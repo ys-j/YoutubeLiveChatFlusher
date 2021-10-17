@@ -1,0 +1,113 @@
+{
+	"manifest_name": {
+		"message": "YouTube LiveChat Flusher (Danmaku LiveChat)"
+	},
+	"manifest_description": {
+		"message": "\"Flush\" LiveChat (like niconico or bilibili) on YouTube"
+	},
+	"ytp-menuitem-label-switch": {
+		"message": "Flush LiveChat"
+	},
+	"ytp-menuitem-label-config": {
+		"message": "Configure Flusher"
+	},
+	"close": {
+		"message": "close"
+	},
+	"animation_duration": {
+		"message": "Animation Duration"
+	},
+	"font_size": {
+		"message": "Font Size"
+	},
+	"background_opacity": {
+		"message": "Background Opacity"
+	},
+	"opacity_0": {
+		"message": "0"
+	},
+	"opacity_1": {
+		"message": "1"
+	},
+	"simultaneous_message": {
+		"message": "Simultaneous Msg."
+	},
+	"simultaneous_message_0": {
+		"message": "Flush all message"
+	},
+	"simultaneous_message_1": {
+		"message": "Flush only first message per load"
+	},
+	"simultaneous_message_2": {
+		"message": "Merge same message"
+	},
+	"normal": {
+		"message": "Normal"
+	},
+	"member": {
+		"message": "Member"
+	},
+	"moderator": {
+		"message": "Moderator"
+	},
+	"owner": {
+		"message": "Owner"
+	},
+	"superchat": {
+		"message": "Superchat"
+	},
+	"sticker": {
+		"message": "Sticker"
+	},
+	"new_membership": {
+		"message": "New Membership"
+	},
+	"milestone": {
+		"message": "Milestone"
+	},
+	"tooltip-author_photo": {
+		"message": "Author Photo"
+	},
+	"tooltip-author_name": {
+		"message": "Author Name"
+	},
+	"display-author_name": {
+		"message": "Name"
+	},
+	"tooltip-purchase_amount": {
+		"message": "Purchase Amount"
+	},
+	"display-purchase_amount": {
+		"message": "$0"
+	},
+	"tooltip-milestone_months": {
+		"message": "Milestone Months"
+	},
+	"display-milestone_months": {
+		"message": "Months"
+	},
+	"tooltip-chat_message": {
+		"message": "Chat Message"
+	},
+	"display-chat_message": {
+		"message": "Message"
+	},
+	"tooltip-new_membership_message": {
+		"message": "New Membership Message"
+	},
+	"display-new_membership_message": {
+		"message": "Message"
+	},
+	"tooltip-sticker": {
+		"message": "Sticker"
+	},
+	"display-sticker": {
+		"message": "Sticker"
+	},
+	"tooltip-custom_color": {
+		"message": "Custom Color"
+	},
+	"display-custom_color": {
+		"message": "Custom Color"
+	}
+}

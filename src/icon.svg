@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="-16 -16 32 32">
+	<defs>
+		<style>g{fill:#f00}text{font-family:Roboto,sans-serif;font-size:6px;font-weight:900;text-anchor:middle}</style>
+	</defs>
+	<g>
+		<path d="M0,12Q2,12,12,11.5Q15.5,11,15.5,9.5Q16,6,16,0H0z" />
+		<path d="M0,-12Q2,-12,12,-11.5Q15.5,-11,15.5,-9.5Q16,-6,16,0H0z" />
+		<path d="M0,12Q-2,12,-12,11.5Q-15.5,11,-15.5,9.5Q-16,6,-16,0H0z" />
+		<path d="M0,-12Q-2,-12,-12,-11.5Q-15.5,-11,-15.5,-9.5Q-16,-6,-16,0H0z" />
+	</g>
+	<path d="M-7,-6v12L8,0" fill="#fff" />
+	<text y="2">&lt;&lt;LiveChat</text>
+</svg>

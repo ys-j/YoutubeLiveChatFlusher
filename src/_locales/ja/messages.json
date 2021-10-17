@@ -1,0 +1,113 @@
+{
+	"manifest_name": {
+		"message": "YouTube LiveChat Flusher／弾幕コメント"
+	},
+	"manifest_description": {
+		"message": "YouTube Liveのチャットを弾幕風に流します"
+	},
+	"ytp-menuitem-label-switch": {
+		"message": "チャットを流す"
+	},
+	"ytp-menuitem-label-config": {
+		"message": "チャット設定"
+	},
+	"close": {
+		"message": "閉じる"
+	},
+	"animation_duration": {
+		"message": "アニメーション秒数"
+	},
+	"font_size": {
+		"message": "フォントサイズ"
+	},
+	"background_opacity": {
+		"message": "背景の透過度"
+	},
+	"opacity_0": {
+		"message": "透過"
+	},
+	"opacity_1": {
+		"message": "不透過"
+	},
+	"simultaneous_message": {
+		"message": "同時刻チャット"
+	},
+	"simultaneous_message_0": {
+		"message": "全て流す"
+	},
+	"simultaneous_message_1": {
+		"message": "読み込む毎に最初のチャットのみ流す"
+	},
+	"simultaneous_message_2": {
+		"message": "同じ内容のチャットを統合する"
+	},
+	"normal": {
+		"message": "通常"
+	},
+	"member": {
+		"message": "メンバー"
+	},
+	"moderator": {
+		"message": "モデレーター"
+	},
+	"owner": {
+		"message": "チャンネル管理者"
+	},
+	"superchat": {
+		"message": "スーパーチャット"
+	},
+	"sticker": {
+		"message": "ステッカー"
+	},
+	"new_membership": {
+		"message": "新規メンバー"
+	},
+	"milestone": {
+		"message": "マイルストーン"
+	},
+	"tooltip-author_photo": {
+		"message": "投稿者のサムネイル"
+	},
+	"tooltip-author_name": {
+		"message": "投稿者名"
+	},
+	"display-author_name": {
+		"message": "名前"
+	},
+	"tooltip-purchase_amount": {
+		"message": "金額"
+	},
+	"display-purchase_amount": {
+		"message": "金額"
+	},
+	"tooltip-milestone_months": {
+		"message": "マイルストーンの月数"
+	},
+	"display-milestone_months": {
+		"message": "月数"
+	},
+	"tooltip-chat_message": {
+		"message": "チャットメッセージ"
+	},
+	"display-chat_message": {
+		"message": "本文"
+	},
+	"tooltip-new_membership_message": {
+		"message": "新規メンバーのメッセージ"
+	},
+	"display-new_membership_message": {
+		"message": "本文"
+	},
+	"tooltip-sticker": {
+		"message": "ステッカー"
+	},
+	"display-sticker": {
+		"message": "ステッカー"
+	},
+	"tooltip-custom_color": {
+		"message": "カスタム色"
+	},
+	"display-custom_color": {
+		"message": "カスタム色"
+	}
+}

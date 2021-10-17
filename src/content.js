@@ -2,72 +2,43 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+/** @typedef { "photo" | "name" | "amount" | "months" | "message" | "sticker" } StoragePartKey */
 /**
- * @type { { app: HTMLElement?, id: string, layer: HTMLElement?, panel: HTMLElement?, skip: boolean, storage: { [key:string]: * } } }
+ * @type { {
+ * app: HTMLElement?,
+ * id: string,
+ * layer: HTMLElement?,
+ * panel: HTMLElement?,
+ * storage: {
+ * 	styles: { [key:string]: string },
+ * 	others: { simultaneous: number },
+ * 	parts: { [key:string]: { [key in StoragePartKey]?: boolean } & { color?: string? } }
+ * }
+ * } }
  */
 const g = {
 	app: null,
 	id: 'youtube-livechat-flusher',
 	layer: null,
 	panel: null,
-	skip: false,
 	storage: {
 		styles: {
 			animation_duration: '4s',
 			font_size: '36px',
 			background_opacity: '0.5',
 		},
+		others: {
+			simultaneous: 2,
+		},
 		parts: {
-			normal: {
-				photo: false,
-				name: false,
-				message: true,
-				color: null,
-			},
-			member: {
-				photo: true,
-				name: false,
-				message: true,
-				color: null,
-			},
-			moderator: {
-				photo: true,
-				name: true,
-				message: true,
-				color: null,
-			},
-			owner: {
-				photo: true,
-				name: true,
-				message: true,
-				color: null,
-			},
-			paid_message: {
-				photo: true,
-				name: true,
-				amount: true,
-				message: true,
-				color: null,
-			},
-			paid_sticker: {
-				photo: true,
-				name: true,
-				amount: true,
-				sticker: true,
-			},
-			new_membership: {
-				photo: true,
-				name: false,
-				message: true,
-				color: null,
-			},
-			milestone: {
-				photo: true,
-				name: true,
-				months: true,
-				message: true,
-				color: null,
-			},
+			normal: { photo: false, name: false, message: true, color: null },
+			member: { photo: true, name: false, message: true, color: null },
+			moderator: { photo: true, name: true, message: true, color: null },
+			owner: { photo: true, name: true, message: true, color: null },
+			paid_message: { photo: true, name: true, amount: true, message: true, color: null },
+			paid_sticker: { photo: true, name: true, amount: true, sticker: true },
+			new_membership: { photo: true, name: false, message: true, color: null },
+			milestone: { photo: true, name: true, months: true, message: true, color: null },
 		},
 	},
 };
@@ -92,7 +63,7 @@ function detectPageType() {
 								g.layer?.style.setProperty(`--yt-live-chat-flusher-${key.replace(/_/g, '-')}-display-${prop}`, bool ? 'inherit' : 'none');
 							} else {
 								if (bool) {
-									g.layer?.style.setProperty(`--yt-live-chat-flusher-${key.replace(/_/g, '-')}-color`, bool);
+									g.layer?.style.setProperty(`--yt-live-chat-flusher-${key.replace(/_/g, '-')}-color`, `${bool}`);
 								} else {
 									g.layer?.style.removeProperty(`--yt-live-chat-flusher-${key.replace(/_/g, '-')}-color`);
 								}
@@ -180,7 +151,7 @@ function addSettingMenu() {
 	/** @type {HTMLElement?} */
 	const ytpPanelMenu = g.app.querySelector('#ytp-id-17 .ytp-panel .ytp-panel-menu');
 	if (ytpPanelMenu) {
-		ytpPanelMenu.insertAdjacentHTML('beforeend', `<div id="${g.id}-checkbox" class="ytp-menuitem" aria-checked="true" role="menuitemcheckbox" tabindex="0" onclick="var c=this.getAttribute('aria-checked')==='true';this.setAttribute('aria-checked',(!c).toString());var l=document.getElementById('${g.id}');if(l){l.hidden=c;l.setAttribute('aria-hidden',c.toString())}"><div class="ytp-menuitem-icon"></div><div class="ytp-menuitem-label">チャットを流す</div><div class="ytp-menuitem-content"><div class="ytp-menuitem-toggle-checkbox"></div></div></div><div id="${g.id}-popupmenu" class="ytp-menuitem" aria-haspopup="true" role="menuitem" tabindex="0" onclick="var p=document.getElementById('${g.id}-panel');if(p){p.hidden = !p.hidden;p.style.display=p.style.display==='none'?'block':'none'}"><div class="ytp-menuitem-icon"></div><div class="ytp-menuitem-label">チャット設定</div><div class="ytp-menuitem-content"></div></div>`);
+		ytpPanelMenu.insertAdjacentHTML('beforeend', `<div id="${g.id}-checkbox" class="ytp-menuitem" aria-checked="true" role="menuitemcheckbox" tabindex="0" onclick="var c=this.getAttribute('aria-checked')==='true';this.setAttribute('aria-checked',(!c).toString());var l=document.getElementById('${g.id}');if(l){l.hidden=c;l.setAttribute('aria-hidden',c.toString())}"><div class="ytp-menuitem-icon"></div><div class="ytp-menuitem-label">${browser.i18n.getMessage('ytp-menuitem-label-switch')}</div><div class="ytp-menuitem-content"><div class="ytp-menuitem-toggle-checkbox"></div></div></div><div id="${g.id}-popupmenu" class="ytp-menuitem" aria-haspopup="true" role="menuitem" tabindex="0" onclick="var p=document.getElementById('${g.id}-panel');if(p){p.hidden = !p.hidden;p.style.display=p.style.display==='none'?'block':'none'}"><div class="ytp-menuitem-icon"></div><div class="ytp-menuitem-label">${browser.i18n.getMessage('ytp-menuitem-label-config')}</div><div class="ytp-menuitem-content"></div></div>`);
 	}
 	g.panel = (() => {
 		const oldOne = g.app.querySelector(`#${g.id}-panel`);
@@ -205,7 +176,7 @@ function addSettingMenu() {
 	}
 	const closeBtn = document.createElement('button');
 	closeBtn.className = 'html5-video-info-panel-close ytp-button';
-	closeBtn.title = 'close';
+	closeBtn.title = browser.i18n.getMessage('close');
 	closeBtn.textContent = '[x]';
 	closeBtn.onclick = () => {
 		if (g.panel) {
@@ -217,57 +188,68 @@ function addSettingMenu() {
 	form.className = 'html5-video-info-panel-content';
 	form.insertAdjacentHTML('beforeend', [
 		[
-			'<div>アニメーション秒数</div>',
-			`<div><label><input type="number" class="styles" name="animation_duration" min="1" max="10" step="0.1" size="5" value="${parseFloat(g.storage.styles.animation_duration)}" data-unit="s"> s</label></div>`,
+			`<div>${browser.i18n.getMessage('animation_duration')}</div>`,
+			`<div><label><input type="number" class="styles" name="animation_duration" min="1" max="10" step="0.1" size="5" value="${parseFloat(g.storage.styles.animation_duration) || 4}" data-unit="s"> s</label></div>`,
 		],
 		[
-			'<div>フォントサイズ</div>',
-			`<div><label><input type="number" class="styles" name="font_size" min="12" size="5" value="${parseInt(g.storage.styles.font_size)}" data-unit="px"> px</label></div>`,
+			`<div>${browser.i18n.getMessage('font_size')}</div>`,
+			`<div><label><input type="number" class="styles" name="font_size" min="12" size="5" value="${parseInt(g.storage.styles.font_size) || 36}" data-unit="px"> px</label></div>`,
 		],
 		[
-			'<div>背景の透過度</div>',
-			`<div>透過<input type="range" class="styles" name="background_opacity" min="0" max="1" step="0.1" value="${parseFloat(g.storage.styles.background_opacity)}">不透過</div>`,
+			`<div>${browser.i18n.getMessage('background_opacity')}</div>`,
+			`<div>${browser.i18n.getMessage('opacity_0')}<input type="range" class="styles" name="background_opacity" min="0" max="1" step="0.1" value="${parseFloat(g.storage.styles.background_opacity) || 0.5}">${browser.i18n.getMessage('opacity_1')}</div>`,
 		],
 		[
-			'<div>通常</div>',
-			`<div><label class="toggle photo" title="Author Photo"><input type="checkbox" name="normal_display" value="photo"><svg class="photo" viewBox="-8 -8 16 16"><circle r="7"/><ellipse rx="2.5" ry="3.5" cy="-1"/><ellipse rx="4" ry="2" cy="4"/></svg></label><label class="toggle name" title="Author Name"><input type="checkbox" name="normal_display" value="name" ><span>名前</span></label><label class="toggle body" title="Chat Message"><input type="checkbox" name="normal_display" value="message"><span>本文</span></label></div>`,
-			`<div><label title="Custom Color"><input type="checkbox" name="normal_display" value="color">カスタム色</label><input type="color" name="normal_color"></div>`,
+			`<div>${browser.i18n.getMessage('simultaneous_message')}</div>`,
+			`<div><select name="simultaneous"><option value="0">${browser.i18n.getMessage('simultaneous_message_0')}</option><option value="1">${browser.i18n.getMessage('simultaneous_message_1')}</option><option value="2">${browser.i18n.getMessage('simultaneous_message_2')}</option></select>▼</div>`
 		],
 		[
-			'<div>メンバー</div>',
-			`<div><label class="toggle photo" title="Author Photo"><input type="checkbox" name="member_display" value="photo"><svg class="photo" viewBox="-8 -8 16 16"><circle r="7"/><ellipse rx="2.5" ry="3.5" cy="-1"/><ellipse rx="4" ry="2" cy="4"/></svg></label><label class="toggle name" title="Author Name"><input type="checkbox" name="member_display" value="name"><span>名前</span></label><label class="toggle body" title="Chat Message"><input type="checkbox" name="member_display" value="message"><span>本文</span></label></div>`,
-			`<div><label title="Custom Color"><input type="checkbox" name="member_display" value="color">カスタム色</label><input type="color" name="member_color"></div>`,
+			`<div>${browser.i18n.getMessage('normal')}</div>`,
+			`<div><label class="toggle photo" title="${browser.i18n.getMessage('tooltip-author_photo')}"><input type="checkbox" name="normal_display" value="photo"><svg viewBox="0 0 16 16"><defs><symbol id="photo" viewBox="-8 -8 16 16"><circle r="7"/><ellipse rx="2.5" ry="3.5" cy="-1"/><ellipse rx="4" ry="2" cy="4"/></symbol></defs><use xlink:href="#photo"/></svg></label><label class="toggle name" title="${browser.i18n.getMessage('tooltip-author_name')}"><input type="checkbox" name="normal_display" value="name"><span>${browser.i18n.getMessage('display-author_name')}</span></label><label class="toggle body" title="${browser.i18n.getMessage('tooltip-chat_message')}"><input type="checkbox" name="normal_display" value="message"><span>${browser.i18n.getMessage('display-chat_message')}</span></label></div>`,
+			`<div><label title="${browser.i18n.getMessage('tooltip-custom_color')}"><input type="checkbox" name="normal_display" value="color">${browser.i18n.getMessage('display-custom_color')}</label><input type="color" name="normal_color"></div>`,
 		],
 		[
-			'<div>モデレーター</div>',
-			`<div><label class="toggle photo" title="Author Photo"><input type="checkbox" name="moderator_display" value="photo"><svg class="photo" viewBox="-8 -8 16 16"><circle r="7"/><ellipse rx="2.5" ry="3.5" cy="-1"/><ellipse rx="4" ry="2" cy="4"/></svg></label><label class="toggle name" title="Author Name"><input type="checkbox" name="moderator_display" value="name"><span>名前</span></label><label class="toggle body" title="Chat Message"><input type="checkbox" name="moderator_display" value="message"><span>本文</span></label></div>`,
-			`<div><label title="Custom Color"><input type="checkbox" name="moderator_display" value="color">カスタム色</label><input type="color" name="moderator_color"></div>`,
+			`<div>${browser.i18n.getMessage('member')}</div>`,
+			`<div><label class="toggle photo" title="${browser.i18n.getMessage('tooltip-author_photo')}"><input type="checkbox" name="member_display" value="photo"><svg viewBox="0 0 16 16"><use xlink:href="#photo"/></svg></label><label class="toggle name" title="${browser.i18n.getMessage('tooltip-author_name')}"><input type="checkbox" name="member_display" value="name"><span>${browser.i18n.getMessage('display-author_name')}</span></label><label class="toggle body" title="${browser.i18n.getMessage('tooltip-chat_message')}"><input type="checkbox" name="member_display" value="message"><span>${browser.i18n.getMessage('display-chat_message')}</span></label></div>`,
+			`<div><label title="${browser.i18n.getMessage('tooltip-custom_color')}"><input type="checkbox" name="member_display" value="color">${browser.i18n.getMessage('display-custom_color')}</label><input type="color" name="member_color"></div>`,
 		],
 		[
-			'<div>チャンネル管理者</div>',
-			`<div><label class="toggle photo" title="Author Photo"><input type="checkbox" name="owner_display" value="photo"><svg class="photo" viewBox="-8 -8 16 16"><circle r="7"/><ellipse rx="2.5" ry="3.5" cy="-1"/><ellipse rx="4" ry="2" cy="4"/></svg></label><label class="toggle name" title="Author Name"><input type="checkbox" name="owner_display" value="name"><span>名前</span></label><label class="toggle body" title="Chat Message"><input type="checkbox" name="owner_display" value="message"><span>本文</span></label></div>`,
-			`<div><label title="Custom Color"><input type="checkbox" name="owner_display" value="color">カスタム色</label><input type="color" name="owner_color"></div>`,
+			`<div>${browser.i18n.getMessage('moderator')}</div>`,
+			`<div><label class="toggle photo" title="${browser.i18n.getMessage('tooltip-author_photo')}"><input type="checkbox" name="moderator_display" value="photo"><svg viewBox="0 0 16 16"><use xlink:href="#photo"/></svg></label><label class="toggle name" title="${browser.i18n.getMessage('tooltip-author_name')}"><input type="checkbox" name="moderator_display" value="name"><span>${browser.i18n.getMessage('display-author_name')}</span></label><label class="toggle body" title="${browser.i18n.getMessage('tooltip-chat_message')}"><input type="checkbox" name="moderator_display" value="message"><span>${browser.i18n.getMessage('display-chat_message')}</span></label></div>`,
+			`<div><label title="${browser.i18n.getMessage('tooltip-custom_color')}"><input type="checkbox" name="moderator_display" value="color">${browser.i18n.getMessage('display-custom_color')}</label><input type="color" name="moderator_color"></div>`,
 		],
 		[
-			'<div>スーパーチャット</div>',
-			`<div class="superchat"><label class="toggle photo" title="Author Photo"><input type="checkbox" name="paid_message_display" value="photo"><svg class="photo" viewBox="-8 -8 16 16"><circle r="7"/><ellipse rx="2.5" ry="3.5" cy="-1"/><ellipse rx="4" ry="2" cy="4"/></svg></label><label class="toggle name" title="Author Name"><input type="checkbox" name="paid_message_display" value="name"><span>名前</span></label><label class="toggle amount" title="Purchase Amount"><input type="checkbox" name="paid_message_display" value="amount"><span>金額</span></label><br><label class="toggle body" title="Chat Message"><input type="checkbox" name="paid_message_display" value="message"><span>本文</span></label></div>`,
-			`<div><label title="Custom Color"><input type="checkbox" name="paid_message_display" value="color">カスタム色</label><input type="color" name="paid_message_color"></div>`,
+			`<div>${browser.i18n.getMessage('owner')}</div>`,
+			`<div><label class="toggle photo" title="${browser.i18n.getMessage('tooltip-author_photo')}"><input type="checkbox" name="owner_display" value="photo"><svg viewBox="0 0 16 16"><use xlink:href="#photo"/></svg></label><label class="toggle name" title="${browser.i18n.getMessage('tooltip-author_name')}"><input type="checkbox" name="owner_display" value="name"><span>${browser.i18n.getMessage('display-author_name')}</span></label><label class="toggle body" title="${browser.i18n.getMessage('tooltip-chat_message')}"><input type="checkbox" name="owner_display" value="message"><span>${browser.i18n.getMessage('display-chat_message')}</span></label></div>`,
+			`<div><label title="${browser.i18n.getMessage('tooltip-custom_color')}"><input type="checkbox" name="owner_display" value="color">${browser.i18n.getMessage('display-custom_color')}</label><input type="color" name="owner_color"></div>`,
 		],
 		[
-			'<div>ステッカー</div>',
-			`<div class="superchat"><label class="toggle photo" title="Author Photo"><input type="checkbox" name="paid_sticker_display" value="photo"><svg class="photo" viewBox="-8 -8 16 16"><circle r="7"/><ellipse rx="2.5" ry="3.5" cy="-1"/><ellipse rx="4" ry="2" cy="4"/></svg></label><label class="toggle name" title="Author Name"><input type="checkbox" name="paid_sticker_display" value="name"><span>名前</span></label><label class="toggle amount" title="Purchase Amount"><input type="checkbox" name="paid_sticker_display" value="amount"><span>金額</span></label><br><label class="toggle body" title="Sticker"><input type="checkbox" name="paid_sticker_display" value="sticker"><span>ステッカー</span></label></div>`,
+			`<div>${browser.i18n.getMessage('superchat')}</div>`,
+			`<div class="superchat"><label class="toggle photo" title="${browser.i18n.getMessage('tooltip-author_photo')}"><input type="checkbox" name="paid_message_display" value="photo"><svg viewBox="0 0 16 16"><use xlink:href="#photo"/></svg></label><label class="toggle name" title="${browser.i18n.getMessage('tooltip-author_name')}"><input type="checkbox" name="paid_message_display" value="name"><span>${browser.i18n.getMessage('display-author_name')}</span></label><label class="toggle amount" title="${browser.i18n.getMessage('tooltip-purchase_amount')}"><input type="checkbox" name="paid_message_display" value="amount"><span>${browser.i18n.getMessage('display-purchase_amount')}</span></label><br><label class="toggle body" title="${browser.i18n.getMessage('tooltip-chat_message')}"><input type="checkbox" name="paid_message_display" value="message"><span>${browser.i18n.getMessage('display-chat_message')}</span></label></div>`,
+			`<div><label title="${browser.i18n.getMessage('tooltip-custom_color')}"><input type="checkbox" name="paid_message_display" value="color">${browser.i18n.getMessage('display-custom_color')}</label><input type="color" name="paid_message_color"></div>`,
 		],
 		[
-			'<div>新規メンバー</div>',
-			`<div class="superchat"><label class="toggle photo" title="Author Photo"><input type="checkbox" name="new_membership_display" value="photo"><svg class="photo" viewBox="-8 -8 16 16"><circle r="7"/><ellipse rx="2.5" ry="3.5" cy="-1"/><ellipse rx="4" ry="2" cy="4"/></svg></label><label class="toggle name" title="Author Name"><input type="checkbox" name="new_membership_display" value="name"><span>名前</span></label><label class="toggle body" title="Chat Message"><input type="checkbox" name="new_membership_display" value="message"><span>本文</span></label></div>`,
-			`<div><label title="Custom Color"><input type="checkbox" name="new_membership_display" value="color">カスタム色</label><input type="color" name="new_membership_color"></div>`,
+			`<div>${browser.i18n.getMessage('sticker')}</div>`,
+			`<div class="superchat"><label class="toggle photo" title="${browser.i18n.getMessage('tooltip-author_photo')}"><input type="checkbox" name="paid_sticker_display" value="photo"><svg viewBox="0 0 16 16"><use xlink:href="#photo"/></svg></label><label class="toggle name" title="${browser.i18n.getMessage('tooltip-author_name')}"><input type="checkbox" name="paid_sticker_display" value="name"><span>${browser.i18n.getMessage('display-author_name')}</span></label><label class="toggle amount" title="${browser.i18n.getMessage('tooltip-purchase_amount')}"><input type="checkbox" name="paid_sticker_display" value="amount"><span>${browser.i18n.getMessage('display-purchase_amount')}</span></label><br><label class="toggle body" title="${browser.i18n.getMessage('tooltip-sticker')}"><input type="checkbox" name="paid_sticker_display" value="sticker"><span>${browser.i18n.getMessage('display-sticker')}</span></label></div>`,
 		],
 		[
-			'<div>マイルストーン</div>',
-			`<div class="superchat"><label class="toggle photo" title="Author Photo"><input type="checkbox" name="milestone_display" value="photo"><svg class="photo" viewBox="-8 -8 16 16"><circle r="7"/><ellipse rx="2.5" ry="3.5" cy="-1"/><ellipse rx="4" ry="2" cy="4"/></svg></label><label class="toggle name" title="Author Name"><input type="checkbox" name="milestone_display" value="name"><span>名前</span></label><label class="toggle amount" title="Purchase Amount"><input type="checkbox" name="milestone_display" value="months"><span>月数</span></label><br><label class="toggle body" title="Milestone Message"><input type="checkbox" name="milestone_display" value="message"><span>本文</span></label></div>`,
-			`<div><label title="Custom Color"><input type="checkbox" name="milestone_display" value="color">カスタム色</label><input type="color" name="milestone_color"></div>`,
+			`<div>${browser.i18n.getMessage('new_membership')}</div>`,
+			`<div class="superchat"><label class="toggle photo" title="${browser.i18n.getMessage('tooltip-author_photo')}"><input type="checkbox" name="new_membership_display" value="photo"><svg viewBox="0 0 16 16"><use xlink:href="#photo"/></svg></label><label class="toggle name" title="${browser.i18n.getMessage('tooltip-author_name')}"><input type="checkbox" name="new_membership_display" value="name"><span>${browser.i18n.getMessage('display-author_name')}</span></label><label class="toggle body" title="${browser.i18n.getMessage('tooltip-new_membership_message')}"><input type="checkbox" name="new_membership_display" value="message"><span>${browser.i18n.getMessage('display-new_membership_message')}</span></label></div>`,
+			`<div><label title="${browser.i18n.getMessage('tooltip-custom_color')}"><input type="checkbox" name="new_membership_display" value="color">${browser.i18n.getMessage('display-custom_color')}</label><input type="color" name="new_membership_color"></div>`,
+		],
+		[
+			`<div>${browser.i18n.getMessage('milestone')}</div>`,
+			`<div class="superchat"><label class="toggle photo" title="${browser.i18n.getMessage('tooltip-author_photo')}"><input type="checkbox" name="milestone_display" value="photo"><svg viewBox="0 0 16 16"><use xlink:href="#photo"/></svg></label><label class="toggle name" title="${browser.i18n.getMessage('tooltip-author_name')}"><input type="checkbox" name="milestone_display" value="name"><span>${browser.i18n.getMessage('display-author_name')}</span></label><label class="toggle amount" title="${browser.i18n.getMessage('tooltip-milestone_months')}"><input type="checkbox" name="milestone_display" value="months"><span>${browser.i18n.getMessage('display-milestone_months')}</span></label><br><label class="toggle body" title="${browser.i18n.getMessage('tooltip-chat_message')}"><input type="checkbox" name="milestone_display" value="message"><span>${browser.i18n.getMessage('display-chat_message')}</span></label></div>`,
+			`<div><label title="${browser.i18n.getMessage('tooltip-custom_color')}"><input type="checkbox" name="milestone_display" value="color">${browser.i18n.getMessage('display-custom_color')}</label><input type="color" name="milestone_color"></div>`,
 		],
 	].map(row => '<div>' + row.join('') + '</div>').join(''));
+	const selects = form.querySelectorAll('select');
+	selects.forEach(select => {
+		if (select.name in g.storage.others) {
+			const val = g.storage.others[select.name];
+			select.selectedIndex = val;
+		}
+	});
 	const checkboxes = /** @type {NodeListOf<HTMLInputElement>} */ (form.querySelectorAll('input[type="checkbox"]'));
 	checkboxes.forEach(checkbox => {
 		const match = checkbox.name.match(/^(.+)_display$/);
@@ -289,7 +271,7 @@ function addSettingMenu() {
 					case 'color': {
 						const picker = /** @type {HTMLInputElement?} */ (checkbox.parentElement?.nextElementSibling);
 						if (picker) {
-							picker.value = g.storage.parts[type].color;
+							picker.value = g.storage.parts[type].color || 'inherit';
 						}
 						break;
 					}
@@ -298,9 +280,13 @@ function addSettingMenu() {
 		}
 	});
 	form.addEventListener('change', e => {
-		const elem = /** @type {HTMLInputElement} */ (e.target);
+		const elem = /** @type {HTMLInputElement | HTMLSelectElement} */ (e.target);
 		const name = elem.name;
-		if (elem.classList.contains('styles')) {
+		if (elem instanceof HTMLSelectElement) {
+			if (name in g.storage.others) {
+				g.storage.others[name] = parseInt(elem.value);
+			}
+		} else if (elem.classList.contains('styles')) {
 			if (name) {
 				g.storage.styles[name] = elem.value + (elem.dataset.unit || '');
 				g.layer?.style.setProperty('--yt-live-chat-flusher-' + name.replace(/_/g, '-'), g.storage.styles[name]);
@@ -316,7 +302,7 @@ function addSettingMenu() {
 					} else {
 						if (elem.checked) {
 							g.storage.parts[type].color = form.elements[type + '_color']?.value;
-							g.layer?.style.setProperty('--yt-live-chat-flusher-' + type.replace(/_/g, '-') + '-color', g.storage.parts[type].color);
+							g.layer?.style.setProperty('--yt-live-chat-flusher-' + type.replace(/_/g, '-') + '-color', g.storage.parts[type].color || 'inherit');
 						} else {
 							g.storage.parts[type].color = null;
 							g.layer?.style.removeProperty('--yt-live-chat-flusher-' + type.replace(/_/g, '-') + '-color');
@@ -328,9 +314,9 @@ function addSettingMenu() {
 			const match = name.match(/^(.+)_color$/);
 			if (match) {
 				const [_, type] = match;
-				if (elem.previousElementSibling?.firstElementChild.checked) {
+				if (elem.previousElementSibling?.firstElementChild?.checked) {
 					g.storage.parts[type].color = form.elements[type + '_color']?.value;
-					g.layer?.style.setProperty('--yt-live-chat-flusher-' + type.replace('_', '-') + '-color', g.storage.parts[type].color);
+					g.layer?.style.setProperty('--yt-live-chat-flusher-' + type.replace('_', '-') + '-color', g.storage.parts[type].color || 'inherit');
 				} else {
 					g.storage.parts[type].color = null;
 					g.layer?.style.removeProperty('--yt-live-chat-flusher-' + type.replace('_', '-') + '-color');
@@ -354,10 +340,34 @@ function handleYtAction(e) {
 				break;
 			}
 			const actions = e.detail.args[0];
-			for (const action of actions) {
-				const loop = handleChatAction(action);
-				if (g.skip && !loop) {
-					break;
+			const bodies = [];
+			const ids = [];
+			action: for (const action of actions) {
+				const elem = handleChatAction(action);
+				if (elem) {
+					simultaneous: switch (g.storage.others.simultaneous) {
+						case 0: break simultaneous;
+						case 1: break action;
+						case 2: {
+							const body = elem.querySelector('span.body');
+							if (body) {
+								const html = body.outerHTML;
+								const index = bodies.indexOf(html);
+								if (index < 0) {
+									bodies.push(html);
+									ids.push(elem.id);
+								} else {
+									const targetElem = g.layer?.querySelector('#' + ids[index]);
+									const header = elem.querySelector('span.header');
+									if (targetElem && header) {
+										targetElem.querySelector('span.body')?.before(header);
+										targetElem.style.setProperty('--yt-live-chat-flusher-translate-x', `-${(g.layer?.clientWidth || 720) + targetElem.clientWidth}px`);
+										elem.remove();
+									}
+								}
+							}
+						}
+					}
 				}
 			}
 			break;
@@ -376,7 +386,7 @@ function handleYtAction(e) {
 function handleChatAction(action) {
 	if (action.addChatItemAction) {
 		const item = action.addChatItemAction.item;
-		const fs = parseInt(g.storage.styles.font_size), lh = fs * 1.25;
+		const fs = parseInt(g.storage.styles.font_size) || 36, lh = fs * 1.25;
 		const elem = parseChatItem(item);
 		if (elem && g.layer) {
 			const children = Array.from(/** @type {HTMLCollectionOf<HTMLElement>} */ (g.layer.children));
@@ -392,15 +402,13 @@ function handleChatAction(action) {
 			const overline = Math.ceil(g.layer.clientHeight / lh);
 			do {
 				if (children.length > 0) {
-					// elem.dataset.line = `${y}`;
 					elem.style.top = `${y * 1.25}em`;
 					if (!children.some(before => isCatchable(before, elem)) && !isOverflow(g.layer, elem)) {
-						return false;
+						return elem;
 					}
 				} else {
-					// elem.dataset.line = '0';
 					elem.style.top = '0px';
-					return false;
+					return elem;
 				}
 			} while (y++ < overline);
 			do {
@@ -413,15 +421,14 @@ function handleChatAction(action) {
 				do {
 					ln = lines.indexOf(i++);
 				} while (ln < 0);
-				// elem.dataset.line = `${ln}`;
 				elem.style.top = `${ln * 1.25}em`;
 			} while (isOverflow(g.layer, elem) && y-- > 0);
-			return false;
+			return elem;
 		}
 	} else if (action.markChatItemAsDeletedAction) {
 		g.layer?.querySelector('#' + action.markChatItemAsDeletedAction.targetItemId)?.remove();
 	}
-	return true;
+	return null;
 }
 
 /**
@@ -435,17 +442,10 @@ function parseChatItem(item) {
 		const author = getAuthor(renderer);
 		const span = document.createElement('span');
 		span.id = renderer.id;
-		span.className = 'text ' + (author.class ? author.class.join(' ') : 'normal');
-		/*
-		const type = (cl => {
-			if (cl.contains('owner')) return 'owner';
-			if (cl.contains('moderator')) return 'moderator';
-			if (cl.contains('member')) return 'member';
-			return 'normal';
-		})(span.classList);
-		*/
+		const authorType = author.class ? author.class.join(' ') : 'normal';
+		span.className = 'text ' + authorType;
 		span.dataset.author = author.name;
-		span.innerHTML = `<span class="header"><img class="photo" src="${author.photo[0].url}" loading="lazy"><span class="name">${author.name}</span></span><span class="body">${message}</span>`;
+		span.innerHTML = `<span class="header"><img class="photo" src="${author.photo[0].url}" loading="lazy"><span class="name">${author.name}</span></span><span class="body ${authorType}">${message}</span>`;
 		return span;
 	} else if ('liveChatMembershipItemRenderer' in item) {
 		const renderer = item.liveChatMembershipItemRenderer;
@@ -509,7 +509,7 @@ function parseChatItem(item) {
  * @param {Element} after 
  */
 function isCatchable(before, after) {
-	const sec = 4;
+	const sec = parseFloat(g.storage.styles.animation_duration) || 4;
 	const [b, a] = [before, after].map(elm => elm.getBoundingClientRect());
 	if (b.top <= a.top && a.top < b.bottom) {
 		if (b.left <= a.left && a.left <= b.right) {

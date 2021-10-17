@@ -1,14 +1,25 @@
 {
 	"manifest_version": 2,
-	"name": "YouTube LiveChat Flusher",
-	"version": "0.1.0",
-	"description": "YouTube Liveでチャットを弾幕風に流します",
+	"name": "__MSG_manifest_name__",
+	"version": "0.1.1",
+	"applications": {
+		"gecko": {
+			"id": "{5a898e4e-6b5c-4acf-9e29-4c791d3b5f2e}",
+			"strict_min_version": "74.0"
+		}
+	},
+	"default_locale": "en",
+	"description": "__MSG_manifest_description__",
 	"developer": {
 		"name": "_y_s",
-		"url": "https://github.com/ys0115/YoutubeLiveChatFlusher"
+		"url": "https://github.com/ys-j/YoutubeLiveChatFlusher"
 	},
 	"author": "_y_s",
-	"homepage_url": "https://github.com/ys0115/YoutubeLiveChatFlusher",
+	"homepage_url": "https://github.com/ys-j/YoutubeLiveChatFlusher",
+	"icons": {
+		"48": "icon.svg",
+		"96": "icon.svg"
+	},
 	"permissions": ["storage"],
 	"content_scripts": [
 		{

@@ -307,12 +307,12 @@
 #youtube-livechat-flusher-panel label.toggle > input[type="checkbox"]:checked + * {
 	opacity: 1;
 }
-#youtube-livechat-flusher-panel svg.photo {
+#youtube-livechat-flusher-panel .photo > svg {
 	height: 2em;
 	width: 2em;
 	vertical-align: -.5em;
 }
-#youtube-livechat-flusher-panel svg.photo * {
+#youtube-livechat-flusher-panel .photo > svg * {
 	fill: none;
 	stroke: currentColor;
 }
@@ -327,6 +327,16 @@
 	background-color: #fff;
 	border: 0;
 	box-shadow: 0 1px 5px 0 rgba(0,0,0,0.6);
+}
+#youtube-livechat-flusher-panel select {
+	appearance: none;
+	background-color: transparent;
+	border: 0;
+	border-bottom: 1px solid currentColor;
+	cursor: pointer;
+	filter: invert(1);
+	font: inherit;
+	padding: 0 2px;
 }
 #youtube-livechat-flusher-panel input[type="color"] {
 	appearance: none;
