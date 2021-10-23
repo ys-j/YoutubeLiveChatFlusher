@@ -122,6 +122,12 @@
 	"display-sticker": {
 		"message": "ステッカー"
 	},
+	"tooltip-sticker_size": {
+		"message": "ステッカーのサイズ"
+	},
+	"display-sticker_size": {
+		"message": "サイズ"
+	},
 	"tooltip-custom_color": {
 		"message": "カスタム色"
 	},

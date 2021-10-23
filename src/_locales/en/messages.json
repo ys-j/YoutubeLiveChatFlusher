@@ -122,6 +122,12 @@
 	"display-sticker": {
 		"message": "Sticker"
 	},
+	"tooltip-sticker_size": {
+		"message": "Sticker size"
+	},
+	"display-sticker_size": {
+		"message": "Size"
+	},
 	"tooltip-custom_color": {
 		"message": "Custom Color"
 	},

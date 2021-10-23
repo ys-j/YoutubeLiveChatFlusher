@@ -37,6 +37,7 @@ const g = {
 			font_size: '36px',
 			layer_opacity: '1',
 			background_opacity: '0.5',
+			sticker_size: '3em',
 		},
 		others: {
 			simultaneous: 2,
@@ -62,9 +63,15 @@ function detectPageType() {
 		g.app = top.document.querySelector('ytd-app');
 		if (g.app) {
 			startLiveChatFlusher();
-			browser.storage.local.get(['styles', 'parts']).then(storage => {
-				g.storage.styles = storage && storage.style || g.storage.styles;
-				g.storage.parts = storage && storage.parts || g.storage.parts;
+			const storageList = ['styles', 'others', 'parts'];
+			browser.storage.local.get(storageList).then(storage => {
+				if (storage) {
+					for (const type of storageList) {
+						for (const [key, value] of Object.entries(storage[type])){
+							g.storage[type][key] = value;
+						}
+					}
+				}
 				for (const [prop, value] of Object.entries(g.storage.styles)) {
 					g.layer?.style.setProperty('--yt-live-chat-flusher-' + prop.replace(/_/g, '-'), value);
 				}
@@ -180,12 +187,11 @@ function addSettingMenu() {
 			return newOne;
 		}
 	})();
-	if (g.layer) {
-		g.layer.after(g.panel);
-		g.panel.onkeydown = e => {
-			e.stopPropagation();
-		};
-	}
+	g.layer.after(g.panel);
+	g.panel.onkeydown = e => {
+		e.stopPropagation();
+	};
+	const styles = getComputedStyle(g.layer);
 	const closeBtn = document.createElement('button');
 	closeBtn.className = 'html5-video-info-panel-close ytp-button';
 	closeBtn.title = browser.i18n.getMessage('close');
@@ -225,41 +231,42 @@ function addSettingMenu() {
 		],
 		[
 			`<div>${browser.i18n.getMessage('normal')}</div>`,
-			`<div><label class="toggle photo" title="${browser.i18n.getMessage('tooltip-author_photo')}"><input type="checkbox" name="normal_display" value="photo"><svg viewBox="0 0 16 16"><defs><symbol id="photo" viewBox="-8 -8 16 16"><circle r="7"/><ellipse rx="2.5" ry="3.5" cy="-1"/><ellipse rx="4" ry="2" cy="4"/></symbol></defs><use xlink:href="#photo"/></svg></label><label class="toggle name" title="${browser.i18n.getMessage('tooltip-author_name')}"><input type="checkbox" name="normal_display" value="name"><span>${browser.i18n.getMessage('display-author_name')}</span></label><label class="toggle body" title="${browser.i18n.getMessage('tooltip-chat_message')}"><input type="checkbox" name="normal_display" value="message"><span>${browser.i18n.getMessage('display-chat_message')}</span></label></div>`,
+			`<div><label class="toggle photo" title="${browser.i18n.getMessage('tooltip-author_photo')}"><input type="checkbox" name="normal_display" value="photo"><svg viewBox="-8 -8 16 16"><g id="yt-lcf-photo"><circle r="7"/><ellipse rx="2.5" ry="3.5" cy="-1"/><ellipse rx="4" ry="2" cy="4"/></g></svg></label><label class="toggle name" title="${browser.i18n.getMessage('tooltip-author_name')}"><input type="checkbox" name="normal_display" value="name"><span>${browser.i18n.getMessage('display-author_name')}</span></label><label class="toggle body" title="${browser.i18n.getMessage('tooltip-chat_message')}"><input type="checkbox" name="normal_display" value="message"><span>${browser.i18n.getMessage('display-chat_message')}</span></label></div>`,
 			`<div><label title="${browser.i18n.getMessage('tooltip-custom_color')}"><input type="checkbox" name="normal_display" value="color">${browser.i18n.getMessage('display-custom_color')}</label><input type="color" name="normal_color"></div>`,
 		],
 		[
 			`<div>${browser.i18n.getMessage('member')}</div>`,
-			`<div><label class="toggle photo" title="${browser.i18n.getMessage('tooltip-author_photo')}"><input type="checkbox" name="member_display" value="photo"><svg viewBox="0 0 16 16"><use xlink:href="#photo"/></svg></label><label class="toggle name" title="${browser.i18n.getMessage('tooltip-author_name')}"><input type="checkbox" name="member_display" value="name"><span>${browser.i18n.getMessage('display-author_name')}</span></label><label class="toggle body" title="${browser.i18n.getMessage('tooltip-chat_message')}"><input type="checkbox" name="member_display" value="message"><span>${browser.i18n.getMessage('display-chat_message')}</span></label></div>`,
+			`<div><label class="toggle photo" title="${browser.i18n.getMessage('tooltip-author_photo')}"><input type="checkbox" name="member_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${browser.i18n.getMessage('tooltip-author_name')}"><input type="checkbox" name="member_display" value="name"><span>${browser.i18n.getMessage('display-author_name')}</span></label><label class="toggle body" title="${browser.i18n.getMessage('tooltip-chat_message')}"><input type="checkbox" name="member_display" value="message"><span>${browser.i18n.getMessage('display-chat_message')}</span></label></div>`,
 			`<div><label title="${browser.i18n.getMessage('tooltip-custom_color')}"><input type="checkbox" name="member_display" value="color">${browser.i18n.getMessage('display-custom_color')}</label><input type="color" name="member_color"></div>`,
 		],
 		[
 			`<div>${browser.i18n.getMessage('moderator')}</div>`,
-			`<div><label class="toggle photo" title="${browser.i18n.getMessage('tooltip-author_photo')}"><input type="checkbox" name="moderator_display" value="photo"><svg viewBox="0 0 16 16"><use xlink:href="#photo"/></svg></label><label class="toggle name" title="${browser.i18n.getMessage('tooltip-author_name')}"><input type="checkbox" name="moderator_display" value="name"><span>${browser.i18n.getMessage('display-author_name')}</span></label><label class="toggle body" title="${browser.i18n.getMessage('tooltip-chat_message')}"><input type="checkbox" name="moderator_display" value="message"><span>${browser.i18n.getMessage('display-chat_message')}</span></label></div>`,
+			`<div><label class="toggle photo" title="${browser.i18n.getMessage('tooltip-author_photo')}"><input type="checkbox" name="moderator_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${browser.i18n.getMessage('tooltip-author_name')}"><input type="checkbox" name="moderator_display" value="name"><span>${browser.i18n.getMessage('display-author_name')}</span></label><label class="toggle body" title="${browser.i18n.getMessage('tooltip-chat_message')}"><input type="checkbox" name="moderator_display" value="message"><span>${browser.i18n.getMessage('display-chat_message')}</span></label></div>`,
 			`<div><label title="${browser.i18n.getMessage('tooltip-custom_color')}"><input type="checkbox" name="moderator_display" value="color">${browser.i18n.getMessage('display-custom_color')}</label><input type="color" name="moderator_color"></div>`,
 		],
 		[
 			`<div>${browser.i18n.getMessage('owner')}</div>`,
-			`<div><label class="toggle photo" title="${browser.i18n.getMessage('tooltip-author_photo')}"><input type="checkbox" name="owner_display" value="photo"><svg viewBox="0 0 16 16"><use xlink:href="#photo"/></svg></label><label class="toggle name" title="${browser.i18n.getMessage('tooltip-author_name')}"><input type="checkbox" name="owner_display" value="name"><span>${browser.i18n.getMessage('display-author_name')}</span></label><label class="toggle body" title="${browser.i18n.getMessage('tooltip-chat_message')}"><input type="checkbox" name="owner_display" value="message"><span>${browser.i18n.getMessage('display-chat_message')}</span></label></div>`,
+			`<div><label class="toggle photo" title="${browser.i18n.getMessage('tooltip-author_photo')}"><input type="checkbox" name="owner_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${browser.i18n.getMessage('tooltip-author_name')}"><input type="checkbox" name="owner_display" value="name"><span>${browser.i18n.getMessage('display-author_name')}</span></label><label class="toggle body" title="${browser.i18n.getMessage('tooltip-chat_message')}"><input type="checkbox" name="owner_display" value="message"><span>${browser.i18n.getMessage('display-chat_message')}</span></label></div>`,
 			`<div><label title="${browser.i18n.getMessage('tooltip-custom_color')}"><input type="checkbox" name="owner_display" value="color">${browser.i18n.getMessage('display-custom_color')}</label><input type="color" name="owner_color"></div>`,
 		],
 		[
 			`<div>${browser.i18n.getMessage('superchat')}</div>`,
-			`<div class="superchat"><label class="toggle photo" title="${browser.i18n.getMessage('tooltip-author_photo')}"><input type="checkbox" name="paid_message_display" value="photo"><svg viewBox="0 0 16 16"><use xlink:href="#photo"/></svg></label><label class="toggle name" title="${browser.i18n.getMessage('tooltip-author_name')}"><input type="checkbox" name="paid_message_display" value="name"><span>${browser.i18n.getMessage('display-author_name')}</span></label><label class="toggle amount" title="${browser.i18n.getMessage('tooltip-purchase_amount')}"><input type="checkbox" name="paid_message_display" value="amount"><span>${browser.i18n.getMessage('display-purchase_amount')}</span></label><br><label class="toggle body" title="${browser.i18n.getMessage('tooltip-chat_message')}"><input type="checkbox" name="paid_message_display" value="message"><span>${browser.i18n.getMessage('display-chat_message')}</span></label></div>`,
+			`<div class="superchat"><label class="toggle photo" title="${browser.i18n.getMessage('tooltip-author_photo')}"><input type="checkbox" name="paid_message_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${browser.i18n.getMessage('tooltip-author_name')}"><input type="checkbox" name="paid_message_display" value="name"><span>${browser.i18n.getMessage('display-author_name')}</span></label><label class="toggle amount" title="${browser.i18n.getMessage('tooltip-purchase_amount')}"><input type="checkbox" name="paid_message_display" value="amount"><span>${browser.i18n.getMessage('display-purchase_amount')}</span></label><br><label class="toggle body" title="${browser.i18n.getMessage('tooltip-chat_message')}"><input type="checkbox" name="paid_message_display" value="message"><span>${browser.i18n.getMessage('display-chat_message')}</span></label></div>`,
 			`<div><label title="${browser.i18n.getMessage('tooltip-custom_color')}"><input type="checkbox" name="paid_message_display" value="color">${browser.i18n.getMessage('display-custom_color')}</label><input type="color" name="paid_message_color"></div>`,
 		],
 		[
 			`<div>${browser.i18n.getMessage('sticker')}</div>`,
-			`<div class="superchat"><label class="toggle photo" title="${browser.i18n.getMessage('tooltip-author_photo')}"><input type="checkbox" name="paid_sticker_display" value="photo"><svg viewBox="0 0 16 16"><use xlink:href="#photo"/></svg></label><label class="toggle name" title="${browser.i18n.getMessage('tooltip-author_name')}"><input type="checkbox" name="paid_sticker_display" value="name"><span>${browser.i18n.getMessage('display-author_name')}</span></label><label class="toggle amount" title="${browser.i18n.getMessage('tooltip-purchase_amount')}"><input type="checkbox" name="paid_sticker_display" value="amount"><span>${browser.i18n.getMessage('display-purchase_amount')}</span></label><br><label class="toggle body" title="${browser.i18n.getMessage('tooltip-sticker')}"><input type="checkbox" name="paid_sticker_display" value="sticker"><span>${browser.i18n.getMessage('display-sticker')}</span></label></div>`,
+			`<div class="superchat"><label class="toggle photo" title="${browser.i18n.getMessage('tooltip-author_photo')}"><input type="checkbox" name="paid_sticker_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${browser.i18n.getMessage('tooltip-author_name')}"><input type="checkbox" name="paid_sticker_display" value="name"><span>${browser.i18n.getMessage('display-author_name')}</span></label><label class="toggle amount" title="${browser.i18n.getMessage('tooltip-purchase_amount')}"><input type="checkbox" name="paid_sticker_display" value="amount"><span>${browser.i18n.getMessage('display-purchase_amount')}</span></label><br><label class="toggle body" title="${browser.i18n.getMessage('tooltip-sticker')}"><input type="checkbox" name="paid_sticker_display" value="sticker"><span>${browser.i18n.getMessage('display-sticker')}</span></label></div>`,
+			`<div><label title="${browser.i18n.getMessage('tooltip-sticker_size')}" style="padding-left:4px">${browser.i18n.getMessage('display-sticker_size')}: x<input type="number" class="styles" name="sticker_size" min="1" max="10" step="0.1" size="5" value="${parseFloat(g.storage.styles.sticker_size) || 2}" data-unit="em"></label></div>`
 		],
 		[
 			`<div>${browser.i18n.getMessage('new_membership')}</div>`,
-			`<div class="superchat"><label class="toggle photo" title="${browser.i18n.getMessage('tooltip-author_photo')}"><input type="checkbox" name="new_membership_display" value="photo"><svg viewBox="0 0 16 16"><use xlink:href="#photo"/></svg></label><label class="toggle name" title="${browser.i18n.getMessage('tooltip-author_name')}"><input type="checkbox" name="new_membership_display" value="name"><span>${browser.i18n.getMessage('display-author_name')}</span></label><label class="toggle body" title="${browser.i18n.getMessage('tooltip-new_membership_message')}"><input type="checkbox" name="new_membership_display" value="message"><span>${browser.i18n.getMessage('display-new_membership_message')}</span></label></div>`,
+			`<div class="superchat"><label class="toggle photo" title="${browser.i18n.getMessage('tooltip-author_photo')}"><input type="checkbox" name="new_membership_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${browser.i18n.getMessage('tooltip-author_name')}"><input type="checkbox" name="new_membership_display" value="name"><span>${browser.i18n.getMessage('display-author_name')}</span></label><label class="toggle body" title="${browser.i18n.getMessage('tooltip-new_membership_message')}"><input type="checkbox" name="new_membership_display" value="message"><span>${browser.i18n.getMessage('display-new_membership_message')}</span></label></div>`,
 			`<div><label title="${browser.i18n.getMessage('tooltip-custom_color')}"><input type="checkbox" name="new_membership_display" value="color">${browser.i18n.getMessage('display-custom_color')}</label><input type="color" name="new_membership_color"></div>`,
 		],
 		[
 			`<div>${browser.i18n.getMessage('milestone')}</div>`,
-			`<div class="superchat"><label class="toggle photo" title="${browser.i18n.getMessage('tooltip-author_photo')}"><input type="checkbox" name="milestone_display" value="photo"><svg viewBox="0 0 16 16"><use xlink:href="#photo"/></svg></label><label class="toggle name" title="${browser.i18n.getMessage('tooltip-author_name')}"><input type="checkbox" name="milestone_display" value="name"><span>${browser.i18n.getMessage('display-author_name')}</span></label><label class="toggle amount" title="${browser.i18n.getMessage('tooltip-milestone_months')}"><input type="checkbox" name="milestone_display" value="months"><span>${browser.i18n.getMessage('display-milestone_months')}</span></label><br><label class="toggle body" title="${browser.i18n.getMessage('tooltip-chat_message')}"><input type="checkbox" name="milestone_display" value="message"><span>${browser.i18n.getMessage('display-chat_message')}</span></label></div>`,
+			`<div class="superchat"><label class="toggle photo" title="${browser.i18n.getMessage('tooltip-author_photo')}"><input type="checkbox" name="milestone_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${browser.i18n.getMessage('tooltip-author_name')}"><input type="checkbox" name="milestone_display" value="name"><span>${browser.i18n.getMessage('display-author_name')}</span></label><label class="toggle amount" title="${browser.i18n.getMessage('tooltip-milestone_months')}"><input type="checkbox" name="milestone_display" value="months"><span>${browser.i18n.getMessage('display-milestone_months')}</span></label><br><label class="toggle body" title="${browser.i18n.getMessage('tooltip-chat_message')}"><input type="checkbox" name="milestone_display" value="message"><span>${browser.i18n.getMessage('display-chat_message')}</span></label></div>`,
 			`<div><label title="${browser.i18n.getMessage('tooltip-custom_color')}"><input type="checkbox" name="milestone_display" value="color">${browser.i18n.getMessage('display-custom_color')}</label><input type="color" name="milestone_color"></div>`,
 		],
 	].map(row => '<div>' + row.join('') + '</div>').join(''));
@@ -291,7 +298,7 @@ function addSettingMenu() {
 					case 'color': {
 						const picker = /** @type {HTMLInputElement?} */ (checkbox.parentElement?.nextElementSibling);
 						if (picker) {
-							picker.value = g.storage.parts[type].color || 'inherit';
+							picker.value = g.storage.parts[type].color || formatHexColor(styles.getPropertyValue('--yt-live-chat-flusher-' + picker.name.replace(/_/g, '-')));
 						}
 						break;
 					}
@@ -403,6 +410,18 @@ function handleYtAction(e) {
 	}
 }
 
+/**
+ * 
+ * @param { {
+ * addBannerToLiveChatCommand?: *,
+ * addChatItemAction?: *,
+ * addLiveChatTickerItemAction?: *,
+ * markChatItemAsDeletedAction?: *,
+ * markChatItemsByAuthorAsDeletedAction?: *,
+ * replaceChatItemAction?: *,
+ * } } action 
+ * @returns 
+ */
 function handleChatAction(action) {
 	if (action.addChatItemAction) {
 		const item = action.addChatItemAction.item;
@@ -447,6 +466,17 @@ function handleChatAction(action) {
 		}
 	} else if (action.markChatItemAsDeletedAction) {
 		g.layer?.querySelector('#' + action.markChatItemAsDeletedAction.targetItemId)?.remove();
+	} else if (action.markChatItemsByAuthorAsDeletedAction) {
+		g.layer?.querySelectorAll(`[data-channel="${action.markChatItemsByAuthorAsDeletedAction.externalChannelId}"]`).forEach(elem => elem.remove());
+	} else if (action.replaceChatItemAction) {
+		const target = g.layer?.querySelector('#' + action.replaceChatItemAction.targetItemId);
+		if (target) {
+			const item = action.replaceChatItemAction.replacementItem;
+			const elem = parseChatItem(item);
+			if (elem) {
+				target.replaceWith(elem);
+			}
+		}
 	}
 	return null;
 }
@@ -465,6 +495,7 @@ function parseChatItem(item) {
 		const authorType = author.class ? author.class.join(' ') : 'normal';
 		span.className = 'text ' + authorType;
 		span.dataset.author = author.name;
+		span.dataset.channel = author.id;
 		span.innerHTML = `<span class="header"><img class="photo" src="${author.photo[0].url}" loading="lazy"><span class="name">${author.name}</span></span><span class="body ${authorType}">${message}</span>`;
 		return span;
 	} else if ('liveChatMembershipItemRenderer' in item) {
@@ -474,6 +505,7 @@ function parseChatItem(item) {
 		const div = document.createElement('div');
 		div.id = renderer.id;
 		div.dataset.author = author.name;
+		div.dataset.channel = author.id;
 		const headerText = (() => {
 			if (renderer.headerPrimaryText) {
 				div.className = 'milestone';
@@ -499,6 +531,7 @@ function parseChatItem(item) {
 		div.id = renderer.id;
 		div.className = 'paid';
 		div.dataset.author = author.name;
+		div.dataset.channel = author.id;
 		div.innerHTML = `<div class="header" style="background-color:rgba(${getColorRGB(renderer.headerBackgroundColor).join()},var(--yt-live-chat-flusher-background-opacity))">\
 <img class="photo" src="${author.photo[0].url}" loading="lazy">\
 <span class="name">${author.name}</span>\
@@ -513,6 +546,7 @@ function parseChatItem(item) {
 		div.id = renderer.id;
 		div.className = 'sticker';
 		div.dataset.author = author.name;
+		div.dataset.channel = author.id;
 		div.innerHTML = `<div class="header" style="background-color:rgba(${getColorRGB(renderer.backgroundColor).join()},var(--yt-live-chat-flusher-background-opacity))">\
 <img class="photo" src="${author.photo[0].url}" loading="lazy">\
 <span class="name">${author.name}</span>\
@@ -559,10 +593,31 @@ function isOverflow(parent, child) {
 }
 
 /**
- * @param { number } long
+ * @param {number} long
  */
 function getColorRGB(long) {
 	return (long.toString(16).match(/[0-9a-f]{2}/g) || []).map(hex => parseInt(hex, 16)).slice(1);
+}
+
+/**
+ * 
+ * @param {string} color 
+ * @param {string} inherit 
+ */
+function formatHexColor(color, inherit = '#ffffff') {
+	if (color.startsWith('#')) {
+		if (color.length > 6) {
+			return color.slice(0, 7);
+		} else if (color.length > 3) {
+			return color[0] + color[1] + color[1] + color[2] + color[2] + color[3] + color[3];
+		}
+	} else if (color.startsWith('rgb')) {
+		const [_, r, g, b] = color.match(/(\d+),\s*(\d+),\s*(\d+)/);
+		if (_) {
+			return '#' + [r, g, b].map(s => parseInt(s).toString(16).padStart(2, '0')).join('');
+		}
+	}
+	return inherit;
 }
 
 /**
@@ -606,6 +661,7 @@ function getMessage(message, startIndex = 0, endIndex = 0) {
  */
 function getAuthor(renderer) {
 	return {
+		id: renderer.authorExternalChannelId,
 		class: renderer.authorBadges?.map(b => b.liveChatAuthorBadgeRenderer.customThumbnail ? 'member' : b.liveChatAuthorBadgeRenderer.icon?.iconType.toLowerCase()),
 		name: renderer.authorName.simpleText,
 		photo: renderer.authorPhoto.thumbnails,

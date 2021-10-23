@@ -6,6 +6,7 @@
 	--yt-live-chat-flusher-font-size: 36px;
 	--yt-live-chat-flusher-layer-opacity: 1;
 	--yt-live-chat-flusher-background-opacity: .5;
+	--yt-live-chat-flusher-sticker-size: 3em;
 	--yt-live-chat-flusher-normal-color: inherit;
 	--yt-live-chat-flusher-normal-display: block;
 	--yt-live-chat-flusher-normal-display-photo: none;
@@ -258,8 +259,8 @@
 	margin-right: 4px;
 }
 #youtube-livechat-flusher .sticker figure > img {
-	height: 2em;
-	width: 2em;
+	height: var(--yt-live-chat-flusher-sticker-size);
+	width: var(--yt-live-chat-flusher-sticker-size);
 }
 
 @keyframes flush {
@@ -274,6 +275,12 @@
 /*
 	Config panel
 */
+#youtube-livechat-flusher-panel {
+	max-height: calc(100% - 20px);
+	max-width: calc(100% - 20px);
+	overflow: scroll;
+	scrollbar-width: none;
+}
 #youtube-livechat-flusher-panel > .html5-video-info-panel-content > div {
 	margin: .5em 0;
 }
@@ -318,6 +325,17 @@
 	fill: none;
 	stroke: currentColor;
 }
+#youtube-livechat-flusher-panel input {
+	color: inherit;
+	font: inherit;
+}
+#youtube-livechat-flusher-panel input[type="number"] {
+	background-color: inherit;
+	border: 1px solid currentColor;
+	border-radius: 2px;
+	margin: 0 .25em;
+	padding: 2px 0 2px .25em;
+}
 #youtube-livechat-flusher-panel input[type="range"] {
 	background-color: inherit;
 	vertical-align: middle;
@@ -343,7 +361,7 @@
 }
 #youtube-livechat-flusher-panel input[type="color"] {
 	appearance: none;
-	border: 1px outset;
+	border: 1px outset currentColor;
 	cursor: pointer;
 	padding: 0;
 	height: 1.5em;
