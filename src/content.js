@@ -65,8 +65,8 @@ function detectPageType() {
 			startLiveChatFlusher();
 			const storageList = ['styles', 'others', 'parts'];
 			browser.storage.local.get(storageList).then(storage => {
-				if (storage) {
-					for (const type of storageList) {
+				for (const type of storageList) {
+					if (storage && storage[type]) {
 						for (const [key, value] of Object.entries(storage[type])){
 							g.storage[type][key] = value;
 						}
