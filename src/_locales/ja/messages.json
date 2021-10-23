@@ -20,6 +20,9 @@
 	"font_size": {
 		"message": "フォントサイズ"
 	},
+	"layer_opacity": {
+		"message": "全体の透過度"
+	},
 	"background_opacity": {
 		"message": "背景の透過度"
 	},
@@ -40,6 +43,21 @@
 	},
 	"simultaneous_message_2": {
 		"message": "同じ内容のチャットを統合する"
+	},
+	"emoji_expression": {
+		"message": "絵文字の表示"
+	},
+	"emoji_expression_0": {
+		"message": "全て非表示"
+	},
+	"emoji_expression_1": {
+		"message": "全て表示"
+	},
+	"emoji_expression_2": {
+		"message": "ラベルに置換する"
+	},
+	"emoji_expression_3": {
+		"message": "ショートカットに置換する"
 	},
 	"normal": {
 		"message": "通常"

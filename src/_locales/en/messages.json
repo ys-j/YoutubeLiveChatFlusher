@@ -20,6 +20,9 @@
 	"font_size": {
 		"message": "Font Size"
 	},
+	"layer_opacity": {
+		"message": "Chat Layer Opacity"
+	},
 	"background_opacity": {
 		"message": "Background Opacity"
 	},
@@ -33,13 +36,28 @@
 		"message": "Simultaneous Msg."
 	},
 	"simultaneous_message_0": {
-		"message": "Flush all message"
+		"message": "Flush all messages"
 	},
 	"simultaneous_message_1": {
 		"message": "Flush only first message per load"
 	},
 	"simultaneous_message_2": {
-		"message": "Merge same message"
+		"message": "Merge same messages"
+	},
+	"emoji_expression": {
+		"message": "Emoji Expression"
+	},
+	"emoji_expression_0": {
+		"message": "Hide all"
+	},
+	"emoji_expression_1": {
+		"message": "Show all"
+	},
+	"emoji_expression_2": {
+		"message": "Replace with labels"
+	},
+	"emoji_expression_3": {
+		"message": "Replace with shortcuts"
 	},
 	"normal": {
 		"message": "Normal"

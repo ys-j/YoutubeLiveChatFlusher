@@ -6,18 +6,28 @@
 /**
  * @type { {
  * app: HTMLElement?,
+ * enum: { [key:string]: number },
  * id: string,
  * layer: HTMLElement?,
  * panel: HTMLElement?,
  * storage: {
  * 	styles: { [key:string]: string },
- * 	others: { simultaneous: number },
+ * 	others: { simultaneous: number, emoji: number },
  * 	parts: { [key:string]: { [key in StoragePartKey]?: boolean } & { color?: string? } }
  * }
  * } }
  */
 const g = {
 	app: null,
+	enum: {
+		SIMULTANEOUS_ALL: 0,
+		SIMULTANEOUS_FIRST: 1,
+		SIMULTANEOUS_MERGE: 2,
+		EMOJI_NONE: 0,
+		EMOJI_ALL: 1,
+		EMOJI_LABEL: 2,
+		EMOJI_SHORTCUT: 3,
+	},
 	id: 'youtube-livechat-flusher',
 	layer: null,
 	panel: null,
@@ -25,10 +35,12 @@ const g = {
 		styles: {
 			animation_duration: '4s',
 			font_size: '36px',
+			layer_opacity: '1',
 			background_opacity: '0.5',
 		},
 		others: {
 			simultaneous: 2,
+			emoji: 1,
 		},
 		parts: {
 			normal: { photo: false, name: false, message: true, color: null },
@@ -196,12 +208,20 @@ function addSettingMenu() {
 			`<div><label><input type="number" class="styles" name="font_size" min="12" size="5" value="${parseInt(g.storage.styles.font_size) || 36}" data-unit="px"> px</label></div>`,
 		],
 		[
+			`<div>${browser.i18n.getMessage('layer_opacity')}</div>`,
+			`<div>${browser.i18n.getMessage('opacity_0')}<input type="range" class="styles" name="layer_opacity" min="0" max="1" step="0.1" value="${parseFloat(g.storage.styles.layer_opacity) || 1}">${browser.i18n.getMessage('opacity_1')}</div>`,
+		],
+		[
 			`<div>${browser.i18n.getMessage('background_opacity')}</div>`,
 			`<div>${browser.i18n.getMessage('opacity_0')}<input type="range" class="styles" name="background_opacity" min="0" max="1" step="0.1" value="${parseFloat(g.storage.styles.background_opacity) || 0.5}">${browser.i18n.getMessage('opacity_1')}</div>`,
 		],
 		[
 			`<div>${browser.i18n.getMessage('simultaneous_message')}</div>`,
 			`<div><select name="simultaneous"><option value="0">${browser.i18n.getMessage('simultaneous_message_0')}</option><option value="1">${browser.i18n.getMessage('simultaneous_message_1')}</option><option value="2">${browser.i18n.getMessage('simultaneous_message_2')}</option></select>▼</div>`
+		],
+		[
+			`<div>${browser.i18n.getMessage('emoji_expression')}</div>`,
+			`<div><select name="emoji"><option value="0">${browser.i18n.getMessage('emoji_expression_0')}</option><option value="1">${browser.i18n.getMessage('emoji_expression_1')}</option><option value="2">${browser.i18n.getMessage('emoji_expression_2')}</option><option value="3">${browser.i18n.getMessage('emoji_expression_3')}</option></select>▼</div>`
 		],
 		[
 			`<div>${browser.i18n.getMessage('normal')}</div>`,
@@ -346,9 +366,9 @@ function handleYtAction(e) {
 				const elem = handleChatAction(action);
 				if (elem) {
 					simultaneous: switch (g.storage.others.simultaneous) {
-						case 0: break simultaneous;
-						case 1: break action;
-						case 2: {
+						case g.enum.SIMULTANEOUS_ALL: break simultaneous;
+						case g.enum.SIMULTANEOUS_FIRST: break action;
+						case g.enum.SIMULTANEOUS_MERGE: {
 							const body = elem.querySelector('span.body');
 							if (body) {
 								const html = body.outerHTML;
@@ -557,9 +577,19 @@ function getMessage(message, startIndex = 0, endIndex = 0) {
 			return runs.map(r => {
 				if ('text' in r) {
 					return r.text;
-				} else {
-					const thumbnail = r.emoji.image.thumbnails.pop();
-					return thumbnail ? `<img class="emoji" src="${thumbnail.url}">` : `<span class="emoji">${r.emoji.emojiId}</span>`;
+				} else if (g.storage.others.emoji) {
+					switch (g.storage.others.emoji) {
+						case g.enum.EMOJI_ALL: {
+							const thumbnail = r.emoji.image.thumbnails.pop();
+							return thumbnail ? `<img class="emoji" src="${thumbnail.url}">` : `<span class="emoji">${r.emoji.emojiId}</span>`;
+						}
+						case g.enum.EMOJI_LABEL: {
+							return `<span class="emoji">${r.emoji.image.accessibility.accessibilityData.label}</span>`;
+						}
+						case g.enum.EMOJI_SHORTCUT: {
+							return `<span class="emoji">${r.emoji.shortcuts[0]}</span>`;
+						}
+					}
 				}
 			}).join('');
 		} else {

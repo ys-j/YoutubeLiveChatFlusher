@@ -4,6 +4,7 @@
 #youtube-livechat-flusher {
 	--yt-live-chat-flusher-animation-duration: 4s;
 	--yt-live-chat-flusher-font-size: 36px;
+	--yt-live-chat-flusher-layer-opacity: 1;
 	--yt-live-chat-flusher-background-opacity: .5;
 	--yt-live-chat-flusher-normal-color: inherit;
 	--yt-live-chat-flusher-normal-display: block;
@@ -51,6 +52,7 @@
 	font-size: var(--yt-live-chat-flusher-font-size);
 	font-weight: 500;
 	line-height: 1.25;
+	opacity: var(--yt-live-chat-flusher-layer-opacity);
 	overflow: hidden;
 	pointer-events: none;
 	text-shadow: #000 -1px 0px, #000 1px 0px, #000 0px -1px, #000 0px 1px;
@@ -322,6 +324,7 @@
 }
 #youtube-livechat-flusher-panel input[type="range"]::-moz-range-track {
 	background-color: #f00;
+	height: 3px;
 }
 #youtube-livechat-flusher-panel input[type="range"]::-moz-range-thumb {
 	background-color: #fff;
@@ -336,7 +339,7 @@
 	cursor: pointer;
 	filter: invert(1);
 	font: inherit;
-	padding: 0 2px;
+	padding: 2px;
 }
 #youtube-livechat-flusher-panel input[type="color"] {
 	appearance: none;
