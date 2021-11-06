@@ -57,6 +57,9 @@ const g = {
 };
 
 detectPageType();
+window.addEventListener('yt-navigate-finish', e => {
+	detectPageType();
+}, { passive: true });
 
 function detectPageType() {
 	if (location.pathname.startsWith('/live_chat') && top && top.location.pathname === '/watch') {
@@ -111,14 +114,11 @@ function detectPageType() {
 			switch (e.detail.actionName) {
 				case 'ytd-watch-player-data-changed': {
 					const layer = document.getElementById(g.id);
-					if (layer) layer.innerHTML = '';
-					break;
+					if (layer) {
+						layer.innerHTML = '';
+					}
 				}
 			}
-		}, { passive: true });
-	} else {
-		window.addEventListener('yt-navigate-finish', e => {
-			detectPageType();
 		}, { passive: true });
 	}
 }
