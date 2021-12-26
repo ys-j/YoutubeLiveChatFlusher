@@ -1,4 +1,4 @@
-namespace LiveChat {
+declare namespace LiveChat {
 	interface RendererContent {
 		authorBadges?: AuthorBadgeRenderer[]
 		authorExternalChannelId: string
@@ -10,71 +10,38 @@ namespace LiveChat {
 		timestampUsec: string
 		trackingParams: string
 	}
+	type AnyRenderer = TextMessageRenderer | MembershipItemRenderer | PaidMessageRenderer | PaidStickerRenderer | ViewerEngagementMessageRenderer;
 	type TextMessageRenderer = {
-		liveChatTextMessageRenderer: {
-			authorBadges?: AuthorBadgeRenderer[]
-			authorExternalChannelId: string
-			authorName: SimpleText
-			authorPhoto: {
-				thumbnails: Thumbnail[]
-			}
-			id: string
+		liveChatTextMessageRenderer: RendererContent & {
 			message: Runs
 			timestampText: SimpleText
-			timestampUsec: string
-			trackingParams: string
 		}
 	};
 	type MembershipItemRenderer = {
-		liveChatMembershipItemRenderer: {
-			authorBadges: AuthorBadgeRenderer[]
-			authorExternalChannelId: string
-			authorName: SimpleText
-			authorPhoto: {
-				thumbnails: Thumbnail[]
-			}
+		liveChatMembershipItemRenderer: RendererContent & {
 			headerPrimaryText?: Runs
 			headerSubtext?: Runs | SimpleText
-			id: string
 			message?: Runs
 			timestampText?: SimpleText
-			timestampUsec: string
-			trackingParams: string
 		}
 	}
 	type PaidMessageRenderer = {
-		liveChatPaidMessageRenderer: {
-			authorBadges?: AuthorBadgeRenderer[]
-			authorExternalChannelId: string
-			authorName: SimpleText
+		liveChatPaidMessageRenderer: RendererContent & {
 			authorNameTextColor: number
-			authorPhoto: {
-				thumbnails: Thumbnail[]
-			}
 			bodyBackgroundColor: number
 			bodyTextColor: number
 			headerBackgroundColor: number
 			headerTextColor: number
-			id: string
 			message: Runs
 			purchaseAmountText: SimpleText
 			timestampColor: number
 			timestampText?: SimpleText
-			timestampUsec: string
-			trackingParams: string
 		}
 	}
 	type PaidStickerRenderer = {
-		liveChatPaidStickerRenderer: {
-			authorBadges?: AuthorBadgeRenderer[]
-			authorExternalChannelId: string
-			authorName: SimpleText
+		liveChatPaidStickerRenderer: RendererContent & {
 			authorNameTextColor: number
-			authorPhoto: {
-				thumbnails: Thumbnail[]
-			}
 			backgroundColor: number
-			id: string
 			moneyChipBackgroundColor: number
 			moneyChipTextColor: number
 			purchaseAmountText: SimpleText
@@ -83,8 +50,11 @@ namespace LiveChat {
 			}
 			stickerDisplayHeight: number
 			stickerDisplayWidth: number
-			timestampUsec: string
-			trackingParams: string
+		}
+	}
+	type ViewerEngagementMessageRenderer = {
+		liveChatViewerEngagementMessageRenderer: RendererContent & {
+			message: Runs
 		}
 	}
 	type AuthorBadgeRenderer = {
@@ -124,4 +94,11 @@ namespace LiveChat {
 			shortcuts: string[]
 		}
 	}
+}
+
+interface DocumentAndElementEventHandlersEventMap {
+	"yt-action": CustomEvent<{
+		actionName: string
+		args: any[][]
+	}>
 }

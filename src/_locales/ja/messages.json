@@ -1,9 +1,9 @@
 {
 	"manifest_name": {
-		"message": "YouTube LiveChat Flusher／弾幕コメント"
+		"message": "YouTube LiveChat Flusher／弾幕チャット"
 	},
 	"manifest_description": {
-		"message": "YouTube Liveのチャットを弾幕風に流します"
+		"message": "YouTube Liveのチャットをニコニコ動画・ビリビリ動画のように弾幕風に流します"
 	},
 	"ytp-menuitem-label-switch": {
 		"message": "チャットを流す"
@@ -19,6 +19,9 @@
 	},
 	"font_size": {
 		"message": "フォントサイズ"
+	},
+	"lines": {
+		"message": "行"
 	},
 	"layer_opacity": {
 		"message": "全体の透過度"

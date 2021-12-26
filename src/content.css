@@ -329,6 +329,18 @@
 	color: inherit;
 	font: inherit;
 }
+#youtube-livechat-flusher-panel input[type="checkbox"] {
+	appearance: none;
+	background-color: currentColor;
+	height: 1.25em;
+	margin: 0 .25em;
+	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 11'%3E%3Cpath d='M1.5,0.5h8q1,0,1,1v8q0,1,-1,1h-8q-1,0,-1,-1v-8q0,-1,1,-1z' fill='none' stroke='currentColor' /%3E%3C/svg%3E") no-repeat center/1.25em;
+	vertical-align: -.25em;
+	width: 1.25em;
+}
+#youtube-livechat-flusher-panel input[type="checkbox"]:checked {
+	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 11'%3E%3Cpath d='M1.5,0.5h8q1,0,1,1v8q0,1,-1,1h-8q-1,0,-1,-1v-8q0,-1,1,-1z' fill='none' stroke='currentColor' /%3E%3Cpath d='M2.5,6l2,2,4,-5' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' /%3E%3C/svg%3E");
+}
 #youtube-livechat-flusher-panel input[type="number"] {
 	background-color: inherit;
 	border: 1px solid currentColor;
@@ -341,11 +353,11 @@
 	vertical-align: middle;
 }
 #youtube-livechat-flusher-panel input[type="range"]::-moz-range-track {
-	background-color: #f00;
+	background-color: var(--yt-spec-static-brand-red, red);
 	height: 3px;
 }
 #youtube-livechat-flusher-panel input[type="range"]::-moz-range-thumb {
-	background-color: #fff;
+	background-color: var(--yt-spec-static-brand-white, white);
 	border: 0;
 	box-shadow: 0 1px 5px 0 rgba(0,0,0,0.6);
 }

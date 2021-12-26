@@ -3,7 +3,7 @@
 		"message": "YouTube LiveChat Flusher (Danmaku LiveChat)"
 	},
 	"manifest_description": {
-		"message": "\"Flush\" LiveChat (like niconico or bilibili) on YouTube"
+		"message": "Provides bullet chatting (danmaku) on YouTube Live, like niconico or bilibili."
 	},
 	"ytp-menuitem-label-switch": {
 		"message": "Flush LiveChat"
@@ -19,6 +19,9 @@
 	},
 	"font_size": {
 		"message": "Font Size"
+	},
+	"lines": {
+		"message": "lines"
 	},
 	"layer_opacity": {
 		"message": "Chat Layer Opacity"

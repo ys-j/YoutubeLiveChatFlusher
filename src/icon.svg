@@ -1,13 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="-16 -16 32 32">
-	<defs>
-		<style>g{fill:#f00}text{font-family:Roboto,sans-serif;font-size:6px;font-weight:900;text-anchor:middle}</style>
-	</defs>
-	<g>
-		<path d="M0,12Q2,12,12,11.5Q15.5,11,15.5,9.5Q16,6,16,0H0z" />
-		<path d="M0,-12Q2,-12,12,-11.5Q15.5,-11,15.5,-9.5Q16,-6,16,0H0z" />
-		<path d="M0,12Q-2,12,-12,11.5Q-15.5,11,-15.5,9.5Q-16,6,-16,0H0z" />
-		<path d="M0,-12Q-2,-12,-12,-11.5Q-15.5,-11,-15.5,-9.5Q-16,-6,-16,0H0z" />
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="-36 -36 72 72">
+	<path d="M0,24Q8,24,24,23,31,22,31,19,32,12,32,0H0M0,24Q-8,24,-24,23,-31,22,-31,19,-32,12,-32,0H0M0,-24Q-8,-24,-24,-23,-31,-22,-31,-19,-32,-12,-32,0H0M0,-24Q8,-24,24,-23,31,-22,31,-19,32,-12,32,0H0Z" fill="red"/>
+	<g transform="translate(0,10)" fill="white">
+		<path d="M4,-10l12,12h6l-12,-12,12,-12h-6z" />
+		<circle cx="0" r="2.5" />
+		<circle cx="-10" r="2.5" />
+		<circle cx="-20" r="2.5" />
 	</g>
-	<path d="M-7,-6v12L8,0" fill="#fff" />
-	<text y="2">&lt;&lt;LiveChat</text>
 </svg>
