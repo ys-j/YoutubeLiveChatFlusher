@@ -219,9 +219,11 @@ function addSettingMenu() {
 					g.layer.setAttribute('aria-hidden', 'true');
 				}
 			} else {
-				g.layer = getLayer();
-				g.layer.hidden = false;
-				g.layer.setAttribute('aria-hidden', 'false');
+				if (g.layer) {
+					g.layer.hidden = false;
+					g.layer.setAttribute('aria-hidden', 'false');
+				}
+				browser.runtime.reload();
 			}
 		};
 		checkbox.innerHTML = `<div class="ytp-menuitem-icon"><svg height="24" width="24" viewBox="-40 -40 80 80"><path d="M0,24Q8,24,24,23,31,22,31,19,32,12,32,0M0,24Q-8,24,-24,23,-31,22,-31,19,-32,12,-32,0M0,-24Q-8,-24,-24,-23,-31,-22,-31,-19,-32,-12,-32,0M0,-24Q8,-24,24,-23,31,-22,31,-19,32,-12,32,0" fill="none" stroke="white" stroke-width="3"/><g fill="white" transform="translate(0,10)"><path d="M4,-10l12,12h8l-12,-12,12,-12h-8z"/><circle r="3"/><circle cx="-10" r="3"/><circle cx="-20" r="3"/></g></svg></div><div class="ytp-menuitem-label">${getMessage('ytp-menuitem-label-switch')}</div><div class="ytp-menuitem-content"><div class="ytp-menuitem-toggle-checkbox"></div></div></div>`;
@@ -353,7 +355,7 @@ function addSettingMenu() {
 				}
 			}
 		} else if (checkbox.name === 'lines') {
-			checkbox.checked = g.storage.styles['number_of_lines'] !== '0';
+			checkbox.checked = g.storage.others['number_of_lines'] > 0;
 			form.font_size.disabled = checkbox.checked;
 			form.number_of_lines.disabled = !checkbox.checked;
 		}
