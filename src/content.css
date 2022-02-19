@@ -229,7 +229,7 @@
 #youtube-livechat-flusher > .newmember .name {
 	display: var(--yt-live-chat-flusher-new-membership-display-name);
 }
-#youtube-livechat-flusher > .newmember .body {
+#youtube-livechat-flusher > .newmember .months {
 	display: var(--yt-live-chat-flusher-new-membership-display-message);
 }
 #youtube-livechat-flusher > .milestone .photo {

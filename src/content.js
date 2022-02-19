@@ -553,11 +553,11 @@ const parser = {
 				const runs = startIndex || endIndex ? message.runs.slice(startIndex, endIndex || undefined) : message.runs;
 				return runs.map(r => {
 					if ('text' in r) {
-						return r.text;
+						return r.bold ? `<b>${r.text}</b>` : r.text;
 					} else if (g.storage.others.emoji) {
 						switch (g.storage.others.emoji) {
 							case g.enum.EMOJI_ALL: {
-								const thumbnail = r.emoji.image.thumbnails.pop();
+								const thumbnail = r.emoji.image.thumbnails.slice(-1)[0];
 								return thumbnail ? `<img class="emoji" src="${thumbnail.url}">` : `<span class="emoji">${r.emoji.emojiId}</span>`;
 							}
 							case g.enum.EMOJI_LABEL: {
@@ -619,17 +619,15 @@ function parseChatItem(item) {
 			if (renderer.headerPrimaryText) {
 				div.className = 'milestone';
 				return parser.message(renderer.headerPrimaryText, 1);
-			} else if (renderer.headerSubtext) {
+			} else {
 				div.className = 'newmember';
-				return parser.message(renderer.headerSubtext);
+				return renderer.headerSubtext ? parser.message(renderer.headerSubtext) : '';
 			}
-			div.className = 'newmember';
-			return '';
 		})();
 		div.innerHTML = `<div class="header" style="background-color:rgba(${getColorRGB(0xff0f9d58).join()},var(--yt-live-chat-flusher-background-opacity));">\
 <img class="photo" src="${author.photo[0].url}" loading="lazy">\
 <span class="name">${author.name}</span>\
-<span class="month">${headerText}</span>\
+<span class="months">${headerText}</span>\
 </div><div class="body" style="background-color:rgba(${getColorRGB(0xff0a8043).join()},var(--yt-live-chat-flusher-background-opacity));">${message}</div>`;
 		return div;
 	} else if ('liveChatPaidMessageRenderer' in item) {
@@ -664,9 +662,17 @@ function parseChatItem(item) {
 <img src="${sticker.url}"></figure>` : '');
 		return div;
 	} else if ('liveChatViewerEngagementMessageRenderer' in item) {
-		// TODO
+		// TODO: POLL
 		const renderer = item.liveChatViewerEngagementMessageRenderer;
 		console.log(renderer);
+		if (renderer.icon.iconType === 'POLL') {
+			const message = parser.message(renderer.message);
+			const div = document.createElement('div');
+			div.id = renderer.id;
+			div.className = 'engagement-poll';
+			div.innerHTML = `<div class="body">${message.replace('\n', '<br>')}</div>`;
+			return div;
+		}
 	}
 }
 

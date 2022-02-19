@@ -53,7 +53,22 @@ declare namespace LiveChat {
 		}
 	}
 	type ViewerEngagementMessageRenderer = {
-		liveChatViewerEngagementMessageRenderer: RendererContent & {
+		liveChatViewerEngagementMessageRenderer: {
+			contextMenuAccessibility: AccessibilityData
+			contextMenuEndpoint: {
+				commandMetadata: {
+					webCommandMetadata: {
+						ignoreNavigation: boolean
+					}
+				}
+				liveChatItemContextMenuEndpoint: {
+					param: string
+				}
+			}
+			icon: {
+				iconType: string
+			}
+			id: string
 			message: Runs
 		}
 	}
@@ -70,18 +85,25 @@ declare namespace LiveChat {
 		}
 	}
 	type AccessibilityData = {
-		accessibilityData: { label: string }
+		accessibilityData: {
+			label: string
+		}
 	}
 	type Thumbnail = {
 		url: string
 		width: number
 		height: number
 	}
-	type SimpleText = { simpleText: string }
+	type SimpleText = {
+		simpleText: string
+	}
 	type Runs = {
 		runs: (Text | Emoji)[]
 	}
-	type Text = { text: string }
+	type Text = {
+		text: string
+		bold?: boolean
+	}
 	type Emoji = {
 		emoji: {
 			emojiId: string
