@@ -23,6 +23,15 @@
 	"lines": {
 		"message": "行"
 	},
+	"type_of_lines_0": {
+		"message": "固定"
+	},
+	"type_of_lines_1": {
+		"message": "最大"
+	},
+	"type_of_lines_2": {
+		"message": "最小"
+	},
 	"layer_opacity": {
 		"message": "全体の透過度"
 	},
@@ -74,11 +83,14 @@
 	"owner": {
 		"message": "チャンネル管理者"
 	},
+	"verified": {
+		"message": "確認済み"
+	},
 	"superchat": {
 		"message": "スーパーチャット"
 	},
 	"sticker": {
-		"message": "ステッカー"
+		"message": "スーパーステッカー"
 	},
 	"new_membership": {
 		"message": "新規メンバー"

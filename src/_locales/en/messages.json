@@ -23,6 +23,15 @@
 	"lines": {
 		"message": "lines"
 	},
+	"type_of_lines_0": {
+		"message": "fixed"
+	},
+	"type_of_lines_1": {
+		"message": "max"
+	},
+	"type_of_lines_2": {
+		"message": "min"
+	},
 	"layer_opacity": {
 		"message": "Chat Layer Opacity"
 	},
@@ -74,11 +83,14 @@
 	"owner": {
 		"message": "Owner"
 	},
+	"verified": {
+		"message": "Verified"
+	},
 	"superchat": {
-		"message": "Superchat"
+		"message": "Super Chat"
 	},
 	"sticker": {
-		"message": "Sticker"
+		"message": "Super Sticker"
 	},
 	"new_membership": {
 		"message": "New Membership"
@@ -105,7 +117,7 @@
 		"message": "Milestone Months"
 	},
 	"display-milestone_months": {
-		"message": "Months"
+		"message": "mths"
 	},
 	"tooltip-chat_message": {
 		"message": "Chat Message"

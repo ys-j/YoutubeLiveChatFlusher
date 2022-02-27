@@ -20,6 +20,9 @@
 const g = {
 	app: null,
 	enum: {
+		LINES_FIXED: 0,
+		LINES_MAX: 1,
+		LINES_MIN: 2,
 		SIMULTANEOUS_ALL: 0,
 		SIMULTANEOUS_FIRST: 1,
 		SIMULTANEOUS_MERGE: 2,
@@ -33,19 +36,21 @@ const g = {
 	panel: null,
 	storage: {
 		styles: {
-			animation_duration: '4s',
-			font_size: '36px',
+			animation_duration: '6s',
+			font_size: '32px',
 			layer_opacity: '1',
 			background_opacity: '0.5',
 			sticker_size: '3em',
 		},
 		others: {
 			number_of_lines: 0,
+			type_of_lines: 0,
 			simultaneous: 2,
 			emoji: 1,
 		},
 		parts: {
 			normal: { photo: false, name: false, message: true, color: null },
+			verified: { photo: true, name: true, message: true, color: null },
 			member: { photo: true, name: false, message: true, color: null },
 			moderator: { photo: true, name: true, message: true, color: null },
 			owner: { photo: true, name: true, message: true, color: null },
@@ -64,16 +69,19 @@ window.addEventListener('yt-navigate-finish', e => {
 	detectPageType();
 }, { passive: true });
 window.addEventListener('resize', e => {
-	if (!g.layer) return;
 	const lines = g.storage.others.number_of_lines;
-	if (lines) {
-		const height = g.layer.getBoundingClientRect().height;
-		g.layer.style.setProperty('--yt-live-chat-flusher-font-size', (height * .8 / lines).toFixed(0) + 'px');
+	if (g.layer && lines) {
+		const sizeByLines = Math.floor(g.layer.getBoundingClientRect().height * .8 / lines);
+		g.layer.style.setProperty('--yt-live-chat-flusher-font-size', [
+			`${sizeByLines}px`,
+			`max(${g.storage.styles.font_size}, ${sizeByLines}px)`,
+			`min(${g.storage.styles.font_size}, ${sizeByLines}px)`,
+		][g.storage.others.type_of_lines]);
 	}
 }, { passive: true });
 
 function detectPageType() {
-	if (location.pathname.startsWith('/live_chat') && top && top.location.pathname === '/watch') {
+	if (location.pathname.startsWith('/live_chat') && top?.location.pathname === '/watch') {
 		g.app = top.document.querySelector('ytd-app');
 		if (g.app) {
 			startLiveChatFlusher();
@@ -90,8 +98,13 @@ function detectPageType() {
 					g.layer?.style.setProperty('--yt-live-chat-flusher-' + prop.replace(/_/g, '-'), value);
 				}
 				const lines = g.storage.others.number_of_lines;
-				if (lines) {
-					g.layer?.style.setProperty('--yt-live-chat-flusher-font-size', Math.floor(g.layer.getBoundingClientRect().height * .8 / lines).toString() + 'px');
+				if (g.layer && lines) {
+					const sizeByLines = Math.floor(g.layer.getBoundingClientRect().height * .8 / lines);
+					if (g.storage.others.type_of_lines > 0) {
+						g.layer.style.setProperty('--yt-live-chat-flusher-font-size', `max(${g.storage.styles.font_size}, ${sizeByLines}px)`);
+					} else {
+						g.layer.style.setProperty('--yt-live-chat-flusher-font-size', `${sizeByLines}px`);
+					}
 				}
 				for (const [key, values] of Object.entries(g.storage.parts)) {
 					if (values) {
@@ -111,6 +124,7 @@ function detectPageType() {
 				/** @type { [ string, number, number ][] } */
 				const colormap = [
 					['--yt-live-chat-normal-message-background-color', 0xffc0c0c0, -1],
+					['--yt-live-chat-verified-message-background-color', 0xffc0c0c0, -1],
 					['--yt-live-chat-member-message-background-color', 0xffc0c0c0, -1],
 					['--yt-live-chat-moderator-message-background-color', 0xffc0c0c0, -1],
 					['--yt-live-chat-owner-message-background-color', 0xffc0c0c0, -1],
@@ -183,12 +197,6 @@ function startLiveChatFlusher() {
 			if (renderer) {
 				clearInterval(timer);
 				renderer.addEventListener('yt-action', handleYtAction, { passive: true });
-				video.addEventListener('pause', () => {
-					g.layer?.classList.add('paused');
-				}, { passive: true });
-				video.addEventListener('play', () => {
-					g.layer?.classList.remove('paused');
-				}, { passive: true });
 			}
 		}, 1000);
 	}
@@ -257,27 +265,27 @@ function addSettingMenu() {
 	form.insertAdjacentHTML('beforeend', [
 		[
 			`<div>${getMessage('animation_duration')}</div>`,
-			`<div><label><input type="number" class="styles" name="animation_duration" min="1" max="10" step="0.1" size="5" value="${parseFloat(g.storage.styles.animation_duration) || 4}" data-unit="s"> s</label></div>`,
+			`<div><label><input type="number" class="styles" name="animation_duration" min="1" max="10" step="0.1" size="5" value="${parseFloat(g.storage.styles.animation_duration) || 6}" data-unit="s"> s</label></div>`,
 		],
 		[
 			`<div>${getMessage('font_size')}</div>`,
-			`<div><label><input type="number" class="styles" name="font_size" min="12" size="5" value="${parseInt(g.storage.styles.font_size) || 36}" data-unit="px"> px</label> / <label><input type="checkbox" name="lines"><input type="number" name="number_of_lines" min="6" size="5" value="${g.storage.others.number_of_lines || 20}">${getMessage('lines')}</label></div>`,
+			`<div><label><input type="number" class="styles" name="font_size" min="12" size="5" value="${parseInt(g.storage.styles.font_size) || 36}" data-unit="px"><span>px</span></label> /<input type="checkbox" name="lines"><label><input type="number" name="number_of_lines" min="6" size="5" value="${g.storage.others.number_of_lines || 20}"><span>${getMessage('lines')}</span></label><select name="type_of_lines"><option value="0">${getMessage('type_of_lines_0')}<option value="1">${getMessage('type_of_lines_1')}<option value="2">${getMessage('type_of_lines_2')}</select><span>▼</span></div>`,
 		],
 		[
 			`<div>${getMessage('layer_opacity')}</div>`,
-			`<div>${getMessage('opacity_0')}<input type="range" class="styles" name="layer_opacity" min="0" max="1" step="0.1" value="${parseFloat(g.storage.styles.layer_opacity) || 1}">${getMessage('opacity_1')}</div>`,
+			`<div>${getMessage('opacity_0')}<input type="range" class="styles" name="layer_opacity" min="0" max="1" step="0.05" value="${parseFloat(g.storage.styles.layer_opacity) || 1}">${getMessage('opacity_1')}</div>`,
 		],
 		[
 			`<div>${getMessage('background_opacity')}</div>`,
-			`<div>${getMessage('opacity_0')}<input type="range" class="styles" name="background_opacity" min="0" max="1" step="0.1" value="${parseFloat(g.storage.styles.background_opacity) || 0.5}">${getMessage('opacity_1')}</div>`,
+			`<div>${getMessage('opacity_0')}<input type="range" class="styles" name="background_opacity" min="0" max="1" step="0.05" value="${parseFloat(g.storage.styles.background_opacity) || 0.5}">${getMessage('opacity_1')}</div>`,
 		],
 		[
 			`<div>${getMessage('simultaneous_message')}</div>`,
-			`<div><select name="simultaneous"><option value="0">${getMessage('simultaneous_message_0')}</option><option value="1">${getMessage('simultaneous_message_1')}</option><option value="2">${getMessage('simultaneous_message_2')}</option></select>▼</div>`
+			`<div><select name="simultaneous"><option value="0">${getMessage('simultaneous_message_0')}<option value="1">${getMessage('simultaneous_message_1')}<option value="2">${getMessage('simultaneous_message_2')}</select>▼</div>`
 		],
 		[
 			`<div>${getMessage('emoji_expression')}</div>`,
-			`<div><select name="emoji"><option value="0">${getMessage('emoji_expression_0')}</option><option value="1">${getMessage('emoji_expression_1')}</option><option value="2">${getMessage('emoji_expression_2')}</option><option value="3">${getMessage('emoji_expression_3')}</option></select>▼</div>`
+			`<div><select name="emoji"><option value="0">${getMessage('emoji_expression_0')}<option value="1">${getMessage('emoji_expression_1')}<option value="2">${getMessage('emoji_expression_2')}<option value="3">${getMessage('emoji_expression_3')}</select>▼</div>`
 		],
 		[
 			`<div>${getMessage('normal')}</div>`,
@@ -298,6 +306,11 @@ function addSettingMenu() {
 			`<div>${getMessage('owner')}</div>`,
 			`<div><label class="toggle photo" title="${getMessage('tooltip-author_photo')}"><input type="checkbox" name="owner_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${getMessage('tooltip-author_name')}"><input type="checkbox" name="owner_display" value="name"><span>${getMessage('display-author_name')}</span></label><label class="toggle body" title="${getMessage('tooltip-chat_message')}"><input type="checkbox" name="owner_display" value="message"><span>${getMessage('display-chat_message')}</span></label></div>`,
 			`<div><label title="${getMessage('tooltip-custom_color')}"><input type="checkbox" name="owner_display" value="color">${getMessage('display-custom_color')}</label><input type="color" name="owner_color"></div>`,
+		],
+		[
+			`<div>${getMessage('verified')}</div>`,
+			`<div><label class="toggle photo" title="${getMessage('tooltip-author_photo')}"><input type="checkbox" name="verified_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${getMessage('tooltip-author_name')}"><input type="checkbox" name="verified_display" value="name"><span>${getMessage('display-author_name')}</span></label><label class="toggle body" title="${getMessage('tooltip-chat_message')}"><input type="checkbox" name="verified_display" value="message"><span>${getMessage('display-chat_message')}</span></label></div>`,
+			`<div><label title="${getMessage('tooltip-custom_color')}"><input type="checkbox" name="verified_display" value="color">${getMessage('display-custom_color')}</label><input type="color" name="verified_color"></div>`,
 		],
 		[
 			`<div>${getMessage('superchat')}</div>`,
@@ -355,9 +368,10 @@ function addSettingMenu() {
 				}
 			}
 		} else if (checkbox.name === 'lines') {
-			checkbox.checked = g.storage.others['number_of_lines'] > 0;
+			checkbox.checked = g.storage.others.number_of_lines > 0;
 			form.font_size.disabled = checkbox.checked;
 			form.number_of_lines.disabled = !checkbox.checked;
+			form.type_of_lines.disabled = !checkbox.checked;
 		}
 	});
 	form.addEventListener('change', e => {
@@ -403,12 +417,25 @@ function addSettingMenu() {
 					g.layer?.style.removeProperty('--yt-live-chat-flusher-' + type.replace('_', '-') + '-color');
 				}
 			}
-		} else if (['lines', 'number_of_lines'].includes(name)) {
+		}
+		if (['lines', 'number_of_lines', 'type_of_lines'].includes(name)) {
 			const checked = form.lines.checked;
 			form.font_size.disabled = checked;
 			form.number_of_lines.disabled = !checked;
+			form.type_of_lines.disabled = !checked;
 			g.storage.others.number_of_lines = checked ? form.number_of_lines.valueAsNumber : 0;
-			g.layer?.style.setProperty('--yt-live-chat-flusher-font-size', (checked ? Math.floor(g.layer.getBoundingClientRect().height * .8 / form.number_of_lines.valueAsNumber).toString() : form.font_size.value) + 'px');
+			if (g.layer) {
+				if (checked) {
+					const sizeByLines = Math.floor(g.layer.getBoundingClientRect().height * .8 / form.number_of_lines.valueAsNumber);
+					g.layer?.style.setProperty('--yt-live-chat-flusher-font-size', [
+						`${sizeByLines}px`,
+						`max(${form.font_size.value}px, ${sizeByLines}px)`,
+						`min(${form.font_size.value}px, ${sizeByLines}px)`,
+					][g.storage.others.type_of_lines]);
+				} else {
+					g.layer.style.setProperty('--yt-live-chat-flusher-font-size', `${form.font_size.value}px`);
+				}
+			}
 		}
 		browser.storage.local.set(g.storage);
 	}, { passive: true });
@@ -435,7 +462,7 @@ function handleYtAction(e) {
 					simultaneous: switch (g.storage.others.simultaneous) {
 						case g.enum.SIMULTANEOUS_ALL: break simultaneous;
 						case g.enum.SIMULTANEOUS_FIRST: break action;
-						case g.enum.SIMULTANEOUS_MERGE: {
+						case g.enum.SIMULTANEOUS_MERGE:
 							const body = elem.querySelector('span.body');
 							if (body) {
 								const html = body.outerHTML;
@@ -453,18 +480,9 @@ function handleYtAction(e) {
 									}
 								}
 							}
-						}
 					}
 				}
 			}
-			break;
-		}
-		case 'yt-live-chat-pause-replay': {
-			g.layer?.classList.add('paused');
-			break;
-		}
-		case 'yt-live-chat-resume-replay': {
-			g.layer?.classList.remove('paused');
 			break;
 		}
 	}
