@@ -2,75 +2,348 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-/** @typedef { "photo" | "name" | "amount" | "months" | "message" | "sticker" } StoragePartKey */
-/**
- * @type { {
- * app: HTMLElement?,
- * enum: { [key:string]: number },
- * id: string,
- * layer: HTMLElement?,
- * panel: HTMLElement?,
- * storage: {
- * 	styles: { [key:string]: string },
- * 	others: { [key:string]: number },
- * 	parts: { [key:string]: { [key in StoragePartKey]?: boolean } & { color?: string? } }
- * }
- * } }
- */
+'use strict';
 const g = {
-	app: null,
-	enum: {
-		LINES_FIXED: 0,
-		LINES_MAX: 1,
-		LINES_MIN: 2,
-		SIMULTANEOUS_ALL: 0,
-		SIMULTANEOUS_FIRST: 1,
-		SIMULTANEOUS_MERGE: 2,
-		EMOJI_NONE: 0,
-		EMOJI_ALL: 1,
-		EMOJI_LABEL: 2,
-		EMOJI_SHORTCUT: 3,
+	app: /** @type {HTMLElement?} */ (null),
+	array: {
+		hyphens: ['manual', 'auto', 'auto'],
+		wordBreak: ['keep-all', 'normal', 'keep-all'],
+		whiteSpace: ['pre', 'pre-line', 'pre-line'],
+		maxWidth: ['', '', ''],
 	},
+	/** @type {'youtube-livechat-flusher'} */
 	id: 'youtube-livechat-flusher',
+	index: {
+		/** @type { { fixed: 0, max: 1, min: 2 } } */
+		lines: { fixed: 0, max: 1, min: 2 },
+		/** @type { {  none: 0, normal: 1, auto: 2} } */
+		wrap: { none: 0, normal: 1, auto: 2 },
+		/** @type { { all: 0, first: 1, merge: 2, last_merge: 3 } } */
+		simultaneous: { all: 0, first: 1, merge: 2, last_merge: 3 },
+		/** @type { { none: 0, all: 1, label: 2, shortcut: 3 } } */
+		emoji: { none: 0, all: 1, label: 2, shortcut: 3 },
+	},
+	/** @type {LiveChatLayerElement?} */
 	layer: null,
-	panel: null,
 	storage: {
+		// default value
 		styles: {
-			animation_duration: '6s',
+			animation_duration: '8s',
 			font_size: '32px',
 			layer_opacity: '1',
 			background_opacity: '0.5',
+			max_width: '100%',
 			sticker_size: '3em',
 		},
 		others: {
 			number_of_lines: 0,
 			type_of_lines: 0,
+			wrap: 1,
+			limit: 0,
 			simultaneous: 2,
 			emoji: 1,
 		},
 		parts: {
-			normal: { photo: false, name: false, message: true, color: null },
-			verified: { photo: true, name: true, message: true, color: null },
-			member: { photo: true, name: false, message: true, color: null },
-			moderator: { photo: true, name: true, message: true, color: null },
-			owner: { photo: true, name: true, message: true, color: null },
-			paid_message: { photo: true, name: true, amount: true, message: true, color: null },
+			normal: { photo: false, name: false, message: true, color: '' },
+			verified: { photo: true, name: true, message: true, color: '' },
+			member: { photo: false, name: false, message: true, color: '' },
+			moderator: { photo: true, name: true, message: true, color: '' },
+			owner: { photo: true, name: true, message: true, color: '' },
+			paid_message: { photo: true, name: true, amount: true, message: true, color: '' },
 			paid_sticker: { photo: true, name: true, amount: true, sticker: true },
-			new_membership: { photo: true, name: false, message: true, color: null },
-			milestone: { photo: true, name: true, months: true, message: true, color: null },
+			membership: { photo: true, name: false, message: true, color: '' },
+			milestone: { photo: true, name: true, months: true, message: true, color: '' },
 		},
 	},
+	tag: {
+		chat: 'yt-live-chat-renderer',
+		layer: 'yt-live-chat-flusher-layer',
+		panel: 'yt-live-chat-flusher-panel',
+	}
 };
 
 const getMessage = browser.i18n.getMessage;
 
+class LiveChatLayerElement extends HTMLElement {
+	constructor() {
+		super();
+		/** @type {number} */
+		this.limit = 0;
+		this.hide = () => {
+			this.hidden = true;
+			this.ariaHidden = 'true';
+			this.style.display = 'none';
+			this.init();
+		};
+		this.show = () => {
+			this.hidden = false;
+			this.ariaHidden = 'false';
+			this.style.display = 'block';
+		};
+		this.init = () => {
+			const root = this.shadowRoot || this.attachShadow({ mode: 'open' });
+			root.innerHTML = '';
+			const link = document.createElement('link');
+			link.rel = 'stylesheet';
+			link.href = browser.runtime.getURL('layer.css');
+			root.appendChild(link);
+			const observer = new MutationObserver(() => {
+				const over = root.childElementCount - (this.limit || Infinity);
+				if (over > 0) {
+					let i = 1;
+					while (i++ < over) link.nextElementSibling?.remove();
+				}
+			});
+			observer.observe(root, { childList: true });
+			return this;
+		};
+	}
+	connectedCallback() {
+		this.dataset.layer = '1';
+		this.setAttribute('role', 'marquee');
+		this.setAttribute('aria-live', 'off');
+		this.init();
+	}
+}
+customElements.define(g.tag.layer, LiveChatLayerElement);
+
+class LiveChatPanelElement extends HTMLElement {
+	constructor() {
+		super();
+		this.hide = () => {
+			this.hidden = true;
+			this.ariaHidden = 'true';
+			this.style.display = 'none';
+		};
+		this.show = () => {
+			this.hidden = false;
+			this.ariaHidden = 'false';
+			this.style.display = 'block';
+		};
+	}
+	connectedCallback() {
+		this.className = 'html5-video-info-panel';
+		this.dataset.layer = '4';
+		this.innerHTML = '';
+		this.hide();
+
+		const form = document.createElement('form');
+		form.className = 'html5-video-info-panel-content';
+		form.innerHTML = [
+			[
+				`<div>${getMessage('animation_duration')}</div>`,
+				`<div><label><input type="number" class="styles" name="animation_duration" min="1" max="10" step="0.1" size="5" value="${parseFloat(g.storage.styles.animation_duration) || 6}" data-unit="s"> s</label></div>`,
+			],
+			[
+				`<div>${getMessage('font_size')}</div>`,
+				`<div><label><input type="number" class="styles" name="font_size" min="12" size="5" value="${parseInt(g.storage.styles.font_size) || 36}" data-unit="px"><span>px</span></label> /<input type="checkbox" name="lines"><label><input type="number" name="number_of_lines" min="6" size="5" value="${g.storage.others.number_of_lines || 20}"><span>${getMessage('lines')}</span></label><select name="type_of_lines">${Object.values(g.index.lines).map(v => `<option value="${v}">` + getMessage(`type_of_lines_${v}`)).join('')}</select><span>▼</span></div>`,
+			],
+			[
+				`<div>${getMessage('layer_opacity')}</div>`,
+				`<div>${getMessage('opacity_0')}<input type="range" class="styles" name="layer_opacity" min="0" max="1" step="0.05" value="${parseFloat(g.storage.styles.layer_opacity) || 1}">${getMessage('opacity_1')}</div>`,
+			],
+			[
+				`<div>${getMessage('background_opacity')}</div>`,
+				`<div>${getMessage('opacity_0')}<input type="range" class="styles" name="background_opacity" min="0" max="1" step="0.05" value="${parseFloat(g.storage.styles.background_opacity) || 0.5}">${getMessage('opacity_1')}</div>`,
+			],
+			[
+				`<div>${getMessage('max_width')}/${getMessage('word_wrap')}</div>`,
+				`<div><label><input type="number" class="styles" name="max_width" min="50" size="8" value="${parseInt(g.storage.styles.max_width) || 100}" data-unit="%"><span>%</span></label> /<select name="wrap">${Object.values(g.index.wrap).map(v => `<option value="${v}">` + getMessage(`word_wrap_${v}`)).join('')}</select>▼</div>`,
+			],
+			[
+				`<div>${getMessage('display_limit')}</div>`,
+				`<div><input type="number" class="others" name="limit_number" min="1" size="8" value="${g.storage.others.limit || 100}"><label><input type="checkbox" name="unlimited">${getMessage('unlimited')}</label></div>`,
+			],
+			[
+				`<div>${getMessage('simultaneous_message')}</div>`,
+				`<div><select name="simultaneous">${Object.values(g.index.simultaneous).map(v => `<option value="${v}">` + getMessage(`simultaneous_message_${v}`)).join('')}</select>▼</div>`,
+			],
+			[
+				`<div>${getMessage('emoji_expression')}</div>`,
+				`<div><select name="emoji">${Object.values(g.index.emoji).map(v => `<option value="${v}">` + getMessage(`emoji_expression_${v}`)).join('')}</select>▼</div>`,
+			],
+			...['normal', 'member', 'moderator', 'owner', 'verified'].map(type => [
+				`<div>${getMessage(type)}</div>`,
+				`<div><label class="toggle photo" title="${getMessage('tooltip-author_photo')}"><input type="checkbox" name="${type}_display" value="photo"><svg viewBox="-8 -8 16 16"><g id="yt-lcf-photo"><circle r="7"/><ellipse rx="2.5" ry="3.5" cy="-1"/><ellipse rx="4" ry="2" cy="4"/></g></svg></label><label class="toggle name" title="${getMessage('tooltip-author_name')}"><input type="checkbox" name="${type}_display" value="name"><span>${getMessage('display-author_name')}</span></label><label class="toggle body" title="${getMessage('tooltip-chat_message')}"><input type="checkbox" name="${type}_display" value="message"><span>${getMessage('display-chat_message')}</span></label></div>`,
+				`<div><label title="${getMessage('tooltip-custom_color')}"><input type="checkbox" name="${type}_display" value="color">${getMessage('display-custom_color')}</label><input type="color" name="${type}_color"></div>`,
+			]),
+			[
+				`<div>${getMessage('superchat')}</div>`,
+				`<div class="superchat"><label class="toggle photo" title="${getMessage('tooltip-author_photo')}"><input type="checkbox" name="paid_message_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${getMessage('tooltip-author_name')}"><input type="checkbox" name="paid_message_display" value="name"><span>${getMessage('display-author_name')}</span></label><label class="toggle amount" title="${getMessage('tooltip-purchase_amount')}"><input type="checkbox" name="paid_message_display" value="amount"><span>${getMessage('display-purchase_amount')}</span></label><br><label class="toggle body" title="${getMessage('tooltip-chat_message')}"><input type="checkbox" name="paid_message_display" value="message"><span>${getMessage('display-chat_message')}</span></label></div>`,
+				`<div><label title="${getMessage('tooltip-custom_color')}"><input type="checkbox" name="paid_message_display" value="color">${getMessage('display-custom_color')}</label><input type="color" name="paid_message_color"></div>`,
+			],
+			[
+				`<div>${getMessage('sticker')}</div>`,
+				`<div class="superchat"><label class="toggle photo" title="${getMessage('tooltip-author_photo')}"><input type="checkbox" name="paid_sticker_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${getMessage('tooltip-author_name')}"><input type="checkbox" name="paid_sticker_display" value="name"><span>${getMessage('display-author_name')}</span></label><label class="toggle amount" title="${getMessage('tooltip-purchase_amount')}"><input type="checkbox" name="paid_sticker_display" value="amount"><span>${getMessage('display-purchase_amount')}</span></label><br><label class="toggle body" title="${getMessage('tooltip-sticker')}"><input type="checkbox" name="paid_sticker_display" value="sticker"><span>${getMessage('display-sticker')}</span></label></div>`,
+				`<div><label title="${getMessage('tooltip-sticker_size')}" style="padding-left:4px">${getMessage('display-sticker_size')}: x<input type="number" class="styles" name="sticker_size" min="1" max="10" step="0.1" size="5" value="${parseFloat(g.storage.styles.sticker_size) || 2}" data-unit="em"></label></div>`
+			],
+			[
+				`<div>${getMessage('membership')}</div>`,
+				`<div class="superchat"><label class="toggle photo" title="${getMessage('tooltip-author_photo')}"><input type="checkbox" name="membership_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${getMessage('tooltip-author_name')}"><input type="checkbox" name="membership_display" value="name"><span>${getMessage('display-author_name')}</span></label><label class="toggle body" title="${getMessage('tooltip-membership_message')}"><input type="checkbox" name="membership_display" value="message"><span>${getMessage('display-membership_message')}</span></label></div>`,
+				`<div><label title="${getMessage('tooltip-custom_color')}"><input type="checkbox" name="membership_display" value="color">${getMessage('display-custom_color')}</label><input type="color" name="membership_color"></div>`,
+			],
+			[
+				`<div>${getMessage('milestone')}</div>`,
+				`<div class="superchat"><label class="toggle photo" title="${getMessage('tooltip-author_photo')}"><input type="checkbox" name="milestone_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${getMessage('tooltip-author_name')}"><input type="checkbox" name="milestone_display" value="name"><span>${getMessage('display-author_name')}</span></label><label class="toggle amount" title="${getMessage('tooltip-milestone_months')}"><input type="checkbox" name="milestone_display" value="months"><span>${getMessage('display-milestone_months')}</span></label><br><label class="toggle body" title="${getMessage('tooltip-chat_message')}"><input type="checkbox" name="milestone_display" value="message"><span>${getMessage('display-chat_message')}</span></label></div>`,
+				`<div><label title="${getMessage('tooltip-custom_color')}"><input type="checkbox" name="milestone_display" value="color">${getMessage('display-custom_color')}</label><input type="color" name="milestone_color"></div>`,
+			],
+		].map(row => '<div>' + row.join('') + '</div>').join('');
+		
+		const selects = form.querySelectorAll('select');
+		for (const select of selects) {
+			if (select.name in g.storage.others) {
+				const val = g.storage.others[select.name];
+				select.selectedIndex = val;
+				if (g.layer && select.name === 'wrap') {
+					g.layer.style.setProperty('--yt-live-chat-flusher-message-hyphens', g.array.hyphens[val]);
+					g.layer.style.setProperty('--yt-live-chat-flusher-message-word-break', g.array.wordBreak[val]);
+					g.layer.style.setProperty('--yt-live-chat-flusher-message-white-space', g.array.whiteSpace[val]);
+					g.layer.style.setProperty('--yt-live-chat-flusher-max-width', g.array.maxWidth[val] || g.storage.styles.max_width);
+				}
+			}
+		}
+		const checkboxes = /** @type {NodeListOf<HTMLInputElement>} */ (form.querySelectorAll('input[type="checkbox"]'));
+		for (const checkbox of checkboxes) {
+			const match = checkbox.name.match(/^(.+)_display$/);
+			if (match) {
+				const [_, type] = match;
+				if (type in g.storage.parts) {
+					checkbox.checked = g.storage.parts[type][checkbox.value];
+					switch (checkbox.value) {
+						case 'name': {
+							const div = /** @type {HTMLDivElement} */ (checkbox.closest('div'));
+							if (checkbox.checked) div.classList.add('outlined');
+							checkbox.addEventListener('change', e => {
+								const method = checkbox.checked ? 'add' : 'remove';
+								div.classList[method]('outlined');
+								g.layer?.classList[method](`has-${type}-name`);
+							}, { passive: true });
+							break;
+						}
+						case 'color': {
+							const picker = /** @type {HTMLInputElement?} */ (checkbox.parentElement?.nextElementSibling);
+							if (picker) {
+								const saved = g.storage.parts[type].color;
+								if (saved) {
+									picker.value = saved;
+								} else if (g.layer) {
+									picker.value = formatHexColor(getComputedStyle(g.layer).getPropertyValue('--yt-live-chat-flusher-' + picker.name.replace(/_/g, '-')))
+								}
+							}
+							break;
+						}
+					}
+				}
+			} else if (checkbox.name === 'lines') {
+				checkbox.checked = g.storage.others.number_of_lines > 0;
+				form.font_size.disabled = checkbox.checked;
+				form.number_of_lines.disabled = form.type_of_lines.disabled = !checkbox.checked;
+			} else if (checkbox.name === 'unlimited') {
+				form.limit_number.disabled = checkbox.checked = g.storage.others.limit === 0;
+				if (g.layer) g.layer.limit = g.storage.others.limit;
+			}
+		}
+		form.addEventListener('change', e => {
+			if (!form.reportValidity()) return;
+			const elem = /** @type {HTMLInputElement | HTMLSelectElement} */ (e.target);
+			const name = elem.name;
+			if (elem instanceof HTMLSelectElement) {
+				if (name in g.storage.others) {
+					const val = parseInt(elem.value);
+					g.storage.others[name] = val;
+					if (name === 'wrap' && g.layer) {
+						g.layer.style.setProperty('--yt-live-chat-flusher-message-hyphens', g.array.hyphens[val]);
+						g.layer.style.setProperty('--yt-live-chat-flusher-message-word-break', g.array.wordBreak[val]);
+						g.layer.style.setProperty('--yt-live-chat-flusher-message-white-space', g.array.whiteSpace[val]);
+						g.layer.style.setProperty('--yt-live-chat-flusher-max-width', g.array.maxWidth[val] || g.storage.styles.max_width);
+						updateCurrentItemStyle();
+					}
+				}
+			} else if (elem.classList.contains('styles')) {
+				if (name) {
+					g.storage.styles[name] = elem.value + (elem.dataset.unit || '');
+					g.layer?.style.setProperty('--yt-live-chat-flusher-' + name.replace(/_/g, '-'), g.storage.styles[name]);
+					if (name === 'max_width') updateCurrentItemStyle();
+				}
+			} else if (name.endsWith('_display')) {
+				const match = name.match(/^(.+)_display$/);
+				if (match) {
+					const [_, type] = match;
+					if (type in g.storage.parts && g.layer) {
+						if (elem.value !== 'color') {
+							g.storage.parts[type][elem.value] = elem.checked;
+							g.layer.style.setProperty('--yt-live-chat-flusher-' + name.replace(/_/g, '-') + '-' + elem.value, elem.checked ? 'inherit' : 'none');
+						} else {
+							if (elem.checked) {
+								g.storage.parts[type].color = form.elements[type + '_color']?.value;
+								g.layer.style.setProperty('--yt-live-chat-flusher-' + type.replace(/_/g, '-') + '-color', g.storage.parts[type].color || 'inherit');
+							} else {
+								g.storage.parts[type].color = null;
+								g.layer.style.removeProperty('--yt-live-chat-flusher-' + type.replace(/_/g, '-') + '-color');
+							}
+						}
+						updateCurrentItemStyle(type);
+					}
+				}
+			} else if (name.endsWith('_color')) {
+				const match = name.match(/^(.+)_color$/);
+				if (match) {
+					const [_, type] = match;
+					if (/** @type {HTMLInputElement?} */ (elem.previousElementSibling?.firstElementChild)?.checked) {
+						g.storage.parts[type].color = form.elements[type + '_color']?.value;
+						g.layer?.style.setProperty('--yt-live-chat-flusher-' + type.replace('_', '-') + '-color', g.storage.parts[type].color || 'inherit');
+					} else {
+						g.storage.parts[type].color = null;
+						g.layer?.style.removeProperty('--yt-live-chat-flusher-' + type.replace('_', '-') + '-color');
+					}
+				}
+			}
+			if (['lines', 'number_of_lines', 'type_of_lines'].includes(name)) {
+				const checked = form.lines.checked;
+				form.font_size.disabled = checked;
+				form.number_of_lines.disabled = !checked;
+				form.type_of_lines.disabled = !checked;
+				g.storage.others.number_of_lines = checked ? form.number_of_lines.valueAsNumber : 0;
+				if (g.layer) {
+					if (checked) {
+						const sizeByLines = Math.floor(g.layer.getBoundingClientRect().height * .8 / form.number_of_lines.valueAsNumber);
+						g.layer?.style.setProperty('--yt-live-chat-flusher-font-size', [
+							`${sizeByLines}px`,
+							`max(${form.font_size.value}px, ${sizeByLines}px)`,
+							`min(${form.font_size.value}px, ${sizeByLines}px)`,
+						][g.storage.others.type_of_lines]);
+					} else {
+						g.layer.style.setProperty('--yt-live-chat-flusher-font-size', `${form.font_size.value}px`);
+					}
+				}
+			} else if (['unlimited', 'limit_number'].includes(name)) {
+				const checked = form.unlimited.checked;
+				form.limit_number.disabled = checked;
+				g.storage.others.limit = checked ? 0 : form.limit_number.valueAsNumber;
+				if (g.layer) g.layer.limit = g.storage.others.limit;
+			}
+			browser.storage.local.set(g.storage);
+		}, { passive: true });
+		const closeBtn = document.createElement('button');
+		closeBtn.className = 'html5-video-info-panel-close ytp-button';
+		closeBtn.title = getMessage('close');
+		closeBtn.textContent = '[X]';
+		closeBtn.addEventListener('click', this.hide, { passive: true });
+		this.insertAdjacentElement('beforeend', closeBtn);
+		this.insertAdjacentElement('beforeend', form);
+		this.addEventListener('keydown', e => {
+			e.stopPropagation();
+		}, { passive: true });
+	}
+}
+customElements.define(g.tag.panel, LiveChatPanelElement);
+
 detectPageType();
-window.addEventListener('yt-navigate-finish', e => {
-	detectPageType();
-}, { passive: true });
+window.addEventListener('yt-navigate-finish', detectPageType, { passive: true });
 window.addEventListener('resize', e => {
+	if (!g.layer) return;
 	const lines = g.storage.others.number_of_lines;
-	if (g.layer && lines) {
+	if (lines) {
 		const sizeByLines = Math.floor(g.layer.getBoundingClientRect().height * .8 / lines);
 		g.layer.style.setProperty('--yt-live-chat-flusher-font-size', [
 			`${sizeByLines}px`,
@@ -78,11 +351,12 @@ window.addEventListener('resize', e => {
 			`min(${g.storage.styles.font_size}, ${sizeByLines}px)`,
 		][g.storage.others.type_of_lines]);
 	}
+	updateCurrentItemStyle();
 }, { passive: true });
 
 function detectPageType() {
 	if (location.pathname.startsWith('/live_chat') && top?.location.pathname === '/watch') {
-		g.app = top.document.querySelector('ytd-app');
+		g.app = top.document.querySelector('#ytd-player');
 		if (g.app) {
 			startLiveChatFlusher();
 			const storageList = ['styles', 'others', 'parts'];
@@ -107,16 +381,17 @@ function detectPageType() {
 					}
 				}
 				for (const [key, values] of Object.entries(g.storage.parts)) {
-					if (values) {
-						for (const [prop, bool] of Object.entries(values)) {
-							if (prop !== 'color') {
-								g.layer?.style.setProperty(`--yt-live-chat-flusher-${key.replace(/_/g, '-')}-display-${prop}`, bool ? 'inherit' : 'none');
+					for (const [prop, bool] of Object.entries(values)) {
+						if (prop !== 'color') {
+							g.layer?.style.setProperty(`--yt-live-chat-flusher-${key.replace(/_/g, '-')}-display-${prop}`, bool ? 'inline' : 'none');
+							if (prop === 'name') {
+								g.layer?.classList[bool ? 'add' : 'remove'](`has-${key}-name`);
+							}
+						} else {
+							if (bool) {
+								g.layer?.style.setProperty(`--yt-live-chat-flusher-${key.replace(/_/g, '-')}-color`, `${bool}`);
 							} else {
-								if (bool) {
-									g.layer?.style.setProperty(`--yt-live-chat-flusher-${key.replace(/_/g, '-')}-color`, `${bool}`);
-								} else {
-									g.layer?.style.removeProperty(`--yt-live-chat-flusher-${key.replace(/_/g, '-')}-color`);
-								}
+								g.layer?.style.removeProperty(`--yt-live-chat-flusher-${key.replace(/_/g, '-')}-color`);
 							}
 						}
 					}
@@ -131,21 +406,17 @@ function detectPageType() {
 					['--yt-live-chat-paid-sticker-background-color', 0xffffb300, -1],
 					['--yt-live-chat-author-chip-owner-background-color', 0xffffd600, -1],
 				];
-				colormap.forEach(([name, rgb, alpha]) => {
+				for (const [name, rgb, alpha] of colormap) {
 					g.layer?.style.setProperty(name, `rgba(${getColorRGB(rgb).join()},${alpha < 0 ? 'var(--yt-live-chat-flusher-background-opacity)' : alpha})`);
-				});
-			}).then(() => {
-				addSettingMenu();
-			});
+				}
+			}).then(addSettingMenu);
 		}
 	} else if (location.pathname === '/watch') {
 		document.addEventListener('yt-action', e => {
 			switch (e.detail.actionName) {
 				case 'ytd-watch-player-data-changed': {
-					const layer = document.getElementById(g.id);
-					if (layer) {
-						layer.innerHTML = '';
-					}
+					const layer = document.querySelector(g.tag.layer);
+					if (layer) /** @type {LiveChatLayerElement} */ (layer).init();
 				}
 			}
 		}, { passive: true });
@@ -153,47 +424,52 @@ function detectPageType() {
 }
 
 function getLayer() {
-	const oldOne = g.app?.querySelector(`#${g.id}`);
-	if (oldOne) {
-		oldOne.innerHTML = '';
-		return /** @type {HTMLElement} */ (oldOne);
-	} else {
-		const newOne = document.createElement('div');
-		newOne.id = g.id;
-		newOne.dataset.layer = '1';
-		newOne.setAttribute('role', 'marquee');
-		newOne.setAttribute('aria-live', 'off');
-		return newOne;
-	}
-}
-
-function getPanel() {
-	const oldOne = g.app?.querySelector(`#${g.id}-panel`);
-	if (oldOne) {
-		oldOne.innerHTML = '';
-		return /** @type {HTMLElement} */ (oldOne);
-	} else {
-		const newOne = document.createElement('div');
-		newOne.id = g.id + '-panel';
-		newOne.className = 'html5-video-info-panel';
-		newOne.dataset.layer = '4';
-		newOne.hidden = true;
-		newOne.style.display = 'none';
-		return newOne;
-	}
+	const layer = /** @type {LiveChatLayerElement} */ (document.createElement(g.tag.layer));
+	layer.addEventListener('contextmenu', e => {
+		/** @type {HTMLElement?} */
+		const origin = e.originalTarget;
+		if (origin) {
+			e.preventDefault();
+			e.stopPropagation();
+			origin.classList.toggle('paused');
+		}
+	}, { passive: false });
+	layer.addEventListener('click', e => {
+		/** @type {HTMLElement?} */
+		const origin = e.originalTarget;
+		if (origin?.tagName === 'A') {
+			e.stopPropagation();
+		} else {
+			e.target?.parentElement.click();
+		}
+	}, { passive: true });
+	layer.addEventListener('wheel', e => {
+		/** @type {HTMLElement?} */
+		const origin = e.originalTarget;
+		if (origin) {
+			e.preventDefault();
+			if (origin.classList.contains('paused')) {
+				e.stopPropagation();
+				origin.style.animationDelay = `${parseFloat(origin.style.animationDelay || '0') + Math.sign(e.deltaY) * .05}s`;
+			}
+		}
+	}, { passive: false });
+	return layer;
 }
 
 function startLiveChatFlusher() {
 	if (!g.app) return;
 	const video = g.app.querySelector('video');
-	const videoContainer = g.app.querySelector('video')?.parentElement;
+	const videoContainer = video?.parentElement;
 	
 	if (video && videoContainer) {
+		const current = g.app.querySelector(g.tag.layer);
+		if (current) current.remove();
 		g.layer = getLayer();
 		videoContainer.insertAdjacentElement('afterend', g.layer);
 		
 		const timer = setInterval(() => {
-			const /** @type {HTMLElement?} */ renderer = document.querySelector('yt-live-chat-renderer');
+			const /** @type {HTMLElement?} */ renderer = document.querySelector(g.tag.chat);
 			if (renderer) {
 				clearInterval(timer);
 				renderer.addEventListener('yt-action', handleYtAction, { passive: true });
@@ -204,498 +480,303 @@ function startLiveChatFlusher() {
 
 function addSettingMenu() {
 	if (!g.app) return;
-	g.panel = getPanel();
-	const checkbox = g.app.querySelector(`#${g.id}-checkbox`), popupmenu = g.app.querySelector(`#${g.id}-popupmenu`);
-	if (checkbox && popupmenu) {
-		checkbox.remove(), popupmenu.remove();
-	}
+	const current = g.app.querySelector(g.tag.panel);
+	if (current) current.remove();
+	const panel = document.createElement(g.tag.panel);
+	const checkboxId = g.id + '-checkbox';
+	const popupmenuId = g.id + '-popupmenu';
+	g.app.querySelector('#' + checkboxId)?.remove();
+	g.app.querySelector('#' + popupmenuId)?.remove();
 	/** @type {HTMLElement?} */
-	const ytpPanelMenu = g.app.querySelector('#ytp-id-17 .ytp-panel .ytp-panel-menu');
+	const ytpPanelMenu = g.app.querySelector('.ytp-settings-menu .ytp-panel-menu');
 	if (ytpPanelMenu) {
-		const checkbox = document.createElement('div'), popupmenu = document.createElement('div');
-		checkbox.id = g.id + '-checkbox', popupmenu.id = g.id + '-popupmenu';
+		const checkbox = document.createElement('div');
+		const popupmenu = document.createElement('div');
+		checkbox.id = checkboxId;
+		popupmenu.id = popupmenuId;
 		checkbox.className = popupmenu.className = 'ytp-menuitem';
 		checkbox.tabIndex = popupmenu.tabIndex = 0;
-		checkbox.setAttribute('role', 'menuitemcheckbox'), popupmenu.setAttribute('role', 'menuitem');
-		checkbox.setAttribute('aria-checked', 'true'), popupmenu.setAttribute('aria-haspopup', 'true');
-		checkbox.onclick = e => {
+		checkbox.setAttribute('role', 'menuitemcheckbox');
+		popupmenu.setAttribute('role', 'menuitem');
+		checkbox.setAttribute('aria-checked', 'true');
+		popupmenu.setAttribute('aria-haspopup', 'true');
+		checkbox.addEventListener('click', _ => {
 			const checked = checkbox.getAttribute('aria-checked') === 'true';
 			checkbox.setAttribute('aria-checked', (!checked).toString());
-			if (checked) {
-				if (g.layer) {
-					g.layer.hidden = true;
-					g.layer.setAttribute('aria-hidden', 'true');
-				}
-			} else {
-				if (g.layer) {
-					g.layer.hidden = false;
-					g.layer.setAttribute('aria-hidden', 'false');
-				}
-				browser.runtime.reload();
-			}
-		};
+			if (g.layer) g.layer[checked ? 'hide' : 'show']();
+			if (!checked) browser.runtime.reload();
+		}, { passive: true });
 		checkbox.innerHTML = `<div class="ytp-menuitem-icon"><svg height="24" width="24" viewBox="-40 -40 80 80"><path d="M0,24Q8,24,24,23,31,22,31,19,32,12,32,0M0,24Q-8,24,-24,23,-31,22,-31,19,-32,12,-32,0M0,-24Q-8,-24,-24,-23,-31,-22,-31,-19,-32,-12,-32,0M0,-24Q8,-24,24,-23,31,-22,31,-19,32,-12,32,0" fill="none" stroke="white" stroke-width="3"/><g fill="white" transform="translate(0,10)"><path d="M4,-10l12,12h8l-12,-12,12,-12h-8z"/><circle r="3"/><circle cx="-10" r="3"/><circle cx="-20" r="3"/></g></svg></div><div class="ytp-menuitem-label">${getMessage('ytp-menuitem-label-switch')}</div><div class="ytp-menuitem-content"><div class="ytp-menuitem-toggle-checkbox"></div></div></div>`;
-		popupmenu.onclick = e => {
-			if (g.panel) {
-				g.panel.hidden = !g.panel.hidden;
-				g.panel.style.display = g.panel.style.display === 'none' ? 'block' : 'none';
-			}
-		};
+		popupmenu.addEventListener('click', _ => {
+			panel[panel.hidden ? 'show' : 'hide']();
+		}, { passive: true });
 		popupmenu.innerHTML = `<div class="ytp-menuitem-icon"><svg height="24" width="24" viewBox="-40 -64 108 108"><mask id="m"><path d="M-40-80h120v120h-120z" fill="white" /><circle r="9"/></mask><path d="M0,24Q8,24,24,23,31,22,31,19,32,12,32,0M0,24Q-8,24,-24,23,-31,22,-31,19,-32,12,-32,0M0,-24Q-8,-24,-24,-23,-31,-22,-31,-19,-32,-12,-32,0" fill="none" stroke="white" stroke-width="4"/><g fill="white" transform="translate(0,10)"><circle cx="8" r="3"/><circle cx="-4" r="3"/><circle cx="-16" r="3"/><g transform="translate(32,-32) scale(1.25)" mask="url(#m)"><path id="p" d="M0,0L-10,-8L-6,-24Q0,-26,6,-24L10,-8L-10,8L-6,24Q0,26,6,24L10,8z"/><use xlink:href="#p" transform="rotate(60)"/><use xlink:href="#p" transform="rotate(120)"/></g></g></svg></div><div class="ytp-menuitem-label">${getMessage('ytp-menuitem-label-config')}</div><div class="ytp-menuitem-content"></div>`;
-		ytpPanelMenu.append(checkbox, popupmenu);
+		ytpPanelMenu.appendChild(checkbox);
+		ytpPanelMenu.appendChild(popupmenu);
 	}
-	if (!g.layer) g.layer = getLayer();
-	g.layer.after(g.panel);
-	g.panel.onkeydown = e => {
-		e.stopPropagation();
-	};
-	const styles = getComputedStyle(g.layer);
-	const closeBtn = document.createElement('button');
-	closeBtn.className = 'html5-video-info-panel-close ytp-button';
-	closeBtn.title = getMessage('close');
-	closeBtn.textContent = '[x]';
-	closeBtn.onclick = () => {
-		if (g.panel) {
-			g.panel.hidden = true;
-			g.panel.style.display = 'none';
+	g.layer?.insertAdjacentElement('afterend', panel);
+}
+
+/** @param {string | undefined} type */
+function updateCurrentItemStyle(type = undefined) {
+	if (!g.layer) return;
+	const children = g.layer.shadowRoot?.children;
+	if (children) {
+		const items = type ? Array.from(children).filter(c => c.classList.contains(type)) : children;
+		for (const c of items) {
+			const isLong = c.clientWidth >= g.layer.clientWidth * (parseInt(g.storage.styles.max_width) / 100 || 1);
+			c.classList[isLong ? 'add' : 'remove']('wrap');
+			/** @type {HTMLElement} */ (c).style.setProperty('--yt-live-chat-flusher-translate-x', `-${g.layer.clientWidth + c.clientWidth}px`);
 		}
-	};
-	const form = document.createElement('form');
-	form.className = 'html5-video-info-panel-content';
-	form.insertAdjacentHTML('beforeend', [
-		[
-			`<div>${getMessage('animation_duration')}</div>`,
-			`<div><label><input type="number" class="styles" name="animation_duration" min="1" max="10" step="0.1" size="5" value="${parseFloat(g.storage.styles.animation_duration) || 6}" data-unit="s"> s</label></div>`,
-		],
-		[
-			`<div>${getMessage('font_size')}</div>`,
-			`<div><label><input type="number" class="styles" name="font_size" min="12" size="5" value="${parseInt(g.storage.styles.font_size) || 36}" data-unit="px"><span>px</span></label> /<input type="checkbox" name="lines"><label><input type="number" name="number_of_lines" min="6" size="5" value="${g.storage.others.number_of_lines || 20}"><span>${getMessage('lines')}</span></label><select name="type_of_lines"><option value="0">${getMessage('type_of_lines_0')}<option value="1">${getMessage('type_of_lines_1')}<option value="2">${getMessage('type_of_lines_2')}</select><span>▼</span></div>`,
-		],
-		[
-			`<div>${getMessage('layer_opacity')}</div>`,
-			`<div>${getMessage('opacity_0')}<input type="range" class="styles" name="layer_opacity" min="0" max="1" step="0.05" value="${parseFloat(g.storage.styles.layer_opacity) || 1}">${getMessage('opacity_1')}</div>`,
-		],
-		[
-			`<div>${getMessage('background_opacity')}</div>`,
-			`<div>${getMessage('opacity_0')}<input type="range" class="styles" name="background_opacity" min="0" max="1" step="0.05" value="${parseFloat(g.storage.styles.background_opacity) || 0.5}">${getMessage('opacity_1')}</div>`,
-		],
-		[
-			`<div>${getMessage('simultaneous_message')}</div>`,
-			`<div><select name="simultaneous"><option value="0">${getMessage('simultaneous_message_0')}<option value="1">${getMessage('simultaneous_message_1')}<option value="2">${getMessage('simultaneous_message_2')}</select>▼</div>`
-		],
-		[
-			`<div>${getMessage('emoji_expression')}</div>`,
-			`<div><select name="emoji"><option value="0">${getMessage('emoji_expression_0')}<option value="1">${getMessage('emoji_expression_1')}<option value="2">${getMessage('emoji_expression_2')}<option value="3">${getMessage('emoji_expression_3')}</select>▼</div>`
-		],
-		[
-			`<div>${getMessage('normal')}</div>`,
-			`<div><label class="toggle photo" title="${getMessage('tooltip-author_photo')}"><input type="checkbox" name="normal_display" value="photo"><svg viewBox="-8 -8 16 16"><g id="yt-lcf-photo"><circle r="7"/><ellipse rx="2.5" ry="3.5" cy="-1"/><ellipse rx="4" ry="2" cy="4"/></g></svg></label><label class="toggle name" title="${getMessage('tooltip-author_name')}"><input type="checkbox" name="normal_display" value="name"><span>${getMessage('display-author_name')}</span></label><label class="toggle body" title="${getMessage('tooltip-chat_message')}"><input type="checkbox" name="normal_display" value="message"><span>${getMessage('display-chat_message')}</span></label></div>`,
-			`<div><label title="${getMessage('tooltip-custom_color')}"><input type="checkbox" name="normal_display" value="color">${getMessage('display-custom_color')}</label><input type="color" name="normal_color"></div>`,
-		],
-		[
-			`<div>${getMessage('member')}</div>`,
-			`<div><label class="toggle photo" title="${getMessage('tooltip-author_photo')}"><input type="checkbox" name="member_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${getMessage('tooltip-author_name')}"><input type="checkbox" name="member_display" value="name"><span>${getMessage('display-author_name')}</span></label><label class="toggle body" title="${getMessage('tooltip-chat_message')}"><input type="checkbox" name="member_display" value="message"><span>${getMessage('display-chat_message')}</span></label></div>`,
-			`<div><label title="${getMessage('tooltip-custom_color')}"><input type="checkbox" name="member_display" value="color">${getMessage('display-custom_color')}</label><input type="color" name="member_color"></div>`,
-		],
-		[
-			`<div>${getMessage('moderator')}</div>`,
-			`<div><label class="toggle photo" title="${getMessage('tooltip-author_photo')}"><input type="checkbox" name="moderator_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${getMessage('tooltip-author_name')}"><input type="checkbox" name="moderator_display" value="name"><span>${getMessage('display-author_name')}</span></label><label class="toggle body" title="${getMessage('tooltip-chat_message')}"><input type="checkbox" name="moderator_display" value="message"><span>${getMessage('display-chat_message')}</span></label></div>`,
-			`<div><label title="${getMessage('tooltip-custom_color')}"><input type="checkbox" name="moderator_display" value="color">${getMessage('display-custom_color')}</label><input type="color" name="moderator_color"></div>`,
-		],
-		[
-			`<div>${getMessage('owner')}</div>`,
-			`<div><label class="toggle photo" title="${getMessage('tooltip-author_photo')}"><input type="checkbox" name="owner_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${getMessage('tooltip-author_name')}"><input type="checkbox" name="owner_display" value="name"><span>${getMessage('display-author_name')}</span></label><label class="toggle body" title="${getMessage('tooltip-chat_message')}"><input type="checkbox" name="owner_display" value="message"><span>${getMessage('display-chat_message')}</span></label></div>`,
-			`<div><label title="${getMessage('tooltip-custom_color')}"><input type="checkbox" name="owner_display" value="color">${getMessage('display-custom_color')}</label><input type="color" name="owner_color"></div>`,
-		],
-		[
-			`<div>${getMessage('verified')}</div>`,
-			`<div><label class="toggle photo" title="${getMessage('tooltip-author_photo')}"><input type="checkbox" name="verified_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${getMessage('tooltip-author_name')}"><input type="checkbox" name="verified_display" value="name"><span>${getMessage('display-author_name')}</span></label><label class="toggle body" title="${getMessage('tooltip-chat_message')}"><input type="checkbox" name="verified_display" value="message"><span>${getMessage('display-chat_message')}</span></label></div>`,
-			`<div><label title="${getMessage('tooltip-custom_color')}"><input type="checkbox" name="verified_display" value="color">${getMessage('display-custom_color')}</label><input type="color" name="verified_color"></div>`,
-		],
-		[
-			`<div>${getMessage('superchat')}</div>`,
-			`<div class="superchat"><label class="toggle photo" title="${getMessage('tooltip-author_photo')}"><input type="checkbox" name="paid_message_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${getMessage('tooltip-author_name')}"><input type="checkbox" name="paid_message_display" value="name"><span>${getMessage('display-author_name')}</span></label><label class="toggle amount" title="${getMessage('tooltip-purchase_amount')}"><input type="checkbox" name="paid_message_display" value="amount"><span>${getMessage('display-purchase_amount')}</span></label><br><label class="toggle body" title="${getMessage('tooltip-chat_message')}"><input type="checkbox" name="paid_message_display" value="message"><span>${getMessage('display-chat_message')}</span></label></div>`,
-			`<div><label title="${getMessage('tooltip-custom_color')}"><input type="checkbox" name="paid_message_display" value="color">${getMessage('display-custom_color')}</label><input type="color" name="paid_message_color"></div>`,
-		],
-		[
-			`<div>${getMessage('sticker')}</div>`,
-			`<div class="superchat"><label class="toggle photo" title="${getMessage('tooltip-author_photo')}"><input type="checkbox" name="paid_sticker_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${getMessage('tooltip-author_name')}"><input type="checkbox" name="paid_sticker_display" value="name"><span>${getMessage('display-author_name')}</span></label><label class="toggle amount" title="${getMessage('tooltip-purchase_amount')}"><input type="checkbox" name="paid_sticker_display" value="amount"><span>${getMessage('display-purchase_amount')}</span></label><br><label class="toggle body" title="${getMessage('tooltip-sticker')}"><input type="checkbox" name="paid_sticker_display" value="sticker"><span>${getMessage('display-sticker')}</span></label></div>`,
-			`<div><label title="${getMessage('tooltip-sticker_size')}" style="padding-left:4px">${getMessage('display-sticker_size')}: x<input type="number" class="styles" name="sticker_size" min="1" max="10" step="0.1" size="5" value="${parseFloat(g.storage.styles.sticker_size) || 2}" data-unit="em"></label></div>`
-		],
-		[
-			`<div>${getMessage('new_membership')}</div>`,
-			`<div class="superchat"><label class="toggle photo" title="${getMessage('tooltip-author_photo')}"><input type="checkbox" name="new_membership_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${getMessage('tooltip-author_name')}"><input type="checkbox" name="new_membership_display" value="name"><span>${getMessage('display-author_name')}</span></label><label class="toggle body" title="${getMessage('tooltip-new_membership_message')}"><input type="checkbox" name="new_membership_display" value="message"><span>${getMessage('display-new_membership_message')}</span></label></div>`,
-			`<div><label title="${getMessage('tooltip-custom_color')}"><input type="checkbox" name="new_membership_display" value="color">${getMessage('display-custom_color')}</label><input type="color" name="new_membership_color"></div>`,
-		],
-		[
-			`<div>${getMessage('milestone')}</div>`,
-			`<div class="superchat"><label class="toggle photo" title="${getMessage('tooltip-author_photo')}"><input type="checkbox" name="milestone_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${getMessage('tooltip-author_name')}"><input type="checkbox" name="milestone_display" value="name"><span>${getMessage('display-author_name')}</span></label><label class="toggle amount" title="${getMessage('tooltip-milestone_months')}"><input type="checkbox" name="milestone_display" value="months"><span>${getMessage('display-milestone_months')}</span></label><br><label class="toggle body" title="${getMessage('tooltip-chat_message')}"><input type="checkbox" name="milestone_display" value="message"><span>${getMessage('display-chat_message')}</span></label></div>`,
-			`<div><label title="${getMessage('tooltip-custom_color')}"><input type="checkbox" name="milestone_display" value="color">${getMessage('display-custom_color')}</label><input type="color" name="milestone_color"></div>`,
-		],
-	].map(row => '<div>' + row.join('') + '</div>').join(''));
-	const selects = form.querySelectorAll('select');
-	selects.forEach(select => {
-		if (select.name in g.storage.others) {
-			const val = g.storage.others[select.name];
-			select.selectedIndex = val;
-		}
-	});
-	const checkboxes = /** @type {NodeListOf<HTMLInputElement>} */ (form.querySelectorAll('input[type="checkbox"]'));
-	checkboxes.forEach(checkbox => {
-		const match = checkbox.name.match(/^(.+)_display$/);
-		if (match) {
-			const [_, type] = match;
-			if (type in g.storage.parts) {
-				checkbox.checked = g.storage.parts[type][checkbox.value];
-				switch (checkbox.value) {
-					case 'name': {
-						const div = /** @type {HTMLDivElement} */ (checkbox.closest('div'));
-						if (checkbox.checked) {
-							div.classList.add('outlined');
-						}
-						checkbox.onchange = () => {
-							div.classList[checkbox.checked ? 'add' : 'remove']('outlined');
-						};
-						break;
-					}
-					case 'color': {
-						const picker = /** @type {HTMLInputElement?} */ (checkbox.parentElement?.nextElementSibling);
-						if (picker) {
-							picker.value = g.storage.parts[type].color || formatHexColor(styles.getPropertyValue('--yt-live-chat-flusher-' + picker.name.replace(/_/g, '-')));
-						}
-						break;
-					}
-				}
-			}
-		} else if (checkbox.name === 'lines') {
-			checkbox.checked = g.storage.others.number_of_lines > 0;
-			form.font_size.disabled = checkbox.checked;
-			form.number_of_lines.disabled = !checkbox.checked;
-			form.type_of_lines.disabled = !checkbox.checked;
-		}
-	});
-	form.addEventListener('change', e => {
-		const elem = /** @type {HTMLInputElement | HTMLSelectElement} */ (e.target);
-		const name = elem.name;
-		if (elem instanceof HTMLSelectElement) {
-			if (name in g.storage.others) {
-				g.storage.others[name] = parseInt(elem.value);
-			}
-		} else if (elem.classList.contains('styles')) {
-			if (name) {
-				g.storage.styles[name] = elem.value + (elem.dataset.unit || '');
-				g.layer?.style.setProperty('--yt-live-chat-flusher-' + name.replace(/_/g, '-'), g.storage.styles[name]);
-			}
-		} else if (name.endsWith('_display')) {
-			const match = name.match(/^(.+)_display$/);
-			if (match) {
-				const [_, type] = match;
-				if (type in g.storage.parts) {
-					if (elem.value !== 'color') {
-						g.storage.parts[type][elem.value] = elem.checked;
-						g.layer?.style.setProperty('--yt-live-chat-flusher-' + name.replace(/_/g, '-') + '-' + elem.value, elem.checked ? 'inherit' : 'none');
-					} else {
-						if (elem.checked) {
-							g.storage.parts[type].color = form.elements[type + '_color']?.value;
-							g.layer?.style.setProperty('--yt-live-chat-flusher-' + type.replace(/_/g, '-') + '-color', g.storage.parts[type].color || 'inherit');
-						} else {
-							g.storage.parts[type].color = null;
-							g.layer?.style.removeProperty('--yt-live-chat-flusher-' + type.replace(/_/g, '-') + '-color');
-						}
-					}
-				}
-			}
-		} else if (name.endsWith('_color')) {
-			const match = name.match(/^(.+)_color$/);
-			if (match) {
-				const [_, type] = match;
-				if (/** @type {HTMLInputElement?} */ (elem.previousElementSibling?.firstElementChild)?.checked) {
-					g.storage.parts[type].color = form.elements[type + '_color']?.value;
-					g.layer?.style.setProperty('--yt-live-chat-flusher-' + type.replace('_', '-') + '-color', g.storage.parts[type].color || 'inherit');
-				} else {
-					g.storage.parts[type].color = null;
-					g.layer?.style.removeProperty('--yt-live-chat-flusher-' + type.replace('_', '-') + '-color');
-				}
-			}
-		}
-		if (['lines', 'number_of_lines', 'type_of_lines'].includes(name)) {
-			const checked = form.lines.checked;
-			form.font_size.disabled = checked;
-			form.number_of_lines.disabled = !checked;
-			form.type_of_lines.disabled = !checked;
-			g.storage.others.number_of_lines = checked ? form.number_of_lines.valueAsNumber : 0;
-			if (g.layer) {
-				if (checked) {
-					const sizeByLines = Math.floor(g.layer.getBoundingClientRect().height * .8 / form.number_of_lines.valueAsNumber);
-					g.layer?.style.setProperty('--yt-live-chat-flusher-font-size', [
-						`${sizeByLines}px`,
-						`max(${form.font_size.value}px, ${sizeByLines}px)`,
-						`min(${form.font_size.value}px, ${sizeByLines}px)`,
-					][g.storage.others.type_of_lines]);
-				} else {
-					g.layer.style.setProperty('--yt-live-chat-flusher-font-size', `${form.font_size.value}px`);
-				}
-			}
-		}
-		browser.storage.local.set(g.storage);
-	}, { passive: true });
-	g.panel.insertAdjacentElement('beforeend', closeBtn);
-	g.panel.insertAdjacentElement('beforeend', form);
+	}
 }
 
 /**
- * 
  * @param {CustomEvent<{ actionName: string, args: any[][] }>} e 
  */
 function handleYtAction(e) {
-	switch (e.detail.actionName) {
-		case 'yt-live-chat-actions': {
-			if (document.visibilityState === 'hidden' || g.layer?.hidden || g.layer?.classList.contains('paused')) {
-				break;
-			}
-			const actions = e.detail.args[0];
-			const bodies = [];
-			const ids = [];
-			action: for (const action of actions) {
-				const elem = handleChatAction(action);
-				if (elem) {
-					simultaneous: switch (g.storage.others.simultaneous) {
-						case g.enum.SIMULTANEOUS_ALL: break simultaneous;
-						case g.enum.SIMULTANEOUS_FIRST: break action;
-						case g.enum.SIMULTANEOUS_MERGE:
-							const body = elem.querySelector('span.body');
-							if (body) {
-								const html = body.outerHTML;
-								const index = bodies.indexOf(html);
-								if (index < 0) {
-									bodies.push(html);
-									ids.push(elem.id);
-								} else {
-									const /** @type {HTMLElement?} */ targetElem = g.layer?.querySelector('#' + ids[index]) || null;
-									const /** @type {HTMLElement?} */ header = elem.querySelector('span.header');
-									if (targetElem && header) {
-										targetElem.querySelector('span.body')?.before(header);
-										targetElem.style.setProperty('--yt-live-chat-flusher-translate-x', `-${(g.layer?.clientWidth || 720) + targetElem.clientWidth}px`);
-										elem.remove();
-									}
-								}
-							}
+	if (e.detail.actionName === 'yt-live-chat-actions') {
+		const root = g.layer?.shadowRoot;
+		if (!g.layer || !root) return;
+		if (document.visibilityState === 'hidden') return;
+		if (g.layer.hidden) return;
+		if (g.layer.parentElement?.classList.contains('paused-mode')) return;
+		const actions = e.detail.args[0];
+		const filtered = {
+			add: actions.filter(a => 'addChatItemAction' in a),
+			delete: actions.filter(a => 'markChatItemAsDeletedAction' in a),
+			delete_author: actions.filter(a => 'markChatItemsByAuthorAsDeletedAction' in a),
+			replace: actions.filter(a => 'replaceChatItemAction' in a),
+		};
+
+		// Add
+		const fs = parseInt(g.storage.styles.font_size) || 36, lh = fs * 1.25;
+		const sv = g.storage.others.simultaneous, si = g.index.simultaneous;
+		const last = sv === si.last_merge ? root.lastElementChild : null;
+		const bodies = last ? [ `<!-- ${last.className} -->` + (last.querySelector('.tiny')?.textContent || '') ] : [];
+		const ids = last ? [last.id] : [];
+		if (sv === si.first) {
+			const notext = filtered.add.slice(1).filter(a => !a.addChatItemAction.item.liveChatTextMessageRenderer);
+			filtered.add.splice(1, Infinity, ...notext);
+		}
+		const adding = filtered.add.map(action => new Promise((resolve, reject) => {
+			const elem = parseChatItem(action.addChatItemAction.item);
+			if (!g.layer || !root) return reject('No layer element');
+			if (!elem) return reject('No target element');
+			if (sv === si.merge || sv === si.last_merge) {
+				const body = `<!-- ${elem.className} -->` + (elem.querySelector('.tiny')?.textContent || '');
+				if (body) {
+					const index = bodies.indexOf(body);
+					if (index < 0) {
+						bodies.push(body);
+						ids.push(elem.id);
+					} else {
+						const earlier = root.getElementById(ids[index]);
+						/** @type {HTMLElement | null | undefined} */
+						const name = earlier?.querySelector('.name');
+						/** @type {HTMLImageElement?} */
+						const thumbnail = elem.querySelector('.photo');
+						if (name && thumbnail) {
+							name?.insertAdjacentHTML('beforebegin', `<img class="photo" src="${thumbnail.src}" loading="lazy">`);
+							name.hidden = true;
+						}
+						return resolve(elem.id);
 					}
 				}
 			}
-			break;
-		}
-	}
-}
-
-/**
- * 
- * @param { {
- * addBannerToLiveChatCommand?: *,
- * addChatItemAction?: *,
- * addLiveChatTickerItemAction?: *,
- * markChatItemAsDeletedAction?: *,
- * markChatItemsByAuthorAsDeletedAction?: *,
- * replaceChatItemAction?: *,
- * } } action 
- * @returns 
- */
-function handleChatAction(action) {
-	if (action.addChatItemAction) {
-		const item = action.addChatItemAction.item;
-		const fs = parseInt(g.storage.styles.font_size) || 36, lh = fs * 1.25;
-		const elem = parseChatItem(item);
-		if (elem && g.layer) {
-			const children = Array.from(/** @type {HTMLCollectionOf<HTMLElement>} */ (g.layer.children));
-			elem.onanimationend = () => {
-				elem.remove();
-			};
-			g.layer.insertAdjacentElement('beforeend', elem);
-			if (elem.clientWidth >= g.layer.clientWidth) {
-				elem.classList.add('multiline');
-			}
+			const children = Array.from(/** @type {HTMLCollectionOf<HTMLElement>} */ (root.children));
+			root.appendChild(elem);
+			const isLong = elem.clientWidth >= g.layer.clientWidth * (parseInt(g.storage.styles.max_width) / 100 || 1)
+			if (isLong) elem.classList.add('wrap');
 			elem.style.setProperty('--yt-live-chat-flusher-translate-x', `-${g.layer.clientWidth + elem.clientWidth}px`);
+			elem.addEventListener('animationend', e => {
+				elem.remove();
+			}, { passive: true });
 			let y = 0;
+			if (elem.clientHeight >= g.layer.clientHeight) {
+				elem.style.top = '0px';
+				return resolve(elem.id);
+			}
 			const overline = Math.ceil(g.layer.clientHeight / lh);
 			do {
 				if (children.length > 0) {
 					elem.style.top = `${y * 1.25}em`;
-					if (!children.some(before => isCatchable(before, elem)) && !isOverflow(g.layer, elem)) {
-						return elem;
-					}
+					if (!children.some(before => isCatchable(before, elem)) && !isOverflow(g.layer, elem)) return resolve(elem.id);
 				} else {
 					elem.style.top = '0px';
-					return elem;
+					return resolve(elem.id);
 				}
 			} while (y++ < overline);
 			do {
 				const tops = children.map(child => child.offsetTop);
 				const lines = new Array(y).fill(0);
-				tops.forEach(v => {
-					lines[v / lh]++;
-				});
+				tops.forEach(v => { lines[v / lh]++; });
 				let ln = -1, i = 0;
 				do {
 					ln = lines.indexOf(i++);
-				} while (ln < 0);
+				 } while (ln < 0);
 				elem.style.top = `${ln * 1.25}em`;
 			} while (isOverflow(g.layer, elem) && y-- > 0);
-			return elem;
-		}
-	} else if (action.markChatItemAsDeletedAction) {
-		g.layer?.querySelector('#' + action.markChatItemAsDeletedAction.targetItemId)?.remove();
-	} else if (action.markChatItemsByAuthorAsDeletedAction) {
-		g.layer?.querySelectorAll(`[data-channel="${action.markChatItemsByAuthorAsDeletedAction.externalChannelId}"]`).forEach(elem => elem.remove());
-	} else if (action.replaceChatItemAction) {
-		const target = g.layer?.querySelector('#' + action.replaceChatItemAction.targetItemId);
-		if (target) {
-			const item = action.replaceChatItemAction.replacementItem;
-			const elem = parseChatItem(item);
-			if (elem) {
-				target.replaceWith(elem);
+			return resolve(elem.id);
+		}));
+		
+		// Delete
+		const deleting = filtered.delete.map(action => new Promise((resolve, reject) => {
+			const id = action.markChatItemAsDeletedAction.targetItemId;
+			const target = root.getElementById(id);
+			if (target) {
+				target.remove();
+				resolve(id);
+			} else {
+				reject('Failed to delete message: #' + id);
 			}
-		}
+		}));
+
+		// Delete by author
+		const deletingAuthor = filtered.delete_author.map(action => new Promise((resolve, reject) => {
+			const id = action.markChatItemsByAuthorAsDeletedAction.externalChannelId;
+			const targets = root.querySelectorAll(`[data-author-id="${id}"]`);
+			if (targets.length > 0) {
+				targets.forEach(elem => elem.remove());
+				resolve(id);
+			} else {
+				reject('Failed to delate message: (Author ID) ' + id);
+			}
+		}));
+		
+		// Replace
+		const replacing = filtered.replace.map(action => new Promise((resolve, reject) => {
+			const id = action.replaceChatItemAction.targetItemId;
+			const target = root.getElementById(id);
+			if (target) {
+				const replacement = action.replaceChatItemAction.replacementItem;
+				const elem = parseChatItem(replacement);
+				if (elem) {
+					target.replaceWith(elem);
+					resolve(id);
+				} else {
+					reject('Failed to replace message: #' + id);
+				}
+			} else {
+				reject('Failed to replace message: #' + id);
+			}
+		}));
 	}
-	return null;
 }
 
-const parser = {
-	/**
-	 * @param { LiveChat.Runs | LiveChat.SimpleText | undefined } message
-	 * @param {number} startIndex
-	 * @param {number} endIndex
-	 */
-	message(message, startIndex = 0, endIndex = 0) {
-		if (message) {
-			if ('runs' in message) {
-				const runs = startIndex || endIndex ? message.runs.slice(startIndex, endIndex || undefined) : message.runs;
-				return runs.map(r => {
-					if ('text' in r) {
-						return r.bold ? `<b>${r.text}</b>` : r.text;
-					} else if (g.storage.others.emoji) {
-						switch (g.storage.others.emoji) {
-							case g.enum.EMOJI_ALL: {
-								const thumbnail = r.emoji.image.thumbnails.slice(-1)[0];
-								return thumbnail ? `<img class="emoji" src="${thumbnail.url}">` : `<span class="emoji">${r.emoji.emojiId}</span>`;
-							}
-							case g.enum.EMOJI_LABEL: {
-								return `<span class="emoji">${r.emoji.image.accessibility.accessibilityData.label}</span>`;
-							}
-							case g.enum.EMOJI_SHORTCUT: {
-								return `<span class="emoji">${r.emoji.shortcuts[0]}</span>`;
-							}
-						}
-					}
-				}).join('');
-			} else {
-				const text = startIndex || endIndex ? message.simpleText.slice(startIndex, endIndex || undefined): message.simpleText;
-				return text;
-			}
-		} else {
-			return '';
-		}
-	},
-	/**
-	 * @param {LiveChat.RendererContent} renderer
-	 */
-	author(renderer) {
-		return {
-			id: renderer.authorExternalChannelId,
-			class: renderer.authorBadges?.map(b => b.liveChatAuthorBadgeRenderer.customThumbnail ? 'member' : b.liveChatAuthorBadgeRenderer.icon?.iconType.toLowerCase()),
-			name: renderer.authorName.simpleText,
-			photo: renderer.authorPhoto.thumbnails,
-		};
-	},
-};
-
 /**
- * 
  * @param {LiveChat.AnyRenderer} item 
  */
 function parseChatItem(item) {
-	if ('liveChatTextMessageRenderer' in item) {
-		const renderer = item.liveChatTextMessageRenderer;
-		const message = parser.message(renderer.message);
-		const author = parser.author(renderer);
-		const span = document.createElement('span');
-		span.id = renderer.id;
-		const authorType = author.class ? author.class.join(' ') : 'normal';
-		span.className = 'text ' + authorType;
-		span.dataset.author = author.name;
-		span.dataset.channel = author.id;
-		span.innerHTML = `<span class="header"><img class="photo" src="${author.photo[0].url}" loading="lazy"><span class="name">${author.name}</span></span><span class="body ${authorType}">${message}</span>`;
-		return span;
-	} else if ('liveChatMembershipItemRenderer' in item) {
-		const renderer = item.liveChatMembershipItemRenderer;
-		const message = parser.message(renderer.message);
-		const author = parser.author(renderer);
-		const div = document.createElement('div');
-		div.id = renderer.id;
-		div.dataset.author = author.name;
-		div.dataset.channel = author.id;
-		const headerText = (() => {
-			if (renderer.headerPrimaryText) {
-				div.className = 'milestone';
-				return parser.message(renderer.headerPrimaryText, 1);
-			} else {
-				div.className = 'newmember';
-				return renderer.headerSubtext ? parser.message(renderer.headerSubtext) : '';
-			}
-		})();
-		div.innerHTML = `<div class="header" style="background-color:rgba(${getColorRGB(0xff0f9d58).join()},var(--yt-live-chat-flusher-background-opacity));">\
-<img class="photo" src="${author.photo[0].url}" loading="lazy">\
-<span class="name">${author.name}</span>\
-<span class="months">${headerText}</span>\
-</div><div class="body" style="background-color:rgba(${getColorRGB(0xff0a8043).join()},var(--yt-live-chat-flusher-background-opacity));">${message}</div>`;
-		return div;
-	} else if ('liveChatPaidMessageRenderer' in item) {
-		const renderer = item.liveChatPaidMessageRenderer;
-		const message = parser.message(renderer.message);
-		const author = parser.author(renderer);
-		const div = document.createElement('div');
-		div.id = renderer.id;
-		div.className = 'paid';
-		div.dataset.author = author.name;
-		div.dataset.channel = author.id;
-		div.innerHTML = `<div class="header" style="background-color:rgba(${getColorRGB(renderer.headerBackgroundColor).join()},var(--yt-live-chat-flusher-background-opacity))">\
-<img class="photo" src="${author.photo[0].url}" loading="lazy">\
-<span class="name">${author.name}</span>\
-<span class="amount">${renderer.purchaseAmountText.simpleText}</span>\
-</div><div class="body" style="background-color:rgba(${getColorRGB(renderer.bodyBackgroundColor).join()},var(--yt-live-chat-flusher-background-opacity))">${message}</div>`;
-		return div;
-	} else if ('liveChatPaidStickerRenderer' in item) {
-		const renderer = item.liveChatPaidStickerRenderer;
-		const author = parser.author(renderer);
-		const sticker = renderer.sticker.thumbnails.find(t => 2 * 36 <= t.width) || renderer.sticker.thumbnails.pop();
-		const div = document.createElement('div');
-		div.id = renderer.id;
-		div.className = 'sticker';
-		div.dataset.author = author.name;
-		div.dataset.channel = author.id;
-		div.innerHTML = `<div class="header" style="background-color:rgba(${getColorRGB(renderer.backgroundColor).join()},var(--yt-live-chat-flusher-background-opacity))">\
-<img class="photo" src="${author.photo[0].url}" loading="lazy">\
-<span class="name">${author.name}</span>\
-<span class="amount">${renderer.purchaseAmountText.simpleText}</span>\
-</div>` + (sticker ? `<figure class="body" style="background-color:rgba(${getColorRGB(renderer.moneyChipBackgroundColor).join()},var(--yt-live-chat-flusher-background-opacity)">\
-<img src="${sticker.url}"></figure>` : '');
-		return div;
-	} else if ('liveChatViewerEngagementMessageRenderer' in item) {
-		// TODO: POLL
-		const renderer = item.liveChatViewerEngagementMessageRenderer;
-		console.log(renderer);
-		if (renderer.icon.iconType === 'POLL') {
-			const message = parser.message(renderer.message);
-			const div = document.createElement('div');
-			div.id = renderer.id;
-			div.className = 'engagement-poll';
-			div.innerHTML = `<div class="body">${message.replace('\n', '<br>')}</div>`;
-			return div;
+	const key = Object.keys(item)[0];
+	const renderer = item[key];
+	const elem = document.createElement('div');
+	elem.id = renderer.id;
+	elem.dataset.authorId = renderer.authorExternalChannelId;
+	switch (key) {
+		case 'liveChatTextMessageRenderer': {
+			elem.className = 'text ' + getAuthorType(renderer);
+			elem.innerHTML = `<span class="header"><img class="photo" src="${renderer.authorPhoto.thumbnails[0].url}" loading="lazy"><span class="name">${getChatMessage(renderer.authorName)}</span></span><span class="body">${getChatMessage(renderer.message)}</span><span class="tiny" hidden>${getChatMessage(renderer.message, { emoji: -1 })}</span>`;
+			break;
 		}
+		case 'liveChatMembershipItemRenderer': {
+			const { headerPrimaryText: primary, headerSubtext: sub } = renderer;
+			elem.className = primary ? 'milestone' : 'membership';
+			elem.innerHTML = `<div class="header" style="background-color:rgba(${getColorRGB(0xff0f9d58).join()},var(--yt-live-chat-flusher-background-opacity))"><img class="photo" src="${renderer.authorPhoto.thumbnails[0].url}" loading="lazy"><span class="name">${getChatMessage(renderer.authorName)}</span><span class="months">${getChatMessage(primary || sub, { start: primary ? 1 : 0 })}</span></div><div class="body" style="background-color:rgba(${getColorRGB(0xff0a8043).join()},var(--yt-live-chat-flusher-background-opacity))">${getChatMessage(renderer.message)}</div>`;
+			break;
+		}
+		case 'liveChatPaidMessageRenderer': {
+			elem.id = renderer.id;
+			elem.className = 'superchat';
+			elem.innerHTML = `<div class="header" style="background-color:rgba(${getColorRGB(renderer.headerBackgroundColor).join()},var(--yt-live-chat-flusher-background-opacity))"><img class="photo" src="${renderer.authorPhoto.thumbnails[0].url}" loading="lazy"><span class="name">${getChatMessage(renderer.authorName)}</span><span class="amount">${getChatMessage(renderer.purchaseAmountText)}</span></div><div class="body" style="background-color:rgba(${getColorRGB(renderer.bodyBackgroundColor).join()},var(--yt-live-chat-flusher-background-opacity))">${getChatMessage(renderer.message)}</div>`;
+			break;
+		}
+		case 'liveChatPaidStickerRenderer': {
+			elem.id = renderer.id;
+			elem.className = 'supersticker';
+			elem.innerHTML = `<div class="header" style="background-color:rgba(${getColorRGB(renderer.backgroundColor).join()},var(--yt-live-chat-flusher-background-opacity))"><img class="photo" src="${renderer.authorPhoto.thumbnails[0].url}" loading="lazy"><span class="name">${getChatMessage(renderer.authorName)}</span><span class="amount">${getChatMessage(renderer.purchaseAmountText)}</span></div><figure class="body" style="background-color:rgba(${getColorRGB(renderer.moneyChipBackgroundColor).join()},var(--yt-live-chat-flusher-background-opacity)"><img class="sticker" src="${(renderer.sticker.thumbnails.find(t => 2 * 36 <= (t.width || 36)) || renderer.sticker.thumbnails[0]).url}" loading="lazy"></figure>`;
+			break;
+		}
+		case 'liveChatViewerEngagementMessageRenderer': {
+			switch (renderer.icon.iconType) {
+				case 'POLL': {
+					const message = getChatMessage(renderer.message);
+					elem.className = 'engagement-poll';
+					elem.innerHTML = `<div class="body">${message}</div>`;
+					break;
+				}
+				case 'YOUTUBE_ROUND': break;
+				default: console.log(renderer);
+			}
+			break;
+		}
+		case 'liveChatPlaceholderItemRenderer': break;
+		// liveChatModeChangeMessageRenderer
+		default: console.log(item);
 	}
+	return elem;
 }
 
 /**
- * 
+ * @param {LiveChat.RendererContent} renderer
+ */
+function getAuthorType(renderer) {
+	const statuses = ['owner', 'moderator', 'member', 'verified'];
+	const classes = renderer.authorBadges?.map(b => b.liveChatAuthorBadgeRenderer.customThumbnail ? 'member' : b.liveChatAuthorBadgeRenderer.icon?.iconType.toLowerCase() || '') || [];
+	for (const s of statuses) if (classes.includes(s)) return s;
+	return 'normal';
+}
+
+/**
+ * @param { LiveChat.Runs | LiveChat.SimpleText | undefined } message
+ * @param { { start?: number, end?: number, emoji?: number } } options
+ */
+function getChatMessage(message, options = {}) {
+	if (message) {
+		const { start, end } = options;
+		if ('runs' in message) {
+			const runs = start || end ? message.runs.slice(start, end) : message.runs;
+			return runs.map(r => {
+				if ('text' in r) {
+					let text = escapeHtml(r.text).replace(/\n/g, '<br>');
+					if (r.italics) text = '<i>' + text + '</i>';
+					if (r.bold) text = '<b>' + text + '</b>';
+					if (r.navigationEndpoint) {
+						const icon = document.querySelector('iron-iconset-svg #open_in_new');
+						const { url, nofollow } = r.navigationEndpoint.urlEndpoint;
+						text = `<a class="open_in_new" href="${url}" target="_blank" title="${text}" rel="${nofollow ? 'nofollow' : ''}"><svg viewBox="0 0 24 24" fill="currentColor" stroke="#000" paint-order="stroke">${icon?.innerHTML}</svg></a>`;
+					}
+					return text;
+				} else {
+					const emoji = options.emoji ?? g.storage.others.emoji;
+					if (!emoji) return '';
+					const e = g.index.emoji;
+					switch (emoji) {
+						case e.all: {
+							const thumbnail = r.emoji.image.thumbnails.slice(-1)[0];
+							return thumbnail ? `<img class="emoji" src="${thumbnail.url}">` : `<span class="emoji">${r.emoji.emojiId}</span>`;
+						}
+						case e.label: return `<span class="emoji">${r.emoji.image.accessibility.accessibilityData.label}</span>`;
+						case e.shortcut: return `<span class="emoji">${r.emoji.shortcuts?.[0] || ''}</span>`;
+						case -1: return r.emoji.emojiId || r.emoji.shortcuts?.[0] || '';
+						default: return '';
+					}
+				}
+			}).join('');
+		} else {
+			return escapeHtml(start || end ? message.simpleText.slice(start, end): message.simpleText);
+		}
+	} else {
+		return '';
+	}
+}
+
+/** @param {string} str */
+function escapeHtml(str) {
+	return str.replace(/&/g, '&amp;').replace(/>/g, '&gt;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+}
+
+/**
  * @param {Element} before 
  * @param {Element} after 
  */
@@ -719,7 +800,6 @@ function isCatchable(before, after) {
 }
 
 /**
- * 
  * @param {Element} parent 
  * @param {Element} child 
  */
@@ -737,7 +817,6 @@ function getColorRGB(long) {
 }
 
 /**
- * 
  * @param {string} color 
  * @param {string} inherit 
  */

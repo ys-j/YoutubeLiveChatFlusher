@@ -44,6 +44,27 @@
 	"opacity_1": {
 		"message": "不透過"
 	},
+	"max_width": {
+		"message": "最大長さ"
+	},
+	"word_wrap": {
+		"message": "折り返し"
+	},
+	"word_wrap_0": {
+		"message": "折り返しなし"
+	},
+	"word_wrap_1": {
+		"message": "モード1"
+	},
+	"word_wrap_2": {
+		"message": "モード2"
+	},
+	"display_limit": {
+		"message": "最大表示数"
+	},
+	"unlimited": {
+		"message": "無制限"
+	},
 	"simultaneous_message": {
 		"message": "同時刻チャット"
 	},
@@ -54,7 +75,10 @@
 		"message": "読み込む毎に最初のチャットのみ流す"
 	},
 	"simultaneous_message_2": {
-		"message": "同じ内容のチャットを統合する"
+		"message": "同じ内容を統合する"
+	},
+	"simultaneous_message_3": {
+		"message": "直前を含めて同じ内容を統合する"
 	},
 	"emoji_expression": {
 		"message": "絵文字の表示"
@@ -92,8 +116,8 @@
 	"sticker": {
 		"message": "スーパーステッカー"
 	},
-	"new_membership": {
-		"message": "新規メンバー"
+	"membership": {
+		"message": "メンバーシップ"
 	},
 	"milestone": {
 		"message": "マイルストーン"
@@ -125,10 +149,10 @@
 	"display-chat_message": {
 		"message": "本文"
 	},
-	"tooltip-new_membership_message": {
+	"tooltip-membership_message": {
 		"message": "新規メンバーのメッセージ"
 	},
-	"display-new_membership_message": {
+	"display-membership_message": {
 		"message": "本文"
 	},
 	"tooltip-sticker": {

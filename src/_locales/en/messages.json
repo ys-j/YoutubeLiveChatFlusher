@@ -44,6 +44,27 @@
 	"opacity_1": {
 		"message": "1"
 	},
+	"max_width": {
+		"message": "Max Width"
+	},
+	"word_wrap": {
+		"message": "Wrap"
+	},
+	"word_wrap_0": {
+		"message": "No Wrap"
+	},
+	"word_wrap_1": {
+		"message": "Wrap Mode 1"
+	},
+	"word_wrap_2": {
+		"message": "Wrap Mode 2"
+	},
+	"display_limit": {
+		"message": "Display Limit"
+	},
+	"unlimited": {
+		"message": "Unlimited"
+	},
 	"simultaneous_message": {
 		"message": "Simultaneous Msg."
 	},
@@ -55,6 +76,9 @@
 	},
 	"simultaneous_message_2": {
 		"message": "Merge same messages"
+	},
+	"simultaneous_message_3": {
+		"message": "Merge same messages including last one"
 	},
 	"emoji_expression": {
 		"message": "Emoji Expression"
@@ -92,8 +116,8 @@
 	"sticker": {
 		"message": "Super Sticker"
 	},
-	"new_membership": {
-		"message": "New Membership"
+	"membership": {
+		"message": "Membership"
 	},
 	"milestone": {
 		"message": "Milestone"
@@ -125,10 +149,10 @@
 	"display-chat_message": {
 		"message": "Message"
 	},
-	"tooltip-new_membership_message": {
-		"message": "New Membership Message"
+	"tooltip-membership_message": {
+		"message": "New/Upgraded Membership Message"
 	},
-	"display-new_membership_message": {
+	"display-membership_message": {
 		"message": "Message"
 	},
 	"tooltip-sticker": {
