@@ -172,5 +172,14 @@
 	},
 	"display-custom_color": {
 		"message": "カスタム色"
+	},
+	"translation": {
+		"message": "メッセージ翻訳"
+	},
+	"disabled": {
+		"message": "しない"
+	},
+	"addable_by_firefox_language_settings": {
+		"message": "選択肢はabout:preferences#languagesGroupから追加可能です"
 	}
 }

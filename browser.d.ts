@@ -618,7 +618,7 @@ declare namespace browser {
 		function getMessage(messageName: string): string
 		function getMessage(messageName: string, substitutions: string | string[]): string
 		function getUILanguage(): LanguageCode
-		function detectLanguage(text: string): Promise<{ isReliable: boolean, languages: [language: LanguageCode, percentage: number ]}>
+		function detectLanguage(text: string): Promise<{ isReliable: boolean, languages: { language: LanguageCode, percentage: number }[]}>
 	}
 	namespace identity {
 		function getRedirectURL(): string

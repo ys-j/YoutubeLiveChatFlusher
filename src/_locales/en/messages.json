@@ -172,5 +172,14 @@
 	},
 	"display-custom_color": {
 		"message": "Custom Color"
+	},
+	"translation": {
+		"message": "Message Translation"
+	},
+	"disabled": {
+		"message": "Disabled"
+	},
+	"addable_by_firefox_language_settings": {
+		"message": "Choices are addable by about:preferences#languagesGroup"
 	}
 }

@@ -42,6 +42,7 @@ const g = {
 			limit: 0,
 			simultaneous: 2,
 			emoji: 1,
+			translation: 0,
 		},
 		parts: {
 			normal: { photo: false, name: false, message: true, color: '' },
@@ -187,6 +188,11 @@ class LiveChatPanelElement extends HTMLElement {
 				`<div class="superchat"><label class="toggle photo" title="${getMessage('tooltip-author_photo')}"><input type="checkbox" name="milestone_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${getMessage('tooltip-author_name')}"><input type="checkbox" name="milestone_display" value="name"><span>${getMessage('display-author_name')}</span></label><label class="toggle amount" title="${getMessage('tooltip-milestone_months')}"><input type="checkbox" name="milestone_display" value="months"><span>${getMessage('display-milestone_months')}</span></label><br><label class="toggle body" title="${getMessage('tooltip-chat_message')}"><input type="checkbox" name="milestone_display" value="message"><span>${getMessage('display-chat_message')}</span></label></div>`,
 				`<div><label title="${getMessage('tooltip-custom_color')}"><input type="checkbox" name="milestone_display" value="color">${getMessage('display-custom_color')}</label><input type="color" name="milestone_color"></div>`,
 			],
+			[
+				`<div>${getMessage('translation')}</div>`,
+				`<div><select name="translation" title="${getMessage('addable_by_firefox_language_settings')}"><option value="0">${getMessage('disabled')}${navigator.languages.map((lang, i) => `<option value="${i + 1}">` + lang).join('')}</select>▼</div>`,
+				`<div>(beta feature)</div>`,
+			],
 		].map(row => '<div>' + row.join('') + '</div>').join('');
 		
 		const selects = form.querySelectorAll('select');
@@ -194,11 +200,14 @@ class LiveChatPanelElement extends HTMLElement {
 			if (select.name in g.storage.others) {
 				const val = g.storage.others[select.name];
 				select.selectedIndex = val;
-				if (g.layer && select.name === 'wrap') {
-					g.layer.style.setProperty('--yt-live-chat-flusher-message-hyphens', g.array.hyphens[val]);
-					g.layer.style.setProperty('--yt-live-chat-flusher-message-word-break', g.array.wordBreak[val]);
-					g.layer.style.setProperty('--yt-live-chat-flusher-message-white-space', g.array.whiteSpace[val]);
-					g.layer.style.setProperty('--yt-live-chat-flusher-max-width', g.array.maxWidth[val] || g.storage.styles.max_width);
+				switch (select.name) {
+					case 'wrap': if (g.layer) {
+						g.layer.style.setProperty('--yt-live-chat-flusher-message-hyphens', g.array.hyphens[val]);
+						g.layer.style.setProperty('--yt-live-chat-flusher-message-word-break', g.array.wordBreak[val]);
+						g.layer.style.setProperty('--yt-live-chat-flusher-message-white-space', g.array.whiteSpace[val]);
+						g.layer.style.setProperty('--yt-live-chat-flusher-max-width', g.array.maxWidth[val] || g.storage.styles.max_width);
+					}
+					break;
 				}
 			}
 		}
@@ -251,12 +260,15 @@ class LiveChatPanelElement extends HTMLElement {
 				if (name in g.storage.others) {
 					const val = parseInt(elem.value);
 					g.storage.others[name] = val;
-					if (name === 'wrap' && g.layer) {
-						g.layer.style.setProperty('--yt-live-chat-flusher-message-hyphens', g.array.hyphens[val]);
-						g.layer.style.setProperty('--yt-live-chat-flusher-message-word-break', g.array.wordBreak[val]);
-						g.layer.style.setProperty('--yt-live-chat-flusher-message-white-space', g.array.whiteSpace[val]);
-						g.layer.style.setProperty('--yt-live-chat-flusher-max-width', g.array.maxWidth[val] || g.storage.styles.max_width);
-						updateCurrentItemStyle();
+					switch (name) {
+						case 'wrap': if (g.layer) {
+							g.layer.style.setProperty('--yt-live-chat-flusher-message-hyphens', g.array.hyphens[val]);
+							g.layer.style.setProperty('--yt-live-chat-flusher-message-word-break', g.array.wordBreak[val]);
+							g.layer.style.setProperty('--yt-live-chat-flusher-message-white-space', g.array.whiteSpace[val]);
+							g.layer.style.setProperty('--yt-live-chat-flusher-max-width', g.array.maxWidth[val] || g.storage.styles.max_width);
+							updateCurrentItemStyle();
+						}
+						break;
 					}
 				}
 			} else if (elem.classList.contains('styles')) {
@@ -426,7 +438,7 @@ function detectPageType() {
 function getLayer() {
 	const layer = /** @type {LiveChatLayerElement} */ (document.createElement(g.tag.layer));
 	layer.addEventListener('contextmenu', e => {
-		/** @type {HTMLElement?} */
+		/** @ts-ignore @type {HTMLElement?} */
 		const origin = e.originalTarget;
 		if (origin) {
 			e.preventDefault();
@@ -435,16 +447,16 @@ function getLayer() {
 		}
 	}, { passive: false });
 	layer.addEventListener('click', e => {
-		/** @type {HTMLElement?} */
+		/** @ts-ignore @type {HTMLElement?} */
 		const origin = e.originalTarget;
 		if (origin?.tagName === 'A') {
 			e.stopPropagation();
 		} else {
-			e.target?.parentElement.click();
+			/** @type {HTMLElement?} */ (e.target)?.parentElement?.click();
 		}
 	}, { passive: true });
 	layer.addEventListener('wheel', e => {
-		/** @type {HTMLElement?} */
+		/** @ts-ignore @type {HTMLElement?} */
 		const origin = e.originalTarget;
 		if (origin) {
 			e.preventDefault();
@@ -522,13 +534,17 @@ function updateCurrentItemStyle(type = undefined) {
 	if (!g.layer) return;
 	const children = g.layer.shadowRoot?.children;
 	if (children) {
-		const items = type ? Array.from(children).filter(c => c.classList.contains(type)) : children;
-		for (const c of items) {
-			const isLong = c.clientWidth >= g.layer.clientWidth * (parseInt(g.storage.styles.max_width) / 100 || 1);
-			c.classList[isLong ? 'add' : 'remove']('wrap');
-			/** @type {HTMLElement} */ (c).style.setProperty('--yt-live-chat-flusher-translate-x', `-${g.layer.clientWidth + c.clientWidth}px`);
-		}
+		const items = Array.from(children).filter(type ? c => c.classList.contains(type) : c => c.tagName !== 'LINK');
+		/** @type {HTMLElement[]} */ (items).forEach(updateCurrentItem);
 	}
+}
+
+/** @param {HTMLElement} item */
+function updateCurrentItem(item) {
+	if (!g.layer) return;
+	const isLong = item.clientWidth >= g.layer.clientWidth * (parseInt(g.storage.styles.max_width) / 100 || 1);
+	item.classList[isLong ? 'add' : 'remove']('wrap');
+	item.style.setProperty('--yt-live-chat-flusher-translate-x', `-${g.layer.clientWidth + item.clientWidth}px`);
 }
 
 /**
@@ -552,19 +568,19 @@ function handleYtAction(e) {
 		// Add
 		const fs = parseInt(g.storage.styles.font_size) || 36, lh = fs * 1.25;
 		const sv = g.storage.others.simultaneous, si = g.index.simultaneous;
-		const last = sv === si.last_merge ? root.lastElementChild : null;
-		const bodies = last ? [ `<!-- ${last.className} -->` + (last.querySelector('.tiny')?.textContent || '') ] : [];
+		const last = sv === si.last_merge ? /** @type {HTMLElement?} */ (root.lastElementChild) : null;
+		const bodies = last ? [ `<!-- ${last.className} -->` + (last.dataset.text || '') ] : [];
 		const ids = last ? [last.id] : [];
 		if (sv === si.first) {
 			const notext = filtered.add.slice(1).filter(a => !a.addChatItemAction.item.liveChatTextMessageRenderer);
 			filtered.add.splice(1, Infinity, ...notext);
 		}
-		const adding = filtered.add.map(action => new Promise((resolve, reject) => {
-			const elem = parseChatItem(action.addChatItemAction.item);
+		const adding = filtered.add.map(action => new Promise(async (resolve, reject) => {
+			const elem = await parseChatItem(action.addChatItemAction.item);
 			if (!g.layer || !root) return reject('No layer element');
 			if (!elem) return reject('No target element');
 			if (sv === si.merge || sv === si.last_merge) {
-				const body = `<!-- ${elem.className} -->` + (elem.querySelector('.tiny')?.textContent || '');
+				const body = elem.dataset.text ? `<!-- ${elem.className} -->` + elem.dataset.text : '';
 				if (body) {
 					const index = bodies.indexOf(body);
 					if (index < 0) {
@@ -573,12 +589,18 @@ function handleYtAction(e) {
 					} else {
 						const earlier = root.getElementById(ids[index]);
 						/** @type {HTMLElement | null | undefined} */
-						const name = earlier?.querySelector('.name');
+						const _name = earlier?.querySelector('.name');
+						/** @type {HTMLSpanElement?} */
+						const name = elem.querySelector('.name');
 						/** @type {HTMLImageElement?} */
 						const thumbnail = elem.querySelector('.photo');
-						if (name && thumbnail) {
-							name?.insertAdjacentHTML('beforebegin', `<img class="photo" src="${thumbnail.src}" loading="lazy">`);
-							name.hidden = true;
+						if (earlier && _name && thumbnail) {
+							_name.insertAdjacentHTML('beforebegin', `<a href="/channel/${elem.dataset.authorId}" target="_blank" title="${name?.textContent}"><img class="photo" src="${thumbnail.src}" loading="lazy"></a>`);
+							if (!_name.hidden) {
+								_name.hidden = true;
+								_name.textContent = '';
+							}
+							updateCurrentItem(earlier);
 						}
 						return resolve(elem.id);
 					}
@@ -589,6 +611,10 @@ function handleYtAction(e) {
 			const isLong = elem.clientWidth >= g.layer.clientWidth * (parseInt(g.storage.styles.max_width) / 100 || 1)
 			if (isLong) elem.classList.add('wrap');
 			elem.style.setProperty('--yt-live-chat-flusher-translate-x', `-${g.layer.clientWidth + elem.clientWidth}px`);
+			const body = elem.lastElementChild?.textContent;
+			if (body) browser.i18n.detectLanguage(body).then(result => {
+				if (result.isReliable) elem.lang = result.languages[0].language;
+			});
 			elem.addEventListener('animationend', e => {
 				elem.remove();
 			}, { passive: true });
@@ -612,9 +638,8 @@ function handleYtAction(e) {
 				const lines = new Array(y).fill(0);
 				tops.forEach(v => { lines[v / lh]++; });
 				let ln = -1, i = 0;
-				do {
-					ln = lines.indexOf(i++);
-				 } while (ln < 0);
+				do ln = lines.indexOf(i++);
+				while (ln < 0);
 				elem.style.top = `${ln * 1.25}em`;
 			} while (isOverflow(g.layer, elem) && y-- > 0);
 			return resolve(elem.id);
@@ -645,12 +670,12 @@ function handleYtAction(e) {
 		}));
 		
 		// Replace
-		const replacing = filtered.replace.map(action => new Promise((resolve, reject) => {
+		const replacing = filtered.replace.map(action => new Promise(async (resolve, reject) => {
 			const id = action.replaceChatItemAction.targetItemId;
 			const target = root.getElementById(id);
 			if (target) {
 				const replacement = action.replaceChatItemAction.replacementItem;
-				const elem = parseChatItem(replacement);
+				const elem = await parseChatItem(replacement);
 				if (elem) {
 					target.replaceWith(elem);
 					resolve(id);
@@ -667,42 +692,66 @@ function handleYtAction(e) {
 /**
  * @param {LiveChat.AnyRenderer} item 
  */
-function parseChatItem(item) {
+async function parseChatItem(item) {
 	const key = Object.keys(item)[0];
 	const renderer = item[key];
 	const elem = document.createElement('div');
-	elem.id = renderer.id;
+	elem.id = renderer.id || '';
 	elem.dataset.authorId = renderer.authorExternalChannelId;
+	const name = getChatMessage(renderer.authorName);
+	const author = name ? `<a href="/channel/${renderer.authorExternalChannelId}" target="_blank" title="${name}"><img class="photo" src="${renderer.authorPhoto.thumbnails[0].url}" loading="lazy"></a><span class="name">${name}</span>` : '';
+	const message = {
+		orig: renderer.message ? getChatMessage(renderer.message) : '',
+		trans: '',
+	};
+	const tl = [null, ...navigator.languages][g.storage.others.translation];
+	if (tl && message.orig) {
+		const text = message.orig.split(/(<.*?>)/).filter(s => s.length);
+		message.trans = await Promise.all(text.map(q => q.startsWith('<') ? q : browser.i18n.detectLanguage(q).then(d => {
+			const sl = d.isReliable ? d.languages[0].language : 'auto';
+			return tl === sl ? q : fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&dt=bd&dj=1&q=` + encodeURIComponent(q)).then(res => res.json()).then(json => json.sentences.map(s => s.trans).join(''));
+		}))).then(s => s.join(''));
+	}
 	switch (key) {
 		case 'liveChatTextMessageRenderer': {
 			elem.className = 'text ' + getAuthorType(renderer);
-			elem.innerHTML = `<span class="header"><img class="photo" src="${renderer.authorPhoto.thumbnails[0].url}" loading="lazy"><span class="name">${getChatMessage(renderer.authorName)}</span></span><span class="body">${getChatMessage(renderer.message)}</span><span class="tiny" hidden>${getChatMessage(renderer.message, { emoji: -1 })}</span>`;
+			elem.innerHTML = [
+				`<span class="header">${author}</span>`,
+				`<span class="body">${message.trans || message.orig}</span>`,
+			].join('');
+			elem.dataset.text = getChatMessage(renderer.message, { emoji: -1 });
 			break;
 		}
 		case 'liveChatMembershipItemRenderer': {
 			const { headerPrimaryText: primary, headerSubtext: sub } = renderer;
 			elem.className = primary ? 'milestone' : 'membership';
-			elem.innerHTML = `<div class="header" style="background-color:rgba(${getColorRGB(0xff0f9d58).join()},var(--yt-live-chat-flusher-background-opacity))"><img class="photo" src="${renderer.authorPhoto.thumbnails[0].url}" loading="lazy"><span class="name">${getChatMessage(renderer.authorName)}</span><span class="months">${getChatMessage(primary || sub, { start: primary ? 1 : 0 })}</span></div><div class="body" style="background-color:rgba(${getColorRGB(0xff0a8043).join()},var(--yt-live-chat-flusher-background-opacity))">${getChatMessage(renderer.message)}</div>`;
+			elem.innerHTML = [
+				`<div class="header" style="background-color:rgba(${getColorRGB(0xff0f9d58).join()},var(--yt-live-chat-flusher-background-opacity))">${author}<span class="months">${getChatMessage(primary || sub, { start: primary ? 1 : 0 })}</span></div>`,
+				`<div class="body" style="background-color:rgba(${getColorRGB(0xff0a8043).join()},var(--yt-live-chat-flusher-background-opacity))">${message.trans || message.orig}</div>`,
+			].join('');
 			break;
 		}
 		case 'liveChatPaidMessageRenderer': {
-			elem.id = renderer.id;
 			elem.className = 'superchat';
-			elem.innerHTML = `<div class="header" style="background-color:rgba(${getColorRGB(renderer.headerBackgroundColor).join()},var(--yt-live-chat-flusher-background-opacity))"><img class="photo" src="${renderer.authorPhoto.thumbnails[0].url}" loading="lazy"><span class="name">${getChatMessage(renderer.authorName)}</span><span class="amount">${getChatMessage(renderer.purchaseAmountText)}</span></div><div class="body" style="background-color:rgba(${getColorRGB(renderer.bodyBackgroundColor).join()},var(--yt-live-chat-flusher-background-opacity))">${getChatMessage(renderer.message)}</div>`;
+			elem.innerHTML = [
+				`<div class="header" style="background-color:rgba(${getColorRGB(renderer.headerBackgroundColor).join()},var(--yt-live-chat-flusher-background-opacity))">${author}<span class="amount">${getChatMessage(renderer.purchaseAmountText)}</span></div>`,
+				`<div class="body" style="background-color:rgba(${getColorRGB(renderer.bodyBackgroundColor).join()},var(--yt-live-chat-flusher-background-opacity))">${message.trans || message.orig}</div>`,
+			].join('');
 			break;
 		}
 		case 'liveChatPaidStickerRenderer': {
-			elem.id = renderer.id;
 			elem.className = 'supersticker';
-			elem.innerHTML = `<div class="header" style="background-color:rgba(${getColorRGB(renderer.backgroundColor).join()},var(--yt-live-chat-flusher-background-opacity))"><img class="photo" src="${renderer.authorPhoto.thumbnails[0].url}" loading="lazy"><span class="name">${getChatMessage(renderer.authorName)}</span><span class="amount">${getChatMessage(renderer.purchaseAmountText)}</span></div><figure class="body" style="background-color:rgba(${getColorRGB(renderer.moneyChipBackgroundColor).join()},var(--yt-live-chat-flusher-background-opacity)"><img class="sticker" src="${(renderer.sticker.thumbnails.find(t => 2 * 36 <= (t.width || 36)) || renderer.sticker.thumbnails[0]).url}" loading="lazy"></figure>`;
+			elem.innerHTML = [
+				`<div class="header" style="background-color:rgba(${getColorRGB(renderer.backgroundColor).join()},var(--yt-live-chat-flusher-background-opacity))">${author}<span class="amount">${getChatMessage(renderer.purchaseAmountText)}</span></div>`,
+				`<figure class="body" style="background-color:rgba(${getColorRGB(renderer.moneyChipBackgroundColor).join()},var(--yt-live-chat-flusher-background-opacity)"><img class="sticker" src="${(renderer.sticker.thumbnails.find(t => 2 * 36 <= (t.width || 36)) || renderer.sticker.thumbnails[0]).url}" loading="lazy"></figure>`,
+			].join('');
 			break;
 		}
 		case 'liveChatViewerEngagementMessageRenderer': {
 			switch (renderer.icon.iconType) {
 				case 'POLL': {
-					const message = getChatMessage(renderer.message);
 					elem.className = 'engagement-poll';
-					elem.innerHTML = `<div class="body">${message}</div>`;
+					elem.innerHTML = `<div class="body">${message.trans || message.orig}</div>`;
 					break;
 				}
 				case 'YOUTUBE_ROUND': break;
@@ -758,7 +807,7 @@ function getChatMessage(message, options = {}) {
 						}
 						case e.label: return `<span class="emoji">${r.emoji.image.accessibility.accessibilityData.label}</span>`;
 						case e.shortcut: return `<span class="emoji">${r.emoji.shortcuts?.[0] || ''}</span>`;
-						case -1: return r.emoji.emojiId || r.emoji.shortcuts?.[0] || '';
+						case -1: return r.emoji.shortcuts?.[0] || r.emoji.emojiId || '';
 						default: return '';
 					}
 				}
