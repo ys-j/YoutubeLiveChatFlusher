@@ -1449,3 +1449,8 @@ declare namespace browser {
 		const onFocusChanged: events.Event<[windowId: integer]>
 	}
 }
+declare namespace content {
+	const WebSocket: WebSocket
+	const XMLHttpRequest: XMLHttpRequest
+	const fetch: WindowOrWorkerGlobalScope['fetch']
+}

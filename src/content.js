@@ -438,8 +438,7 @@ function detectPageType() {
 function getLayer() {
 	const layer = /** @type {LiveChatLayerElement} */ (document.createElement(g.tag.layer));
 	layer.addEventListener('contextmenu', e => {
-		/** @ts-ignore @type {HTMLElement?} */
-		const origin = e.originalTarget;
+		const origin = /** @type {HTMLElement?} */ (e.originalTarget);
 		if (origin) {
 			e.preventDefault();
 			e.stopPropagation();
@@ -447,8 +446,7 @@ function getLayer() {
 		}
 	}, { passive: false });
 	layer.addEventListener('click', e => {
-		/** @ts-ignore @type {HTMLElement?} */
-		const origin = e.originalTarget;
+		const origin = /** @type {HTMLElement?} */ (e.originalTarget);
 		if (origin?.tagName === 'A') {
 			e.stopPropagation();
 		} else {
@@ -456,8 +454,7 @@ function getLayer() {
 		}
 	}, { passive: true });
 	layer.addEventListener('wheel', e => {
-		/** @ts-ignore @type {HTMLElement?} */
-		const origin = e.originalTarget;
+		const origin = /** @type {HTMLElement?} */ (e.originalTarget);
 		if (origin) {
 			e.preventDefault();
 			if (origin.classList.contains('paused')) {
@@ -591,15 +588,11 @@ function handleYtAction(e) {
 						/** @type {HTMLElement | null | undefined} */
 						const _name = earlier?.querySelector('.name');
 						/** @type {HTMLSpanElement?} */
-						const name = elem.querySelector('.name');
-						/** @type {HTMLImageElement?} */
 						const thumbnail = elem.querySelector('.photo');
 						if (earlier && _name && thumbnail) {
-							_name.insertAdjacentHTML('beforebegin', `<a href="/channel/${elem.dataset.authorId}" target="_blank" title="${name?.textContent}"><img class="photo" src="${thumbnail.src}" loading="lazy"></a>`);
-							if (!_name.hidden) {
-								_name.hidden = true;
-								_name.textContent = '';
-							}
+							const parent = thumbnail.parentElement;
+							if (parent) _name.insertAdjacentElement('beforebegin', parent);
+							if (!_name.textContent)  _name.textContent = '';
 							updateCurrentItem(earlier);
 						}
 						return resolve(elem.id);
@@ -615,9 +608,7 @@ function handleYtAction(e) {
 			if (body) browser.i18n.detectLanguage(body).then(result => {
 				if (result.isReliable) elem.lang = result.languages[0].language;
 			});
-			elem.addEventListener('animationend', e => {
-				elem.remove();
-			}, { passive: true });
+			elem.addEventListener('animationend', _ => elem.remove() , { passive: true });
 			let y = 0;
 			if (elem.clientHeight >= g.layer.clientHeight) {
 				elem.style.top = '0px';
@@ -700,24 +691,36 @@ async function parseChatItem(item) {
 	elem.dataset.authorId = renderer.authorExternalChannelId;
 	const name = getChatMessage(renderer.authorName);
 	const author = name ? `<a href="/channel/${renderer.authorExternalChannelId}" target="_blank" title="${name}"><img class="photo" src="${renderer.authorPhoto.thumbnails[0].url}" loading="lazy"></a><span class="name">${name}</span>` : '';
-	const message = {
+	const msg = {
 		orig: renderer.message ? getChatMessage(renderer.message) : '',
 		trans: '',
 	};
 	const tl = [null, ...navigator.languages][g.storage.others.translation];
-	if (tl && message.orig) {
-		const text = message.orig.split(/(<.*?>)/).filter(s => s.length);
-		message.trans = await Promise.all(text.map(q => q.startsWith('<') ? q : browser.i18n.detectLanguage(q).then(d => {
-			const sl = d.isReliable ? d.languages[0].language : 'auto';
-			return tl === sl ? q : fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&dt=bd&dj=1&q=` + encodeURIComponent(q)).then(res => res.json()).then(json => json.sentences.map(s => s.trans).join(''));
-		}))).then(s => s.join(''));
+	if (tl && msg.orig) {
+		const text = msg.orig.split(/(\s*<.*?>\s*)/).filter(s => s.length);
+		msg.trans = await Promise.all(text.map(async q => {
+			if (q.startsWith('<')) {
+				return q;
+			} else {
+				const detection = await browser.i18n.detectLanguage(q);
+				const sl = detection.isReliable ? detection.languages[0].language : 'auto';
+				if (tl.split('-')[0] === sl) {
+					return q;
+				} else {
+					const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&dt=bd&dj=1&q=` + encodeURIComponent(q);
+					/** @type { { sentences: { trans: string }[] }? } */
+					const json = await content.fetch(url).then(res => res.json());
+					return json?.sentences.map(s => s.trans).join('') || '';
+				}
+			}
+		})).then(s => s.join(''));
 	}
 	switch (key) {
 		case 'liveChatTextMessageRenderer': {
 			elem.className = 'text ' + getAuthorType(renderer);
 			elem.innerHTML = [
 				`<span class="header">${author}</span>`,
-				`<span class="body">${message.trans || message.orig}</span>`,
+				`<span class="body">${msg.trans || msg.orig}</span>`,
 			].join('');
 			elem.dataset.text = getChatMessage(renderer.message, { emoji: -1 });
 			break;
@@ -727,7 +730,7 @@ async function parseChatItem(item) {
 			elem.className = primary ? 'milestone' : 'membership';
 			elem.innerHTML = [
 				`<div class="header" style="background-color:rgba(${getColorRGB(0xff0f9d58).join()},var(--yt-live-chat-flusher-background-opacity))">${author}<span class="months">${getChatMessage(primary || sub, { start: primary ? 1 : 0 })}</span></div>`,
-				`<div class="body" style="background-color:rgba(${getColorRGB(0xff0a8043).join()},var(--yt-live-chat-flusher-background-opacity))">${message.trans || message.orig}</div>`,
+				`<div class="body" style="background-color:rgba(${getColorRGB(0xff0a8043).join()},var(--yt-live-chat-flusher-background-opacity))">${msg.trans || msg.orig}</div>`,
 			].join('');
 			break;
 		}
@@ -735,7 +738,7 @@ async function parseChatItem(item) {
 			elem.className = 'superchat';
 			elem.innerHTML = [
 				`<div class="header" style="background-color:rgba(${getColorRGB(renderer.headerBackgroundColor).join()},var(--yt-live-chat-flusher-background-opacity))">${author}<span class="amount">${getChatMessage(renderer.purchaseAmountText)}</span></div>`,
-				`<div class="body" style="background-color:rgba(${getColorRGB(renderer.bodyBackgroundColor).join()},var(--yt-live-chat-flusher-background-opacity))">${message.trans || message.orig}</div>`,
+				`<div class="body" style="background-color:rgba(${getColorRGB(renderer.bodyBackgroundColor).join()},var(--yt-live-chat-flusher-background-opacity))">${msg.trans || msg.orig}</div>`,
 			].join('');
 			break;
 		}
@@ -751,7 +754,7 @@ async function parseChatItem(item) {
 			switch (renderer.icon.iconType) {
 				case 'POLL': {
 					elem.className = 'engagement-poll';
-					elem.innerHTML = `<div class="body">${message.trans || message.orig}</div>`;
+					elem.innerHTML = `<div class="body">${msg.trans || msg.orig}</div>`;
 					break;
 				}
 				case 'YOUTUBE_ROUND': break;
