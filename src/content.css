@@ -87,6 +87,7 @@ yt-live-chat-flusher-panel {
 	max-width: calc(100% - 20px);
 	overflow: scroll;
 	scrollbar-width: none;
+	user-select: none;
 }
 yt-live-chat-flusher-panel > .html5-video-info-panel-content > div {
 	margin: .5em 0;
@@ -109,8 +110,10 @@ yt-live-chat-flusher-panel > .html5-video-info-panel-content > div > div.superch
 yt-live-chat-flusher-panel > .html5-video-info-panel-content > div > div > * + :not(span) {
 	margin-left: .5em;
 }
-yt-live-chat-flusher-panel label.toggle {
+yt-live-chat-flusher-panel label {
 	cursor: pointer;
+}
+yt-live-chat-flusher-panel label.toggle {
 	display: inline-block;
 	vertical-align: middle;
 }

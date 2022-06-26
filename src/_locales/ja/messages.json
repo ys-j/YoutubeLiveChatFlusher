@@ -1,41 +1,41 @@
 {
-	"manifest_name": {
+	"manifestName": {
 		"message": "YouTube LiveChat Flusher／弾幕チャット"
 	},
-	"manifest_description": {
+	"manifestDescription": {
 		"message": "YouTube Liveのチャットをニコニコ動画・ビリビリ動画のように弾幕風に流します"
 	},
-	"ytp-menuitem-label-switch": {
+	"ytp_menuitem_label_switch": {
 		"message": "チャットを流す"
 	},
-	"ytp-menuitem-label-config": {
+	"ytp_menuitem_label_config": {
 		"message": "チャット設定"
 	},
 	"close": {
 		"message": "閉じる"
 	},
-	"animation_duration": {
+	"animationDuration": {
 		"message": "アニメーション秒数"
 	},
-	"font_size": {
+	"fontSize": {
 		"message": "フォントサイズ"
 	},
 	"lines": {
 		"message": "行"
 	},
-	"type_of_lines_0": {
+	"typeOfLines_0": {
 		"message": "固定"
 	},
-	"type_of_lines_1": {
+	"typeOfLines_1": {
 		"message": "最大"
 	},
-	"type_of_lines_2": {
+	"typeOfLines_2": {
 		"message": "最小"
 	},
-	"layer_opacity": {
+	"layerOpacity": {
 		"message": "全体の透過度"
 	},
-	"background_opacity": {
+	"backgroundOpacity": {
 		"message": "背景の透過度"
 	},
 	"opacity_0": {
@@ -44,55 +44,55 @@
 	"opacity_1": {
 		"message": "不透過"
 	},
-	"max_width": {
+	"maxWidth": {
 		"message": "最大長さ"
 	},
-	"word_wrap": {
+	"wordWrap": {
 		"message": "折り返し"
 	},
-	"word_wrap_0": {
+	"wordWrap_0": {
 		"message": "折り返しなし"
 	},
-	"word_wrap_1": {
+	"wordWrap_1": {
 		"message": "モード1"
 	},
-	"word_wrap_2": {
+	"wordWrap_2": {
 		"message": "モード2"
 	},
-	"display_limit": {
+	"displayLimit": {
 		"message": "最大表示数"
 	},
 	"unlimited": {
 		"message": "無制限"
 	},
-	"simultaneous_message": {
+	"simultaneousMessage": {
 		"message": "同時刻チャット"
 	},
-	"simultaneous_message_0": {
+	"simultaneousMessage_0": {
 		"message": "全て流す"
 	},
-	"simultaneous_message_1": {
+	"simultaneousMessage_1": {
 		"message": "読み込む毎に最初のチャットのみ流す"
 	},
-	"simultaneous_message_2": {
+	"simultaneousMessage_2": {
 		"message": "同じ内容を統合する"
 	},
-	"simultaneous_message_3": {
+	"simultaneousMessage_3": {
 		"message": "直前を含めて同じ内容を統合する"
 	},
-	"emoji_expression": {
+	"emojiExpression": {
 		"message": "絵文字の表示"
 	},
-	"emoji_expression_0": {
+	"emojiExpression_0": {
 		"message": "全て非表示"
 	},
-	"emoji_expression_1": {
+	"emojiExpression_1": {
 		"message": "全て表示"
 	},
-	"emoji_expression_2": {
+	"emojiExpression_2": {
 		"message": "ラベルに置換する"
 	},
-	"emoji_expression_3": {
+	"emojiExpression_3": {
 		"message": "ショートカットに置換する"
 	},
 	"normal": {
@@ -122,55 +122,55 @@
 	"milestone": {
 		"message": "マイルストーン"
 	},
-	"tooltip-author_photo": {
+	"tooltip_authorPhoto": {
 		"message": "投稿者のサムネイル"
 	},
-	"tooltip-author_name": {
+	"tooltip_authorName": {
 		"message": "投稿者名"
 	},
-	"display-author_name": {
+	"display_authorName": {
 		"message": "名前"
 	},
-	"tooltip-purchase_amount": {
+	"tooltip_purchaseAmount": {
 		"message": "金額"
 	},
-	"display-purchase_amount": {
+	"display_purchaseAmount": {
 		"message": "金額"
 	},
-	"tooltip-milestone_months": {
+	"tooltip_milestoneMonths": {
 		"message": "マイルストーンの月数"
 	},
-	"display-milestone_months": {
+	"display_milestoneMonths": {
 		"message": "月数"
 	},
-	"tooltip-chat_message": {
+	"tooltip_chatMessage": {
 		"message": "チャットメッセージ"
 	},
-	"display-chat_message": {
+	"display_chatMessage": {
 		"message": "本文"
 	},
-	"tooltip-membership_message": {
+	"tooltip_membershipMessage": {
 		"message": "新規メンバーのメッセージ"
 	},
-	"display-membership_message": {
+	"display_membershipMessage": {
 		"message": "本文"
 	},
-	"tooltip-sticker": {
+	"tooltip_sticker": {
 		"message": "ステッカー"
 	},
-	"display-sticker": {
+	"display_sticker": {
 		"message": "ステッカー"
 	},
-	"tooltip-sticker_size": {
+	"tooltip_stickerSize": {
 		"message": "ステッカーのサイズ"
 	},
-	"display-sticker_size": {
+	"display_stickerSize": {
 		"message": "サイズ"
 	},
-	"tooltip-custom_color": {
+	"tooltip_customColor": {
 		"message": "カスタム色"
 	},
-	"display-custom_color": {
+	"display_customColor": {
 		"message": "カスタム色"
 	},
 	"translation": {
@@ -179,7 +179,7 @@
 	"disabled": {
 		"message": "しない"
 	},
-	"addable_by_firefox_language_settings": {
+	"addableByFirefoxLanguageSettings": {
 		"message": "選択肢はabout:preferences#languagesGroupから追加可能です"
 	}
 }

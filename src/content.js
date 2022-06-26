@@ -9,7 +9,6 @@ const g = {
 		hyphens: ['manual', 'auto', 'auto'],
 		wordBreak: ['keep-all', 'normal', 'keep-all'],
 		whiteSpace: ['pre', 'pre-line', 'pre-line'],
-		maxWidth: ['', '', ''],
 	},
 	/** @type {'youtube-livechat-flusher'} */
 	id: 'youtube-livechat-flusher',
@@ -132,65 +131,65 @@ class LiveChatPanelElement extends HTMLElement {
 		form.className = 'html5-video-info-panel-content';
 		form.innerHTML = [
 			[
-				`<div>${getMessage('animation_duration')}</div>`,
+				`<div>${getMessage('animationDuration')}</div>`,
 				`<div><label><input type="number" class="styles" name="animation_duration" min="1" max="10" step="0.1" size="5" value="${parseFloat(g.storage.styles.animation_duration) || 6}" data-unit="s"> s</label></div>`,
 			],
 			[
-				`<div>${getMessage('font_size')}</div>`,
-				`<div><label><input type="number" class="styles" name="font_size" min="12" size="5" value="${parseInt(g.storage.styles.font_size) || 36}" data-unit="px"><span>px</span></label> /<input type="checkbox" name="lines"><label><input type="number" name="number_of_lines" min="6" size="5" value="${g.storage.others.number_of_lines || 20}"><span>${getMessage('lines')}</span></label><select name="type_of_lines">${Object.values(g.index.lines).map(v => `<option value="${v}">` + getMessage(`type_of_lines_${v}`)).join('')}</select><span>▼</span></div>`,
+				`<div>${getMessage('fontSize')}</div>`,
+				`<div><label><input type="number" class="styles" name="font_size" min="12" size="5" value="${parseInt(g.storage.styles.font_size) || 36}" data-unit="px"><span>px</span></label> /<input type="checkbox" name="lines"><label><input type="number" name="number_of_lines" min="6" size="5" value="${g.storage.others.number_of_lines || 20}"><span>${getMessage('lines')}</span></label><select name="type_of_lines">${Object.values(g.index.lines).map(v => `<option value="${v}">` + getMessage(`typeOfLines_${v}`)).join('')}</select><span>▼</span></div>`,
 			],
 			[
-				`<div>${getMessage('layer_opacity')}</div>`,
+				`<div>${getMessage('layerOpacity')}</div>`,
 				`<div>${getMessage('opacity_0')}<input type="range" class="styles" name="layer_opacity" min="0" max="1" step="0.05" value="${parseFloat(g.storage.styles.layer_opacity) || 1}">${getMessage('opacity_1')}</div>`,
 			],
 			[
-				`<div>${getMessage('background_opacity')}</div>`,
+				`<div>${getMessage('backgroundOpacity')}</div>`,
 				`<div>${getMessage('opacity_0')}<input type="range" class="styles" name="background_opacity" min="0" max="1" step="0.05" value="${parseFloat(g.storage.styles.background_opacity) || 0.5}">${getMessage('opacity_1')}</div>`,
 			],
 			[
-				`<div>${getMessage('max_width')}/${getMessage('word_wrap')}</div>`,
-				`<div><label><input type="number" class="styles" name="max_width" min="50" size="8" value="${parseInt(g.storage.styles.max_width) || 100}" data-unit="%"><span>%</span></label> /<select name="wrap">${Object.values(g.index.wrap).map(v => `<option value="${v}">` + getMessage(`word_wrap_${v}`)).join('')}</select>▼</div>`,
+				`<div>${getMessage('maxWidth')}/${getMessage('wordWrap')}</div>`,
+				`<div><label><input type="number" class="styles" name="max_width" min="50" size="8" value="${parseInt(g.storage.styles.max_width) || 100}" data-unit="%"><span>%</span></label> /<select name="wrap">${Object.values(g.index.wrap).map(v => `<option value="${v}">` + getMessage(`wordWrap_${v}`)).join('')}</select>▼</div>`,
 			],
 			[
-				`<div>${getMessage('display_limit')}</div>`,
+				`<div>${getMessage('displayLimit')}</div>`,
 				`<div><input type="number" class="others" name="limit_number" min="1" size="8" value="${g.storage.others.limit || 100}"><label><input type="checkbox" name="unlimited">${getMessage('unlimited')}</label></div>`,
 			],
 			[
-				`<div>${getMessage('simultaneous_message')}</div>`,
-				`<div><select name="simultaneous">${Object.values(g.index.simultaneous).map(v => `<option value="${v}">` + getMessage(`simultaneous_message_${v}`)).join('')}</select>▼</div>`,
+				`<div>${getMessage('simultaneousMessage')}</div>`,
+				`<div><select name="simultaneous">${Object.values(g.index.simultaneous).map(v => `<option value="${v}">` + getMessage(`simultaneousMessage_${v}`)).join('')}</select>▼</div>`,
 			],
 			[
-				`<div>${getMessage('emoji_expression')}</div>`,
-				`<div><select name="emoji">${Object.values(g.index.emoji).map(v => `<option value="${v}">` + getMessage(`emoji_expression_${v}`)).join('')}</select>▼</div>`,
+				`<div>${getMessage('emojiExpression')}</div>`,
+				`<div><select name="emoji">${Object.values(g.index.emoji).map(v => `<option value="${v}">` + getMessage(`emojiExpression_${v}`)).join('')}</select>▼</div>`,
 			],
 			...['normal', 'member', 'moderator', 'owner', 'verified'].map(type => [
 				`<div>${getMessage(type)}</div>`,
-				`<div><label class="toggle photo" title="${getMessage('tooltip-author_photo')}"><input type="checkbox" name="${type}_display" value="photo"><svg viewBox="-8 -8 16 16"><g id="yt-lcf-photo"><circle r="7"/><ellipse rx="2.5" ry="3.5" cy="-1"/><ellipse rx="4" ry="2" cy="4"/></g></svg></label><label class="toggle name" title="${getMessage('tooltip-author_name')}"><input type="checkbox" name="${type}_display" value="name"><span>${getMessage('display-author_name')}</span></label><label class="toggle body" title="${getMessage('tooltip-chat_message')}"><input type="checkbox" name="${type}_display" value="message"><span>${getMessage('display-chat_message')}</span></label></div>`,
-				`<div><label title="${getMessage('tooltip-custom_color')}"><input type="checkbox" name="${type}_display" value="color">${getMessage('display-custom_color')}</label><input type="color" name="${type}_color"></div>`,
+				`<div><label class="toggle photo" title="${getMessage('tooltip_authorPhoto')}"><input type="checkbox" name="${type}_display" value="photo"><svg viewBox="-8 -8 16 16"><g id="yt-lcf-photo"><circle r="7"/><ellipse rx="2.5" ry="3.5" cy="-1"/><ellipse rx="4" ry="2" cy="4"/></g></svg></label><label class="toggle name" title="${getMessage('tooltip_authorName')}"><input type="checkbox" name="${type}_display" value="name"><span>${getMessage('display_authorName')}</span></label><label class="toggle body" title="${getMessage('tooltip_chatMessage')}"><input type="checkbox" name="${type}_display" value="message"><span>${getMessage('display_chatMessage')}</span></label></div>`,
+				`<div><label title="${getMessage('tooltip_customColor')}"><input type="checkbox" name="${type}_display" value="color">${getMessage('display_customColor')}</label><input type="color" name="${type}_color"></div>`,
 			]),
 			[
 				`<div>${getMessage('superchat')}</div>`,
-				`<div class="superchat"><label class="toggle photo" title="${getMessage('tooltip-author_photo')}"><input type="checkbox" name="paid_message_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${getMessage('tooltip-author_name')}"><input type="checkbox" name="paid_message_display" value="name"><span>${getMessage('display-author_name')}</span></label><label class="toggle amount" title="${getMessage('tooltip-purchase_amount')}"><input type="checkbox" name="paid_message_display" value="amount"><span>${getMessage('display-purchase_amount')}</span></label><br><label class="toggle body" title="${getMessage('tooltip-chat_message')}"><input type="checkbox" name="paid_message_display" value="message"><span>${getMessage('display-chat_message')}</span></label></div>`,
-				`<div><label title="${getMessage('tooltip-custom_color')}"><input type="checkbox" name="paid_message_display" value="color">${getMessage('display-custom_color')}</label><input type="color" name="paid_message_color"></div>`,
+				`<div class="superchat"><label class="toggle photo" title="${getMessage('tooltip_authorPhoto')}"><input type="checkbox" name="paid_message_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${getMessage('tooltip_authorName')}"><input type="checkbox" name="paid_message_display" value="name"><span>${getMessage('display_authorName')}</span></label><label class="toggle amount" title="${getMessage('tooltip_purchaseAmount')}"><input type="checkbox" name="paid_message_display" value="amount"><span>${getMessage('display_purchaseAmount')}</span></label><br><label class="toggle body" title="${getMessage('tooltip_chatMessage')}"><input type="checkbox" name="paid_message_display" value="message"><span>${getMessage('display_chatMessage')}</span></label></div>`,
+				`<div><label title="${getMessage('tooltip_customColor')}"><input type="checkbox" name="paid_message_display" value="color">${getMessage('display_customColor')}</label><input type="color" name="paid_message_color"></div>`,
 			],
 			[
 				`<div>${getMessage('sticker')}</div>`,
-				`<div class="superchat"><label class="toggle photo" title="${getMessage('tooltip-author_photo')}"><input type="checkbox" name="paid_sticker_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${getMessage('tooltip-author_name')}"><input type="checkbox" name="paid_sticker_display" value="name"><span>${getMessage('display-author_name')}</span></label><label class="toggle amount" title="${getMessage('tooltip-purchase_amount')}"><input type="checkbox" name="paid_sticker_display" value="amount"><span>${getMessage('display-purchase_amount')}</span></label><br><label class="toggle body" title="${getMessage('tooltip-sticker')}"><input type="checkbox" name="paid_sticker_display" value="sticker"><span>${getMessage('display-sticker')}</span></label></div>`,
-				`<div><label title="${getMessage('tooltip-sticker_size')}" style="padding-left:4px">${getMessage('display-sticker_size')}: x<input type="number" class="styles" name="sticker_size" min="1" max="10" step="0.1" size="5" value="${parseFloat(g.storage.styles.sticker_size) || 2}" data-unit="em"></label></div>`
+				`<div class="superchat"><label class="toggle photo" title="${getMessage('tooltip_authorPhoto')}"><input type="checkbox" name="paid_sticker_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${getMessage('tooltip_authorName')}"><input type="checkbox" name="paid_sticker_display" value="name"><span>${getMessage('display_authorName')}</span></label><label class="toggle amount" title="${getMessage('tooltip_purchaseAmount')}"><input type="checkbox" name="paid_sticker_display" value="amount"><span>${getMessage('display_purchaseAmount')}</span></label><br><label class="toggle body" title="${getMessage('tooltip_sticker')}"><input type="checkbox" name="paid_sticker_display" value="sticker"><span>${getMessage('display_sticker')}</span></label></div>`,
+				`<div><label title="${getMessage('tooltip_stickerSize')}" style="padding-left:4px">${getMessage('display_stickerSize')}: x<input type="number" class="styles" name="sticker_size" min="1" max="10" step="0.1" size="5" value="${parseFloat(g.storage.styles.sticker_size) || 2}" data-unit="em"></label></div>`
 			],
 			[
 				`<div>${getMessage('membership')}</div>`,
-				`<div class="superchat"><label class="toggle photo" title="${getMessage('tooltip-author_photo')}"><input type="checkbox" name="membership_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${getMessage('tooltip-author_name')}"><input type="checkbox" name="membership_display" value="name"><span>${getMessage('display-author_name')}</span></label><label class="toggle body" title="${getMessage('tooltip-membership_message')}"><input type="checkbox" name="membership_display" value="message"><span>${getMessage('display-membership_message')}</span></label></div>`,
-				`<div><label title="${getMessage('tooltip-custom_color')}"><input type="checkbox" name="membership_display" value="color">${getMessage('display-custom_color')}</label><input type="color" name="membership_color"></div>`,
+				`<div class="superchat"><label class="toggle photo" title="${getMessage('tooltip_authorPhoto')}"><input type="checkbox" name="membership_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${getMessage('tooltip_authorName')}"><input type="checkbox" name="membership_display" value="name"><span>${getMessage('display_authorName')}</span></label><label class="toggle body" title="${getMessage('tooltip_membershipMessage')}"><input type="checkbox" name="membership_display" value="message"><span>${getMessage('display_membershipMessage')}</span></label></div>`,
+				`<div><label title="${getMessage('tooltip_customColor')}"><input type="checkbox" name="membership_display" value="color">${getMessage('display_customColor')}</label><input type="color" name="membership_color"></div>`,
 			],
 			[
 				`<div>${getMessage('milestone')}</div>`,
-				`<div class="superchat"><label class="toggle photo" title="${getMessage('tooltip-author_photo')}"><input type="checkbox" name="milestone_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${getMessage('tooltip-author_name')}"><input type="checkbox" name="milestone_display" value="name"><span>${getMessage('display-author_name')}</span></label><label class="toggle amount" title="${getMessage('tooltip-milestone_months')}"><input type="checkbox" name="milestone_display" value="months"><span>${getMessage('display-milestone_months')}</span></label><br><label class="toggle body" title="${getMessage('tooltip-chat_message')}"><input type="checkbox" name="milestone_display" value="message"><span>${getMessage('display-chat_message')}</span></label></div>`,
-				`<div><label title="${getMessage('tooltip-custom_color')}"><input type="checkbox" name="milestone_display" value="color">${getMessage('display-custom_color')}</label><input type="color" name="milestone_color"></div>`,
+				`<div class="superchat"><label class="toggle photo" title="${getMessage('tooltip_authorPhoto')}"><input type="checkbox" name="milestone_display" value="photo"><svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg></label><label class="toggle name" title="${getMessage('tooltip_authorName')}"><input type="checkbox" name="milestone_display" value="name"><span>${getMessage('display_authorName')}</span></label><label class="toggle amount" title="${getMessage('tooltip_milestoneMonths')}"><input type="checkbox" name="milestone_display" value="months"><span>${getMessage('display_milestoneMonths')}</span></label><br><label class="toggle body" title="${getMessage('tooltip_chatMessage')}"><input type="checkbox" name="milestone_display" value="message"><span>${getMessage('display_chatMessage')}</span></label></div>`,
+				`<div><label title="${getMessage('tooltip_customColor')}"><input type="checkbox" name="milestone_display" value="color">${getMessage('display_customColor')}</label><input type="color" name="milestone_color"></div>`,
 			],
 			[
 				`<div>${getMessage('translation')}</div>`,
-				`<div><select name="translation" title="${getMessage('addable_by_firefox_language_settings')}"><option value="0">${getMessage('disabled')}${navigator.languages.map((lang, i) => `<option value="${i + 1}">` + lang).join('')}</select>▼</div>`,
+				`<div><select name="translation" title="${getMessage('addableByFirefoxLanguageSettings')}"><option value="0">${getMessage('disabled')}${navigator.languages.map((lang, i) => `<option value="${i + 1}">` + lang).join('')}</select>▼</div>`,
 				`<div>(beta feature)</div>`,
 			],
 		].map(row => '<div>' + row.join('') + '</div>').join('');
@@ -205,7 +204,7 @@ class LiveChatPanelElement extends HTMLElement {
 						g.layer.style.setProperty('--yt-live-chat-flusher-message-hyphens', g.array.hyphens[val]);
 						g.layer.style.setProperty('--yt-live-chat-flusher-message-word-break', g.array.wordBreak[val]);
 						g.layer.style.setProperty('--yt-live-chat-flusher-message-white-space', g.array.whiteSpace[val]);
-						g.layer.style.setProperty('--yt-live-chat-flusher-max-width', g.array.maxWidth[val] || g.storage.styles.max_width);
+						g.layer.style.setProperty('--yt-live-chat-flusher-max-width', g.storage.styles.max_width);
 					}
 					break;
 				}
@@ -265,7 +264,7 @@ class LiveChatPanelElement extends HTMLElement {
 							g.layer.style.setProperty('--yt-live-chat-flusher-message-hyphens', g.array.hyphens[val]);
 							g.layer.style.setProperty('--yt-live-chat-flusher-message-word-break', g.array.wordBreak[val]);
 							g.layer.style.setProperty('--yt-live-chat-flusher-message-white-space', g.array.whiteSpace[val]);
-							g.layer.style.setProperty('--yt-live-chat-flusher-max-width', g.array.maxWidth[val] || g.storage.styles.max_width);
+							g.layer.style.setProperty('--yt-live-chat-flusher-max-width', g.storage.styles.max_width);
 							updateCurrentItemStyle();
 						}
 						break;
@@ -455,12 +454,10 @@ function getLayer() {
 	}, { passive: true });
 	layer.addEventListener('wheel', e => {
 		const origin = /** @type {HTMLElement?} */ (e.originalTarget);
-		if (origin) {
+		if (origin?.classList.contains('paused')) {
 			e.preventDefault();
-			if (origin.classList.contains('paused')) {
-				e.stopPropagation();
-				origin.style.animationDelay = `${parseFloat(origin.style.animationDelay || '0') + Math.sign(e.deltaY) * .05}s`;
-			}
+			e.stopPropagation();
+			origin.style.animationDelay = `${parseFloat(origin.style.animationDelay || '0') + Math.sign(e.deltaY) * .05}s`;
 		}
 	}, { passive: false });
 	return layer;
@@ -515,11 +512,11 @@ function addSettingMenu() {
 			if (g.layer) g.layer[checked ? 'hide' : 'show']();
 			if (!checked) browser.runtime.reload();
 		}, { passive: true });
-		checkbox.innerHTML = `<div class="ytp-menuitem-icon"><svg height="24" width="24" viewBox="-40 -40 80 80"><path d="M0,24Q8,24,24,23,31,22,31,19,32,12,32,0M0,24Q-8,24,-24,23,-31,22,-31,19,-32,12,-32,0M0,-24Q-8,-24,-24,-23,-31,-22,-31,-19,-32,-12,-32,0M0,-24Q8,-24,24,-23,31,-22,31,-19,32,-12,32,0" fill="none" stroke="white" stroke-width="3"/><g fill="white" transform="translate(0,10)"><path d="M4,-10l12,12h8l-12,-12,12,-12h-8z"/><circle r="3"/><circle cx="-10" r="3"/><circle cx="-20" r="3"/></g></svg></div><div class="ytp-menuitem-label">${getMessage('ytp-menuitem-label-switch')}</div><div class="ytp-menuitem-content"><div class="ytp-menuitem-toggle-checkbox"></div></div></div>`;
+		checkbox.innerHTML = `<div class="ytp-menuitem-icon"><svg height="24" width="24" viewBox="-40 -40 80 80"><path d="M0,24Q8,24,24,23,31,22,31,19,32,12,32,0M0,24Q-8,24,-24,23,-31,22,-31,19,-32,12,-32,0M0,-24Q-8,-24,-24,-23,-31,-22,-31,-19,-32,-12,-32,0M0,-24Q8,-24,24,-23,31,-22,31,-19,32,-12,32,0" fill="none" stroke="white" stroke-width="3"/><g fill="white" transform="translate(0,10)"><path d="M4,-10l12,12h8l-12,-12,12,-12h-8z"/><circle r="3"/><circle cx="-10" r="3"/><circle cx="-20" r="3"/></g></svg></div><div class="ytp-menuitem-label">${getMessage('ytp_menuitem_label_switch')}</div><div class="ytp-menuitem-content"><div class="ytp-menuitem-toggle-checkbox"></div></div></div>`;
 		popupmenu.addEventListener('click', _ => {
 			panel[panel.hidden ? 'show' : 'hide']();
 		}, { passive: true });
-		popupmenu.innerHTML = `<div class="ytp-menuitem-icon"><svg height="24" width="24" viewBox="-40 -64 108 108"><mask id="m"><path d="M-40-80h120v120h-120z" fill="white" /><circle r="9"/></mask><path d="M0,24Q8,24,24,23,31,22,31,19,32,12,32,0M0,24Q-8,24,-24,23,-31,22,-31,19,-32,12,-32,0M0,-24Q-8,-24,-24,-23,-31,-22,-31,-19,-32,-12,-32,0" fill="none" stroke="white" stroke-width="4"/><g fill="white" transform="translate(0,10)"><circle cx="8" r="3"/><circle cx="-4" r="3"/><circle cx="-16" r="3"/><g transform="translate(32,-32) scale(1.25)" mask="url(#m)"><path id="p" d="M0,0L-10,-8L-6,-24Q0,-26,6,-24L10,-8L-10,8L-6,24Q0,26,6,24L10,8z"/><use xlink:href="#p" transform="rotate(60)"/><use xlink:href="#p" transform="rotate(120)"/></g></g></svg></div><div class="ytp-menuitem-label">${getMessage('ytp-menuitem-label-config')}</div><div class="ytp-menuitem-content"></div>`;
+		popupmenu.innerHTML = `<div class="ytp-menuitem-icon"><svg height="24" width="24" viewBox="-40 -64 108 108"><mask id="m"><path d="M-40-80h120v120h-120z" fill="white" /><circle r="9"/></mask><path d="M0,24Q8,24,24,23,31,22,31,19,32,12,32,0M0,24Q-8,24,-24,23,-31,22,-31,19,-32,12,-32,0M0,-24Q-8,-24,-24,-23,-31,-22,-31,-19,-32,-12,-32,0" fill="none" stroke="white" stroke-width="4"/><g fill="white" transform="translate(0,10)"><circle cx="8" r="3"/><circle cx="-4" r="3"/><circle cx="-16" r="3"/><g transform="translate(32,-32) scale(1.25)" mask="url(#m)"><path id="p" d="M0,0L-10,-8L-6,-24Q0,-26,6,-24L10,-8L-10,8L-6,24Q0,26,6,24L10,8z"/><use xlink:href="#p" transform="rotate(60)"/><use xlink:href="#p" transform="rotate(120)"/></g></g></svg></div><div class="ytp-menuitem-label">${getMessage('ytp_menuitem_label_config')}</div><div class="ytp-menuitem-content"></div>`;
 		ytpPanelMenu.appendChild(checkbox);
 		ytpPanelMenu.appendChild(popupmenu);
 	}
@@ -563,7 +560,7 @@ function handleYtAction(e) {
 		};
 
 		// Add
-		const fs = parseInt(g.storage.styles.font_size) || 36, lh = fs * 1.25;
+		const fs = parseInt(g.storage.styles.font_size) || 36, lhf = 1.25, lh = fs * lhf;
 		const sv = g.storage.others.simultaneous, si = g.index.simultaneous;
 		const last = sv === si.last_merge ? /** @type {HTMLElement?} */ (root.lastElementChild) : null;
 		const bodies = last ? [ `<!-- ${last.className} -->` + (last.dataset.text || '') ] : [];
@@ -608,7 +605,9 @@ function handleYtAction(e) {
 			if (body) browser.i18n.detectLanguage(body).then(result => {
 				if (result.isReliable) elem.lang = result.languages[0].language;
 			});
-			elem.addEventListener('animationend', _ => elem.remove() , { passive: true });
+			elem.addEventListener('animationend', e => {
+				/** @type {HTMLElement} */ (e.target).remove();
+			}, { passive: true });
 			let y = 0;
 			if (elem.clientHeight >= g.layer.clientHeight) {
 				elem.style.top = '0px';
@@ -617,7 +616,7 @@ function handleYtAction(e) {
 			const overline = Math.ceil(g.layer.clientHeight / lh);
 			do {
 				if (children.length > 0) {
-					elem.style.top = `${y * 1.25}em`;
+					elem.style.top = `${y * lhf}em`;
 					if (!children.some(before => isCatchable(before, elem)) && !isOverflow(g.layer, elem)) return resolve(elem.id);
 				} else {
 					elem.style.top = '0px';
@@ -631,7 +630,7 @@ function handleYtAction(e) {
 				let ln = -1, i = 0;
 				do ln = lines.indexOf(i++);
 				while (ln < 0);
-				elem.style.top = `${ln * 1.25}em`;
+				elem.style.top = `${ln * lhf}em`;
 			} while (isOverflow(g.layer, elem) && y-- > 0);
 			return resolve(elem.id);
 		}));
@@ -750,6 +749,19 @@ async function parseChatItem(item) {
 			].join('');
 			break;
 		}
+		case 'liveChatSponsorshipsGiftPurchaseAnnouncementRenderer': {
+			elem.className = 'membership gift';
+			const h = renderer.header.liveChatSponsorshipsHeaderRenderer;
+			const name = getChatMessage(h.authorName);
+			const author = name ? `<a href="/channel/${renderer.authorExternalChannelId}" target="_blank" title="${name}"><img class="photo" src="${h.authorPhoto.thumbnails[0].url}" loading="lazy"></a><span class="name">${name}</span>` : '';
+			const icon = document.querySelector('iron-iconset-svg #gift-filled');
+			const count = h.primaryText?.runs?.filter(r => parseInt(r.text) !== NaN)[0]?.text;
+			if (count) {
+				const gifts = (icon ? `<svg viewBox="0 2 24 24" fill="currentColor" stroke="#000" paint-order="stroke">${icon.innerHTML}</svg>` : '🎁') + count;
+				elem.innerHTML = `<div class="header" style="background-color:rgba(${getColorRGB(0xff0f9d58).join()},var(--yt-live-chat-flusher-background-opacity))">${author}<span class="gifts">${gifts}</span></div>`;
+			}
+			break;
+		}
 		case 'liveChatViewerEngagementMessageRenderer': {
 			switch (renderer.icon.iconType) {
 				case 'POLL': {
@@ -762,7 +774,9 @@ async function parseChatItem(item) {
 			}
 			break;
 		}
-		case 'liveChatPlaceholderItemRenderer': break;
+		case 'liveChatPlaceholderItemRenderer':
+		case 'liveChatSponsorshipsGiftRedemptionAnnouncementRenderer':
+			break;
 		// liveChatModeChangeMessageRenderer
 		default: console.log(item);
 	}

@@ -1,41 +1,41 @@
 {
-	"manifest_name": {
+	"manifestName": {
 		"message": "YouTube LiveChat Flusher (Danmaku LiveChat)"
 	},
-	"manifest_description": {
+	"manifestDescription": {
 		"message": "Provides bullet chatting (danmaku) on YouTube Live, like niconico or bilibili."
 	},
-	"ytp-menuitem-label-switch": {
+	"ytp_menuitem_label_switch": {
 		"message": "Flush LiveChat"
 	},
-	"ytp-menuitem-label-config": {
+	"ytp_menuitem_label_config": {
 		"message": "Configure Flusher"
 	},
 	"close": {
 		"message": "close"
 	},
-	"animation_duration": {
+	"animationDuration": {
 		"message": "Animation Duration"
 	},
-	"font_size": {
+	"fontSize": {
 		"message": "Font Size"
 	},
 	"lines": {
 		"message": "lines"
 	},
-	"type_of_lines_0": {
+	"typeOfLines_0": {
 		"message": "fixed"
 	},
-	"type_of_lines_1": {
+	"typeOfLines_1": {
 		"message": "max"
 	},
-	"type_of_lines_2": {
+	"typeOfLines_2": {
 		"message": "min"
 	},
-	"layer_opacity": {
+	"layerOpacity": {
 		"message": "Chat Layer Opacity"
 	},
-	"background_opacity": {
+	"backgroundOpacity": {
 		"message": "Background Opacity"
 	},
 	"opacity_0": {
@@ -44,55 +44,55 @@
 	"opacity_1": {
 		"message": "1"
 	},
-	"max_width": {
+	"maxWidth": {
 		"message": "Max Width"
 	},
-	"word_wrap": {
+	"wordWrap": {
 		"message": "Wrap"
 	},
-	"word_wrap_0": {
+	"wordWrap_0": {
 		"message": "No Wrap"
 	},
-	"word_wrap_1": {
+	"wordWrap_1": {
 		"message": "Wrap Mode 1"
 	},
-	"word_wrap_2": {
+	"wordWrap_2": {
 		"message": "Wrap Mode 2"
 	},
-	"display_limit": {
+	"displayLimit": {
 		"message": "Display Limit"
 	},
 	"unlimited": {
 		"message": "Unlimited"
 	},
-	"simultaneous_message": {
+	"simultaneousMessage": {
 		"message": "Simultaneous Msg."
 	},
-	"simultaneous_message_0": {
+	"simultaneousMessage_0": {
 		"message": "Flush all messages"
 	},
-	"simultaneous_message_1": {
+	"simultaneousMessage_1": {
 		"message": "Flush only first message per load"
 	},
-	"simultaneous_message_2": {
+	"simultaneousMessage_2": {
 		"message": "Merge same messages"
 	},
-	"simultaneous_message_3": {
+	"simultaneousMessage_3": {
 		"message": "Merge same messages including last one"
 	},
-	"emoji_expression": {
+	"emojiExpression": {
 		"message": "Emoji Expression"
 	},
-	"emoji_expression_0": {
+	"emojiExpression_0": {
 		"message": "Hide all"
 	},
-	"emoji_expression_1": {
+	"emojiExpression_1": {
 		"message": "Show all"
 	},
-	"emoji_expression_2": {
+	"emojiExpression_2": {
 		"message": "Replace with labels"
 	},
-	"emoji_expression_3": {
+	"emojiExpression_3": {
 		"message": "Replace with shortcuts"
 	},
 	"normal": {
@@ -122,55 +122,55 @@
 	"milestone": {
 		"message": "Milestone"
 	},
-	"tooltip-author_photo": {
+	"tooltip_authorPhoto": {
 		"message": "Author Photo"
 	},
-	"tooltip-author_name": {
+	"tooltip_authorName": {
 		"message": "Author Name"
 	},
-	"display-author_name": {
+	"display_authorName": {
 		"message": "Name"
 	},
-	"tooltip-purchase_amount": {
+	"tooltip_purchaseAmount": {
 		"message": "Purchase Amount"
 	},
-	"display-purchase_amount": {
+	"display_purchaseAmount": {
 		"message": "$0"
 	},
-	"tooltip-milestone_months": {
+	"tooltip_milestoneMonths": {
 		"message": "Milestone Months"
 	},
-	"display-milestone_months": {
+	"display_milestoneMonths": {
 		"message": "mths"
 	},
-	"tooltip-chat_message": {
+	"tooltip_chatMessage": {
 		"message": "Chat Message"
 	},
-	"display-chat_message": {
+	"display_chatMessage": {
 		"message": "Message"
 	},
-	"tooltip-membership_message": {
+	"tooltip_membershipMessage": {
 		"message": "New/Upgraded Membership Message"
 	},
-	"display-membership_message": {
+	"display_membershipMessage": {
 		"message": "Message"
 	},
-	"tooltip-sticker": {
+	"tooltip_sticker": {
 		"message": "Sticker"
 	},
-	"display-sticker": {
+	"display_sticker": {
 		"message": "Sticker"
 	},
-	"tooltip-sticker_size": {
+	"tooltip_stickerSize": {
 		"message": "Sticker size"
 	},
-	"display-sticker_size": {
+	"display_stickerSize": {
 		"message": "Size"
 	},
-	"tooltip-custom_color": {
+	"tooltip_customColor": {
 		"message": "Custom Color"
 	},
-	"display-custom_color": {
+	"display_customColor": {
 		"message": "Custom Color"
 	},
 	"translation": {
@@ -179,7 +179,7 @@
 	"disabled": {
 		"message": "Disabled"
 	},
-	"addable_by_firefox_language_settings": {
+	"addableByFirefoxLanguageSettings": {
 		"message": "Choices are addable by about:preferences#languagesGroup"
 	}
 }

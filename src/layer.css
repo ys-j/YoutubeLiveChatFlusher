@@ -133,8 +133,8 @@ div.body, figure.body {
 .membership { color: var(--yt-live-chat-flusher-membership-color) }
 .membership .photo { display: var(--yt-live-chat-flusher-membership-display-photo) }
 .membership .name { display: var(--yt-live-chat-flusher-membership-display-name) }
-.membership .months { display: var(--yt-live-chat-flusher-membership-display-months) }
-.membership .body { display: var(--yt-live-chat-flusher-membership-display-message) }
+.membership .gifts { display: var(--yt-live-chat-flusher-membership-display-months) }
+.membership .months { display: var(--yt-live-chat-flusher-membership-display-message) }
 
 .milestone { color: var(--yt-live-chat-flusher-milestone-color) }
 .milestone .photo { display: var(--yt-live-chat-flusher-milestone-display-photo) }
