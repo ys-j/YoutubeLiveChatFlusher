@@ -808,9 +808,12 @@ function getChatMessage(message, options = {}) {
 					if (r.italics) text = '<i>' + text + '</i>';
 					if (r.bold) text = '<b>' + text + '</b>';
 					if (r.navigationEndpoint) {
-						const icon = document.querySelector('iron-iconset-svg #open_in_new');
-						const { url, nofollow } = r.navigationEndpoint.urlEndpoint;
-						text = `<a class="open_in_new" href="${url}" target="_blank" title="${text}" rel="${nofollow ? 'nofollow' : ''}"><svg viewBox="0 0 24 24" fill="currentColor" stroke="#000" paint-order="stroke">${icon?.innerHTML}</svg></a>`;
+						const ep = r.navigationEndpoint.urlEndpoint || r.navigationEndpoint.watchEndpoint;
+						if (ep) {
+							const icon = document.querySelector('iron-iconset-svg #open_in_new');
+							const href = 'url' in ep ? ep.url : (ep.videoId ? '/watch?v=' + ep.videoId : '');
+							text = `<a class="open_in_new" href="${href}" target="_blank" title="${text}" rel="${ep.nofollow ? 'nofollow' : ''}"><svg viewBox="0 0 24 24" fill="currentColor" stroke="#000" paint-order="stroke">${icon?.innerHTML}</svg></a>`;
+						}
 					}
 					return text;
 				} else {

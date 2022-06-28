@@ -184,9 +184,13 @@ declare namespace LiveChat {
 		italics?: boolean
 		navigationEndpoint?: {
 			commandMetadata: WebCommandMetadata
-			urlEndpoint: {
+			urlEndpoint?: {
 				url: string
 				target: string
+				nofollow: boolean
+			}
+			watchEndpoint?: {
+				videoId: string
 				nofollow: boolean
 			}
 		}
