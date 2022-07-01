@@ -1,0 +1,160 @@
+@keyframes flush {
+	from { transform: translateX(0px) }
+	to { transform: translateX(var(--yt-live-chat-flusher-translate-x)) }
+}
+:host {
+	contain: strict;
+}
+:host > * {
+	animation: flush var(--yt-live-chat-flusher-animation-duration) linear var(--yt-live-chat-flusher-animation-play-state);
+	left: 100%;
+	max-width: var(--yt-live-chat-flusher-max-width);
+	overflow: hidden;
+	pointer-events: auto;
+	position: absolute;
+	text-overflow: ellipsis;
+	will-change: transform;
+}
+:host > :not(.text) {
+	border-radius: .5em;
+	display: flex;
+	flex-flow: column nowrap;
+	overflow: hidden;
+}
+img, svg {
+	height: 1em;
+	object-fit: cover;
+	vertical-align: -.15em;
+	width: 1em;
+}
+a {
+	color: inherit;
+	pointer-events: auto;
+}
+.header, .body, a > * {
+	pointer-events: none;
+}
+.body {
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.photo {
+	border-radius: 50%;
+	margin-right: 4px;
+}
+.name, .months, .amount {
+	font-size: .75em;
+}
+.name {
+	padding-right: 1em;
+}
+
+.normal { color: var(--yt-live-chat-flusher-normal-color) }
+:host(.has-normal-name) .normal {
+	background-color: var(--yt-live-chat-normal-message-background-color); 
+	border-radius: .5em;
+	padding: 0 .25em;
+}
+.normal .photo { display: var(--yt-live-chat-flusher-normal-display-photo) }
+.normal .name { display: var(--yt-live-chat-flusher-normal-display-name) }
+.normal .body { display: var(--yt-live-chat-flusher-normal-display-message) }
+
+.member { color: var(--yt-live-chat-flusher-member-color) }
+:host(.has-member-name) .member {
+	background-color: var(--yt-live-chat-member-message-background-color);
+	border-radius: .5em;
+	padding: 0 .25em;
+}
+.member .photo { display: var(--yt-live-chat-flusher-member-display-photo) }
+.member .name { display: var(--yt-live-chat-flusher-member-display-name) }
+.member .body { display: var(--yt-live-chat-flusher-member-display-message) }
+
+.verified { color: var(--yt-live-chat-flusher-verified-color) }
+:host(.has-verified-name) .verified {
+	background-color: var(--yt-live-chat-verified-message-background-color);
+	border-radius: .5em;
+	padding: 0 .25em;
+}
+.verified .photo { display: var(--yt-live-chat-flusher-verified-display-photo) }
+.verified .name { display: var(--yt-live-chat-flusher-verified-display-name) }
+.verified .body { display: var(--yt-live-chat-flusher-verified-display-message) }
+
+.moderator { color: var(--yt-live-chat-flusher-moderator-color) }
+:host(.has-moderator-name) .moderator {
+	background-color: var(--yt-live-chat-moderator-message-background-color);
+	border-radius: .5em;
+	padding: 0 .25em;
+}
+.moderator .photo { display: var(--yt-live-chat-flusher-moderator-display-photo) }
+.moderator .name { display: var(--yt-live-chat-flusher-moderator-display-name) }
+.moderator .body { display: var(--yt-live-chat-flusher-moderator-display-message) }
+
+.owner { color: var(--yt-live-chat-flusher-owner-color) }
+:host(.has-owner-name) .owner {
+	background-color: var(--yt-live-chat-owner-message-background-color);
+	border-radius: .5em;
+	padding: 0 .25em;
+}
+.owner .photo { display: var(--yt-live-chat-flusher-owner-display-photo) }
+.owner .name { display: var(--yt-live-chat-flusher-owner-display-name) }
+.owner .body { display: var(--yt-live-chat-flusher-owner-display-message) }
+
+div.header {
+	display: flex;
+	align-items: center;
+	background-color: var(--yt-live-chat-paid-message-secondary-color);
+	height: 1.25em;
+	padding: 2px .5em 0;
+}
+div.header .name {
+	padding-right: .75em;
+	white-space: nowrap;
+}
+div.body, figure.body {
+	background-color: var(--yt-live-chat-paid-message-primary-color);
+	font-size: .9375em;
+	margin: 0;
+	padding: 0 .5em 2px;
+}
+.sticker {
+	height: var(--yt-live-chat-flusher-sticker-size);
+	width: var(--yt-live-chat-flusher-sticker-size);
+}
+.wrap {
+	hyphens: var(--yt-live-chat-flusher-message-hyphens);
+	word-break: var(--yt-live-chat-flusher-message-word-break);
+	white-space: var(--yt-live-chat-flusher-message-white-space);
+	width: max-content;
+}
+.paused {
+	animation-play-state: paused;
+}
+
+.membership { color: var(--yt-live-chat-flusher-membership-color) }
+.membership .photo { display: var(--yt-live-chat-flusher-membership-display-photo) }
+.membership .name { display: var(--yt-live-chat-flusher-membership-display-name) }
+.membership .gifts { display: var(--yt-live-chat-flusher-membership-display-months) }
+.membership .months { display: var(--yt-live-chat-flusher-membership-display-message) }
+
+.milestone { color: var(--yt-live-chat-flusher-milestone-color) }
+.milestone .photo { display: var(--yt-live-chat-flusher-milestone-display-photo) }
+.milestone .name { display: var(--yt-live-chat-flusher-milestone-display-name) }
+.milestone .months { display: var(--yt-live-chat-flusher-milestone-display-months) }
+.milestone .body { display: var(--yt-live-chat-flusher-milestone-display-message) }
+
+.superchat { color: var(--yt-live-chat-flusher-paid-message-color) }
+.superchat .photo { display: var(--yt-live-chat-flusher-paid-message-display-photo) }
+.superchat .name { display: var(--yt-live-chat-flusher-paid-message-display-name) }
+.superchat .amount { display: var(--yt-live-chat-flusher-paid-message-display-amount) }
+.superchat .body { display: var(--yt-live-chat-flusher-paid-message-display-message) }
+
+.supersticker { color: var(--yt-live-chat-flusher-paid-sticker-color) }
+.supersticker .photo { display: var(--yt-live-chat-flusher-paid-sticker-display-photo) }
+.supersticker .name { display: var(--yt-live-chat-flusher-paid-sticker-display-name) }
+.supersticker .amount { display: var(--yt-live-chat-flusher-paid-sticker-display-amount) }
+.supersticker .body { display: var(--yt-live-chat-flusher-paid-sticker-display-sticker) }
+
+.engagement-poll {
+	background-color: rgba(64, 64, 64, var(--yt-live-chat-flusher-background-opacity));
+	color: var(--yt-live-chat-dialog-text-color, #fff);
+}

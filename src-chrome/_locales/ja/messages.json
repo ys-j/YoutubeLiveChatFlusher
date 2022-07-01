@@ -1,0 +1,185 @@
+{
+	"manifestName": {
+		"message": "YouTube LiveChat Flusher／弾幕チャット"
+	},
+	"manifestDescription": {
+		"message": "YouTube Liveのチャットをニコニコ動画・ビリビリ動画のように弾幕風に流します"
+	},
+	"ytp_menuitem_label_switch": {
+		"message": "チャットを流す"
+	},
+	"ytp_menuitem_label_config": {
+		"message": "チャット設定"
+	},
+	"close": {
+		"message": "閉じる"
+	},
+	"animationDuration": {
+		"message": "アニメーション秒数"
+	},
+	"fontSize": {
+		"message": "フォントサイズ"
+	},
+	"lines": {
+		"message": "行"
+	},
+	"typeOfLines_0": {
+		"message": "固定"
+	},
+	"typeOfLines_1": {
+		"message": "最大"
+	},
+	"typeOfLines_2": {
+		"message": "最小"
+	},
+	"layerOpacity": {
+		"message": "全体の透過度"
+	},
+	"backgroundOpacity": {
+		"message": "背景の透過度"
+	},
+	"opacity_0": {
+		"message": "透過"
+	},
+	"opacity_1": {
+		"message": "不透過"
+	},
+	"maxWidth": {
+		"message": "最大長さ"
+	},
+	"wordWrap": {
+		"message": "折り返し"
+	},
+	"wordWrap_0": {
+		"message": "折り返しなし"
+	},
+	"wordWrap_1": {
+		"message": "モード1"
+	},
+	"wordWrap_2": {
+		"message": "モード2"
+	},
+	"displayLimit": {
+		"message": "最大表示数"
+	},
+	"unlimited": {
+		"message": "無制限"
+	},
+	"simultaneousMessage": {
+		"message": "同時刻チャット"
+	},
+	"simultaneousMessage_0": {
+		"message": "全て流す"
+	},
+	"simultaneousMessage_1": {
+		"message": "読み込む毎に最初のチャットのみ流す"
+	},
+	"simultaneousMessage_2": {
+		"message": "同じ内容を統合する"
+	},
+	"simultaneousMessage_3": {
+		"message": "直前を含めて同じ内容を統合する"
+	},
+	"emojiExpression": {
+		"message": "絵文字の表示"
+	},
+	"emojiExpression_0": {
+		"message": "全て非表示"
+	},
+	"emojiExpression_1": {
+		"message": "全て表示"
+	},
+	"emojiExpression_2": {
+		"message": "ラベルに置換する"
+	},
+	"emojiExpression_3": {
+		"message": "ショートカットに置換する"
+	},
+	"normal": {
+		"message": "通常"
+	},
+	"member": {
+		"message": "メンバー"
+	},
+	"moderator": {
+		"message": "モデレーター"
+	},
+	"owner": {
+		"message": "チャンネル管理者"
+	},
+	"verified": {
+		"message": "確認済み"
+	},
+	"superchat": {
+		"message": "スーパーチャット"
+	},
+	"sticker": {
+		"message": "スーパーステッカー"
+	},
+	"membership": {
+		"message": "メンバーシップ"
+	},
+	"milestone": {
+		"message": "マイルストーン"
+	},
+	"tooltip_authorPhoto": {
+		"message": "投稿者のサムネイル"
+	},
+	"tooltip_authorName": {
+		"message": "投稿者名"
+	},
+	"display_authorName": {
+		"message": "名前"
+	},
+	"tooltip_purchaseAmount": {
+		"message": "金額"
+	},
+	"display_purchaseAmount": {
+		"message": "金額"
+	},
+	"tooltip_milestoneMonths": {
+		"message": "マイルストーンの月数"
+	},
+	"display_milestoneMonths": {
+		"message": "月数"
+	},
+	"tooltip_chatMessage": {
+		"message": "チャットメッセージ"
+	},
+	"display_chatMessage": {
+		"message": "本文"
+	},
+	"tooltip_membershipMessage": {
+		"message": "新規メンバーのメッセージ"
+	},
+	"display_membershipMessage": {
+		"message": "本文"
+	},
+	"tooltip_sticker": {
+		"message": "ステッカー"
+	},
+	"display_sticker": {
+		"message": "ステッカー"
+	},
+	"tooltip_stickerSize": {
+		"message": "ステッカーのサイズ"
+	},
+	"display_stickerSize": {
+		"message": "サイズ"
+	},
+	"tooltip_customColor": {
+		"message": "カスタム色"
+	},
+	"display_customColor": {
+		"message": "カスタム色"
+	},
+	"translation": {
+		"message": "メッセージ翻訳"
+	},
+	"disabled": {
+		"message": "しない"
+	},
+	"addableByFirefoxLanguageSettings": {
+		"message": "選択肢はchrome://settings/languagesから追加可能です"
+	}
+}

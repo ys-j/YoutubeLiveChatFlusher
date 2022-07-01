@@ -1,0 +1,185 @@
+{
+	"manifestName": {
+		"message": "YouTube LiveChat Flusher (Danmaku LiveChat)"
+	},
+	"manifestDescription": {
+		"message": "Provides bullet chatting (danmaku) on YouTube Live, like niconico or bilibili."
+	},
+	"ytp_menuitem_label_switch": {
+		"message": "Flush LiveChat"
+	},
+	"ytp_menuitem_label_config": {
+		"message": "Configure Flusher"
+	},
+	"close": {
+		"message": "close"
+	},
+	"animationDuration": {
+		"message": "Animation Duration"
+	},
+	"fontSize": {
+		"message": "Font Size"
+	},
+	"lines": {
+		"message": "lines"
+	},
+	"typeOfLines_0": {
+		"message": "fixed"
+	},
+	"typeOfLines_1": {
+		"message": "max"
+	},
+	"typeOfLines_2": {
+		"message": "min"
+	},
+	"layerOpacity": {
+		"message": "Chat Layer Opacity"
+	},
+	"backgroundOpacity": {
+		"message": "Background Opacity"
+	},
+	"opacity_0": {
+		"message": "0"
+	},
+	"opacity_1": {
+		"message": "1"
+	},
+	"maxWidth": {
+		"message": "Max Width"
+	},
+	"wordWrap": {
+		"message": "Wrap"
+	},
+	"wordWrap_0": {
+		"message": "No Wrap"
+	},
+	"wordWrap_1": {
+		"message": "Wrap Mode 1"
+	},
+	"wordWrap_2": {
+		"message": "Wrap Mode 2"
+	},
+	"displayLimit": {
+		"message": "Display Limit"
+	},
+	"unlimited": {
+		"message": "Unlimited"
+	},
+	"simultaneousMessage": {
+		"message": "Simultaneous Msg."
+	},
+	"simultaneousMessage_0": {
+		"message": "Flush all messages"
+	},
+	"simultaneousMessage_1": {
+		"message": "Flush only first message per load"
+	},
+	"simultaneousMessage_2": {
+		"message": "Merge same messages"
+	},
+	"simultaneousMessage_3": {
+		"message": "Merge same messages including last one"
+	},
+	"emojiExpression": {
+		"message": "Emoji Expression"
+	},
+	"emojiExpression_0": {
+		"message": "Hide all"
+	},
+	"emojiExpression_1": {
+		"message": "Show all"
+	},
+	"emojiExpression_2": {
+		"message": "Replace with labels"
+	},
+	"emojiExpression_3": {
+		"message": "Replace with shortcuts"
+	},
+	"normal": {
+		"message": "Normal"
+	},
+	"member": {
+		"message": "Member"
+	},
+	"moderator": {
+		"message": "Moderator"
+	},
+	"owner": {
+		"message": "Owner"
+	},
+	"verified": {
+		"message": "Verified"
+	},
+	"superchat": {
+		"message": "Super Chat"
+	},
+	"sticker": {
+		"message": "Super Sticker"
+	},
+	"membership": {
+		"message": "Membership"
+	},
+	"milestone": {
+		"message": "Milestone"
+	},
+	"tooltip_authorPhoto": {
+		"message": "Author Photo"
+	},
+	"tooltip_authorName": {
+		"message": "Author Name"
+	},
+	"display_authorName": {
+		"message": "Name"
+	},
+	"tooltip_purchaseAmount": {
+		"message": "Purchase Amount"
+	},
+	"display_purchaseAmount": {
+		"message": "$0"
+	},
+	"tooltip_milestoneMonths": {
+		"message": "Milestone Months"
+	},
+	"display_milestoneMonths": {
+		"message": "mths"
+	},
+	"tooltip_chatMessage": {
+		"message": "Chat Message"
+	},
+	"display_chatMessage": {
+		"message": "Message"
+	},
+	"tooltip_membershipMessage": {
+		"message": "New/Upgraded Membership Message"
+	},
+	"display_membershipMessage": {
+		"message": "Message"
+	},
+	"tooltip_sticker": {
+		"message": "Sticker"
+	},
+	"display_sticker": {
+		"message": "Sticker"
+	},
+	"tooltip_stickerSize": {
+		"message": "Sticker size"
+	},
+	"display_stickerSize": {
+		"message": "Size"
+	},
+	"tooltip_customColor": {
+		"message": "Custom Color"
+	},
+	"display_customColor": {
+		"message": "Custom Color"
+	},
+	"translation": {
+		"message": "Message Translation"
+	},
+	"disabled": {
+		"message": "Disabled"
+	},
+	"addableByFirefoxLanguageSettings": {
+		"message": "Choices are addable by chrome://settings/languages"
+	}
+}

@@ -10,7 +10,7 @@ declare namespace LiveChat {
 			}
 		}
 		id: string
-		timestampColor: integer	// replay
+		timestampColor: number	// replay
 		timestampText?: SimpleText	// replay
 		timestampUsec: string
 		trackingParams: string	// streaming
@@ -62,7 +62,7 @@ declare namespace LiveChat {
 			actionButton: ButtonRenderer
 			icon: { iconType: "GIFT" }
 			message: Runs
-		 } | {
+		} | {
 			contextMenuAccessibility: AccessibilityData
 			contextMenuEndpoint: {
 				commandMetadata: WebCommandMetadata
