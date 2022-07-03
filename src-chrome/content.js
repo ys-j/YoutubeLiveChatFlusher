@@ -114,6 +114,7 @@ class LiveChatPanel {
 		this.element.id = 'yt-live-chat-flusher-panel';
 		this.element.className = 'html5-video-info-panel';
 		this.element.dataset.layer = '4';
+		this.hide();
 
 		this.form = document.createElement('form');
 		this.form.className = 'html5-video-info-panel-content';
@@ -181,7 +182,7 @@ class LiveChatPanel {
 				`<div>(beta feature)</div>`,
 			],
 		].map(row => '<div>' + row.join('') + '</div>').join('');
-		
+
 		const selects = this.form.querySelectorAll('select');
 		for (const select of selects) {
 			if (select.name in g.storage.others) {
@@ -244,7 +245,7 @@ class LiveChatPanel {
 			const elem = /** @type {HTMLInputElement | HTMLSelectElement} */ (e.target);
 			this.updateStorage(elem);
 		}, { passive: true });
-		
+
 		const closeBtn = document.createElement('button');
 		closeBtn.className = 'html5-video-info-panel-close ytp-button';
 		closeBtn.title = getMessage('close');
@@ -271,7 +272,7 @@ class LiveChatPanel {
 	/** @param elem {HTMLInputElement | HTMLSelectElement}  */
 	updateStorage(elem) {
 		const name = elem.name;
-		if (elem.tagName === 'SELECT') {
+		if (elem.tagName === 'SELECT' || elem instanceof HTMLSelectElement) {
 			if (name in g.storage.others) {
 				const val = parseInt(elem.value);
 				g.storage.others[name] = val;
@@ -498,36 +499,55 @@ function addSettingMenu() {
 	const current = g.app.querySelector('#' + g.tag.panel);
 	if (current) current.remove();
 	const panel = new LiveChatPanel();
-	const checkboxId = g.id + '-checkbox';
-	const popupmenuId = g.id + '-popupmenu';
-	g.app.querySelector('#' + checkboxId)?.remove();
-	g.app.querySelector('#' + popupmenuId)?.remove();
+	const attrs = [
+		{
+			id: g.id + '-checkbox',
+			role: 'menuitemcheckbox',
+			'aria-checked': 'true',
+		},
+		{
+			id: g.id + '-popupmenu',
+			role: 'menuitem',
+			'aria-haspopup': 'true',
+		}
+	];
+	const htmls = [
+		`<div class="ytp-menuitem-icon"><svg height="24" width="24" viewBox="-40 -40 80 80"><path d="M0,24Q8,24,24,23,31,22,31,19,32,12,32,0M0,24Q-8,24,-24,23,-31,22,-31,19,-32,12,-32,0M0,-24Q-8,-24,-24,-23,-31,-22,-31,-19,-32,-12,-32,0M0,-24Q8,-24,24,-23,31,-22,31,-19,32,-12,32,0" fill="none" stroke="white" stroke-width="3"/><g fill="white" transform="translate(0,10)"><path d="M4,-10l12,12h8l-12,-12,12,-12h-8z"/><circle r="3"/><circle cx="-10" r="3"/><circle cx="-20" r="3"/></g></svg></div><div class="ytp-menuitem-label">${getMessage('ytp_menuitem_label_switch')}</div><div class="ytp-menuitem-content"><div class="ytp-menuitem-toggle-checkbox"></div></div></div>`,
+		`<div class="ytp-menuitem-icon"><svg height="24" width="24" viewBox="-40 -64 108 108"><mask id="m"><path d="M-40-80h120v120h-120z" fill="white" /><circle r="9"/></mask><path d="M0,24Q8,24,24,23,31,22,31,19,32,12,32,0M0,24Q-8,24,-24,23,-31,22,-31,19,-32,12,-32,0M0,-24Q-8,-24,-24,-23,-31,-22,-31,-19,-32,-12,-32,0" fill="none" stroke="white" stroke-width="4"/><g fill="white" transform="translate(0,10)"><circle cx="8" r="3"/><circle cx="-4" r="3"/><circle cx="-16" r="3"/><g transform="translate(32,-32) scale(1.25)" mask="url(#m)"><path id="p" d="M0,0L-10,-8L-6,-24Q0,-26,6,-24L10,-8L-10,8L-6,24Q0,26,6,24L10,8z"/><use xlink:href="#p" transform="rotate(60)"/><use xlink:href="#p" transform="rotate(120)"/></g></g></svg></div><div class="ytp-menuitem-label">${getMessage('ytp_menuitem_label_config')}</div><div class="ytp-menuitem-content"></div>`,
+	];
+	/** @type { { [K in keyof GlobalEventHandlersEventMap]?: (ev: GlobalEventHandlersEventMap[K]) => void }[]} */
+	const events = [
+		{
+			click: e => {
+				const cb = /** @type {HTMLElement?} */ (e.currentTarget);
+				if (cb) {
+					const checked = cb.getAttribute('aria-checked') === 'true';
+					cb.setAttribute('aria-checked', (!checked).toString());
+					g.layer?.[checked ? 'hide' : 'show']();
+				}
+			},
+		},
+		{
+			click: _ => {
+				panel[panel.element.hidden ? 'show' : 'hide']();
+			},
+		}
+	];
 	/** @type {HTMLElement?} */
 	const ytpPanelMenu = g.app.querySelector('.ytp-settings-menu .ytp-panel-menu');
 	if (ytpPanelMenu) {
-		const checkbox = document.createElement('div');
-		const popupmenu = document.createElement('div');
-		checkbox.id = checkboxId;
-		popupmenu.id = popupmenuId;
-		checkbox.className = popupmenu.className = 'ytp-menuitem';
-		checkbox.tabIndex = popupmenu.tabIndex = 0;
-		checkbox.setAttribute('role', 'menuitemcheckbox');
-		popupmenu.setAttribute('role', 'menuitem');
-		checkbox.setAttribute('aria-checked', 'true');
-		popupmenu.setAttribute('aria-haspopup', 'true');
-		checkbox.addEventListener('click', _ => {
-			const checked = checkbox.getAttribute('aria-checked') === 'true';
-			checkbox.setAttribute('aria-checked', (!checked).toString());
-			if (g.layer) g.layer[checked ? 'hide' : 'show']();
-			if (!checked) chrome.runtime.reload();
-		}, { passive: true });
-		checkbox.innerHTML = `<div class="ytp-menuitem-icon"><svg height="24" width="24" viewBox="-40 -40 80 80"><path d="M0,24Q8,24,24,23,31,22,31,19,32,12,32,0M0,24Q-8,24,-24,23,-31,22,-31,19,-32,12,-32,0M0,-24Q-8,-24,-24,-23,-31,-22,-31,-19,-32,-12,-32,0M0,-24Q8,-24,24,-23,31,-22,31,-19,32,-12,32,0" fill="none" stroke="white" stroke-width="3"/><g fill="white" transform="translate(0,10)"><path d="M4,-10l12,12h8l-12,-12,12,-12h-8z"/><circle r="3"/><circle cx="-10" r="3"/><circle cx="-20" r="3"/></g></svg></div><div class="ytp-menuitem-label">${getMessage('ytp_menuitem_label_switch')}</div><div class="ytp-menuitem-content"><div class="ytp-menuitem-toggle-checkbox"></div></div></div>`;
-		popupmenu.addEventListener('click', _ => {
-			panel[panel.element.hidden ? 'show' : 'hide']();
-		}, { passive: true });
-		popupmenu.innerHTML = `<div class="ytp-menuitem-icon"><svg height="24" width="24" viewBox="-40 -64 108 108"><mask id="m"><path d="M-40-80h120v120h-120z" fill="white" /><circle r="9"/></mask><path d="M0,24Q8,24,24,23,31,22,31,19,32,12,32,0M0,24Q-8,24,-24,23,-31,22,-31,19,-32,12,-32,0M0,-24Q-8,-24,-24,-23,-31,-22,-31,-19,-32,-12,-32,0" fill="none" stroke="white" stroke-width="4"/><g fill="white" transform="translate(0,10)"><circle cx="8" r="3"/><circle cx="-4" r="3"/><circle cx="-16" r="3"/><g transform="translate(32,-32) scale(1.25)" mask="url(#m)"><path id="p" d="M0,0L-10,-8L-6,-24Q0,-26,6,-24L10,-8L-10,8L-6,24Q0,26,6,24L10,8z"/><use xlink:href="#p" transform="rotate(60)"/><use xlink:href="#p" transform="rotate(120)"/></g></g></svg></div><div class="ytp-menuitem-label">${getMessage('ytp_menuitem_label_config')}</div><div class="ytp-menuitem-content"></div>`;
-		ytpPanelMenu.appendChild(checkbox);
-		ytpPanelMenu.appendChild(popupmenu);
+		const div = document.createElement('div');
+		div.className = 'ytp-menuitem';
+		div.tabIndex = 0;
+		attrs.forEach((attr, i) => {
+			g.app?.querySelector('#' + attr.id)?.remove();
+			const menuitem = div.cloneNode();
+			for (const [k, v] of Object.entries(attr)) menuitem.setAttribute(k, v);
+			menuitem.innerHTML = htmls[i];
+			// @ts-ignore
+			for (const [k, v] of Object.entries(events[i])) menuitem.addEventListener(k, v, { passive: true });
+			ytpPanelMenu.appendChild(menuitem);
+		});
 	}
 	g.layer?.element.insertAdjacentElement('afterend', panel.element);
 }

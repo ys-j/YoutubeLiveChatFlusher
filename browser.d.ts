@@ -1449,7 +1449,7 @@ declare namespace browser {
 		const onFocusChanged: events.Event<[windowId: integer]>
 	}
 }
-var chrome: browser;
+declare var chrome: typeof browser;
 declare namespace content {
 	const WebSocket: WebSocket
 	const XMLHttpRequest: XMLHttpRequest
