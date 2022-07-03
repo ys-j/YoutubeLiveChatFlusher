@@ -22,8 +22,10 @@ const g = {
 		/** @type { { none: 0, all: 1, label: 2, shortcut: 3 } } */
 		emoji: { none: 0, all: 1, label: 2, shortcut: 3 },
 	},
-	/** @type {LiveChatLayerElement?} */
+	/** @type {LiveChatLayer?} */
 	layer: null,
+	/** @type {LiveChatPanel?} */
+	panel: null,
 	storage: {
 		// default value
 		styles: {
@@ -35,6 +37,7 @@ const g = {
 			sticker_size: '3em',
 		},
 		others: {
+			px_per_sec: 0,
 			number_of_lines: 0,
 			type_of_lines: 0,
 			wrap: 1,
@@ -64,79 +67,66 @@ const g = {
 
 const getMessage = browser.i18n.getMessage;
 
-class LiveChatLayerElement extends HTMLElement {
-	constructor() {
-		super();
-		/** @type {number} */
+class LiveChatLayer {
+	/** @param div {?HTMLDivElement | undefined} */
+	constructor(div = undefined) {
 		this.limit = 0;
-		this.hide = () => {
-			this.hidden = true;
-			this.ariaHidden = 'true';
-			this.style.display = 'none';
-			this.init();
-		};
-		this.show = () => {
-			this.hidden = false;
-			this.ariaHidden = 'false';
-			this.style.display = 'block';
-		};
-		this.init = () => {
-			const root = this.shadowRoot || this.attachShadow({ mode: 'open' });
-			root.innerHTML = '';
-			const link = document.createElement('link');
-			link.rel = 'stylesheet';
-			link.href = browser.runtime.getURL('layer.css');
-			root.appendChild(link);
-			const observer = new MutationObserver(() => {
-				const over = root.childElementCount - (this.limit || Infinity);
-				if (over > 0) {
-					let i = 1;
-					while (i++ < over) link.nextElementSibling?.remove();
-				}
-			});
-			observer.observe(root, { childList: true });
-			return this;
-		};
-	}
-	connectedCallback() {
-		this.dataset.layer = '1';
-		this.setAttribute('role', 'marquee');
-		this.setAttribute('aria-live', 'off');
+		this.element = div || document.createElement('div');
+		this.element.id = 'yt-live-chat-flusher-layer';
+		this.element.dataset.layer = '1';
+		this.element.setAttribute('role', 'marquee');
+		this.element.setAttribute('aria-live', 'off');
 		this.init();
 	}
-}
-customElements.define(g.tag.layer, LiveChatLayerElement);
-
-class LiveChatPanelElement extends HTMLElement {
-	constructor() {
-		super();
-		this.hide = () => {
-			this.hidden = true;
-			this.ariaHidden = 'true';
-			this.style.display = 'none';
-		};
-		this.show = () => {
-			this.hidden = false;
-			this.ariaHidden = 'false';
-			this.style.display = 'block';
-		};
+	init() {
+		const root = this.element.shadowRoot || this.element.attachShadow({ mode: 'open' });
+		root.innerHTML = '';
+		const link = document.createElement('link');
+		link.rel = 'stylesheet';
+		link.href = browser.runtime.getURL('layer.css');
+		root.appendChild(link);
+		const observer = new MutationObserver(() => {
+			const over = root.childElementCount - (this.limit || Infinity);
+			if (over > 0) {
+				let i = 1;
+				while (i++ < over) link.nextElementSibling?.remove();
+			}
+		});
+		observer.observe(root, { childList: true });
+		return this;
 	}
-	connectedCallback() {
-		this.className = 'html5-video-info-panel';
-		this.dataset.layer = '4';
-		this.innerHTML = '';
+	hide() {
+		this.element.hidden = true;
+		this.element.ariaHidden = 'true';
+		this.element.style.display = 'none';
+		this.init();
+	}
+	show() {
+		this.element.hidden = false;
+		this.element.ariaHidden = 'false';
+		this.element.style.display = 'block';
+	}
+}
+
+class LiveChatPanel {
+	/** @param div {?HTMLDivElement | undefined} */
+	constructor(div = undefined) {
+		this.element = div || document.createElement('div');
+		this.element.id = 'yt-live-chat-flusher-panel';
+		this.element.className = 'html5-video-info-panel';
+		this.element.dataset.layer = '4';
 		this.hide();
 
-		const form = document.createElement('form');
-		form.className = 'html5-video-info-panel-content';
-		form.innerHTML = [
+		this.form = document.createElement('form');
+		this.form.className = 'html5-video-info-panel-content';
+		this.form.innerHTML = [
 			[
 				`<div>${getMessage('animationDuration')}</div>`,
-				`<div><label><input type="number" class="styles" name="animation_duration" min="1" max="10" step="0.1" size="5" value="${parseFloat(g.storage.styles.animation_duration) || 6}" data-unit="s"> s</label></div>`,
+				`<div><label><input type="number" class="styles" name="animation_duration" min="1" max="10" step="0.1" size="5" value="${parseFloat(g.storage.styles.animation_duration) || 8}" data-unit="s">s</label> /<input type="checkbox" name="speed"><label><input type="number" name="px_per_sec" min="1" size="8" value="${g.storage.others.px_per_sec || 160}" data-unit="px/s">px/s</label></div>`,
 			],
 			[
 				`<div>${getMessage('fontSize')}</div>`,
-				`<div><label><input type="number" class="styles" name="font_size" min="12" size="5" value="${parseInt(g.storage.styles.font_size) || 36}" data-unit="px"><span>px</span></label> /<input type="checkbox" name="lines"><label><input type="number" name="number_of_lines" min="6" size="5" value="${g.storage.others.number_of_lines || 20}"><span>${getMessage('lines')}</span></label><select name="type_of_lines">${Object.values(g.index.lines).map(v => `<option value="${v}">` + getMessage(`typeOfLines_${v}`)).join('')}</select><span>▼</span></div>`,
+				`<div><label><input type="number" class="styles" name="font_size" min="12" size="5" value="${parseInt(g.storage.styles.font_size) || 36}" data-unit="px">px</label> /<input type="checkbox" name="lines"><label><input type="number" name="number_of_lines" min="6" size="5" value="${g.storage.others.number_of_lines || 20}">${getMessage('lines')}</label><select name="type_of_lines">${Object.values(g.index.lines).map(v => `<option value="${v}">` + getMessage(`typeOfLines_${v}`)).join('')}</select><span>▼</span></div>`,
 			],
 			[
 				`<div>${getMessage('layerOpacity')}</div>`,
@@ -193,170 +183,219 @@ class LiveChatPanelElement extends HTMLElement {
 				`<div>(beta feature)</div>`,
 			],
 		].map(row => '<div>' + row.join('') + '</div>').join('');
-		
-		const selects = form.querySelectorAll('select');
+
+		const selects = this.form.querySelectorAll('select');
 		for (const select of selects) {
 			if (select.name in g.storage.others) {
 				const val = g.storage.others[select.name];
 				select.selectedIndex = val;
 				switch (select.name) {
 					case 'wrap': if (g.layer) {
-						g.layer.style.setProperty('--yt-live-chat-flusher-message-hyphens', g.array.hyphens[val]);
-						g.layer.style.setProperty('--yt-live-chat-flusher-message-word-break', g.array.wordBreak[val]);
-						g.layer.style.setProperty('--yt-live-chat-flusher-message-white-space', g.array.whiteSpace[val]);
-						g.layer.style.setProperty('--yt-live-chat-flusher-max-width', g.storage.styles.max_width);
+						g.layer.element.style.setProperty('--yt-live-chat-flusher-message-hyphens', g.array.hyphens[val]);
+						g.layer.element.style.setProperty('--yt-live-chat-flusher-message-word-break', g.array.wordBreak[val]);
+						g.layer.element.style.setProperty('--yt-live-chat-flusher-message-white-space', g.array.whiteSpace[val]);
+						g.layer.element.style.setProperty('--yt-live-chat-flusher-max-width', g.storage.styles.max_width);
 					}
 					break;
 				}
 			}
 		}
-		const checkboxes = /** @type {NodeListOf<HTMLInputElement>} */ (form.querySelectorAll('input[type="checkbox"]'));
-		for (const checkbox of checkboxes) {
-			const match = checkbox.name.match(/^(.+)_display$/);
+		const checkboxes = /** @type {NodeListOf<HTMLInputElement>} */ (this.form.querySelectorAll('input[type="checkbox"]'));
+		for (const cb of checkboxes) {
+			const match = cb.name.match(/^(.+)_display$/);
 			if (match) {
 				const [_, type] = match;
 				if (type in g.storage.parts) {
-					checkbox.checked = g.storage.parts[type][checkbox.value];
-					switch (checkbox.value) {
+					cb.checked = g.storage.parts[type][cb.value];
+					switch (cb.value) {
 						case 'name': {
-							const div = /** @type {HTMLDivElement} */ (checkbox.closest('div'));
-							if (checkbox.checked) div.classList.add('outlined');
-							checkbox.addEventListener('change', e => {
-								const method = checkbox.checked ? 'add' : 'remove';
+							const div = /** @type {HTMLDivElement} */ (cb.closest('div'));
+							if (cb.checked) div.classList.add('outlined');
+							cb.addEventListener('change', e => {
+								const method = cb.checked ? 'add' : 'remove';
 								div.classList[method]('outlined');
-								g.layer?.classList[method](`has-${type}-name`);
+								g.layer?.element.classList[method](`has-${type}-name`);
 							}, { passive: true });
 							break;
 						}
 						case 'color': {
-							const picker = /** @type {HTMLInputElement?} */ (checkbox.parentElement?.nextElementSibling);
+							const picker = /** @type {HTMLInputElement?} */ (cb.parentElement?.nextElementSibling);
 							if (picker) {
 								const saved = g.storage.parts[type].color;
 								if (saved) {
 									picker.value = saved;
 								} else if (g.layer) {
-									picker.value = formatHexColor(getComputedStyle(g.layer).getPropertyValue('--yt-live-chat-flusher-' + picker.name.replace(/_/g, '-')))
+									picker.value = formatHexColor(getComputedStyle(g.layer.element).getPropertyValue('--yt-live-chat-flusher-' + picker.name.replace(/_/g, '-')));
 								}
 							}
 							break;
 						}
 					}
 				}
-			} else if (checkbox.name === 'lines') {
-				checkbox.checked = g.storage.others.number_of_lines > 0;
-				form.font_size.disabled = checkbox.checked;
-				form.number_of_lines.disabled = form.type_of_lines.disabled = !checkbox.checked;
-			} else if (checkbox.name === 'unlimited') {
-				form.limit_number.disabled = checkbox.checked = g.storage.others.limit === 0;
-				if (g.layer) g.layer.limit = g.storage.others.limit;
-			}
-		}
-		form.addEventListener('change', e => {
-			if (!form.reportValidity()) return;
-			const elem = /** @type {HTMLInputElement | HTMLSelectElement} */ (e.target);
-			const name = elem.name;
-			if (elem.tagName === 'SELECT') {
-				if (name in g.storage.others) {
-					const val = parseInt(elem.value);
-					g.storage.others[name] = val;
-					switch (name) {
-						case 'wrap': if (g.layer) {
-							g.layer.style.setProperty('--yt-live-chat-flusher-message-hyphens', g.array.hyphens[val]);
-							g.layer.style.setProperty('--yt-live-chat-flusher-message-word-break', g.array.wordBreak[val]);
-							g.layer.style.setProperty('--yt-live-chat-flusher-message-white-space', g.array.whiteSpace[val]);
-							g.layer.style.setProperty('--yt-live-chat-flusher-max-width', g.storage.styles.max_width);
-							updateCurrentItemStyle();
-						}
+			} else {
+				switch (cb.name) {
+					case 'speed': {
+						cb.checked = g.storage.others.px_per_sec > 0;
+						this.form.animation_duration.disabled = cb.checked;
+						this.form.px_per_sec.disabled = !cb.checked;
+						break;
+					}
+					case 'lines': {
+						cb.checked = g.storage.others.number_of_lines > 0;
+						this.form.font_size.disabled = cb.checked;
+						this.form.number_of_lines.disabled = this.form.type_of_lines.disabled = !cb.checked;
+						break;
+					}
+					case 'unlimited': {
+						this.form.limit_number.disabled = cb.checked = g.storage.others.limit === 0;
+						if (g.layer) g.layer.limit = g.storage.others.limit;
 						break;
 					}
 				}
-			} else if (elem.classList.contains('styles')) {
-				if (name) {
-					g.storage.styles[name] = elem.value + (elem.dataset.unit || '');
-					g.layer?.style.setProperty('--yt-live-chat-flusher-' + name.replace(/_/g, '-'), g.storage.styles[name]);
-					if (name === 'max_width') updateCurrentItemStyle();
-				}
-			} else if (name.endsWith('_display')) {
-				const match = name.match(/^(.+)_display$/);
-				if (match) {
-					const [_, type] = match;
-					if (type in g.storage.parts && g.layer) {
-						if (elem.value !== 'color') {
-							g.storage.parts[type][elem.value] = elem.checked;
-							g.layer.style.setProperty('--yt-live-chat-flusher-' + name.replace(/_/g, '-') + '-' + elem.value, elem.checked ? 'inherit' : 'none');
-						} else {
-							if (elem.checked) {
-								g.storage.parts[type].color = form.elements[type + '_color']?.value;
-								g.layer.style.setProperty('--yt-live-chat-flusher-' + type.replace(/_/g, '-') + '-color', g.storage.parts[type].color || 'inherit');
-							} else {
-								g.storage.parts[type].color = null;
-								g.layer.style.removeProperty('--yt-live-chat-flusher-' + type.replace(/_/g, '-') + '-color');
-							}
-						}
-						updateCurrentItemStyle(type);
-					}
-				}
-			} else if (name.endsWith('_color')) {
-				const match = name.match(/^(.+)_color$/);
-				if (match) {
-					const [_, type] = match;
-					if (/** @type {HTMLInputElement?} */ (elem.previousElementSibling?.firstElementChild)?.checked) {
-						g.storage.parts[type].color = form.elements[type + '_color']?.value;
-						g.layer?.style.setProperty('--yt-live-chat-flusher-' + type.replace('_', '-') + '-color', g.storage.parts[type].color || 'inherit');
-					} else {
-						g.storage.parts[type].color = null;
-						g.layer?.style.removeProperty('--yt-live-chat-flusher-' + type.replace('_', '-') + '-color');
-					}
-				}
 			}
-			if (['lines', 'number_of_lines', 'type_of_lines'].includes(name)) {
-				const checked = form.lines.checked;
-				form.font_size.disabled = checked;
-				form.number_of_lines.disabled = !checked;
-				form.type_of_lines.disabled = !checked;
-				g.storage.others.number_of_lines = checked ? form.number_of_lines.valueAsNumber : 0;
-				if (g.layer) {
-					if (checked) {
-						const sizeByLines = Math.floor(g.layer.getBoundingClientRect().height * .8 / form.number_of_lines.valueAsNumber);
-						g.layer?.style.setProperty('--yt-live-chat-flusher-font-size', [
-							`${sizeByLines}px`,
-							`max(${form.font_size.value}px, ${sizeByLines}px)`,
-							`min(${form.font_size.value}px, ${sizeByLines}px)`,
-						][g.storage.others.type_of_lines]);
-					} else {
-						g.layer.style.setProperty('--yt-live-chat-flusher-font-size', `${form.font_size.value}px`);
-					}
-				}
-			} else if (['unlimited', 'limit_number'].includes(name)) {
-				const checked = form.unlimited.checked;
-				form.limit_number.disabled = checked;
-				g.storage.others.limit = checked ? 0 : form.limit_number.valueAsNumber;
-				if (g.layer) g.layer.limit = g.storage.others.limit;
-			}
-			browser.storage.local.set(g.storage);
+		}
+		this.form.addEventListener('change', e => {
+			if (!this.form.reportValidity()) return;
+			const elem = /** @type {HTMLInputElement | HTMLSelectElement} */ (e.target);
+			this.updateStorage(elem);
 		}, { passive: true });
+
 		const closeBtn = document.createElement('button');
 		closeBtn.className = 'html5-video-info-panel-close ytp-button';
 		closeBtn.title = getMessage('close');
 		closeBtn.textContent = '[X]';
-		closeBtn.addEventListener('click', this.hide, { passive: true });
-		this.insertAdjacentElement('beforeend', closeBtn);
-		this.insertAdjacentElement('beforeend', form);
-		this.addEventListener('keydown', e => {
+		closeBtn.addEventListener('click', () => {
+			this.hide();
+		}, { passive: true });
+		this.element.insertAdjacentElement('beforeend', closeBtn);
+		this.element.insertAdjacentElement('beforeend', this.form);
+		this.element.addEventListener('keydown', e => {
 			e.stopPropagation();
 		}, { passive: true });
 	}
+	hide() {
+		this.element.hidden = true;
+		this.element.ariaHidden = 'true';
+		this.element.style.display = 'none';
+	}
+	show() {
+		this.element.hidden = false;
+		this.element.ariaHidden = 'false';
+		this.element.style.display = 'block';
+	}
+	/** @param elem {HTMLInputElement | HTMLSelectElement}  */
+	updateStorage(elem) {
+		const name = elem.name;
+		const le = g.layer?.element;
+		if (elem.tagName === 'SELECT' || elem instanceof HTMLSelectElement) {
+			if (name in g.storage.others) {
+				const val = parseInt(elem.value);
+				g.storage.others[name] = val;
+				switch (name) {
+					case 'wrap': if (le) {
+						le.style.setProperty('--yt-live-chat-flusher-message-hyphens', g.array.hyphens[val]);
+						le.style.setProperty('--yt-live-chat-flusher-message-word-break', g.array.wordBreak[val]);
+						le.style.setProperty('--yt-live-chat-flusher-message-white-space', g.array.whiteSpace[val]);
+						le.style.setProperty('--yt-live-chat-flusher-max-width', g.storage.styles.max_width);
+						updateCurrentItemStyle();
+					}
+					break;
+				}
+			}
+		} else if (elem.classList.contains('styles')) {
+			if (name) {
+				g.storage.styles[name] = elem.value + (elem.dataset.unit || '');
+				le?.style.setProperty('--yt-live-chat-flusher-' + name.replace(/_/g, '-'), g.storage.styles[name]);
+				if (name === 'max_width') updateCurrentItemStyle();
+			}
+		} else if (name.endsWith('_display')) {
+			const match = name.match(/^(.+)_display$/);
+			if (match) {
+				const [_, type] = match;
+				if (type in g.storage.parts && le) {
+					if (elem.value !== 'color') {
+						g.storage.parts[type][elem.value] = elem.checked;
+						le.style.setProperty('--yt-live-chat-flusher-' + name.replace(/_/g, '-') + '-' + elem.value, elem.checked ? 'inherit' : 'none');
+					} else {
+						if (elem.checked) {
+							g.storage.parts[type].color = this.form.elements[type + '_color']?.value;
+							le.style.setProperty('--yt-live-chat-flusher-' + type.replace(/_/g, '-') + '-color', g.storage.parts[type].color || 'inherit');
+						} else {
+							g.storage.parts[type].color = null;
+							le.style.removeProperty('--yt-live-chat-flusher-' + type.replace(/_/g, '-') + '-color');
+						}
+					}
+					updateCurrentItemStyle(type);
+				}
+			}
+		} else if (name.endsWith('_color')) {
+			const match = name.match(/^(.+)_color$/);
+			if (match) {
+				const [_, type] = match;
+				if (/** @type {HTMLInputElement?} */ (elem.previousElementSibling?.firstElementChild)?.checked) {
+					g.storage.parts[type].color = this.form.elements[type + '_color']?.value;
+					le?.style.setProperty('--yt-live-chat-flusher-' + type.replace('_', '-') + '-color', g.storage.parts[type].color || 'inherit');
+				} else {
+					g.storage.parts[type].color = null;
+					le?.style.removeProperty('--yt-live-chat-flusher-' + type.replace('_', '-') + '-color');
+				}
+			}
+		}
+		if (['speed', 'px_per_sec'].includes(name)) {
+			const checked = this.form.speed.checked;
+			this.form.animation_duration.disabled = checked;
+			this.form.px_per_sec.disabled = !checked;
+			g.storage.others.px_per_sec = checked ? this.form.px_per_sec.valueAsNumber : 0;
+			if (le) {
+				if (checked) {
+					const durationBySpeed = le.getBoundingClientRect().width / this.form.px_per_sec.valueAsNumber;
+					le.style.setProperty('--yt-live-chat-flusher-animation-duration', durationBySpeed.toFixed(2) + 's');
+				} else {
+					le.style.setProperty('--yt-live-chat-flusher-animation-duration', this.form.animation_duration.value + 's');
+				}
+			}
+		} else if (['lines', 'number_of_lines', 'type_of_lines'].includes(name)) {
+			const checked = this.form.lines.checked;
+			this.form.font_size.disabled = checked;
+			this.form.number_of_lines.disabled = !checked;
+			this.form.type_of_lines.disabled = !checked;
+			g.storage.others.number_of_lines = checked ? this.form.number_of_lines.valueAsNumber : 0;
+			if (le) {
+				if (checked) {
+					const sizeByLines = Math.floor(le.getBoundingClientRect().height * .8 / this.form.number_of_lines.valueAsNumber);
+					le.style.setProperty('--yt-live-chat-flusher-font-size', [
+						`${sizeByLines}px`,
+						`max(${this.form.font_size.value}px, ${sizeByLines}px)`,
+						`min(${this.form.font_size.value}px, ${sizeByLines}px)`,
+					][g.storage.others.type_of_lines]);
+				} else {
+					le.style.setProperty('--yt-live-chat-flusher-font-size', this.form.font_size.value + 'px');
+				}
+			}
+		} else if (['unlimited', 'limit_number'].includes(name)) {
+			const checked = this.form.unlimited.checked;
+			this.form.limit_number.disabled = checked;
+			g.storage.others.limit = checked ? 0 : this.form.limit_number.valueAsNumber;
+			if (g.layer) g.layer.limit = g.storage.others.limit;
+		}
+		browser.storage.local.set(g.storage);
+	}
 }
-customElements.define(g.tag.panel, LiveChatPanelElement);
 
 detectPageType();
 window.addEventListener('yt-navigate-finish', detectPageType, { passive: true });
 window.addEventListener('resize', e => {
 	if (!g.layer) return;
+	const le = g.layer.element;
+	const speed = g.storage.others.px_per_sec;
+	if (speed) {
+		const durationBySpeed = le.getBoundingClientRect().width / speed;
+		le.style.setProperty('--yt-live-chat-flusher-animation-duration', durationBySpeed.toFixed(2) + 's');
+	}
 	const lines = g.storage.others.number_of_lines;
 	if (lines) {
-		const sizeByLines = Math.floor(g.layer.getBoundingClientRect().height * .8 / lines);
-		g.layer.style.setProperty('--yt-live-chat-flusher-font-size', [
+		const sizeByLines = Math.floor(le.getBoundingClientRect().height * .8 / lines);
+		le.style.setProperty('--yt-live-chat-flusher-font-size', [
 			`${sizeByLines}px`,
 			`max(${g.storage.styles.font_size}, ${sizeByLines}px)`,
 			`min(${g.storage.styles.font_size}, ${sizeByLines}px)`,
@@ -379,46 +418,49 @@ function detectPageType() {
 						}
 					}
 				}
-				for (const [prop, value] of Object.entries(g.storage.styles)) {
-					g.layer?.style.setProperty('--yt-live-chat-flusher-' + prop.replace(/_/g, '-'), value);
-				}
-				const lines = g.storage.others.number_of_lines;
-				if (g.layer && lines) {
-					const sizeByLines = Math.floor(g.layer.getBoundingClientRect().height * .8 / lines);
-					if (g.storage.others.type_of_lines > 0) {
-						g.layer.style.setProperty('--yt-live-chat-flusher-font-size', `max(${g.storage.styles.font_size}, ${sizeByLines}px)`);
-					} else {
-						g.layer.style.setProperty('--yt-live-chat-flusher-font-size', `${sizeByLines}px`);
+				if (g.layer) {
+					const le = g.layer.element;
+					for (const [prop, value] of Object.entries(g.storage.styles)) {
+						le.style.setProperty('--yt-live-chat-flusher-' + prop.replace(/_/g, '-'), value);
 					}
-				}
-				for (const [key, values] of Object.entries(g.storage.parts)) {
-					for (const [prop, bool] of Object.entries(values)) {
-						if (prop !== 'color') {
-							g.layer?.style.setProperty(`--yt-live-chat-flusher-${key.replace(/_/g, '-')}-display-${prop}`, bool ? 'inline' : 'none');
-							if (prop === 'name') {
-								g.layer?.classList[bool ? 'add' : 'remove'](`has-${key}-name`);
-							}
+					const lines = g.storage.others.number_of_lines;
+					if (lines) {
+						const sizeByLines = Math.floor(le.getBoundingClientRect().height * .8 / lines);
+						if (g.storage.others.type_of_lines > 0) {
+							le.style.setProperty('--yt-live-chat-flusher-font-size', `max(${g.storage.styles.font_size}, ${sizeByLines}px)`);
 						} else {
-							if (bool) {
-								g.layer?.style.setProperty(`--yt-live-chat-flusher-${key.replace(/_/g, '-')}-color`, `${bool}`);
+							le.style.setProperty('--yt-live-chat-flusher-font-size', `${sizeByLines}px`);
+						}
+					}
+					for (const [key, values] of Object.entries(g.storage.parts)) {
+						for (const [prop, bool] of Object.entries(values)) {
+							if (prop !== 'color') {
+								le.style.setProperty(`--yt-live-chat-flusher-${key.replace(/_/g, '-')}-display-${prop}`, bool ? 'inline' : 'none');
+								if (prop === 'name') {
+									le.classList[bool ? 'add' : 'remove'](`has-${key}-name`);
+								}
 							} else {
-								g.layer?.style.removeProperty(`--yt-live-chat-flusher-${key.replace(/_/g, '-')}-color`);
+								if (bool) {
+									le.style.setProperty(`--yt-live-chat-flusher-${key.replace(/_/g, '-')}-color`, `${bool}`);
+								} else {
+									le.style.removeProperty(`--yt-live-chat-flusher-${key.replace(/_/g, '-')}-color`);
+								}
 							}
 						}
 					}
-				}
-				/** @type { [ string, number, number ][] } */
-				const colormap = [
-					['--yt-live-chat-normal-message-background-color', 0xffc0c0c0, -1],
-					['--yt-live-chat-verified-message-background-color', 0xffc0c0c0, -1],
-					['--yt-live-chat-member-message-background-color', 0xffc0c0c0, -1],
-					['--yt-live-chat-moderator-message-background-color', 0xffc0c0c0, -1],
-					['--yt-live-chat-owner-message-background-color', 0xffc0c0c0, -1],
-					['--yt-live-chat-paid-sticker-background-color', 0xffffb300, -1],
-					['--yt-live-chat-author-chip-owner-background-color', 0xffffd600, -1],
-				];
-				for (const [name, rgb, alpha] of colormap) {
-					g.layer?.style.setProperty(name, `rgba(${getColorRGB(rgb).join()},${alpha < 0 ? 'var(--yt-live-chat-flusher-background-opacity)' : alpha})`);
+					/** @type { [ string, number, number ][] } */
+					const colormap = [
+						['--yt-live-chat-normal-message-background-color', 0xffc0c0c0, -1],
+						['--yt-live-chat-verified-message-background-color', 0xffc0c0c0, -1],
+						['--yt-live-chat-member-message-background-color', 0xffc0c0c0, -1],
+						['--yt-live-chat-moderator-message-background-color', 0xffc0c0c0, -1],
+						['--yt-live-chat-owner-message-background-color', 0xffc0c0c0, -1],
+						['--yt-live-chat-paid-sticker-background-color', 0xffffb300, -1],
+						['--yt-live-chat-author-chip-owner-background-color', 0xffffd600, -1],
+					];
+					for (const [name, rgb, alpha] of colormap) {
+						le.style.setProperty(name, `rgba(${getColorRGB(rgb).join()},${alpha < 0 ? 'var(--yt-live-chat-flusher-background-opacity)' : alpha})`);
+					}
 				}
 			}).then(addSettingMenu);
 		}
@@ -426,8 +468,12 @@ function detectPageType() {
 		document.addEventListener('yt-action', e => {
 			switch (e.detail.actionName) {
 				case 'ytd-watch-player-data-changed': {
-					const layer = document.querySelector(g.tag.layer);
-					if (layer) /** @type {LiveChatLayerElement} */ (layer).init();
+					/** @type {HTMLDivElement?} */
+					const div = document.querySelector('#' + g.tag.layer);
+					if (div) {
+						const layer = new LiveChatLayer(div);
+						layer.init();
+					}
 				}
 			}
 		}, { passive: true });
@@ -435,25 +481,25 @@ function detectPageType() {
 }
 
 function getLayer() {
-	const layer = /** @type {LiveChatLayerElement} */ (document.createElement(g.tag.layer));
-	layer.addEventListener('contextmenu', e => {
-		const origin = /** @type {HTMLElement?} */ (e.originalTarget);
+	const layer = new LiveChatLayer();
+	layer.element.addEventListener('contextmenu', e => {
+		const origin = /** @type {HTMLElement?} */ (e.composedPath().find(p => 'id' in p));
 		if (origin) {
 			e.preventDefault();
 			e.stopPropagation();
 			origin.classList.toggle('paused');
 		}
 	}, { passive: false });
-	layer.addEventListener('click', e => {
-		const origin = /** @type {HTMLElement?} */ (e.originalTarget);
+	layer.element.addEventListener('click', e => {
+		const origin = /** @type {HTMLElement?} */ (e.composedPath()[0]);
 		if (origin?.tagName === 'A') {
 			e.stopPropagation();
 		} else {
 			/** @type {HTMLElement?} */ (e.target)?.parentElement?.click();
 		}
 	}, { passive: true });
-	layer.addEventListener('wheel', e => {
-		const origin = /** @type {HTMLElement?} */ (e.originalTarget);
+	layer.element.addEventListener('wheel', e => {
+		const origin = /** @type {HTMLElement?} */ (e.composedPath().find(p => 'id' in p));
 		if (origin?.classList.contains('paused')) {
 			e.preventDefault();
 			e.stopPropagation();
@@ -469,10 +515,10 @@ function startLiveChatFlusher() {
 	const videoContainer = video?.parentElement;
 	
 	if (video && videoContainer) {
-		const current = g.app.querySelector(g.tag.layer);
+		const current = g.app.querySelector('#' + g.tag.layer);
 		if (current) current.remove();
 		g.layer = getLayer();
-		videoContainer.insertAdjacentElement('afterend', g.layer);
+		videoContainer.insertAdjacentElement('afterend', g.layer.element);
 		
 		const timer = setInterval(() => {
 			const /** @type {HTMLElement?} */ renderer = document.querySelector(g.tag.chat);
@@ -486,47 +532,67 @@ function startLiveChatFlusher() {
 
 function addSettingMenu() {
 	if (!g.app) return;
-	const current = g.app.querySelector(g.tag.panel);
+	/** @type {HTMLDivElement?} */
+	const current = g.app.querySelector('#' + g.tag.panel);
 	if (current) current.remove();
-	const panel = document.createElement(g.tag.panel);
-	const checkboxId = g.id + '-checkbox';
-	const popupmenuId = g.id + '-popupmenu';
-	g.app.querySelector('#' + checkboxId)?.remove();
-	g.app.querySelector('#' + popupmenuId)?.remove();
+	const panel = new LiveChatPanel();
+	const attrs = [
+		{
+			id: g.id + '-checkbox',
+			role: 'menuitemcheckbox',
+			'aria-checked': 'true',
+		},
+		{
+			id: g.id + '-popupmenu',
+			role: 'menuitem',
+			'aria-haspopup': 'true',
+		}
+	];
+	const htmls = [
+		`<div class="ytp-menuitem-icon"><svg height="24" width="24" viewBox="-40 -40 80 80"><path d="M0,24Q8,24,24,23,31,22,31,19,32,12,32,0M0,24Q-8,24,-24,23,-31,22,-31,19,-32,12,-32,0M0,-24Q-8,-24,-24,-23,-31,-22,-31,-19,-32,-12,-32,0M0,-24Q8,-24,24,-23,31,-22,31,-19,32,-12,32,0" fill="none" stroke="white" stroke-width="3"/><g fill="white" transform="translate(0,10)"><path d="M4,-10l12,12h8l-12,-12,12,-12h-8z"/><circle r="3"/><circle cx="-10" r="3"/><circle cx="-20" r="3"/></g></svg></div><div class="ytp-menuitem-label">${getMessage('ytp_menuitem_label_switch')}</div><div class="ytp-menuitem-content"><div class="ytp-menuitem-toggle-checkbox"></div></div></div>`,
+		`<div class="ytp-menuitem-icon"><svg height="24" width="24" viewBox="-40 -64 108 108"><mask id="m"><path d="M-40-80h120v120h-120z" fill="white" /><circle r="9"/></mask><path d="M0,24Q8,24,24,23,31,22,31,19,32,12,32,0M0,24Q-8,24,-24,23,-31,22,-31,19,-32,12,-32,0M0,-24Q-8,-24,-24,-23,-31,-22,-31,-19,-32,-12,-32,0" fill="none" stroke="white" stroke-width="4"/><g fill="white" transform="translate(0,10)"><circle cx="8" r="3"/><circle cx="-4" r="3"/><circle cx="-16" r="3"/><g transform="translate(32,-32) scale(1.25)" mask="url(#m)"><path id="p" d="M0,0L-10,-8L-6,-24Q0,-26,6,-24L10,-8L-10,8L-6,24Q0,26,6,24L10,8z"/><use xlink:href="#p" transform="rotate(60)"/><use xlink:href="#p" transform="rotate(120)"/></g></g></svg></div><div class="ytp-menuitem-label">${getMessage('ytp_menuitem_label_config')}</div><div class="ytp-menuitem-content"></div>`,
+	];
+	/** @type { { [K in keyof GlobalEventHandlersEventMap]?: (ev: GlobalEventHandlersEventMap[K]) => void }[]} */
+	const events = [
+		{
+			click: e => {
+				const cb = /** @type {HTMLElement?} */ (e.currentTarget);
+				if (cb) {
+					const checked = cb.getAttribute('aria-checked') === 'true';
+					cb.setAttribute('aria-checked', (!checked).toString());
+					g.layer?.[checked ? 'hide' : 'show']();
+				}
+			},
+		},
+		{
+			click: _ => {
+				panel[panel.element.hidden ? 'show' : 'hide']();
+			},
+		}
+	];
 	/** @type {HTMLElement?} */
 	const ytpPanelMenu = g.app.querySelector('.ytp-settings-menu .ytp-panel-menu');
 	if (ytpPanelMenu) {
-		const checkbox = document.createElement('div');
-		const popupmenu = document.createElement('div');
-		checkbox.id = checkboxId;
-		popupmenu.id = popupmenuId;
-		checkbox.className = popupmenu.className = 'ytp-menuitem';
-		checkbox.tabIndex = popupmenu.tabIndex = 0;
-		checkbox.setAttribute('role', 'menuitemcheckbox');
-		popupmenu.setAttribute('role', 'menuitem');
-		checkbox.setAttribute('aria-checked', 'true');
-		popupmenu.setAttribute('aria-haspopup', 'true');
-		checkbox.addEventListener('click', _ => {
-			const checked = checkbox.getAttribute('aria-checked') === 'true';
-			checkbox.setAttribute('aria-checked', (!checked).toString());
-			if (g.layer) g.layer[checked ? 'hide' : 'show']();
-			if (!checked) browser.runtime.reload();
-		}, { passive: true });
-		checkbox.innerHTML = `<div class="ytp-menuitem-icon"><svg height="24" width="24" viewBox="-40 -40 80 80"><path d="M0,24Q8,24,24,23,31,22,31,19,32,12,32,0M0,24Q-8,24,-24,23,-31,22,-31,19,-32,12,-32,0M0,-24Q-8,-24,-24,-23,-31,-22,-31,-19,-32,-12,-32,0M0,-24Q8,-24,24,-23,31,-22,31,-19,32,-12,32,0" fill="none" stroke="white" stroke-width="3"/><g fill="white" transform="translate(0,10)"><path d="M4,-10l12,12h8l-12,-12,12,-12h-8z"/><circle r="3"/><circle cx="-10" r="3"/><circle cx="-20" r="3"/></g></svg></div><div class="ytp-menuitem-label">${getMessage('ytp_menuitem_label_switch')}</div><div class="ytp-menuitem-content"><div class="ytp-menuitem-toggle-checkbox"></div></div></div>`;
-		popupmenu.addEventListener('click', _ => {
-			panel[panel.hidden ? 'show' : 'hide']();
-		}, { passive: true });
-		popupmenu.innerHTML = `<div class="ytp-menuitem-icon"><svg height="24" width="24" viewBox="-40 -64 108 108"><mask id="m"><path d="M-40-80h120v120h-120z" fill="white" /><circle r="9"/></mask><path d="M0,24Q8,24,24,23,31,22,31,19,32,12,32,0M0,24Q-8,24,-24,23,-31,22,-31,19,-32,12,-32,0M0,-24Q-8,-24,-24,-23,-31,-22,-31,-19,-32,-12,-32,0" fill="none" stroke="white" stroke-width="4"/><g fill="white" transform="translate(0,10)"><circle cx="8" r="3"/><circle cx="-4" r="3"/><circle cx="-16" r="3"/><g transform="translate(32,-32) scale(1.25)" mask="url(#m)"><path id="p" d="M0,0L-10,-8L-6,-24Q0,-26,6,-24L10,-8L-10,8L-6,24Q0,26,6,24L10,8z"/><use xlink:href="#p" transform="rotate(60)"/><use xlink:href="#p" transform="rotate(120)"/></g></g></svg></div><div class="ytp-menuitem-label">${getMessage('ytp_menuitem_label_config')}</div><div class="ytp-menuitem-content"></div>`;
-		ytpPanelMenu.appendChild(checkbox);
-		ytpPanelMenu.appendChild(popupmenu);
+		const div = document.createElement('div');
+		div.className = 'ytp-menuitem';
+		div.tabIndex = 0;
+		attrs.forEach((attr, i) => {
+			g.app?.querySelector('#' + attr.id)?.remove();
+			const menuitem = div.cloneNode();
+			for (const [k, v] of Object.entries(attr)) menuitem.setAttribute(k, v);
+			menuitem.innerHTML = htmls[i];
+			// @ts-ignore
+			for (const [k, v] of Object.entries(events[i])) menuitem.addEventListener(k, v, { passive: true });
+			ytpPanelMenu.appendChild(menuitem);
+		});
 	}
-	g.layer?.insertAdjacentElement('afterend', panel);
+	g.layer?.element.insertAdjacentElement('afterend', panel.element);
 }
 
 /** @param {string | undefined} type */
 function updateCurrentItemStyle(type = undefined) {
 	if (!g.layer) return;
-	const children = g.layer.shadowRoot?.children;
+	const children = g.layer.element.shadowRoot?.children;
 	if (children) {
 		const items = Array.from(children).filter(type ? c => c.classList.contains(type) : c => c.tagName !== 'LINK');
 		/** @type {HTMLElement[]} */ (items).forEach(updateCurrentItem);
@@ -536,9 +602,9 @@ function updateCurrentItemStyle(type = undefined) {
 /** @param {HTMLElement} item */
 function updateCurrentItem(item) {
 	if (!g.layer) return;
-	const isLong = item.clientWidth >= g.layer.clientWidth * (parseInt(g.storage.styles.max_width) / 100 || 1);
+	const isLong = item.clientWidth >= g.layer.element.clientWidth * (parseInt(g.storage.styles.max_width) / 100 || 1);
 	item.classList[isLong ? 'add' : 'remove']('wrap');
-	item.style.setProperty('--yt-live-chat-flusher-translate-x', `-${g.layer.clientWidth + item.clientWidth}px`);
+	item.style.setProperty('--yt-live-chat-flusher-translate-x', `-${g.layer.element.clientWidth + item.clientWidth}px`);
 }
 
 /**
@@ -546,11 +612,10 @@ function updateCurrentItem(item) {
  */
 function handleYtAction(e) {
 	if (e.detail.actionName === 'yt-live-chat-actions') {
-		const root = g.layer?.shadowRoot;
-		if (!g.layer || !root) return;
-		if (document.visibilityState === 'hidden') return;
-		if (g.layer.hidden) return;
-		if (g.layer.parentElement?.classList.contains('paused-mode')) return;
+		if (!g.layer) return;
+		const le = g.layer.element;
+		const root = le.shadowRoot;
+		if (!root || document.visibilityState === 'hidden' || le.hidden || le.parentElement?.classList.contains('paused-mode')) return;
 		const actions = e.detail.args[0];
 		const filtered = {
 			add: actions.filter(a => 'addChatItemAction' in a),
@@ -598,26 +663,27 @@ function handleYtAction(e) {
 			}
 			const children = Array.from(/** @type {HTMLCollectionOf<HTMLElement>} */ (root.children));
 			root.appendChild(elem);
-			const isLong = elem.clientWidth >= g.layer.clientWidth * (parseInt(g.storage.styles.max_width) / 100 || 1)
+			const { clientHeight: ch, clientWidth: cw } = le;
+			const isLong = elem.clientWidth >= cw * (parseInt(g.storage.styles.max_width) / 100 || 1)
 			if (isLong) elem.classList.add('wrap');
-			elem.style.setProperty('--yt-live-chat-flusher-translate-x', `-${g.layer.clientWidth + elem.clientWidth}px`);
+			elem.style.setProperty('--yt-live-chat-flusher-translate-x', `-${cw + elem.clientWidth}px`);
 			const body = elem.lastElementChild?.textContent;
 			if (body) browser.i18n.detectLanguage(body).then(result => {
-				if (result.isReliable) elem.lang = result.languages[0].language;
+				if (result.isReliable) elem.lang = result.languages?.[0].language;
 			});
 			elem.addEventListener('animationend', e => {
 				/** @type {HTMLElement} */ (e.target).remove();
 			}, { passive: true });
 			let y = 0;
-			if (elem.clientHeight >= g.layer.clientHeight) {
+			if (elem.clientHeight >= ch) {
 				elem.style.top = '0px';
 				return resolve(elem.id);
 			}
-			const overline = Math.ceil(g.layer.clientHeight / lh);
+			const overline = Math.ceil(ch / lh);
 			do {
 				if (children.length > 0) {
 					elem.style.top = `${y * lhf}em`;
-					if (!children.some(before => isCatchable(before, elem)) && !isOverflow(g.layer, elem)) return resolve(elem.id);
+					if (!children.some(before => isCatchable(before, elem)) && !isOverflow(le, elem)) return resolve(elem.id);
 				} else {
 					elem.style.top = '0px';
 					return resolve(elem.id);
@@ -631,7 +697,7 @@ function handleYtAction(e) {
 				do ln = lines.indexOf(i++);
 				while (ln < 0);
 				elem.style.top = `${ln * lhf}em`;
-			} while (isOverflow(g.layer, elem) && y-- > 0);
+			} while (isOverflow(le, elem) && y-- > 0);
 			return resolve(elem.id);
 		}));
 		
@@ -886,10 +952,11 @@ function getColorRGB(long) {
 }
 
 /**
- * @param {string} color 
+ * @param {string} css 
  * @param {string} inherit 
  */
-function formatHexColor(color, inherit = '#ffffff') {
+function formatHexColor(css, inherit = '#ffffff') {
+	const color = css.trim();
 	if (color.startsWith('#')) {
 		if (color.length > 6) {
 			return color.slice(0, 7);

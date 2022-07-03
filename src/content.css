@@ -1,7 +1,7 @@
 .html5-video-player {
 	font-family: inherit !important;
 }
-yt-live-chat-flusher-layer {
+#yt-live-chat-flusher-layer {
 	--yt-live-chat-flusher-animation-duration: 8s;
 	--yt-live-chat-flusher-font-size: 32px;
 	--yt-live-chat-flusher-layer-opacity: 1;
@@ -71,77 +71,77 @@ yt-live-chat-flusher-layer {
 	width: 100%;
 	z-index: 12;
 }
-.html5-video-player.unstarted-mode > yt-live-chat-flusher-layer,
-.html5-video-player.ended-mode > yt-live-chat-flusher-layer {
+.html5-video-player.unstarted-mode > #yt-live-chat-flusher-layer,
+.html5-video-player.ended-mode > #yt-live-chat-flusher-layer {
 	z-index: 25;
 }
-.paused-mode > yt-live-chat-flusher-layer {
+.paused-mode > #yt-live-chat-flusher-layer {
 	--yt-live-chat-flusher-animation-play-state: paused;
 }
 
 /*
 	Config panel
 */
-yt-live-chat-flusher-panel {
+#yt-live-chat-flusher-panel {
 	max-height: calc(100% - 20px);
 	max-width: calc(100% - 20px);
 	overflow: scroll;
 	scrollbar-width: none;
 	user-select: none;
 }
-yt-live-chat-flusher-panel > .html5-video-info-panel-content > div {
+#yt-live-chat-flusher-panel > .html5-video-info-panel-content > div {
 	margin: .5em 0;
 }
-yt-live-chat-flusher-panel > .html5-video-info-panel-content > div > div {
+#yt-live-chat-flusher-panel > .html5-video-info-panel-content > div > div {
 	padding: 0 .25em;
 	margin: 0 .25em;
 	text-align: start;
 	vertical-align: middle;
 	white-space: nowrap;
 }
-yt-live-chat-flusher-panel > .html5-video-info-panel-content > div > div:first-child {
+#yt-live-chat-flusher-panel > .html5-video-info-panel-content > div > div:first-child {
 	text-align: end;
 }
-yt-live-chat-flusher-panel > .html5-video-info-panel-content > div > div.outlined,
-yt-live-chat-flusher-panel > .html5-video-info-panel-content > div > div.superchat {
+#yt-live-chat-flusher-panel > .html5-video-info-panel-content > div > div.outlined,
+#yt-live-chat-flusher-panel > .html5-video-info-panel-content > div > div.superchat {
 	outline: 1px solid;
 	border-radius: .5em;
 }
-yt-live-chat-flusher-panel > .html5-video-info-panel-content > div > div > * + :not(span) {
+#yt-live-chat-flusher-panel > .html5-video-info-panel-content > div > div > * + :not(span) {
 	margin-left: .5em;
 }
-yt-live-chat-flusher-panel label {
+#yt-live-chat-flusher-panel label {
 	cursor: pointer;
 }
-yt-live-chat-flusher-panel label.toggle {
+#yt-live-chat-flusher-panel label.toggle {
 	display: inline-block;
 	vertical-align: middle;
 }
-yt-live-chat-flusher-panel label.toggle > input[type="checkbox"] {
+#yt-live-chat-flusher-panel label.toggle > input[type="checkbox"] {
 	display: none;
 }
-yt-live-chat-flusher-panel :disabled,
-yt-live-chat-flusher-panel :disabled + span,
-yt-live-chat-flusher-panel label.toggle > input[type="checkbox"] + * {
+#yt-live-chat-flusher-panel :disabled,
+#yt-live-chat-flusher-panel :disabled + span,
+#yt-live-chat-flusher-panel label.toggle > input[type="checkbox"] + * {
 	opacity: .4;
 }
-yt-live-chat-flusher-panel label.toggle > input[type="checkbox"]:checked + * {
+#yt-live-chat-flusher-panel label.toggle > input[type="checkbox"]:checked + * {
 	opacity: 1;
 }
-yt-live-chat-flusher-panel .photo > svg {
+#yt-live-chat-flusher-panel .photo > svg {
 	height: 2em;
 	width: 2em;
 	vertical-align: -.5em;
 }
-yt-live-chat-flusher-panel .photo > svg * {
+#yt-live-chat-flusher-panel .photo > svg * {
 	fill: none;
 	stroke: currentColor;
 }
-yt-live-chat-flusher-panel input {
+#yt-live-chat-flusher-panel input {
 	color: inherit;
 	font: inherit;
 }
-yt-live-chat-flusher-panel input[type="checkbox"] {
+#yt-live-chat-flusher-panel input[type="checkbox"] {
 	appearance: none;
 	background-color: currentColor;
 	height: 1.25em;
@@ -150,30 +150,30 @@ yt-live-chat-flusher-panel input[type="checkbox"] {
 	vertical-align: -.25em;
 	width: 1.25em;
 }
-yt-live-chat-flusher-panel input[type="checkbox"]:checked {
+#yt-live-chat-flusher-panel input[type="checkbox"]:checked {
 	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 11'%3E%3Cpath d='M1.5,0.5h8q1,0,1,1v8q0,1,-1,1h-8q-1,0,-1,-1v-8q0,-1,1,-1z' fill='none' stroke='currentColor' /%3E%3Cpath d='M2.5,6l2,2,4,-5' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' /%3E%3C/svg%3E");
 }
-yt-live-chat-flusher-panel input[type="number"] {
+#yt-live-chat-flusher-panel input[type="number"] {
 	background-color: inherit;
 	border: 1px solid currentColor;
 	border-radius: 2px;
 	margin: 0 .25em;
 	padding: 2px 0 2px .25em;
 }
-yt-live-chat-flusher-panel input[type="range"] {
+#yt-live-chat-flusher-panel input[type="range"] {
 	background-color: inherit;
 	vertical-align: middle;
 }
-yt-live-chat-flusher-panel input[type="range"]::-moz-range-track {
+#yt-live-chat-flusher-panel input[type="range"]::-moz-range-track {
 	background-color: var(--yt-spec-static-brand-red, red);
 	height: 3px;
 }
-yt-live-chat-flusher-panel input[type="range"]::-moz-range-thumb {
+#yt-live-chat-flusher-panel input[type="range"]::-moz-range-thumb {
 	background-color: var(--yt-spec-static-brand-white, white);
 	border: 0;
 	box-shadow: 0 1px 5px 0 rgba(0,0,0,0.6);
 }
-yt-live-chat-flusher-panel select {
+#yt-live-chat-flusher-panel select {
 	appearance: none;
 	background-color: transparent;
 	border: 0;
@@ -182,7 +182,7 @@ yt-live-chat-flusher-panel select {
 	font: inherit;
 	padding: 2px;
 }
-yt-live-chat-flusher-panel input[type="color"] {
+#yt-live-chat-flusher-panel input[type="color"] {
 	appearance: none;
 	border: 1px outset currentColor;
 	padding: 0;
@@ -190,10 +190,10 @@ yt-live-chat-flusher-panel input[type="color"] {
 	width: 1.5em;
 	vertical-align: -.25em;
 }
-yt-live-chat-flusher-panel input:not([type="number"]):enabled,
-yt-live-chat-flusher-panel select:enabled {
+#yt-live-chat-flusher-panel input:not([type="number"]):enabled,
+#yt-live-chat-flusher-panel select:enabled {
 	cursor: pointer;
 }
-yt-live-chat-flusher-panel input:invalid {
+#yt-live-chat-flusher-panel input:invalid {
 	box-shadow: 0 0 1px 1px var(--yt-spec-static-brand-red, red);
 }
