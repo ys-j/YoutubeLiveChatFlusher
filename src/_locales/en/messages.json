@@ -32,6 +32,12 @@
 	"typeOfLines_2": {
 		"message": "min"
 	},
+	"fontFamily": {
+		"message": "Font Family"
+	},
+	"fontWeight": {
+		"message": "Weight"
+	},
 	"layerOpacity": {
 		"message": "Chat Layer Opacity"
 	},
@@ -110,6 +116,9 @@
 	"verified": {
 		"message": "Verified"
 	},
+	"you": {
+		"message": "You"
+	},
 	"superchat": {
 		"message": "Super Chat"
 	},
@@ -121,6 +130,9 @@
 	},
 	"milestone": {
 		"message": "Milestone"
+	},
+	"displaySettings": {
+		"message": "Display Settings"
 	},
 	"tooltip_authorPhoto": {
 		"message": "Author Photo"
@@ -172,6 +184,12 @@
 	},
 	"display_customColor": {
 		"message": "Custom Color"
+	},
+	"placeholder_customCSS": {
+		"message": "Custom CSS"
+	},
+	"commonCSS": {
+		"message": "Common CSS"
 	},
 	"translation": {
 		"message": "Message Translation"

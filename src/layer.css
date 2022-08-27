@@ -5,8 +5,9 @@
 :host {
 	contain: strict;
 }
-:host > * {
+:host > div {
 	animation: flush var(--yt-live-chat-flusher-animation-duration) linear var(--yt-live-chat-flusher-animation-play-state);
+	contain: content;
 	left: 100%;
 	max-width: var(--yt-live-chat-flusher-max-width);
 	overflow: hidden;
@@ -22,6 +23,7 @@
 	overflow: hidden;
 }
 img, svg {
+	display: inherit;
 	height: 1em;
 	object-fit: cover;
 	vertical-align: -.15em;
@@ -157,4 +159,17 @@ div.body, figure.body {
 .engagement-poll {
 	background-color: rgba(64, 64, 64, var(--yt-live-chat-flusher-background-opacity));
 	color: var(--yt-live-chat-dialog-text-color, #fff);
+}
+
+:host([data-emoji="none"]) .emoji {
+	display: none;
+}
+:host([data-emoji="label"]) .emoji::before {
+	content: attr(data-label);
+}
+:host([data-emoji="shortcut"]) .emoji::before {
+	content: attr(data-shortcut);
+}
+:host(:not([data-emoji="all"])) .emoji > img {
+	display: none;
 }

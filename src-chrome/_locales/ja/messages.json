@@ -18,7 +18,7 @@
 		"message": "アニメーション秒数"
 	},
 	"fontSize": {
-		"message": "フォントサイズ"
+		"message": "文字サイズ"
 	},
 	"lines": {
 		"message": "行"
@@ -31,6 +31,12 @@
 	},
 	"typeOfLines_2": {
 		"message": "最小"
+	},
+	"fontFamily": {
+		"message": "フォント名"
+	},
+	"fontWeight": {
+		"message": "太さ"
 	},
 	"layerOpacity": {
 		"message": "全体の透過度"
@@ -110,6 +116,9 @@
 	"verified": {
 		"message": "確認済み"
 	},
+	"you": {
+		"message": "あなた"
+	},
 	"superchat": {
 		"message": "スーパーチャット"
 	},
@@ -121,6 +130,9 @@
 	},
 	"milestone": {
 		"message": "マイルストーン"
+	},
+	"displaySettings": {
+		"message": "表示設定"
 	},
 	"tooltip_authorPhoto": {
 		"message": "投稿者のサムネイル"
@@ -173,6 +185,12 @@
 	"display_customColor": {
 		"message": "カスタム色"
 	},
+	"placeholder_customCSS": {
+		"message": "カスタムCSS"
+	},
+	"commonCSS": {
+		"message": "共通CSS"
+	},
 	"translation": {
 		"message": "メッセージ翻訳"
 	},
@@ -180,6 +198,6 @@
 		"message": "しない"
 	},
 	"addableByFirefoxLanguageSettings": {
-		"message": "選択肢はchrome://settings/languagesから追加可能です"
+		"message": "選択肢はabout:preferences#languagesGroupから追加可能です"
 	}
 }
