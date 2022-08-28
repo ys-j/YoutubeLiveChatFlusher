@@ -129,7 +129,7 @@ div.body, figure.body {
 	width: max-content;
 }
 .paused {
-	animation-play-state: paused;
+	animation-play-state: paused !important;
 }
 
 .membership { color: var(--yt-live-chat-flusher-membership-color) }
