@@ -19,3 +19,8 @@ I'd be glad if you could point out my bad English.
   ![Screenshot 2](https://addons.mozilla.org/user-media/previews/full/266/266861.png "【#神楽めあ新衣装】初めての新衣装お披露目配信(⋈◍＞◡＜◍)。✧♡ - YouTube")
 - [【Vampire Survivors】神ゲー🌟ヴァンパイアが緑の地に挑戦！！！【ホロライブ/夜空メル】 - YouTube](https://www.youtube.com/watch?v=dsnGWY5XXAE)
   ![Screenshot 3](https://addons.mozilla.org/user-media/previews/full/266/266862.png "【Vampire Survivors】神ゲー🌟ヴァンパイアが緑の地に挑戦！！！【ホロライブ/夜空メル】 - YouTube")
+
+## DISCLAIMER / 免責事項
+当アドオンによって生じる一切の損害について、開発者は責任を負いません。なお、当アドオンは、業として開発・配布が実施されるものではなく、日本国内における株式会社ドワンゴの特許権を侵害するものではありません。
+
+cf. https://twitter.com/sigekun/status/1533297493626105857
