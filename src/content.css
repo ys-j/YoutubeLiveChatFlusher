@@ -223,7 +223,7 @@
 	border: 1px solid currentColor;
 	border-radius: 2px;
 	cursor: text !important;
-	margin: 2px 0 0 2px;
+	margin: 0 .25em;
 	padding: 2px;
 }
 #yt-live-chat-flusher-panel details input[type="text"] {

@@ -25,6 +25,8 @@ const g = {
 	},
 	/** @type {LiveChatLayer?} */
 	layer: null,
+	/** @type {LiveChatPanel?} */
+	panel: null,
 	storage: {
 		// default value
 		styles: {
@@ -72,6 +74,10 @@ const g = {
 			'.milestone': '',
 			':host>div': '',
 		},
+		hotkeys: {
+			layer: '',
+			panel: '',
+		}
 	},
 	tag: {
 		chat: 'yt-live-chat-renderer',
@@ -87,7 +93,7 @@ class LiveChatLayer {
 	constructor(div = undefined) {
 		this.limit = 0;
 		this.element = div || document.createElement('div');
-		this.element.id = 'yt-live-chat-flusher-layer';
+		this.element.id = g.tag.layer;
 		this.element.dataset.layer = '1';
 		this.element.setAttribute('role', 'marquee');
 		this.element.setAttribute('aria-live', 'off');
@@ -134,7 +140,7 @@ class LiveChatPanel {
 	/** @param div {?HTMLDivElement | undefined} */
 	constructor(div = undefined) {
 		this.element = div || document.createElement('div');
-		this.element.id = 'yt-live-chat-flusher-panel';
+		this.element.id = g.tag.panel;
 		this.element.className = 'html5-video-info-panel';
 		this.element.dataset.layer = '4';
 		this.hide();
@@ -143,8 +149,8 @@ class LiveChatPanel {
 		this.form.className = 'html5-video-info-panel-content';
 		const svg = `<svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg>`;
 		this.form.innerHTML = [
-			`<div><div>${getMessage('animationDuration')}</div><div><label><input type="number" class="styles" name="animation_duration" min="1" step="0.1" size="5" value="${(parseFloat(g.storage.styles.animation_duration) || 8).toFixed(1)}" data-unit="s">s</label> /<input type="checkbox" name="speed"><label><input type="number" name="px_per_sec" min="1" size="8" value="${g.storage.others.px_per_sec || 160}" data-unit="px/s">px/s</label></div></div>`,
-			`<div><div>${getMessage('fontSize')}</div><div><label><input type="number" class="styles" name="font_size" min="12" size="5" value="${parseInt(g.storage.styles.font_size) || 36}" data-unit="px">px</label> /<input type="checkbox" name="lines"><label><input type="number" name="number_of_lines" min="6" size="5" value="${g.storage.others.number_of_lines || 20}">${getMessage('lines')}</label><select name="type_of_lines">${Object.values(g.index.lines).map(v => `<option value="${v}">` + getMessage(`typeOfLines_${v}`)).join('')}</select><span>▼</span></div></div>`,
+			`<div><div>${getMessage('animationDuration')}</div><div><label><input type="number" class="styles" name="animation_duration" min="1" step="0.1" size="5" value="${(parseFloat(g.storage.styles.animation_duration) || 8).toFixed(1)}" data-unit="s">s</label> /<input type="checkbox" name="speed"><label><input type="number" name="px_per_sec" min="1" size="8" value="${g.storage.others.px_per_sec || 160}" data-unit="px/s"><span>px/s</span></label></div></div>`,
+			`<div><div>${getMessage('fontSize')}</div><div><label><input type="number" class="styles" name="font_size" min="12" size="5" value="${parseInt(g.storage.styles.font_size) || 36}" data-unit="px">px</label> /<input type="checkbox" name="lines"><label><input type="number" name="number_of_lines" min="6" size="5" value="${g.storage.others.number_of_lines || 20}"><span>${getMessage('lines')}</span></label><select name="type_of_lines">${Object.values(g.index.lines).map(v => `<option value="${v}">` + getMessage(`typeOfLines_${v}`)).join('')}</select><span>▼</span></div></div>`,
 			`<div><div>${getMessage('fontFamily')} / ${getMessage('fontWeight')}</div><div><input type="text" class="styles" name="font_family" value="${escapeHtml(g.storage.styles.font_family) || 'inherit'}"> / <input type="number" class="styles" name="font_weight" min="100" max="900" step="100" size="8" value="${g.storage.styles.font_weight || '500'}"></div></div>`,
 			`<div><div>${getMessage('layerOpacity')}</div><div>${getMessage('opacity_0')}<input type="range" class="styles" name="layer_opacity" min="0" max="1" step="0.05" value="${parseFloat(g.storage.styles.layer_opacity) || 1}">${getMessage('opacity_1')}</div></div>`,
 			`<div><div>${getMessage('backgroundOpacity')}</div><div>${getMessage('opacity_0')}<input type="range" class="styles" name="background_opacity" min="0" max="1" step="0.05" value="${parseFloat(g.storage.styles.background_opacity) || 0.5}">${getMessage('opacity_1')}</div></div>`,
@@ -158,7 +164,8 @@ class LiveChatPanel {
 			`<div class="_details"><div>${getMessage('membership')}</div><div><details><summary>${getMessage('displaySettings')}</summary><div><div class="superchat"><label class="toggle photo" title="${getMessage('tooltip_authorPhoto')}"><input type="checkbox" name="membership_display" value="photo">${svg}</label><label class="toggle name" title="${getMessage('tooltip_authorName')}"><input type="checkbox" name="membership_display" value="name"><span>${getMessage('display_authorName')}</span></label><label class="toggle body" title="${getMessage('tooltip_membershipMessage')}"><input type="checkbox" name="membership_display" value="message"><span>${getMessage('display_membershipMessage')}</span></label></div><div><label title="${getMessage('tooltip_customColor')}"><input type="checkbox" name="membership_display" value="color">${getMessage('display_customColor')}</label><input type="color" name="membership_color"></div></div><input type="text" name="membership_css" placeholder="${getMessage('placeholder_customCSS')}" value="${escapeHtml(g.storage.cssTexts['.membership'])}"></details></div></div>`,
 			`<div class="_details"><div>${getMessage('milestone')}</div><div><details><summary>${getMessage('displaySettings')}</summary><div><div class="superchat"><label class="toggle photo" title="${getMessage('tooltip_authorPhoto')}"><input type="checkbox" name="milestone_display" value="photo">${svg}</label><label class="toggle name" title="${getMessage('tooltip_authorName')}"><input type="checkbox" name="milestone_display" value="name"><span>${getMessage('display_authorName')}</span></label><label class="toggle amount" title="${getMessage('tooltip_milestoneMonths')}"><input type="checkbox" name="milestone_display" value="months"><span>${getMessage('display_milestoneMonths')}</span></label><br><label class="toggle body" title="${getMessage('tooltip_chatMessage')}"><input type="checkbox" name="milestone_display" value="message"><span>${getMessage('display_chatMessage')}</span></label></div><div><label title="${getMessage('tooltip_customColor')}"><input type="checkbox" name="milestone_display" value="color">${getMessage('display_customColor')}</label><input type="color" name="milestone_color"></div></div><input type="text" name="milestone_css" placeholder="${getMessage('placeholder_customCSS')}" value="${escapeHtml(g.storage.cssTexts['.milestone'])}"></details></div></div>`,
 			`<div><div>${getMessage('commonCSS')}</div><div><input type="text" name="_css" placeholder="${getMessage('placeholder_customCSS')}" value="${escapeHtml(g.storage.cssTexts[':host>div'])}" style="width:20.5em"></div></div>`,
-			`<div><div>${getMessage('translation')}</div><div><select name="translation" title="${getMessage('addableByFirefoxLanguageSettings')}"><option value="0">${getMessage('disabled')}${navigator.languages.map((lang, i) => `<option value="${i + 1}">` + lang).join('')}</select>▼</div><div></div></div>`,
+			`<div><div>${getMessage('translation')}</div><div><select name="translation" title="${getMessage('addableByFirefoxLanguageSettings')}"><option value="0">${getMessage('disabled')}${navigator.languages.map((lang, i) => `<option value="${i + 1}">` + lang).join('')}</select>▼ /<label><input type="checkbox" name="prefix_lang"><span>${getMessage('prefixOriginalLanguage')}</span></label></div><div></div></div>`,
+			`<div><div>${getMessage('hotkey')}</div><div><label><span>${getMessage('hotkey_layer')}</span><input type="text" name="hotkey_layer" pattern="^.?$" size="3" value="${g.storage.hotkeys.layer}"></label> / <label><span>${getMessage('hotkey_panel')}</span><input type="text" name="hotkey_panel" pattern="^.?$" size="3" value="${g.storage.hotkeys.panel}"></label></div></div>`,
 		].join('');
 
 		const le = g.layer?.element;
@@ -167,7 +174,7 @@ class LiveChatPanel {
 			if (select.name in g.storage.others) {
 				/** @type {number} */
 				const val = g.storage.others[select.name];
-				select.selectedIndex = val;
+				select.selectedIndex = Math.abs(val);
 				if (le) switch (select.name) {
 					case 'emoji': {
 						le.dataset.emoji = Object.keys(g.index.emoji)[val];
@@ -234,6 +241,12 @@ class LiveChatPanel {
 						if (g.layer) g.layer.limit = g.storage.others.limit;
 						break;
 					}
+					case 'prefix_lang': {
+						cb.checked = g.storage.others.translation < 0;
+						cb.disabled = this.form.translation.selectedIndex === 0;
+						le?.classList[cb.checked ? 'add' : 'remove'](cb.name);
+						break;
+					}
 				}
 			}
 		}
@@ -273,7 +286,13 @@ class LiveChatPanel {
 		if (elem.tagName === 'SELECT' || elem instanceof HTMLSelectElement) {
 			if (name in g.storage.others) {
 				const val = parseInt(elem.value);
-				g.storage.others[name] = val;
+				if (name === 'translation') {
+					const prefix = this.form.prefix_lang;
+					prefix.disabled = val === 0;
+					g.storage.others[name] = val * (prefix.checked ? -1 : 1);
+				} else {
+					g.storage.others[name] = val;
+				}
 				if (le) switch (name) {
 					case 'emoji': {
 						le.dataset.emoji = Object.keys(g.index.emoji)[val];
@@ -340,13 +359,24 @@ class LiveChatPanel {
 			if (match) {
 				const [_, type] = match;
 				const selector = type ? '.' + type : ':host>div';
-				console.log(selector, this.form.elements[type + '_css']?.value);
 				g.storage.cssTexts[selector] = this.form.elements[type + '_css']?.value || '';
 				const style = le?.shadowRoot?.querySelector('#customcss');
 				if (style) {
 					const rule = new RegExp('\\' + selector + '{.*?}');
 					style.textContent = (style.textContent || '').replace(rule, selector + '{' + g.storage.cssTexts[selector] + '}');
 				}
+			}
+		} else if (name === 'prefix_lang') {
+			const checked = this.form[name].checked;
+			const val = g.storage.others.translation;
+			g.storage.others.translation = Math.abs(val) * (checked ? -1 : 1);
+			le?.classList[checked ? 'add' : 'remove']('prefix_lang');
+			updateCurrentItemStyle();
+		} else if (name.startsWith('hotkey_')) {
+			const match = name.match(/^hotkey_(.*)$/);
+			if (match) {
+				const [_, type] = match;
+				g.storage.hotkeys[type] = elem.value;
 			}
 		}
 		if (['speed', 'px_per_sec'].includes(name)) {
@@ -422,7 +452,7 @@ function detectPageType() {
 		g.app = top.document.querySelector('#ytd-player');
 		if (g.app) {
 			startLiveChatFlusher();
-			const storageList = ['styles', 'others', 'parts', 'cssTexts'];
+			const storageList = ['styles', 'others', 'parts', 'cssTexts', 'hotkeys'];
 			browser.storage.local.get(storageList).then(storage => {
 				for (const type of storageList) {
 					if (storage && storage[type]) {
@@ -477,7 +507,23 @@ function detectPageType() {
 					const style = le.shadowRoot?.querySelector('style');
 					if (style) style.textContent = Object.entries(g.storage.cssTexts).map(([selector, css]) => selector + '{' + css + '}').join('');
 				}
-			}).then(addSettingMenu);
+			}).then(() => {
+				addSettingMenu();
+				top?.document.body.addEventListener('keydown', e => {
+					if (!e.repeat) switch (e.key) {
+						case g.storage.hotkeys.layer: {
+							const checkbox = /** @type {HTMLElement?} */ (g.app?.querySelector('#' + g.id + '-checkbox'));
+							checkbox?.click();
+							break;
+						}
+						case g.storage.hotkeys.panel: {
+							const popupmenu = /** @type {HTMLElement?} */ (g.app?.querySelector('#' + g.id + '-popupmenu'));
+							popupmenu?.click();
+							break;
+						}
+					}
+				}, { passive: true });
+			});
 		}
 	} else if (location.pathname === '/watch') {
 		document.addEventListener('yt-action', e => {
@@ -563,6 +609,7 @@ function addSettingMenu() {
 	const current = g.app.querySelector('#' + g.tag.panel);
 	if (current) current.remove();
 	const panel = new LiveChatPanel();
+	g.panel = panel;
 	const attrs = [
 		{
 			id: g.id + '-checkbox',
@@ -788,8 +835,10 @@ async function parseChatItem(item) {
 	const msg = {
 		orig: renderer.message ? getChatMessage(renderer.message) : '',
 		trans: '',
+		src: '',
 	};
-	const tl = [null, ...navigator.languages][g.storage.others.translation];
+	const index = g.storage.others.translation;
+	const tl = ['', ...navigator.languages][Math.abs(index)];
 	if (tl && msg.orig) {
 		const text = msg.orig.split(/(\s*<.*?>\s*)/).filter(s => s.length);
 		msg.trans = await Promise.all(text.map(async q => {
@@ -802,22 +851,25 @@ async function parseChatItem(item) {
 					return q;
 				} else {
 					const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&dt=bd&dj=1&q=` + encodeURIComponent(q);
-					/** @type { { sentences: { trans: string }[] }? } */
+					/** @type { { sentences: { trans: string }[], src: string }? } */
 					const json = await content.fetch(url).then(res => res.json());
-					return json?.sentences.map(s => s.trans).join('') || '';
+					if (json && json.src !== tl) {
+						msg.src = json.src || '';
+						return json.sentences.map(s => s.trans).join('') || '';
+					} else {
+						return q;
+					}
 				}
 			}
 		})).then(s => s.join(''));
+		if (msg.src && msg.trans) msg.trans = `<span data-srclang="${msg.src}">${msg.trans}</span>`;
 	}
 	switch (key) {
 		case 'liveChatTextMessageRenderer': {
 			const authorType = getAuthorType(renderer);
 			if (Object.values(g.storage.parts[authorType]).includes(true)) {
 				elem.className = 'text ' + authorType;
-				elem.innerHTML = [
-					`<span class="header">${author}</span>`,
-					`<span class="body">${msg.trans || msg.orig}</span>`,
-				].join('');
+				elem.innerHTML = `<span class="header">${author}</span><span class="body">${msg.trans || msg.orig}</span>`;
 				elem.dataset.text = getChatMessage(renderer.message, { emoji: -1 });
 			} else {
 				return null;
@@ -829,10 +881,7 @@ async function parseChatItem(item) {
 			const messageType = primary ? 'milestone' : 'membership';
 			elem.className = messageType;
 			if (Object.values(g.storage.parts[messageType]).includes(true)) {
-				elem.innerHTML = [
-					`<div class="header" style="background-color:rgba(${getColorRGB(0xff0f9d58).join()},var(--yt-live-chat-flusher-background-opacity))">${author}<span class="months">${getChatMessage(primary || sub, { start: primary ? 1 : 0 })}</span></div>`,
-					`<div class="body" style="background-color:rgba(${getColorRGB(0xff0a8043).join()},var(--yt-live-chat-flusher-background-opacity))">${msg.trans || msg.orig}</div>`,
-				].join('');
+				elem.innerHTML = `<div class="header" style="background-color:rgba(${getColorRGB(0xff0f9d58).join()},var(--yt-live-chat-flusher-background-opacity))">${author}<span class="months">${getChatMessage(primary || sub, { start: primary ? 1 : 0 })}</span></div><div class="body" style="background-color:rgba(${getColorRGB(0xff0a8043).join()},var(--yt-live-chat-flusher-background-opacity))">${msg.trans || msg.orig}</div>`;
 			} else {
 				return null;
 			}
@@ -841,10 +890,7 @@ async function parseChatItem(item) {
 		case 'liveChatPaidMessageRenderer': {
 			if (Object.values(g.storage.parts.paid_message).includes(true)) {
 				elem.className = 'superchat';
-				elem.innerHTML = [
-					`<div class="header" style="background-color:rgba(${getColorRGB(renderer.headerBackgroundColor).join()},var(--yt-live-chat-flusher-background-opacity))">${author}<span class="amount">${getChatMessage(renderer.purchaseAmountText)}</span></div>`,
-					`<div class="body" style="background-color:rgba(${getColorRGB(renderer.bodyBackgroundColor).join()},var(--yt-live-chat-flusher-background-opacity))">${msg.trans || msg.orig}</div>`,
-				].join('');
+				elem.innerHTML = `<div class="header" style="background-color:rgba(${getColorRGB(renderer.headerBackgroundColor).join()},var(--yt-live-chat-flusher-background-opacity))">${author}<span class="amount">${getChatMessage(renderer.purchaseAmountText)}</span></div><div class="body" style="background-color:rgba(${getColorRGB(renderer.bodyBackgroundColor).join()},var(--yt-live-chat-flusher-background-opacity))">${msg.trans || msg.orig}</div>`;
 			} else {
 				return null;
 			}
@@ -853,10 +899,7 @@ async function parseChatItem(item) {
 		case 'liveChatPaidStickerRenderer': {
 			if (Object.values(g.storage.parts.paid_sticker).includes(true)) {
 				elem.className = 'supersticker';
-				elem.innerHTML = [
-					`<div class="header" style="background-color:rgba(${getColorRGB(renderer.backgroundColor).join()},var(--yt-live-chat-flusher-background-opacity))">${author}<span class="amount">${getChatMessage(renderer.purchaseAmountText)}</span></div>`,
-					`<figure class="body" style="background-color:rgba(${getColorRGB(renderer.moneyChipBackgroundColor).join()},var(--yt-live-chat-flusher-background-opacity)"><img class="sticker" src="${(renderer.sticker.thumbnails.find(t => 2 * 36 <= (t.width || 36)) || renderer.sticker.thumbnails[0]).url}" loading="lazy"></figure>`,
-				].join('');
+				elem.innerHTML = `<div class="header" style="background-color:rgba(${getColorRGB(renderer.backgroundColor).join()},var(--yt-live-chat-flusher-background-opacity))">${author}<span class="amount">${getChatMessage(renderer.purchaseAmountText)}</span></div><figure class="body" style="background-color:rgba(${getColorRGB(renderer.moneyChipBackgroundColor).join()},var(--yt-live-chat-flusher-background-opacity)"><img class="sticker" src="${(renderer.sticker.thumbnails.find(t => 2 * 36 <= (t.width || 36)) || renderer.sticker.thumbnails[0]).url}" loading="lazy"></figure>`;
 			} else {
 				return null;
 			}

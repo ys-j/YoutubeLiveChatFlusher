@@ -14,7 +14,6 @@
 	pointer-events: auto;
 	position: absolute;
 	text-overflow: ellipsis;
-	will-change: transform;
 }
 :host > :not(.text) {
 	border-radius: .5em;
@@ -23,7 +22,6 @@
 	overflow: hidden;
 }
 img, svg {
-	display: inherit;
 	height: 1em;
 	object-fit: cover;
 	vertical-align: -.15em;
@@ -130,6 +128,7 @@ div.body, figure.body {
 }
 .paused {
 	animation-play-state: paused !important;
+	contain: paint;
 }
 
 .membership { color: var(--yt-live-chat-flusher-membership-color) }
@@ -172,4 +171,8 @@ div.body, figure.body {
 }
 :host(:not([data-emoji="all"])) .emoji > img {
 	display: none;
+}
+
+:host(.prefix_lang) [data-srclang]::before {
+	content: '[' attr(data-srclang) '] ';
 }

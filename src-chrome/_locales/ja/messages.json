@@ -199,5 +199,17 @@
 	},
 	"addableByFirefoxLanguageSettings": {
 		"message": "選択肢はabout:preferences#languagesGroupから追加可能です"
+	},
+	"prefixOriginalLanguage": {
+		"message": "元の言語を文頭につける"
+	},
+	"hotkey": {
+		"message": "ホットキー"
+	},
+	"hotkey_layer": {
+		"message": "レイヤ"
+	},
+	"hotkey_panel": {
+		"message": "設定パネル"
 	}
 }

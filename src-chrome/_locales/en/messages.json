@@ -199,5 +199,17 @@
 	},
 	"addableByFirefoxLanguageSettings": {
 		"message": "Choices are addable by about:preferences#languagesGroup"
+	},
+	"prefixOriginalLanguage": {
+		"message": "Prefix original lang"
+	},
+	"hotkey": {
+		"message": "Hotkeys"
+	},
+	"hotkey_layer": {
+		"message": "Layer"
+	},
+	"hotkey_panel": {
+		"message": "Config Panel"
 	}
 }
