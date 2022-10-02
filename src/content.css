@@ -1,76 +1,76 @@
 .html5-video-player {
 	font-family: inherit !important;
 }
-#yt-live-chat-flusher-layer {
-	--yt-live-chat-flusher-animation-duration: 8s;
-	--yt-live-chat-flusher-font-size: 32px;
-	--yt-live-chat-flusher-font-family: inherit;
-	--yt-live-chat-flusher-font-weight: 500;
-	--yt-live-chat-flusher-layer-opacity: 1;
-	--yt-live-chat-flusher-background-opacity: .5;
-	--yt-live-chat-flusher-max-width: 100%;
-	--yt-live-chat-flusher-message-hyphens: auto;
-	--yt-live-chat-flusher-message-word-break: break-all;
-	--yt-live-chat-flusher-message-white-space: pre-line;
-	--yt-live-chat-flusher-sticker-size: 3em;
-	--yt-live-chat-flusher-normal-color: inherit;
-	--yt-live-chat-flusher-normal-display: block;
-	--yt-live-chat-flusher-normal-display-photo: none;
-	--yt-live-chat-flusher-normal-display-name: none;
-	--yt-live-chat-flusher-normal-display-message: inline;
-	--yt-live-chat-flusher-member-color: var(--yt-live-chat-sponsor-color);
-	--yt-live-chat-flusher-member-display: block;
-	--yt-live-chat-flusher-member-display-photo: none;
-	--yt-live-chat-flusher-member-display-name: none;
-	--yt-live-chat-flusher-member-display-message: inline;
-	--yt-live-chat-flusher-moderator-color: var(--yt-live-chat-moderator-color);
-	--yt-live-chat-flusher-moderator-display: block;
-	--yt-live-chat-flusher-moderator-display-photo: inline;
-	--yt-live-chat-flusher-moderator-display-name: inline;
-	--yt-live-chat-flusher-moderator-display-message: inline;
-	--yt-live-chat-flusher-owner-color: var(--yt-live-chat-owner-color);
-	--yt-live-chat-flusher-owner-display: block;
-	--yt-live-chat-flusher-owner-display-photo: inline;
-	--yt-live-chat-flusher-owner-display-name: inline;
-	--yt-live-chat-flusher-owner-display-message: inline;
-	--yt-live-chat-flusher-verified-color: var(--yt-live-chat-author-chip-verified-background-color);
-	--yt-live-chat-flusher-verified-display: block;
-	--yt-live-chat-flusher-verified-display-photo: inline;
-	--yt-live-chat-flusher-verified-display-name: inline;
-	--yt-live-chat-flusher-verified-display-message: inline;
-	--yt-live-chat-flusher-you-color: var(--yt-live-chat-mention-background-color);
-	--yt-live-chat-flusher-you-display: block;
-	--yt-live-chat-flusher-you-display-photo: none;
-	--yt-live-chat-flusher-you-display-name: none;
-	--yt-live-chat-flusher-you-display-message: inline;
-	--yt-live-chat-flusher-paid-message-display: block;
-	--yt-live-chat-flusher-paid-message-display-photo: initial;
-	--yt-live-chat-flusher-paid-message-display-name: initial;
-	--yt-live-chat-flusher-paid-message-display-amount: initial;
-	--yt-live-chat-flusher-paid-message-display-message: initial;
-	--yt-live-chat-flusher-paid-sticker-display: block;
-	--yt-live-chat-flusher-paid-sticker-display-photo: initial;
-	--yt-live-chat-flusher-paid-sticker-display-name: initial;
-	--yt-live-chat-flusher-paid-sticker-display-amount: initial;
-	--yt-live-chat-flusher-paid-sticker-display-sticker: initial;
-	--yt-live-chat-flusher-new-membership-display: block;
-	--yt-live-chat-flusher-new-membership-display-photo: initial;
-	--yt-live-chat-flusher-new-membership-display-name: initial;
-	--yt-live-chat-flusher-new-membership-display-message: initial;
-	--yt-live-chat-flusher-milestone-display: block;
-	--yt-live-chat-flusher-milestone-display-photo: initial;
-	--yt-live-chat-flusher-milestone-display-name: initial;
-	--yt-live-chat-flusher-milestone-display-months: initial;
-	--yt-live-chat-flusher-milestone-display-message: initial;
-	--yt-live-chat-flusher-animation-play-state: running;
+#yt-lcf-layer {
+	--yt-lcf-animation-duration: 8s;
+	--yt-lcf-font-size: 32px;
+	--yt-lcf-font-family: inherit;
+	--yt-lcf-font-weight: 500;
+	--yt-lcf-layer-opacity: 1;
+	--yt-lcf-background-opacity: .5;
+	--yt-lcf-max-width: 100%;
+	--yt-lcf-message-hyphens: auto;
+	--yt-lcf-message-word-break: break-all;
+	--yt-lcf-message-white-space: pre-line;
+	--yt-lcf-sticker-size: 3em;
+	--yt-lcf-normal-color: inherit;
+	--yt-lcf-normal-display: block;
+	--yt-lcf-normal-display-photo: none;
+	--yt-lcf-normal-display-name: none;
+	--yt-lcf-normal-display-message: inline;
+	--yt-lcf-member-color: var(--yt-live-chat-sponsor-color);
+	--yt-lcf-member-display: block;
+	--yt-lcf-member-display-photo: none;
+	--yt-lcf-member-display-name: none;
+	--yt-lcf-member-display-message: inline;
+	--yt-lcf-moderator-color: var(--yt-live-chat-moderator-color);
+	--yt-lcf-moderator-display: block;
+	--yt-lcf-moderator-display-photo: inline;
+	--yt-lcf-moderator-display-name: inline;
+	--yt-lcf-moderator-display-message: inline;
+	--yt-lcf-owner-color: var(--yt-live-chat-owner-color);
+	--yt-lcf-owner-display: block;
+	--yt-lcf-owner-display-photo: inline;
+	--yt-lcf-owner-display-name: inline;
+	--yt-lcf-owner-display-message: inline;
+	--yt-lcf-verified-color: var(--yt-live-chat-author-chip-verified-background-color);
+	--yt-lcf-verified-display: block;
+	--yt-lcf-verified-display-photo: inline;
+	--yt-lcf-verified-display-name: inline;
+	--yt-lcf-verified-display-message: inline;
+	--yt-lcf-you-color: var(--yt-live-chat-mention-background-color);
+	--yt-lcf-you-display: block;
+	--yt-lcf-you-display-photo: none;
+	--yt-lcf-you-display-name: none;
+	--yt-lcf-you-display-message: inline;
+	--yt-lcf-paid-message-display: block;
+	--yt-lcf-paid-message-display-photo: initial;
+	--yt-lcf-paid-message-display-name: initial;
+	--yt-lcf-paid-message-display-amount: initial;
+	--yt-lcf-paid-message-display-message: initial;
+	--yt-lcf-paid-sticker-display: block;
+	--yt-lcf-paid-sticker-display-photo: initial;
+	--yt-lcf-paid-sticker-display-name: initial;
+	--yt-lcf-paid-sticker-display-amount: initial;
+	--yt-lcf-paid-sticker-display-sticker: initial;
+	--yt-lcf-new-membership-display: block;
+	--yt-lcf-new-membership-display-photo: initial;
+	--yt-lcf-new-membership-display-name: initial;
+	--yt-lcf-new-membership-display-message: initial;
+	--yt-lcf-milestone-display: block;
+	--yt-lcf-milestone-display-photo: initial;
+	--yt-lcf-milestone-display-name: initial;
+	--yt-lcf-milestone-display-months: initial;
+	--yt-lcf-milestone-display-message: initial;
+	--yt-lcf-animation-play-state: running;
 	color: #fff;
 	contain: strict;
-	font-size: var(--yt-live-chat-flusher-font-size);
-	font-family: var(--yt-live-chat-flusher-font-family);
-	font-weight: var(--yt-live-chat-flusher-font-weight);
+	font-size: var(--yt-lcf-font-size);
+	font-family: var(--yt-lcf-font-family);
+	font-weight: var(--yt-lcf-font-weight);
 	height: 100%;
 	line-height: 1.25;
-	opacity: var(--yt-live-chat-flusher-layer-opacity);
+	opacity: var(--yt-lcf-layer-opacity);
 	overflow: hidden;
 	pointer-events: none;
 	position: absolute;
@@ -79,93 +79,96 @@
 	width: 100%;
 	z-index: 12;
 }
-.html5-video-player.unstarted-mode > #yt-live-chat-flusher-layer,
-.html5-video-player.ended-mode > #yt-live-chat-flusher-layer {
+.html5-video-player.unstarted-mode > #yt-lcf-layer,
+.html5-video-player.ended-mode > #yt-lcf-layer {
 	z-index: 25;
 }
-.paused-mode > #yt-live-chat-flusher-layer {
-	--yt-live-chat-flusher-animation-play-state: paused;
+.paused-mode > #yt-lcf-layer {
+	--yt-lcf-animation-play-state: paused;
 }
 
 /*
 	Config panel
 */
-#yt-live-chat-flusher-panel {
+#yt-lcf-panel {
 	max-height: calc(100% - 20px);
 	max-width: calc(100% - 20px);
 	overflow: scroll;
 	scrollbar-width: none;
 	user-select: none;
 }
-#yt-live-chat-flusher-panel > .html5-video-info-panel-content > div {
+#yt-lcf-panel:active {
+	will-change: left, top;
+}
+#yt-lcf-panel > .html5-video-info-panel-content > div {
 	margin: .5em 0;
 }
-#yt-live-chat-flusher-panel > .html5-video-info-panel-content > div > div {
+#yt-lcf-panel > .html5-video-info-panel-content > div > div {
 	padding: 0 .25em;
 	margin: 0 .25em;
 	text-align: start;
 	vertical-align: middle;
 	white-space: nowrap;
 }
-#yt-live-chat-flusher-panel > .html5-video-info-panel-content > div._details,
-#yt-live-chat-flusher-panel > .html5-video-info-panel-content details > div {
+#yt-lcf-panel > .html5-video-info-panel-content > div._details,
+#yt-lcf-panel > .html5-video-info-panel-content details > div {
 	display: flex;
 	justify-content: space-between;
 }
-#yt-live-chat-flusher-panel > .html5-video-info-panel-content > div._details > :last-child {
+#yt-lcf-panel > .html5-video-info-panel-content > div._details > :last-child {
 	flex-grow: 1;
 }
-#yt-live-chat-flusher-panel > .html5-video-info-panel-content details > div > :first-child {
+#yt-lcf-panel > .html5-video-info-panel-content details > div > :first-child {
 	padding: 0 .5em 0 .25em;
 }
-#yt-live-chat-flusher-panel > .html5-video-info-panel-content details > div > div + div::before {
+#yt-lcf-panel > .html5-video-info-panel-content details > div > div + div::before {
 	content: '/';
 }
-#yt-live-chat-flusher-panel > .html5-video-info-panel-content > div > div:first-child {
+#yt-lcf-panel > .html5-video-info-panel-content > div > div:first-child {
 	text-align: end;
 }
-#yt-live-chat-flusher-panel > .html5-video-info-panel-content div.outlined,
-#yt-live-chat-flusher-panel > .html5-video-info-panel-content > div > div.superchat {
+#yt-lcf-panel > .html5-video-info-panel-content div.outlined,
+#yt-lcf-panel > .html5-video-info-panel-content > div > div.superchat {
 	outline: 1px solid;
 	border-radius: .5em;
 }
-#yt-live-chat-flusher-panel > .html5-video-info-panel-content > div > div > * + :not(span),
-#yt-live-chat-flusher-panel > .html5-video-info-panel-content details > div > div > * + :not(span) {
+#yt-lcf-panel > .html5-video-info-panel-content > div > div > * + :not(span),
+#yt-lcf-panel > .html5-video-info-panel-content details > div > div > * + :not(span) {
 	margin-left: .5em;
 }
-#yt-live-chat-flusher-panel summary,
-#yt-live-chat-flusher-panel label {
+#yt-lcf-panel summary,
+#yt-lcf-panel label {
 	cursor: pointer;
 }
-#yt-live-chat-flusher-panel label.toggle {
+#yt-lcf-panel label.toggle {
 	display: inline-block;
 	vertical-align: middle;
 }
-#yt-live-chat-flusher-panel label.toggle > input[type="checkbox"] {
+#yt-lcf-panel label.toggle > input[type="checkbox"] {
 	display: none;
 }
-#yt-live-chat-flusher-panel :disabled,
-#yt-live-chat-flusher-panel :disabled + span,
-#yt-live-chat-flusher-panel label.toggle > input[type="checkbox"] + * {
+#yt-lcf-panel :disabled,
+#yt-lcf-panel :disabled + span,
+#yt-lcf-panel label.toggle > input[type="checkbox"] + * {
 	opacity: .4;
 }
-#yt-live-chat-flusher-panel label.toggle > input[type="checkbox"]:checked + * {
+#yt-lcf-panel label.toggle > input[type="checkbox"]:checked + * {
 	opacity: 1;
 }
-#yt-live-chat-flusher-panel .photo > svg {
+#yt-lcf-panel .photo > svg {
 	height: 2em;
 	width: 2em;
 	vertical-align: -.5em;
 }
-#yt-live-chat-flusher-panel .photo > svg * {
+#yt-lcf-panel .photo > svg * {
 	fill: none;
 	stroke: currentColor;
 }
-#yt-live-chat-flusher-panel input {
+#yt-lcf-panel input {
 	color: inherit;
 	font: inherit;
 }
-#yt-live-chat-flusher-panel input[type="checkbox"] {
+#yt-lcf-panel input[type="checkbox"] {
 	appearance: none;
 	background-color: currentColor;
 	height: 1.25em;
@@ -174,30 +177,30 @@
 	vertical-align: -.25em;
 	width: 1.25em;
 }
-#yt-live-chat-flusher-panel input[type="checkbox"]:checked {
+#yt-lcf-panel input[type="checkbox"]:checked {
 	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 11'%3E%3Cpath d='M1.5,0.5h8q1,0,1,1v8q0,1,-1,1h-8q-1,0,-1,-1v-8q0,-1,1,-1z' fill='none' stroke='currentColor' /%3E%3Cpath d='M2.5,6l2,2,4,-5' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' /%3E%3C/svg%3E");
 }
-#yt-live-chat-flusher-panel input[type="number"] {
+#yt-lcf-panel input[type="number"] {
 	background-color: inherit;
 	border: 1px solid currentColor;
 	border-radius: 2px;
 	margin: 0 .25em;
 	padding: 2px 0 2px .25em;
 }
-#yt-live-chat-flusher-panel input[type="range"] {
+#yt-lcf-panel input[type="range"] {
 	background-color: inherit;
 	vertical-align: middle;
 }
-#yt-live-chat-flusher-panel input[type="range"]::-moz-range-track {
+#yt-lcf-panel input[type="range"]::-moz-range-track {
 	background-color: var(--yt-spec-static-brand-red, red);
 	height: 3px;
 }
-#yt-live-chat-flusher-panel input[type="range"]::-moz-range-thumb {
+#yt-lcf-panel input[type="range"]::-moz-range-thumb {
 	background-color: var(--yt-spec-static-brand-white, white);
 	border: 0;
 	box-shadow: 0 1px 5px 0 rgba(0,0,0,0.6);
 }
-#yt-live-chat-flusher-panel select {
+#yt-lcf-panel select {
 	appearance: none;
 	background-color: transparent;
 	border: 0;
@@ -206,7 +209,7 @@
 	font: inherit;
 	padding: 2px;
 }
-#yt-live-chat-flusher-panel input[type="color"] {
+#yt-lcf-panel input[type="color"] {
 	appearance: none;
 	border: 1px outset currentColor;
 	padding: 0;
@@ -214,11 +217,11 @@
 	width: 1.5em;
 	vertical-align: -.25em;
 }
-#yt-live-chat-flusher-panel input:not([type="number"]):enabled,
-#yt-live-chat-flusher-panel select:enabled {
+#yt-lcf-panel input:not([type="number"]):enabled,
+#yt-lcf-panel select:enabled {
 	cursor: pointer;
 }
-#yt-live-chat-flusher-panel input[type="text"] {
+#yt-lcf-panel input[type="text"] {
 	background-color: inherit;
 	border: 1px solid currentColor;
 	border-radius: 2px;
@@ -226,10 +229,15 @@
 	margin: 0 .25em;
 	padding: 2px;
 }
-#yt-live-chat-flusher-panel details input[type="text"] {
+#yt-lcf-panel details input[type="text"] {
 	margin: 2px 0 0 -1px;
 	width: 100%;
 }
-#yt-live-chat-flusher-panel input:invalid {
+#yt-lcf-panel input:invalid {
 	box-shadow: 0 0 1px 1px var(--yt-spec-static-brand-red, red);
+}
+
+#yt-lcf-panel br {
+	display: block;
+	line-height: .5;
 }

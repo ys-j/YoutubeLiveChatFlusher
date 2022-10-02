@@ -203,6 +203,9 @@
 	"prefixOriginalLanguage": {
 		"message": "Prefix original lang"
 	},
+	"exception": {
+		"message": "except"
+	},
 	"hotkey": {
 		"message": "Hotkeys"
 	},

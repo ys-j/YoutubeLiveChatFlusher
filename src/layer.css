@@ -1,15 +1,15 @@
 @keyframes flush {
 	from { transform: translateX(0px) }
-	to { transform: translateX(var(--yt-live-chat-flusher-translate-x)) }
+	to { transform: translateX(var(--yt-lcf-translate-x)) }
 }
 :host {
 	contain: strict;
 }
 :host > div {
-	animation: flush var(--yt-live-chat-flusher-animation-duration) linear var(--yt-live-chat-flusher-animation-play-state);
+	animation: flush var(--yt-lcf-animation-duration) linear var(--yt-lcf-animation-play-state);
 	contain: content;
 	left: 100%;
-	max-width: var(--yt-live-chat-flusher-max-width);
+	max-width: var(--yt-lcf-max-width);
 	overflow: hidden;
 	pointer-events: auto;
 	position: absolute;
@@ -49,55 +49,55 @@ a {
 	padding-right: 1em;
 }
 
-.normal { color: var(--yt-live-chat-flusher-normal-color) }
+.normal { color: var(--yt-lcf-normal-color) }
 :host(.has-normal-name) .normal {
 	background-color: var(--yt-live-chat-normal-message-background-color); 
 	border-radius: .5em;
 	padding: 0 .25em;
 }
-.normal .photo { display: var(--yt-live-chat-flusher-normal-display-photo) }
-.normal .name { display: var(--yt-live-chat-flusher-normal-display-name) }
-.normal .body { display: var(--yt-live-chat-flusher-normal-display-message) }
+.normal .photo { display: var(--yt-lcf-normal-display-photo) }
+.normal .name { display: var(--yt-lcf-normal-display-name) }
+.normal .body { display: var(--yt-lcf-normal-display-message) }
 
-.member { color: var(--yt-live-chat-flusher-member-color) }
+.member { color: var(--yt-lcf-member-color) }
 :host(.has-member-name) .member {
 	background-color: var(--yt-live-chat-member-message-background-color);
 	border-radius: .5em;
 	padding: 0 .25em;
 }
-.member .photo { display: var(--yt-live-chat-flusher-member-display-photo) }
-.member .name { display: var(--yt-live-chat-flusher-member-display-name) }
-.member .body { display: var(--yt-live-chat-flusher-member-display-message) }
+.member .photo { display: var(--yt-lcf-member-display-photo) }
+.member .name { display: var(--yt-lcf-member-display-name) }
+.member .body { display: var(--yt-lcf-member-display-message) }
 
-.verified { color: var(--yt-live-chat-flusher-verified-color) }
+.verified { color: var(--yt-lcf-verified-color) }
 :host(.has-verified-name) .verified {
 	background-color: var(--yt-live-chat-verified-message-background-color);
 	border-radius: .5em;
 	padding: 0 .25em;
 }
-.verified .photo { display: var(--yt-live-chat-flusher-verified-display-photo) }
-.verified .name { display: var(--yt-live-chat-flusher-verified-display-name) }
-.verified .body { display: var(--yt-live-chat-flusher-verified-display-message) }
+.verified .photo { display: var(--yt-lcf-verified-display-photo) }
+.verified .name { display: var(--yt-lcf-verified-display-name) }
+.verified .body { display: var(--yt-lcf-verified-display-message) }
 
-.moderator { color: var(--yt-live-chat-flusher-moderator-color) }
+.moderator { color: var(--yt-lcf-moderator-color) }
 :host(.has-moderator-name) .moderator {
 	background-color: var(--yt-live-chat-moderator-message-background-color);
 	border-radius: .5em;
 	padding: 0 .25em;
 }
-.moderator .photo { display: var(--yt-live-chat-flusher-moderator-display-photo) }
-.moderator .name { display: var(--yt-live-chat-flusher-moderator-display-name) }
-.moderator .body { display: var(--yt-live-chat-flusher-moderator-display-message) }
+.moderator .photo { display: var(--yt-lcf-moderator-display-photo) }
+.moderator .name { display: var(--yt-lcf-moderator-display-name) }
+.moderator .body { display: var(--yt-lcf-moderator-display-message) }
 
-.owner { color: var(--yt-live-chat-flusher-owner-color) }
+.owner { color: var(--yt-lcf-owner-color) }
 :host(.has-owner-name) .owner {
 	background-color: var(--yt-live-chat-owner-message-background-color);
 	border-radius: .5em;
 	padding: 0 .25em;
 }
-.owner .photo { display: var(--yt-live-chat-flusher-owner-display-photo) }
-.owner .name { display: var(--yt-live-chat-flusher-owner-display-name) }
-.owner .body { display: var(--yt-live-chat-flusher-owner-display-message) }
+.owner .photo { display: var(--yt-lcf-owner-display-photo) }
+.owner .name { display: var(--yt-lcf-owner-display-name) }
+.owner .body { display: var(--yt-lcf-owner-display-message) }
 
 div.header {
 	display: flex;
@@ -117,13 +117,13 @@ div.body, figure.body {
 	padding: 0 .5em 2px;
 }
 .sticker {
-	height: var(--yt-live-chat-flusher-sticker-size);
-	width: var(--yt-live-chat-flusher-sticker-size);
+	height: var(--yt-lcf-sticker-size);
+	width: var(--yt-lcf-sticker-size);
 }
 .wrap {
-	hyphens: var(--yt-live-chat-flusher-message-hyphens);
-	word-break: var(--yt-live-chat-flusher-message-word-break);
-	white-space: var(--yt-live-chat-flusher-message-white-space);
+	hyphens: var(--yt-lcf-message-hyphens);
+	word-break: var(--yt-lcf-message-word-break);
+	white-space: var(--yt-lcf-message-white-space);
 	width: max-content;
 }
 .paused {
@@ -131,32 +131,32 @@ div.body, figure.body {
 	contain: paint;
 }
 
-.membership { color: var(--yt-live-chat-flusher-membership-color) }
-.membership .photo { display: var(--yt-live-chat-flusher-membership-display-photo) }
-.membership .name { display: var(--yt-live-chat-flusher-membership-display-name) }
-.membership .gifts { display: var(--yt-live-chat-flusher-membership-display-months) }
-.membership .months { display: var(--yt-live-chat-flusher-membership-display-message) }
+.membership { color: var(--yt-lcf-membership-color) }
+.membership .photo { display: var(--yt-lcf-membership-display-photo) }
+.membership .name { display: var(--yt-lcf-membership-display-name) }
+.membership .gifts { display: var(--yt-lcf-membership-display-months) }
+.membership .months { display: var(--yt-lcf-membership-display-message) }
 
-.milestone { color: var(--yt-live-chat-flusher-milestone-color) }
-.milestone .photo { display: var(--yt-live-chat-flusher-milestone-display-photo) }
-.milestone .name { display: var(--yt-live-chat-flusher-milestone-display-name) }
-.milestone .months { display: var(--yt-live-chat-flusher-milestone-display-months) }
-.milestone .body { display: var(--yt-live-chat-flusher-milestone-display-message) }
+.milestone { color: var(--yt-lcf-milestone-color) }
+.milestone .photo { display: var(--yt-lcf-milestone-display-photo) }
+.milestone .name { display: var(--yt-lcf-milestone-display-name) }
+.milestone .months { display: var(--yt-lcf-milestone-display-months) }
+.milestone .body { display: var(--yt-lcf-milestone-display-message) }
 
-.superchat { color: var(--yt-live-chat-flusher-paid-message-color) }
-.superchat .photo { display: var(--yt-live-chat-flusher-paid-message-display-photo) }
-.superchat .name { display: var(--yt-live-chat-flusher-paid-message-display-name) }
-.superchat .amount { display: var(--yt-live-chat-flusher-paid-message-display-amount) }
-.superchat .body { display: var(--yt-live-chat-flusher-paid-message-display-message) }
+.superchat { color: var(--yt-lcf-paid-message-color) }
+.superchat .photo { display: var(--yt-lcf-paid-message-display-photo) }
+.superchat .name { display: var(--yt-lcf-paid-message-display-name) }
+.superchat .amount { display: var(--yt-lcf-paid-message-display-amount) }
+.superchat .body { display: var(--yt-lcf-paid-message-display-message) }
 
-.supersticker { color: var(--yt-live-chat-flusher-paid-sticker-color) }
-.supersticker .photo { display: var(--yt-live-chat-flusher-paid-sticker-display-photo) }
-.supersticker .name { display: var(--yt-live-chat-flusher-paid-sticker-display-name) }
-.supersticker .amount { display: var(--yt-live-chat-flusher-paid-sticker-display-amount) }
-.supersticker .body { display: var(--yt-live-chat-flusher-paid-sticker-display-sticker) }
+.supersticker { color: var(--yt-lcf-paid-sticker-color) }
+.supersticker .photo { display: var(--yt-lcf-paid-sticker-display-photo) }
+.supersticker .name { display: var(--yt-lcf-paid-sticker-display-name) }
+.supersticker .amount { display: var(--yt-lcf-paid-sticker-display-amount) }
+.supersticker .body { display: var(--yt-lcf-paid-sticker-display-sticker) }
 
 .engagement-poll {
-	background-color: rgba(64, 64, 64, var(--yt-live-chat-flusher-background-opacity));
+	background-color: rgba(64, 64, 64, var(--yt-lcf-background-opacity));
 	color: var(--yt-live-chat-dialog-text-color, #fff);
 }
 
