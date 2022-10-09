@@ -148,6 +148,7 @@ class LiveChatPanel {
 
 		const le = g.layer?.element;
 		const c = { x: 10, y: 10 };
+		/** @type {(e: MouseEvent) => void} */
 		const onmousemove = e => {
 			if (!le) return;
 			/** @type {(val: number, min: number, max: number) => number} */
@@ -163,6 +164,7 @@ class LiveChatPanel {
 			window.removeEventListener('mouseup', onmouseup);
 		};
 		this.element.addEventListener('mousedown', e => {
+			if (/** @type {HTMLElement} */ (e.target)?.tagName === 'INPUT') return;
 			c.x = e.clientX, c.y = e.clientY;
 			top?.addEventListener('mousemove', onmousemove, { passive: true });
 			top?.addEventListener('mouseup', onmouseup, { passive: true });
@@ -320,6 +322,7 @@ class LiveChatPanel {
 					const prefix = this.form.prefix_lang;
 					prefix.disabled = val === 0;
 					g.storage.others[name] = val * (prefix.checked ? -1 : 1);
+					/** @type {NodeListOf<HTMLInputElement>} */
 					const cb = this.form.except_lang;
 					if (val) {
 						const i = Math.abs(val) - 1;
@@ -412,8 +415,9 @@ class LiveChatPanel {
 			le?.classList[checked ? 'add' : 'remove']('prefix_lang');
 			updateCurrentItemStyle();
 		} else if (name === 'except_lang') {
+			/** @type {NodeListOf<HTMLInputElement>} */
 			const list = this.form[name];
-			g.storage.others[name] = Array.from(list).map((l) => l.checked).reduce((a, c, i) => a + (c << i), 0);
+			g.storage.others[name] = Array.from(list).map((l) => Number(l.checked)).reduce((a, c, i) => a + (c << i), 0);
 		} else if (name.startsWith('hotkey_')) {
 			const match = name.match(/^hotkey_(.*)$/);
 			if (match) {
