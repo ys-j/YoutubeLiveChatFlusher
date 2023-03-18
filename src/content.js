@@ -142,7 +142,7 @@ class LiveChatPanel {
 	constructor(div = undefined) {
 		this.element = div || document.createElement('div');
 		this.element.id = g.tag.panel;
-		this.element.className = 'html5-video-info-panel';
+		this.element.className = 'ytp-sfn';
 		this.element.dataset.layer = '4';
 		this.hide();
 
@@ -172,7 +172,7 @@ class LiveChatPanel {
 		}, { passive: true });
 
 		this.form = document.createElement('form');
-		this.form.className = 'html5-video-info-panel-content';
+		this.form.className = 'ytp-sfn-content';
 		const svg = `<svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg>`;
 		this.form.innerHTML = [
 			`<div><div>${getMessage('animationDuration')}</div><div><label><input type="number" class="styles" name="animation_duration" min="1" step="0.1" size="5" value="${(parseFloat(g.storage.styles.animation_duration) || 8).toFixed(1)}" data-unit="s">s</label> /<input type="checkbox" name="speed"><label><input type="number" name="px_per_sec" min="1" size="8" value="${g.storage.others.px_per_sec || 160}" data-unit="px/s"><span>px/s</span></label></div></div>`,
@@ -289,7 +289,7 @@ class LiveChatPanel {
 		}, { passive: true });
 
 		const closeBtn = document.createElement('button');
-		closeBtn.className = 'html5-video-info-panel-close ytp-button';
+		closeBtn.className = 'ytp-sfn-close ytp-button';
 		closeBtn.title = getMessage('close');
 		closeBtn.textContent = '[X]';
 		closeBtn.addEventListener('click', () => {
@@ -809,29 +809,33 @@ function handleYtAction(e) {
 					if (result.isReliable) body.lang = result.languages?.[0].language;
 				});
 			}
-			let y = 0;
 			if (elem.clientHeight >= ch) {
 				elem.style.top = '0px';
+				elem.dataset.line = '0';
 				return resolve(elem.id);
 			}
 			const overline = Math.ceil(ch / lh);
+			let y = 0;
 			do {
 				if (children.length > 0) {
 					elem.style.top = `${y * lhf}em`;
+					elem.dataset.line = `${y}`;
 					if (!children.some(before => isCatchable(before, elem)) && !isOverflow(le, elem)) return resolve(elem.id);
 				} else {
 					elem.style.top = '0px';
+					elem.dataset.line = '0';
 					return resolve(elem.id);
 				}
 			} while (y++ < overline);
 			do {
-				const tops = children.map(child => child.offsetTop);
+				const tops = children.map(child => parseInt(child.dataset.line || '')).filter(v => !isNaN(v));
 				const lines = new Array(y).fill(0);
-				tops.forEach(v => lines[v / lh]++);
-				let ln = -1, i = 0;
-				do ln = lines.indexOf(i++);
+				tops.forEach(v => {lines[v] += 1});
+				let ln = -1, i = -1;
+				do ln = lines.indexOf(++i);
 				while (ln < 0);
 				elem.style.top = `${ln * lhf}em`;
+				elem.dataset.line = `${ln}`;
 			} while (isOverflow(le, elem) && y-- > 0);
 			return resolve(elem.id);
 		}));
@@ -973,7 +977,7 @@ async function parseChatItem(item) {
 				const name = getChatMessage(h.authorName);
 				const author = name ? `<a href="/channel/${renderer.authorExternalChannelId}" target="_blank" title="${name}"><img class="photo" src="${h.authorPhoto.thumbnails[0].url}" loading="lazy"></a><span class="name">${name}</span>` : '';
 				const icon = document.querySelector('iron-iconset-svg #gift-filled');
-				const count = h.primaryText?.runs?.filter(r => parseInt(r.text) !== NaN)[0]?.text;
+				const count = h.primaryText?.runs?.filter(r => !Number.isNaN(parseInt(r.text)))[0]?.text;
 				if (count) {
 					const gifts = (icon ? `<svg viewBox="0 2 24 24" fill="currentColor" stroke="#000" paint-order="stroke">${icon.innerHTML}</svg>` : '🎁') + count;
 					elem.innerHTML = `<div class="header" style="background-color:rgba(${getColorRGB(0xff0f9d58).join()},var(--yt-lcf-background-opacity))">${author}<span class="gifts">${gifts}</span></div>`;
