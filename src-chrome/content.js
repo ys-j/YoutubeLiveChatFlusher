@@ -25,6 +25,7 @@
 	layer: null,
 	/** @type {LiveChatPanel?} */
 	panel: null,
+	skip: false,
 	storage: {
 		// default value
 		styles: {
@@ -744,143 +745,154 @@
   * @param {CustomEvent<{ actionName: string, args: any[][] }>} e 
   */
  function handleYtAction(e) {
-	if (e.detail?.actionName === 'yt-live-chat-actions') {
-		if (!g.layer) return;
-		const le = g.layer.element;
-		const root = le.shadowRoot;
-		if (!root || document.visibilityState === 'hidden' || le.hidden || le.parentElement?.classList.contains('paused-mode')) return;
-		const actions = e.detail.args[0];
-		const filtered = {
-			add: actions.filter(a => 'addChatItemAction' in a),
-			delete: actions.filter(a => 'markChatItemAsDeletedAction' in a),
-			delete_author: actions.filter(a => 'markChatItemsByAuthorAsDeletedAction' in a),
-			replace: actions.filter(a => 'replaceChatItemAction' in a),
-		};
- 
-		// Add
-		const fs = parseInt(g.storage.styles.font_size) || 36, lhf = 1.25, lh = fs * lhf;
-		const sv = g.storage.others.simultaneous, si = g.index.simultaneous;
-		const last = sv === si.last_merge ? /** @type {HTMLElement?} */ (root.lastElementChild) : null;
-		const bodies = last ? [ `<!-- ${last.className} -->` + (last.dataset.text || '') ] : [];
-		const ids = last ? [last.id] : [];
-		if (sv === si.first) {
-			const notext = filtered.add.slice(1).filter(a => !a.addChatItemAction.item.liveChatTextMessageRenderer);
-			filtered.add.splice(1, Infinity, ...notext);
-		}
-		const adding = filtered.add.map(action => new Promise(async (resolve, reject) => {
-			const elem = await parseChatItem(action.addChatItemAction.item);
-			if (!g.layer || !root) return reject('No layer element');
-			if (!elem) return resolve(elem);
-			if (sv === si.merge || sv === si.last_merge) {
-				const body = elem.dataset.text ? `<!-- ${elem.className} -->` + elem.dataset.text : '';
-				if (body) {
-					const index = bodies.indexOf(body);
-					if (index < 0) {
-						bodies.push(body);
-						ids.push(elem.id);
-					} else {
-						const earlier = root.getElementById(ids[index]);
-						/** @type {HTMLElement | null | undefined} */
-						const _name = earlier?.querySelector('.name');
-						/** @type {HTMLSpanElement?} */
-						const thumbnail = elem.querySelector('.photo');
-						if (earlier && _name && thumbnail) {
-							const parent = thumbnail.parentElement;
-							if (parent) _name.insertAdjacentElement('beforebegin', parent);
-							if (!_name.textContent)  _name.textContent = '';
-							updateCurrentItem(earlier);
+	switch (e.detail?.actionName) {
+		case 'yt-live-chat-actions': {
+			if (!g.layer) return;
+			if (g.skip) {
+				g.skip = false;
+				return;
+			}
+			const le = g.layer.element;
+			const root = le.shadowRoot;
+			if (!root || document.visibilityState === 'hidden' || le.hidden || le.parentElement?.classList.contains('paused-mode')) return;
+			const actions = e.detail.args[0];
+			const filtered = {
+				add: actions.filter(a => 'addChatItemAction' in a),
+				delete: actions.filter(a => 'markChatItemAsDeletedAction' in a),
+				delete_author: actions.filter(a => 'markChatItemsByAuthorAsDeletedAction' in a),
+				replace: actions.filter(a => 'replaceChatItemAction' in a),
+			};
+	
+			// Add
+			const fs = parseInt(g.storage.styles.font_size) || 36, lhf = 1.25, lh = fs * lhf;
+			const sv = g.storage.others.simultaneous, si = g.index.simultaneous;
+			const last = sv === si.last_merge ? /** @type {HTMLElement?} */ (root.lastElementChild) : null;
+			const bodies = last ? [ `<!-- ${last.className} -->` + (last.dataset.text || '') ] : [];
+			const ids = last ? [last.id] : [];
+			if (sv === si.first) {
+				const notext = filtered.add.slice(1).filter(a => !a.addChatItemAction.item.liveChatTextMessageRenderer);
+				filtered.add.splice(1, Infinity, ...notext);
+			}
+			const adding = filtered.add.map(action => new Promise(async (resolve, reject) => {
+				const elem = await parseChatItem(action.addChatItemAction.item);
+				if (!g.layer || !root) return reject('No layer element');
+				if (!elem) return resolve(elem);
+				if (sv === si.merge || sv === si.last_merge) {
+					const body = elem.dataset.text ? `<!-- ${elem.className} -->` + elem.dataset.text : '';
+					if (body) {
+						const index = bodies.indexOf(body);
+						if (index < 0) {
+							bodies.push(body);
+							ids.push(elem.id);
+						} else {
+							const earlier = root.getElementById(ids[index]);
+							/** @type {HTMLElement | null | undefined} */
+							const _name = earlier?.querySelector('.name');
+							/** @type {HTMLSpanElement?} */
+							const thumbnail = elem.querySelector('.photo');
+							if (earlier && _name && thumbnail) {
+								const parent = thumbnail.parentElement;
+								if (parent) _name.insertAdjacentElement('beforebegin', parent);
+								if (!_name.textContent)  _name.textContent = '';
+								updateCurrentItem(earlier);
+							}
+							return resolve(elem.id);
 						}
-						return resolve(elem.id);
 					}
 				}
-			}
-			elem.addEventListener('animationend', e => {
-				/** @type {HTMLElement} */ (e.target).remove();
-			}, { passive: true });
-			const children = Array.from(/** @type {HTMLCollectionOf<HTMLElement>} */ (root.children));
-			root.appendChild(elem);
-			const { clientHeight: ch, clientWidth: cw } = le;
-			if (elem.clientWidth >= cw * (parseInt(g.storage.styles.max_width) / 100 || 1)) elem.classList.add('wrap');
-			elem.style.setProperty('--yt-lcf-translate-x', `-${cw + elem.clientWidth}px`);
-			const body = /** @type {HTMLElement?} */ (elem.lastElementChild);
-			if (body) {
-				const content = body.textContent;
-				if (content) chrome.i18n.detectLanguage(content).then(result => {
-					if (result.isReliable) body.lang = result.languages?.[0].language;
-				});
-			}
-			if (elem.clientHeight >= ch) {
-				elem.style.top = '0px';
-				elem.dataset.line = '0';
-				return resolve(elem.id);
-			}
-			const overline = Math.ceil(ch / lh);
-			let y = 0;
-			do {
-				if (children.length > 0) {
-					elem.style.top = `${y * lhf}em`;
-					elem.dataset.line = `${y}`;
-					if (!children.some(before => isCatchable(before, elem)) && !isOverflow(le, elem)) return resolve(elem.id);
-				} else {
+				elem.addEventListener('animationend', e => {
+					/** @type {HTMLElement} */ (e.target).remove();
+				}, { passive: true });
+				const children = Array.from(/** @type {HTMLCollectionOf<HTMLElement>} */ (root.children));
+				root.appendChild(elem);
+				const { clientHeight: ch, clientWidth: cw } = le;
+				if (elem.clientWidth >= cw * (parseInt(g.storage.styles.max_width) / 100 || 1)) elem.classList.add('wrap');
+				elem.style.setProperty('--yt-lcf-translate-x', `-${cw + elem.clientWidth}px`);
+				const body = /** @type {HTMLElement?} */ (elem.lastElementChild);
+				if (body) {
+					const content = body.textContent;
+					if (content) chrome.i18n.detectLanguage(content).then(result => {
+						if (result.isReliable) body.lang = result.languages?.[0].language;
+					});
+				}
+				if (elem.clientHeight >= ch) {
 					elem.style.top = '0px';
 					elem.dataset.line = '0';
 					return resolve(elem.id);
 				}
-			} while (y++ < overline);
-			do {
-				const tops = children.map(child => parseInt(child.dataset.line || '')).filter(v => !isNaN(v));
-				const lines = new Array(y).fill(0);
-				tops.forEach(v => {lines[v] += 1});
-				let ln = -1, i = -1;
-				do ln = lines.indexOf(++i);
-				while (ln < 0);
-				elem.style.top = `${ln * lhf}em`;
-				elem.dataset.line = `${ln}`;
-			} while (isOverflow(le, elem) && y-- > 0);
-			return resolve(elem.id);
-		}));
-		
-		// Delete
-		const deleting = filtered.delete.map(action => new Promise((resolve, reject) => {
-			const id = action.markChatItemAsDeletedAction.targetItemId;
-			const target = root.getElementById(id);
-			if (target) {
-				target.remove();
-				resolve(id);
-			} else {
-				reject('Failed to delete message: #' + id);
-			}
-		}));
- 
-		// Delete by author
-		const deletingAuthor = filtered.delete_author.map(action => new Promise((resolve, reject) => {
-			const id = action.markChatItemsByAuthorAsDeletedAction.externalChannelId;
-			const targets = root.querySelectorAll(`[data-author-id="${id}"]`);
-			if (targets.length > 0) {
-				targets.forEach(elem => elem.remove());
-				resolve(id);
-			} else {
-				reject('Failed to delate message: (Author ID) ' + id);
-			}
-		}));
-		
-		// Replace
-		const replacing = filtered.replace.map(action => new Promise(async (resolve, reject) => {
-			const id = action.replaceChatItemAction.targetItemId;
-			const target = root.getElementById(id);
-			if (target) {
-				const replacement = action.replaceChatItemAction.replacementItem;
-				const elem = await parseChatItem(replacement);
-				if (elem) {
-					target.replaceWith(elem);
+				const overline = Math.ceil(ch / lh);
+				let y = 0;
+				do {
+					if (children.length > 0) {
+						elem.style.top = `${y * lhf}em`;
+						elem.dataset.line = `${y}`;
+						if (!children.some(before => isCatchable(before, elem)) && !isOverflow(le, elem)) return resolve(elem.id);
+					} else {
+						elem.style.top = '0px';
+						elem.dataset.line = '0';
+						return resolve(elem.id);
+					}
+				} while (y++ < overline);
+				do {
+					const tops = children.map(child => parseInt(child.dataset.line || '')).filter(v => !isNaN(v));
+					const lines = new Array(y).fill(0);
+					tops.forEach(v => {lines[v] += 1});
+					let ln = -1, i = -1;
+					do ln = lines.indexOf(++i);
+					while (ln < 0);
+					elem.style.top = `${ln * lhf}em`;
+					elem.dataset.line = `${ln}`;
+				} while (isOverflow(le, elem) && y-- > 0);
+				return resolve(elem.id);
+			}));
+			
+			// Delete
+			const deleting = filtered.delete.map(action => new Promise((resolve, reject) => {
+				const id = action.markChatItemAsDeletedAction.targetItemId;
+				const target = root.getElementById(id);
+				if (target) {
+					target.remove();
 					resolve(id);
+				} else {
+					reject('Failed to delete message: #' + id);
+				}
+			}));
+	
+			// Delete by author
+			const deletingAuthor = filtered.delete_author.map(action => new Promise((resolve, reject) => {
+				const id = action.markChatItemsByAuthorAsDeletedAction.externalChannelId;
+				const targets = root.querySelectorAll(`[data-author-id="${id}"]`);
+				if (targets.length > 0) {
+					targets.forEach(elem => elem.remove());
+					resolve(id);
+				} else {
+					reject('Failed to delate message: (Author ID) ' + id);
+				}
+			}));
+			
+			// Replace
+			const replacing = filtered.replace.map(action => new Promise(async (resolve, reject) => {
+				const id = action.replaceChatItemAction.targetItemId;
+				const target = root.getElementById(id);
+				if (target) {
+					const replacement = action.replaceChatItemAction.replacementItem;
+					const elem = await parseChatItem(replacement);
+					if (elem) {
+						target.replaceWith(elem);
+						resolve(id);
+					} else {
+						reject('Failed to replace message: #' + id);
+					}
 				} else {
 					reject('Failed to replace message: #' + id);
 				}
-			} else {
-				reject('Failed to replace message: #' + id);
-			}
-		}));
+			}));
+		}
+		break;
+		case 'yt-live-chat-seek-success': {
+			g.skip = true;
+		}
+		break;
 	}
  }
  
