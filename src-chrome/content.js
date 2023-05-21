@@ -630,6 +630,13 @@
 	return layer;
  }
  
+function skipRenderingOnce() {
+	g.skip = true;
+}
+function initLayer() {
+	g.layer?.init();
+}
+
  function startLiveChatFlusher() {
 	if (!g.app) return;
 	const video = g.app.querySelector('video');
@@ -646,8 +653,12 @@
 			if (renderer) {
 				clearInterval(timer);
 				renderer.addEventListener('yt-action', handleYtAction, { passive: true });
+				renderer.addEventListener('yt-load-reload-continuation', skipRenderingOnce, { passive: true });
 			}
 		}, 1000);
+
+		top?.document.addEventListener('yt-set-theater-mode-enabled', initLayer, { passive: true });
+		top?.document.addEventListener('fullscreenchange', initLayer,  { passive: true });
  
 		fetch('/account_advanced').then(r => r.text()).then(t => {
 			const m = t.match(/"(UC[\w-]{22})"/);
@@ -748,10 +759,6 @@
 	switch (e.detail?.actionName) {
 		case 'yt-live-chat-actions': {
 			if (!g.layer) return;
-			if (g.skip) {
-				g.skip = false;
-				return;
-			}
 			const le = g.layer.element;
 			const root = le.shadowRoot;
 			if (!root || document.visibilityState === 'hidden' || le.hidden || le.parentElement?.classList.contains('paused-mode')) return;
@@ -762,6 +769,10 @@
 				delete_author: actions.filter(a => 'markChatItemsByAuthorAsDeletedAction' in a),
 				replace: actions.filter(a => 'replaceChatItemAction' in a),
 			};
+			if (g.skip && filtered.add.length > 0) {
+				g.skip = false;
+				return;
+			}
 	
 			// Add
 			const fs = parseInt(g.storage.styles.font_size) || 36, lhf = 1.25, lh = fs * lhf;
@@ -889,10 +900,9 @@
 			}));
 		}
 		break;
-		case 'yt-live-chat-seek-success': {
-			g.skip = true;
-		}
-		break;
+		case 'yt-live-chat-reload-success':
+		case 'yt-live-chat-seek-success':
+			skipRenderingOnce();
 	}
  }
  
@@ -989,7 +999,7 @@
 				const name = getChatMessage(h.authorName);
 				const author = name ? `<a href="/channel/${renderer.authorExternalChannelId}" target="_blank" title="${name}"><img class="photo" src="${h.authorPhoto.thumbnails[0].url}" loading="lazy"></a><span class="name">${name}</span>` : '';
 				const icon = document.querySelector('iron-iconset-svg #gift-filled');
-				const count = h.primaryText?.runs?.filter(r => parseInt(r.text) !== NaN)[0]?.text;
+				const count = h.primaryText?.runs?.filter(r => !Number.isNaN(parseInt(r.text)))[0]?.text;
 				if (count) {
 					const gifts = (icon ? `<svg viewBox="0 2 24 24" fill="currentColor" stroke="#000" paint-order="stroke">${icon.innerHTML}</svg>` : '🎁') + count;
 					elem.innerHTML = `<div class="header" style="background-color:rgba(${getColorRGB(0xff0f9d58).join()},var(--yt-lcf-background-opacity))">${author}<span class="gifts">${gifts}</span></div>`;

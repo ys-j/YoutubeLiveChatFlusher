@@ -1,11 +1,11 @@
 {
-	"manifest_version": 2,
+	"manifest_version": 3,
 	"name": "__MSG_manifestName__",
-	"version": "0.4.2.3",
-	"applications": {
+	"version": "0.4.2.4",
+	"browser_specific_settings": {
 		"gecko": {
 			"id": "{5a898e4e-6b5c-4acf-9e29-4c791d3b5f2e}",
-			"strict_min_version": "74.0"
+			"strict_min_version": "109.0"
 		}
 	},
 	"content_scripts": [
@@ -17,7 +17,6 @@
 			"run_at": "document_end"
 		}
 	],
-	"content_security_policy": "default-src 'self';",
 	"default_locale": "en",
 	"description": "__MSG_manifestDescription__",
 	"developer": {
@@ -29,5 +28,10 @@
 		"96": "icon.svg"
 	},
 	"permissions": ["storage"],
-	"web_accessible_resources": ["layer.css"]
+	"web_accessible_resources": [
+		{
+			"resources": ["layer.css"],
+			"matches": ["*://www.youtube.com/*"]
+		}
+	]
 }

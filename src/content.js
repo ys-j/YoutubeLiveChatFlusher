@@ -630,6 +630,13 @@ function getLayer() {
 	return layer;
 }
 
+function skipRenderingOnce() {
+	g.skip = true;
+}
+function initLayer() {
+	g.layer?.init();
+}
+
 function startLiveChatFlusher() {
 	if (!g.app) return;
 	const video = g.app.querySelector('video');
@@ -646,10 +653,14 @@ function startLiveChatFlusher() {
 			if (renderer) {
 				clearInterval(timer);
 				renderer.addEventListener('yt-action', handleYtAction, { passive: true });
+				renderer.addEventListener('yt-load-reload-continuation', skipRenderingOnce, { passive: true });
 			}
 		}, 1000);
+		
+		top?.document.addEventListener('yt-set-theater-mode-enabled', initLayer, { passive: true });
+		top?.document.addEventListener('fullscreenchange', initLayer,  { passive: true });
 
-		content.fetch('/account_advanced').then(r => r.text()).then(t => {
+		fetch('/account_advanced').then(r => r.text()).then(t => {
 			const m = t.match(/"(UC[\w-]{22})"/);
 			if (m) g.channel = m[1] || '';
 			if (g.channel) {
@@ -748,10 +759,6 @@ function handleYtAction(e) {
 	switch (e.detail?.actionName) {
 		case 'yt-live-chat-actions': {
 			if (!g.layer) return;
-			if (g.skip) {
-				g.skip = false;
-				return;
-			}
 			const le = g.layer.element;
 			const root = le.shadowRoot;
 			if (!root || document.visibilityState === 'hidden' || le.hidden || le.parentElement?.classList.contains('paused-mode')) return;
@@ -762,6 +769,10 @@ function handleYtAction(e) {
 				delete_author: actions.filter(a => 'markChatItemsByAuthorAsDeletedAction' in a),
 				replace: actions.filter(a => 'replaceChatItemAction' in a),
 			};
+			if (g.skip && filtered.add.length > 0) {
+				g.skip = false;
+				return;
+			}
 	
 			// Add
 			const fs = parseInt(g.storage.styles.font_size) || 36, lhf = 1.25, lh = fs * lhf;
@@ -889,10 +900,9 @@ function handleYtAction(e) {
 			}));
 		}
 		break;
-		case 'yt-live-chat-seek-success': {
-			g.skip = true;
-		}
-		break;
+		case 'yt-live-chat-reload-success':
+		case 'yt-live-chat-seek-success':
+			skipRenderingOnce();
 	}
 }
 
@@ -929,7 +939,7 @@ async function parseChatItem(item) {
 				} else {
 					const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${detection.isReliable ? sl : 'auto'}&tl=${tl}&dt=t&dt=bd&dj=1&q=` + encodeURIComponent(q);
 					/** @type { { sentences: { trans: string }[], src: string }? } */
-					const json = await content.fetch(url).then(res => res.json());
+					const json = await fetch(url).then(res => res.json());
 					if (json && !el.includes(json.src)) {
 						msg.src = json.src || '';
 						return json.sentences.map(s => s.trans).join('') || '';
