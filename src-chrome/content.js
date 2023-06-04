@@ -20,6 +20,8 @@
 		simultaneous: { all: 0, first: 1, merge: 2, last_merge: 3 },
 		/** @type { { none: 0, all: 1, label: 2, shortcut: 3 } } */
 		emoji: { none: 0, all: 1, label: 2, shortcut: 3 },
+		/** @type { { none: 0, all: 1, word: 2, char: 3 } } */
+		mutedWords: { none: 0, all: 1, word: 2, char: 3 },
 	},
 	/** @type {LiveChatLayer?} */
 	layer: null,
@@ -77,7 +79,18 @@
 		hotkeys: {
 			layer: '',
 			panel: '',
-		}
+		},
+		mutedWords: {
+			mode: 0,
+			replacement: '',
+			regexp: false,
+			/** @type {string[]} */
+			plainList: [],
+		},
+	},
+	list: {
+		/** @type {RegExp[]} */
+		mutedWords: [],
 	},
 	tag: {
 		chat: 'yt-live-chat-renderer',
@@ -165,7 +178,7 @@
 			window.removeEventListener('mouseup', onmouseup);
 		};
 		this.element.addEventListener('mousedown', e => {
-			if (/** @type {HTMLElement} */ (e.target)?.tagName === 'INPUT') return;
+			if (['INPUT', 'TEXTAREA', 'SELECT'].includes(/** @type {HTMLElement} */ (e.target)?.tagName)) return;
 			c.x = e.clientX, c.y = e.clientY;
 			top?.addEventListener('mousemove', onmousemove, { passive: true });
 			top?.addEventListener('mouseup', onmouseup, { passive: true });
@@ -173,9 +186,45 @@
 		}, { passive: true });
  
 		this.form = document.createElement('form');
-		this.form.className = 'ytp-sfn-content';
+		const changeTab = e => {
+			buttons.forEach(b => {
+				b.setAttribute('aria-selected', 'false');
+			});
+			e.target?.setAttribute('aria-selected', 'true');
+			fields.forEach(f => {
+				f.hidden = true;
+			});
+			const id = e.target.getAttribute('aria-controls');
+			const f = this.form.querySelector(`#${id}`);
+			if (f) /** @type {HTMLElement} */ (f).hidden = false;
+		};
+		const tablist = document.createElement('div');
+		tablist.setAttribute('role', 'tablist');
+		const buttons = ['displayTab', 'mutedWordsTab'].map((s, i) => {
+			const b = document.createElement('button');
+			b.type = 'button';
+			b.className = 'ytp-button';
+			b.id = `yt-lcf-panel-tabbutton-${i}`;
+			b.setAttribute('role', 'tab');
+			b.setAttribute('aria-controls', `yt-lcf-panel-tabpanel-${i}`);
+			b.setAttribute('aria-selected', (!Boolean(i)).toString());
+			b.textContent = getMessage(s);
+			b.addEventListener('click', changeTab);
+			return b;
+		});
+		tablist.append(...buttons);
+
+		const fields = Array.from({ length: 2 }, (_, i) => {
+			const f = document.createElement('fieldset');
+			f.className = 'ytp-sfn-content';
+			f.id = `yt-lcf-panel-tabpanel-${i}`;
+			f.setAttribute('role', 'tabpanel');
+			f.setAttribute('aria-labelledby', `yt-lcf-panel-tabbutton-${i}`);
+			f.hidden = Boolean(i);
+			return f;
+		});
 		const svg = `<svg viewBox="-8 -8 16 16"><use xlink:href="#yt-lcf-photo"/></svg>`;
-		this.form.innerHTML = [
+		fields[0].innerHTML = [
 			`<div><div>${getMessage('animationDuration')}</div><div><label><input type="number" class="styles" name="animation_duration" min="1" step="0.1" size="5" value="${(parseFloat(g.storage.styles.animation_duration) || 8).toFixed(1)}" data-unit="s">s</label> /<input type="checkbox" name="speed"><label><input type="number" name="px_per_sec" min="1" size="5" value="${g.storage.others.px_per_sec || 160}" data-unit="px/s"><span>px/s</span></label></div></div>`,
 			`<div><div>${getMessage('fontSize')}</div><div><label><input type="number" class="styles" name="font_size" min="12" size="5" value="${parseInt(g.storage.styles.font_size) || 36}" data-unit="px">px</label> /<input type="checkbox" name="lines"><label><input type="number" name="number_of_lines" min="6" size="5" value="${g.storage.others.number_of_lines || 20}"><span>${getMessage('lines')}</span></label><select name="type_of_lines">${Object.values(g.index.lines).map(v => `<option value="${v}">` + getMessage(`typeOfLines_${v}`)).join('')}</select><span>▼</span></div></div>`,
 			`<div><div>${getMessage('fontFamily')} / ${getMessage('fontWeight')}</div><div><input type="text" class="styles" name="font_family" value="${escapeHtml(g.storage.styles.font_family) || 'inherit'}"> / <input type="number" class="styles" name="font_weight" min="100" max="900" step="100" size="5" value="${g.storage.styles.font_weight || '500'}"></div></div>`,
@@ -194,6 +243,13 @@
 			`<div><div>${getMessage('translation')}</div><div><select name="translation" title="${getMessage('addableByFirefoxLanguageSettings')}"><option value="0">${getMessage('disabled')}${navigator.languages.map((lang, i) => `<option value="${i + 1}">` + lang).join('')}</select>▼ /<label><input type="checkbox" name="prefix_lang"><span>${getMessage('prefixOriginalLanguage')}</span></label><br><span>${getMessage('exception')}</span>${navigator.languages.map((lang, i) => `<label><input type="checkbox" name="except_lang" value="${i}"><span>${lang}</span></label>`).join('')}</div><div></div></div>`,
 			`<div><div>${getMessage('hotkey')}</div><div><label><span>${getMessage('hotkey_layer')}</span><input type="text" name="hotkey_layer" pattern="^.?$" size="3" value="${g.storage.hotkeys.layer}"></label> / <label><span>${getMessage('hotkey_panel')}</span><input type="text" name="hotkey_panel" pattern="^.?$" size="3" value="${g.storage.hotkeys.panel}"></label></div></div>`,
 		].join('');
+		fields[1].innerHTML = [
+			`<div><div>${getMessage('mutedWordsMode')}</div><div><select name="muted_words_mode">${Object.values(g.index.mutedWords).map(v => `<option value="${v}">` + getMessage(`mutedWordsMode_${v}`)).join('')}</select>▼</div></div>`,
+			`<div><div>${getMessage('mutedWordsReplacement')}</div><div><input type="text" name="muted_words_replacement" placeholder="${getMessage('placeholder_mutedWordsReplacement')}" style="width:20.5em" value="${g.storage.mutedWords.replacement}" title="${g.storage.mutedWords.mode === g.index.mutedWords.char ? getMessage('tooltip_mutedWordsReplacement') : ''}"></div></div>`,
+			`<div><div>${getMessage('mutedWordsGrammer')}</div><div><label><input type="checkbox" name="muted_words_regexp"><span>${getMessage('regexp')}</span></label></div></div>`,
+			`<textarea name="muted_words_list" rows="20" placeholder="${getMessage('placeholder_mutedWordsList')}" style="width:32em">${g.storage.mutedWords.plainList.join('\n')}</textarea>`
+		].join('');
+		this.form.append(tablist, ...fields);
  
 		const selects = this.form.querySelectorAll('select');
 		for (const select of selects) {
@@ -214,6 +270,8 @@
 						break;
 					}
 				}
+			} else if (select.name === 'muted_words_mode') {
+				select.selectedIndex = g.storage.mutedWords.mode;
 			}
 		}
 		const checkboxes = /** @type {NodeListOf<HTMLInputElement>} */ (this.form.querySelectorAll('input[type="checkbox"]'));
@@ -278,6 +336,10 @@
 						cb.checked = g.storage.others.except_lang & 1 << val ? true : false;
 						const abs = Math.abs(g.storage.others.translation);
 						cb.disabled = abs === 0 || abs === val + 1;
+						break;
+					}
+					case 'muted_words_regexp': {
+						cb.checked = g.storage.mutedWords.regexp;
 						break;
 					}
 				}
@@ -350,6 +412,15 @@
 						updateCurrentItemStyle();
 						break;
 					}
+				}
+			} else if (name === 'muted_words_mode') {
+				const mode = parseInt(elem.value);
+				g.storage.mutedWords.mode = mode;
+				const replacement = this.form.elements['muted_words_replacement'];
+				if (mode === g.index.mutedWords.char) {
+					replacement.title = getMessage('tooltip_mutedWordsReplacement');
+				} else {
+					delete replacement.title;
 				}
 			}
 		} else if (elem.classList.contains('styles') && name) {
@@ -424,6 +495,18 @@
 			if (match) {
 				const [_, type] = match;
 				g.storage.hotkeys[type] = elem.value;
+			}
+		} else if (name.startsWith('muted_words_')) {
+			switch (name) {
+				case 'muted_words_replacement': {
+					g.storage.mutedWords.replacement = elem.value;
+					break;
+				}
+				default: {
+					g.storage.mutedWords.regexp = this.form.elements['muted_words_regexp'].checked;
+					g.storage.mutedWords.plainList = this.form.elements['muted_words_list'].value.split(/\n+/).filter(s => s.length > 0);
+					updateMutedWordsList();
+				}
 			}
 		}
 		if (['speed', 'px_per_sec'].includes(name)) {
@@ -507,7 +590,7 @@
 			g.app = top.document.querySelector('#ytd-player');
 			if (g.app) {
 				startLiveChatFlusher();
-				const storageList = ['styles', 'others', 'parts', 'cssTexts', 'hotkeys'];
+				const storageList = ['styles', 'others', 'parts', 'cssTexts', 'hotkeys', 'mutedWords'];
 				chrome.storage.local.get(storageList).then(storage => {
 					for (const type of storageList) {
 						if (storage && storage[type]) {
@@ -516,6 +599,7 @@
 							}
 						}
 					}
+					updateMutedWordsList();
 					if (g.layer) {
 						const le = g.layer.element;
 						for (const [prop, value] of Object.entries(g.storage.styles)) {
@@ -752,6 +836,16 @@ function initLayer() {
 	item.style.setProperty('--yt-lcf-translate-x', `-${g.layer.element.clientWidth + item.clientWidth}px`);
  }
  
+ function updateMutedWordsList() {
+	const { regexp, plainList } = g.storage.mutedWords;
+	if (regexp) {
+		g.list.mutedWords = plainList.map(s => new RegExp(s, 'g'));
+	} else {
+		g.list.mutedWords = plainList.length > 0 ? [ new RegExp(plainList.map(escapeRegExp).join('|'), 'g') ] : [];
+	}
+	return g.list.mutedWords;
+ }
+ 
  /**
   * @param {CustomEvent<{ actionName: string, args: any[][] }>} e 
   */
@@ -918,7 +1012,7 @@ function initLayer() {
 	const name = getChatMessage(renderer.authorName);
 	const author = name ? `<a href="/channel/${renderer.authorExternalChannelId}" target="_blank" title="${name}"><img class="photo" src="${renderer.authorPhoto.thumbnails[0].url}" loading="lazy"></a><span class="name">${name}</span>` : '';
 	const msg = {
-		orig: renderer.message ? getChatMessage(renderer.message) : '',
+		orig: renderer.message ? getChatMessage(renderer.message, { filterMode: g.storage.mutedWords.mode }) : '',
 		trans: '',
 		src: '',
 	};
@@ -1044,16 +1138,19 @@ function initLayer() {
  
  /**
   * @param { LiveChat.Runs | LiveChat.SimpleText | undefined } message
-  * @param { { start?: number, end?: number, emoji?: number } } options
+  * @param { { start?: number, end?: number, emoji?: number, filterMode?: number } } options
   */
  function getChatMessage(message, options = {}) {
 	if (message) {
-		const { start, end } = options;
+		const { start, end, filterMode } = options;
 		if ('runs' in message) {
+			let rslt = '';
 			const runs = start || end ? message.runs.slice(start, end) : message.runs;
-			return runs.map(r => {
+			for (const r of runs) {
 				if ('text' in r) {
-					let text = escapeHtml(r.text).replace(/\n/g, '<br>');
+					const filtered = filterMessage(r.text, filterMode);
+					if (filtered.result && filterMode === g.index.mutedWords.all) break;
+					let text = escapeHtml(filtered.value).replace(/\n/g, '<br>');
 					if (r.italics) text = '<i>' + text + '</i>';
 					if (r.bold) text = '<b>' + text + '</b>';
 					if (r.navigationEndpoint) {
@@ -1064,22 +1161,42 @@ function initLayer() {
 							text = `<a class="open_in_new" href="${href}" target="_blank" title="${text}" rel="${ep.nofollow ? 'nofollow' : ''}"><svg viewBox="0 0 24 24" fill="currentColor" stroke="#000" paint-order="stroke">${icon?.innerHTML}</svg></a>`;
 						}
 					}
-					return text;
+					rslt += text;
 				} else {
 					const emoji = options.emoji ?? g.storage.others.emoji;
-					if (!emoji) return '';
-					const e = g.index.emoji;
 					if (emoji < 0) {
-						return r.emoji.shortcuts?.[0] || r.emoji.emojiId || ''; 
-					} else {
-						const thumbnail = r.emoji.image.thumbnails.slice(-1)[0];
-						const img = thumbnail ? `<img src="${thumbnail.url}" alt="">` : r.emoji.emojiId;
-						return `<span class="emoji" data-label="${escapeHtml(r.emoji.image.accessibility.accessibilityData.label)}" data-shortcut="${escapeHtml(r.emoji.shortcuts?.[0] || '')}">${img}</span>`;
+						rslt += r.emoji.shortcuts?.[0] || r.emoji.emojiId || '';
+					} else if (emoji) {
+						let skip = false;
+						if (filterMode) {
+							const shortcuts = [...(r.emoji.shortcuts || [r.emoji.emojiId])];
+							const plainList = g.storage.mutedWords.plainList;
+							for (const rule of plainList) {
+								const b = shortcuts.includes(rule);
+								if (b) {
+									skip = true;
+									const replacement = g.storage.mutedWords.replacement;
+									switch (filterMode) {
+										case g.index.mutedWords.all: return '';
+										case g.index.mutedWords.word: rslt += replacement; break;
+										case g.index.mutedWords.char: rslt += [...replacement][0] || ''; break;
+									}
+									break;
+								}
+							}
+						}
+						if (!skip) {
+							const thumbnail = r.emoji.image.thumbnails.slice(-1)[0];
+							const img = thumbnail ? `<img src="${thumbnail.url}" alt="">` : r.emoji.emojiId;
+							rslt += `<span class="emoji" data-label="${escapeHtml(r.emoji.image.accessibility.accessibilityData.label)}" data-shortcut="${escapeHtml(r.emoji.shortcuts?.[0] || '')}">${img}</span>`;
+						}
 					}
 				}
-			}).join('');
+			}
+			return rslt;
 		} else {
-			return escapeHtml(start || end ? message.simpleText.slice(start, end): message.simpleText);
+			const str = filterMessage(message.simpleText).value;
+			return escapeHtml(start || end ? str.slice(start, end) : str);
 		}
 	} else {
 		return '';
@@ -1091,6 +1208,11 @@ function initLayer() {
 	return str.replace(/&/g, '&amp;').replace(/>/g, '&gt;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
  }
  
+/** @param {string} str */
+function escapeRegExp(str) {
+	return str.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
+}
+
  /**
   * @param {Element} before 
   * @param {Element} after 
@@ -1124,6 +1246,49 @@ function initLayer() {
 	return c.bottom > p.top + p.height;
  }
  
+/**
+ * @param {string} str 
+ * @param {number} [mode=0] 
+ */
+function filterMessage(str, mode = 0) {
+	const list = g.list.mutedWords;
+	const replacement = g.storage.mutedWords.replacement;
+	let replaced = false;
+	switch (mode) {
+		case g.index.mutedWords.all: {
+			for (const rule of list) {
+				if (rule.test(str)) {
+					return { value: '', result: true };
+				}
+			}
+			break;
+		}
+		case g.index.mutedWords.word: {
+			for (const rule of list) {
+				if (rule.test(str)) {
+					str = str.replace(rule, replacement);
+					replaced = true;
+				}
+			}
+			break;
+		}
+		case g.index.mutedWords.char: {
+			const char = replacement ? [...replacement][0] : '';
+			for (const rule of list) {
+				if (rule.test(str)) {
+					str = char ? str.replace(rule, m => {
+						const len = [...m].length;
+						return char.repeat(len);
+					}) : str.replace(rule, '');
+					replaced = true;
+				}
+			}
+			break;
+		}
+	}
+	return { value: str, result: replaced };
+}
+
  /**
   * @param {number} long
   */

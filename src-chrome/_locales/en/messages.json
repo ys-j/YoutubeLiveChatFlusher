@@ -14,6 +14,12 @@
 	"close": {
 		"message": "close"
 	},
+	"displayTab": {
+		"message": "Basic"
+	},
+	"mutedWordsTab": {
+		"message": "Banned Words"
+	},
 	"animationDuration": {
 		"message": "Animation Duration"
 	},
@@ -214,5 +220,38 @@
 	},
 	"hotkey_panel": {
 		"message": "Config Panel"
+	},
+	"mutedWordsMode": {
+		"message": "Mode"
+	},
+	"mutedWordsMode_0": {
+		"message": "Off"
+	},
+	"mutedWordsMode_1": {
+		"message": "Hide messages containing the keyword"
+	},
+	"mutedWordsMode_2": {
+		"message": "Hide/replace the keyword"
+	},
+	"mutedWordsMode_3": {
+		"message": "Replace the character"
+	},
+	"mutedWordsReplacement": {
+		"message": "Replacement Word/Charactor"
+	},
+	"placeholder_mutedWordsReplacement": {
+		"message": "Empty means hidden"
+	},
+	"tooltip_mutedWordsReplacement": {
+		"message": "Only the first character is used for replacement"
+	},
+	"mutedWordsGrammer": {
+		"message": "Grammar"
+	},
+	"regexp": {
+		"message": "Use regular expression"
+	},
+	"placeholder_mutedWordsList": {
+		"message": "Multiple keywords can be prohibited in a new line."
 	}
 }

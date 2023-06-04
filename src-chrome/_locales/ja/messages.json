@@ -14,6 +14,12 @@
 	"close": {
 		"message": "閉じる"
 	},
+	"displayTab": {
+		"message": "基本設定"
+	},
+	"mutedWordsTab": {
+		"message": "NGワード設定"
+	},
 	"animationDuration": {
 		"message": "アニメーション秒数"
 	},
@@ -214,5 +220,38 @@
 	},
 	"hotkey_panel": {
 		"message": "設定パネル"
+	},
+	"mutedWordsMode": {
+		"message": "モード"
+	},
+	"mutedWordsMode_0": {
+		"message": "オフ"
+	},
+	"mutedWordsMode_1": {
+		"message": "メッセージ全体を非表示にする"
+	},
+	"mutedWordsMode_2": {
+		"message": "キーワードを非表示にする/置換する"
+	},
+	"mutedWordsMode_3": {
+		"message": "文字を伏字にする"
+	},
+	"mutedWordsReplacement": {
+		"message": "置換文字"
+	},
+	"placeholder_mutedWordsReplacement": {
+		"message": "未指定で非表示になります"
+	},
+	"tooltip_mutedWordsReplacement": {
+		"message": "最初の1文字のみが伏字に使用されます"
+	},
+	"mutedWordsGrammer": {
+		"message": "文法"
+	},
+	"regexp": {
+		"message": "正規表現を使用する"
+	},
+	"placeholder_mutedWordsList": {
+		"message": "改行で複数のキーワードを設定できます"
 	}
 }
