@@ -101,13 +101,13 @@
 	will-change: left, top;
 }
 #yt-lcf-panel .ytp-sfn-close {
-	background: var(--yt-spec-themed-overlay-background, rgba(28, 28, 28, .8));
+	background: rgba(28, 28, 28, .8);
 }
 #yt-lcf-panel [role="tablist"] {
 	padding: 0 8px;
 }
 #yt-lcf-panel [role="tab"] {
-	background: var(--yt-spec-themed-overlay-background, rgba(28, 28, 28, .8));
+	background: rgba(28, 28, 28, .8);
 	border: 1px solid;
 	border-radius: 1em 1em 0 0;
 	padding: 8px 8px 7px;
@@ -116,7 +116,7 @@
 	border-bottom-color: transparent;
 }
 #yt-lcf-panel .ytp-sfn-content {
-	background: var(--yt-spec-themed-overlay-background, rgba(28, 28, 28, .8));
+	background: rgba(28, 28, 28, .8);
 }
 #yt-lcf-panel .ytp-sfn-content > div {
 		margin: .5em 0;
