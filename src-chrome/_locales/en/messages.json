@@ -17,6 +17,9 @@
 	"displayTab": {
 		"message": "Basic"
 	},
+	"byTypeTab": {
+		"message": "By Type"
+	},
 	"mutedWordsTab": {
 		"message": "Banned Words"
 	},
@@ -38,11 +41,26 @@
 	"typeOfLines_2": {
 		"message": "min"
 	},
+	"lineHeight": {
+		"message": "Line Height"
+	},
 	"fontFamily": {
 		"message": "Font Family"
 	},
 	"fontWeight": {
 		"message": "Weight"
+	},
+	"strokeStyle": {
+		"message": "Stroke Style"
+	},
+	"strokeColor": {
+		"message": "Color"
+	},
+	"strokeOffset": {
+		"message": "Offset"
+	},
+	"strokeBlur": {
+		"message": "Blur"
 	},
 	"layerOpacity": {
 		"message": "Chat Layer Opacity"

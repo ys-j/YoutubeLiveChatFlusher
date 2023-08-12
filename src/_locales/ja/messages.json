@@ -17,6 +17,9 @@
 	"displayTab": {
 		"message": "基本設定"
 	},
+	"byTypeTab": {
+		"message": "種類別設定"
+	},
 	"mutedWordsTab": {
 		"message": "NGワード設定"
 	},
@@ -38,11 +41,26 @@
 	"typeOfLines_2": {
 		"message": "最小"
 	},
+	"lineHeight": {
+		"message": "行の高さ"
+	},
 	"fontFamily": {
 		"message": "フォント名"
 	},
 	"fontWeight": {
 		"message": "太さ"
+	},
+	"strokeStyle": {
+		"message": "縁取りのスタイル"
+	},
+	"strokeColor": {
+		"message": "色"
+	},
+	"strokeOffset": {
+		"message": "ずれ"
+	},
+	"strokeBlur": {
+		"message": "ぼかし"
 	},
 	"layerOpacity": {
 		"message": "全体の透過度"

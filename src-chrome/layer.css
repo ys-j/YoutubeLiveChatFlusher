@@ -14,6 +14,7 @@
 	pointer-events: auto;
 	position: absolute;
 	text-overflow: ellipsis;
+	padding: auto var(--yt-lcf-stroke-offset);
 }
 :host > :not(.text) {
 	border-radius: .5em;
