@@ -131,6 +131,14 @@ div.body, figure.body {
 	animation-play-state: paused !important;
 	contain: paint;
 }
+:host([style*='--yt-lcf-membership-display-photo: none; --yt-lcf-membership-display-name: none; --yt-lcf-membership-display-message: none']) .membership .header,
+:host([style*='--yt-lcf-milestone-display-photo: none; --yt-lcf-milestone-display-name: none; --yt-lcf-milestone-display-months: none']) .milestone .header,
+:host([style*='--yt-lcf-paid-message-display-photo: none; --yt-lcf-paid-message-display-name: none; --yt-lcf-paid-message-display-amount: none']) .superchat .header,
+:host([style*='--yt-lcf-paid-sticker-display-photo: none; --yt-lcf-paid-sticker-display-name: none; --yt-lcf-paid-sticker-display-amount: none']) .supersticker .header { display: none }
+:host([style*='--yt-lcf-membership-display-photo: none; --yt-lcf-membership-display-name: none; --yt-lcf-membership-display-message: none']) .membership .body,
+:host([style*='--yt-lcf-milestone-display-photo: none; --yt-lcf-milestone-display-name: none; --yt-lcf-milestone-display-months: none']) .milestone .body,
+:host([style*='--yt-lcf-paid-message-display-photo: none; --yt-lcf-paid-message-display-name: none; --yt-lcf-paid-message-display-amount: none']) .superchat .body,
+:host([style*='--yt-lcf-paid-sticker-display-photo: none; --yt-lcf-paid-sticker-display-name: none; --yt-lcf-paid-sticker-display-amount: none']) .supersticker .body { padding-top: 2px }
 
 .membership { color: var(--yt-lcf-membership-color) }
 .membership .photo { display: var(--yt-lcf-membership-display-photo) }

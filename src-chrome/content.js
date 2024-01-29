@@ -116,6 +116,12 @@
 		this.element.dataset.layer = '1';
 		this.element.setAttribute('role', 'marquee');
 		this.element.setAttribute('aria-live', 'off');
+		const resizeObserver = new ResizeObserver(entries => {
+			this.init();
+			this.resetAnimationDuration();
+			this.resetFontSize();
+		});
+		resizeObserver.observe(this.element);
 		this.init();
 	}
 	init() {
@@ -134,12 +140,12 @@
 		link.style.display = cs.style.display = ys.style.display = 'none';
 		fragment.appendChild(ys);
 		root.appendChild(fragment);
-		const observer = new MutationObserver(() => {
+		const mutationObserver = new MutationObserver(() => {
 			const over = root.childElementCount - (this.limit || Infinity);
 			let i = 3;
 			while (i++ < over) ys.nextElementSibling?.remove();
 		});
-		observer.observe(root, { childList: true });
+		mutationObserver.observe(root, { childList: true });
 		return this;
 	}
 	hide() {
@@ -152,6 +158,28 @@
 		this.element.hidden = false;
 		this.element.ariaHidden = 'false';
 		this.element.style.display = 'block';
+	}
+	resetAnimationDuration(pxPerSec = g.storage.others.px_per_sec) {
+		if (pxPerSec) {
+			const durationBySpeed = this.element.getBoundingClientRect().width / pxPerSec;
+			g.storage.styles.animation_duration = durationBySpeed.toFixed(1) + 's';
+			if (g.panel) g.panel.form.animation_duration.value = durationBySpeed.toFixed(1);
+		} else {
+			if (g.panel) g.storage.styles.animation_duration = g.panel.form.animation_duration.value + 's';
+		}
+		this.element.style.setProperty('--yt-lcf-animation-duration', g.storage.styles.animation_duration);
+	}
+	resetFontSize(numberOfLines = g.storage.others.number_of_lines) {
+		if (numberOfLines) {
+			const sizeByLines = Math.floor(this.element.getBoundingClientRect().height / parseFloat(g.storage.styles.line_height) / numberOfLines);
+			this.element.style.setProperty('--yt-lcf-font-size', [
+				`${sizeByLines}px`,
+				`max(${g.storage.styles.font_size}, ${sizeByLines}px)`,
+				`min(${g.storage.styles.font_size}, ${sizeByLines}px)`,
+			][g.storage.others.type_of_lines]);
+		} else {
+			this.element.style.setProperty('--yt-lcf-font-size', g.storage.styles.font_size);
+		}
 	}
  }
  
@@ -525,34 +553,14 @@
 			this.form.animation_duration.disabled = checked;
 			this.form.px_per_sec.disabled = !checked;
 			g.storage.others.px_per_sec = checked ? this.form.px_per_sec.valueAsNumber : 0;
-			if (le) {
-				if (checked) {
-					const durationBySpeed = le.getBoundingClientRect().width / this.form.px_per_sec.valueAsNumber;
-					g.storage.styles.animation_duration = durationBySpeed.toFixed(2) + 's';
-					this.form.animation_duration.valueAsNumber = Math.round(durationBySpeed * 10) * .1;
-				} else {
-					g.storage.styles.animation_duration = this.form.animation_duration.value + 's';
-				}
-				le.style.setProperty('--yt-lcf-animation-duration', g.storage.styles.animation_duration);
-			}
+			if (g.layer) g.layer.resetAnimationDuration();
 		} else if (['lines', 'number_of_lines', 'type_of_lines'].includes(name)) {
 			const checked = this.form.lines.checked;
 			this.form.font_size.disabled = checked;
 			this.form.number_of_lines.disabled = !checked;
 			this.form.type_of_lines.disabled = !checked;
 			g.storage.others.number_of_lines = checked ? this.form.number_of_lines.valueAsNumber : 0;
-			if (le) {
-				if (checked) {
-					const sizeByLines = Math.floor(le.getBoundingClientRect().height * .8 / this.form.number_of_lines.valueAsNumber);
-					le.style.setProperty('--yt-lcf-font-size', [
-						`${sizeByLines}px`,
-						`max(${this.form.font_size.value}px, ${sizeByLines}px)`,
-						`min(${this.form.font_size.value}px, ${sizeByLines}px)`,
-					][g.storage.others.type_of_lines]);
-				} else {
-					le.style.setProperty('--yt-lcf-font-size', this.form.font_size.value + 'px');
-				}
-			}
+			if (g.layer) g.layer.resetFontSize();
 		} else if (['unlimited', 'limit_number'].includes(name)) {
 			const checked = this.form.unlimited.checked;
 			this.form.limit_number.disabled = checked;
@@ -577,10 +585,10 @@
 	const speed = g.storage.others.px_per_sec;
 	if (speed) {
 		const durationBySpeed = le.getBoundingClientRect().width / speed;
-		le.style.setProperty('--yt-lcf-animation-duration', durationBySpeed.toFixed(2) + 's');
+		le.style.setProperty('--yt-lcf-animation-duration', durationBySpeed.toFixed(1) + 's');
 		/** @type {?HTMLInputElement | undefined} */
 		const input = g.app?.querySelector('#' + g.tag.panel + ' [name="animation_duration"]');
-		if (input) input.valueAsNumber = Math.round(durationBySpeed * 10) * .1;
+		if (input) input.value = durationBySpeed.toFixed(1);
 	}
 	const lines = g.storage.others.number_of_lines;
 	if (lines) {
@@ -751,9 +759,6 @@ function initLayer() {
 				renderer.addEventListener('yt-load-reload-continuation', skipRenderingOnce, { passive: true });
 			}
 		}, 1000);
-
-		top?.document.addEventListener('yt-set-theater-mode-enabled', initLayer, { passive: true });
-		top?.document.addEventListener('fullscreenchange', initLayer,  { passive: true });
  
 		fetch('/account_advanced').then(r => r.text()).then(t => {
 			const m = t.match(/"(UC[\w-]{22})"/);
@@ -800,6 +805,7 @@ function initLayer() {
 				if (cb) {
 					const checked = cb.getAttribute('aria-checked') === 'true';
 					cb.setAttribute('aria-checked', (!checked).toString());
+					initLayer();
 					g.layer?.[checked ? 'hide' : 'show']();
 				}
 			},
@@ -915,6 +921,13 @@ function initLayer() {
 							return resolve(elem.id);
 						}
 					}
+				}
+				const duplication = root.getElementById(elem.id);
+				if (duplication) {
+					const type = elem.className.match(/text (.+)/)?.[1] || 'normal';
+					const color = getComputedStyle(g.layer.element).getPropertyValue(`--yt-lcf-${type}-color`);
+					console.log(`Message duplication #${elem.id}: %c${elem.dataset.text || elem.lastElementChild?.textContent}`, color ? 'color:' + color : '');
+					return resolve(elem.id);
 				}
 				elem.addEventListener('animationend', e => {
 					/** @type {HTMLElement} */ (e.target).remove();
