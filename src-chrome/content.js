@@ -2,8 +2,8 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
- 'use strict';
- const g = {
+'use strict';
+const g = {
 	app: /** @type {HTMLElement?} */ (null),
 	array: {
 		hyphens: ['manual', 'auto', 'auto'],
@@ -102,12 +102,16 @@
 		panel: 'yt-lcf-panel',
 		checkbox: 'yt-lcf-cb',
 		popupmenu: 'yt-lcf-pm',
-	}
- };
- 
- const getMessage = chrome.i18n.getMessage;
- 
- class LiveChatLayer {
+	},
+	path: {
+		live_chat: ['live_chat', 'live_chat_replay'],
+		watch: ['watch', 'live'],
+	},
+};
+
+const getMessage = chrome.i18n.getMessage;
+
+class LiveChatLayer {
 	/** @param div {?HTMLDivElement | undefined} */
 	constructor(div = undefined) {
 		this.limit = 0;
@@ -181,9 +185,9 @@
 			this.element.style.setProperty('--yt-lcf-font-size', g.storage.styles.font_size);
 		}
 	}
- }
- 
- class LiveChatPanel {
+}
+
+class LiveChatPanel {
 	/** @param div {?HTMLDivElement | undefined} */
 	constructor(div = undefined) {
 		this.element = div || document.createElement('div');
@@ -574,11 +578,11 @@
 		this.element.style.left = `${x}px`;
 		this.element.style.top = `${y}px`;
 	}
- }
- 
- detectPageType();
- window.addEventListener('yt-navigate-finish', detectPageType, { passive: true });
- window.addEventListener('resize', e => {
+}
+
+detectPageType();
+window.addEventListener('yt-navigate-finish', detectPageType, { passive: true });
+window.addEventListener('resize', e => {
 	if (!g.layer) return;
 	const le = g.layer.element;
 	if (g.panel) g.panel.move(10, 10);
@@ -600,111 +604,107 @@
 		][g.storage.others.type_of_lines]);
 	}
 	updateCurrentItemStyle();
- }, { passive: true });
- 
- function detectPageType() {
-	switch (location.pathname) {
-		case '/live_chat':
-		case '/live_chat_replay': if (top?.location.pathname === '/watch') {
-			g.app = top.document.querySelector('#ytd-player');
-			if (g.app) {
-				startLiveChatFlusher();
-				const storageList = ['styles', 'others', 'parts', 'cssTexts', 'hotkeys', 'mutedWords'];
-				chrome.storage.local.get(storageList).then(storage => {
-					for (const type of storageList) {
-						if (storage && storage[type]) {
-							for (const [key, value] of Object.entries(storage[type])){
-								g.storage[type][key] = value;
-							}
+}, { passive: true });
+
+function detectPageType() {
+	const selfPath1 = location.pathname.split('/')[1];
+	const topPath1 = top?.location.pathname.split('/')[1] || 'never';
+	if (g.path.live_chat.includes(selfPath1) && top && g.path.watch.includes(topPath1)) {
+		g.app = top.document.querySelector('#ytd-player');
+		if (g.app) {
+			startLiveChatFlusher();
+			const storageList = ['styles', 'others', 'parts', 'cssTexts', 'hotkeys', 'mutedWords'];
+			chrome.storage.local.get(storageList).then(storage => {
+				for (const type of storageList) {
+					if (storage && storage[type]) {
+						for (const [key, value] of Object.entries(storage[type])){
+							g.storage[type][key] = value;
 						}
-					}
-					updateMutedWordsList();
-					if (g.layer) {
-						const le = g.layer.element;
-						for (const [prop, value] of Object.entries(g.storage.styles)) {
-							le.style.setProperty('--yt-lcf-' + prop.replace(/_/g, '-'), value);
-						}
-						const lines = g.storage.others.number_of_lines;
-						if (lines) {
-							const sizeByLines = Math.floor(le.getBoundingClientRect().height * .8 / lines);
-							if (g.storage.others.type_of_lines > 0) {
-								le.style.setProperty('--yt-lcf-font-size', `max(${g.storage.styles.font_size}, ${sizeByLines}px)`);
-							} else {
-								le.style.setProperty('--yt-lcf-font-size', `${sizeByLines}px`);
-							}
-						}
-						for (const [key, values] of Object.entries(g.storage.parts)) {
-							for (const [prop, bool] of Object.entries(values)) {
-								switch (prop) {
-									case 'color': {
-										if (bool) {
-											le.style.setProperty(`--yt-lcf-${key.replace(/_/g, '-')}-color`, `${bool}`);
-										} else {
-											le.style.removeProperty(`--yt-lcf-${key.replace(/_/g, '-')}-color`);
-										}
-										break;
-									}
-									case 'name': le.classList[bool ? 'add' : 'remove'](`has-${key}-name`);
-									default: le.style.setProperty(`--yt-lcf-${key.replace(/_/g, '-')}-display-${prop}`, bool ? 'inline' : 'none');
-								}
-							}
-						}
-						/** @type { [ string, number, number ][] } */
-						const colormap = [
-							['--yt-live-chat-normal-message-background-color', 0xffc0c0c0, -1],
-							['--yt-live-chat-verified-message-background-color', 0xffc0c0c0, -1],
-							['--yt-live-chat-member-message-background-color', 0xffc0c0c0, -1],
-							['--yt-live-chat-moderator-message-background-color', 0xffc0c0c0, -1],
-							['--yt-live-chat-owner-message-background-color', 0xffc0c0c0, -1],
-							['--yt-live-chat-you-message-background-color', 0xffc0c0c0, -1],
-							['--yt-live-chat-paid-sticker-background-color', 0xffffb300, -1],
-							['--yt-live-chat-author-chip-owner-background-color', 0xffffd600, -1],
-						];
-						for (const [name, rgb, alpha] of colormap) {
-							le.style.setProperty(name, `rgba(${getColorRGB(rgb).join()},${alpha < 0 ? 'var(--yt-lcf-background-opacity)' : alpha})`);
-						}
-						const style = le.shadowRoot?.querySelector('style');
-						if (style) style.textContent = Object.entries(g.storage.cssTexts).map(([selector, css]) => `:host>${selector}{${css}}`).join('');
-					}
-				}).then(() => {
-					addSettingMenu();
-					top?.document.body.addEventListener('keydown', e => {
-						if (!e.repeat) switch (e.key) {
-							case g.storage.hotkeys.layer: {
-								const checkbox = /** @type {HTMLElement?} */ (g.app?.querySelector('#' + g.tag.checkbox));
-								checkbox?.click();
-								break;
-							}
-							case g.storage.hotkeys.panel: {
-								const popupmenu = /** @type {HTMLElement?} */ (g.app?.querySelector('#' + g.tag.popupmenu));
-								popupmenu?.click();
-								break;
-							}
-						}
-					}, { passive: true });
-				});
-			}
-		}
-		break;
-		case '/watch': {
-			document.addEventListener('yt-action', e => {
-				switch (e.detail?.actionName) {
-					case 'ytd-watch-player-data-changed': {
-						/** @type {HTMLDivElement?} */
-						const layer = document.querySelector('#' + g.tag.layer);
-						if (layer) new LiveChatLayer(layer).init();
-						/** @type {HTMLDivElement?} */
-						const panel = document.querySelector('#' + g.tag.panel);
-						if (panel) new LiveChatPanel(panel).hide();
 					}
 				}
-			}, { passive: true });
+				updateMutedWordsList();
+				if (g.layer) {
+					const le = g.layer.element;
+					for (const [prop, value] of Object.entries(g.storage.styles)) {
+						le.style.setProperty('--yt-lcf-' + prop.replace(/_/g, '-'), value);
+					}
+					const lines = g.storage.others.number_of_lines;
+					if (lines) {
+						const sizeByLines = Math.floor(le.getBoundingClientRect().height * .8 / lines);
+						if (g.storage.others.type_of_lines > 0) {
+							le.style.setProperty('--yt-lcf-font-size', `max(${g.storage.styles.font_size}, ${sizeByLines}px)`);
+						} else {
+							le.style.setProperty('--yt-lcf-font-size', `${sizeByLines}px`);
+						}
+					}
+					for (const [key, values] of Object.entries(g.storage.parts)) {
+						for (const [prop, bool] of Object.entries(values)) {
+							switch (prop) {
+								case 'color': {
+									if (bool) {
+										le.style.setProperty(`--yt-lcf-${key.replace(/_/g, '-')}-color`, `${bool}`);
+									} else {
+										le.style.removeProperty(`--yt-lcf-${key.replace(/_/g, '-')}-color`);
+									}
+									break;
+								}
+								case 'name': le.classList[bool ? 'add' : 'remove'](`has-${key}-name`);
+								default: le.style.setProperty(`--yt-lcf-${key.replace(/_/g, '-')}-display-${prop}`, bool ? 'inline' : 'none');
+							}
+						}
+					}
+					/** @type { [ string, number, number ][] } */
+					const colormap = [
+						['--yt-live-chat-normal-message-background-color', 0xffc0c0c0, -1],
+						['--yt-live-chat-verified-message-background-color', 0xffc0c0c0, -1],
+						['--yt-live-chat-member-message-background-color', 0xffc0c0c0, -1],
+						['--yt-live-chat-moderator-message-background-color', 0xffc0c0c0, -1],
+						['--yt-live-chat-owner-message-background-color', 0xffc0c0c0, -1],
+						['--yt-live-chat-you-message-background-color', 0xffc0c0c0, -1],
+						['--yt-live-chat-paid-sticker-background-color', 0xffffb300, -1],
+						['--yt-live-chat-author-chip-owner-background-color', 0xffffd600, -1],
+					];
+					for (const [name, rgb, alpha] of colormap) {
+						le.style.setProperty(name, `rgba(${getColorRGB(rgb).join()},${alpha < 0 ? 'var(--yt-lcf-background-opacity)' : alpha})`);
+					}
+					const style = le.shadowRoot?.querySelector('style');
+					if (style) style.textContent = Object.entries(g.storage.cssTexts).map(([selector, css]) => `:host>${selector}{${css}}`).join('');
+				}
+			}).then(() => {
+				addSettingMenu();
+				top?.document.body.addEventListener('keydown', e => {
+					if (!e.repeat) switch (e.key) {
+						case g.storage.hotkeys.layer: {
+							const checkbox = /** @type {HTMLElement?} */ (g.app?.querySelector('#' + g.tag.checkbox));
+							checkbox?.click();
+							break;
+						}
+						case g.storage.hotkeys.panel: {
+							const popupmenu = /** @type {HTMLElement?} */ (g.app?.querySelector('#' + g.tag.popupmenu));
+							popupmenu?.click();
+							break;
+						}
+					}
+				}, { passive: true });
+			});
 		}
-		break;
+	} else if (g.path.watch.includes(selfPath1)) {
+		document.addEventListener('yt-action', e => {
+			switch (e.detail?.actionName) {
+				case 'ytd-watch-player-data-changed': {
+					/** @type {HTMLDivElement?} */
+					const layer = document.querySelector('#' + g.tag.layer);
+					if (layer) new LiveChatLayer(layer).init();
+					/** @type {HTMLDivElement?} */
+					const panel = document.querySelector('#' + g.tag.panel);
+					if (panel) new LiveChatPanel(panel).hide();
+				}
+			}
+		}, { passive: true });
 	}
- }
- 
- function getLayer() {
+}
+
+function getLayer() {
 	const layer = new LiveChatLayer();
 	layer.element.addEventListener('contextmenu', e => {
 		const origin = /** @type {HTMLElement?} */ (e.composedPath().find(p => 'id' in p));
@@ -731,8 +731,8 @@
 		}
 	}, { passive: false });
 	return layer;
- }
- 
+}
+
 function skipRenderingOnce() {
 	g.skip = true;
 }
@@ -740,7 +740,7 @@ function initLayer() {
 	g.layer?.init();
 }
 
- function startLiveChatFlusher() {
+function startLiveChatFlusher() {
 	if (!g.app) return;
 	const video = g.app.querySelector('video');
 	const videoContainer = video?.parentElement;
@@ -772,9 +772,9 @@ function initLayer() {
 			}
 		});
 	}
- }
- 
- function addSettingMenu() {
+}
+
+function addSettingMenu() {
 	if (!g.app) return;
 	/** @type {HTMLDivElement?} */
 	const current = g.app.querySelector('#' + g.tag.panel);
@@ -833,27 +833,27 @@ function initLayer() {
 		});
 	}
 	g.layer?.element.insertAdjacentElement('afterend', panel.element);
- }
- 
- /** @param {string | undefined} type */
- function updateCurrentItemStyle(type = undefined) {
+}
+
+/** @param {string | undefined} type */
+function updateCurrentItemStyle(type = undefined) {
 	if (!g.layer) return;
 	const children = g.layer.element.shadowRoot?.children;
 	if (children) {
 		const items = Array.from(children).filter(type ? c => c.classList.contains(type) : c => c.tagName === 'DIV');
 		/** @type {HTMLElement[]} */ (items).forEach(updateCurrentItem);
 	}
- }
- 
- /** @param {HTMLElement} item */
- function updateCurrentItem(item) {
+}
+
+/** @param {HTMLElement} item */
+function updateCurrentItem(item) {
 	if (!g.layer) return;
 	const isLong = item.clientWidth >= g.layer.element.clientWidth * (parseInt(g.storage.styles.max_width) / 100 || 1);
 	item.classList[isLong ? 'add' : 'remove']('wrap');
 	item.style.setProperty('--yt-lcf-translate-x', `-${g.layer.element.clientWidth + item.clientWidth}px`);
- }
- 
- function updateMutedWordsList() {
+}
+
+function updateMutedWordsList() {
 	const { regexp, plainList } = g.storage.mutedWords;
 	if (regexp) {
 		g.list.mutedWords = plainList.map(s => new RegExp(s, 'g'));
@@ -861,12 +861,12 @@ function initLayer() {
 		g.list.mutedWords = plainList.length > 0 ? [ new RegExp(plainList.map(escapeRegExp).join('|'), 'g') ] : [];
 	}
 	return g.list.mutedWords;
- }
- 
- /**
-  * @param {CustomEvent<{ actionName: string, args: any[][] }>} e 
-  */
- function handleYtAction(e) {
+}
+
+/**
+ * @param {CustomEvent<{ actionName: string, args: any[][] }>} e 
+ */
+function handleYtAction(e) {
 	switch (e.detail?.actionName) {
 		case 'yt-live-chat-actions': {
 			if (!g.layer) return;
@@ -1022,12 +1022,12 @@ function initLayer() {
 		case 'yt-live-chat-seek-success':
 			skipRenderingOnce();
 	}
- }
- 
- /**
-  * @param {LiveChat.AnyRenderer} item 
-  */
- async function parseChatItem(item) {
+}
+
+/**
+ * @param {LiveChat.AnyRenderer} item 
+ */
+async function parseChatItem(item) {
 	const key = Object.keys(item)[0];
 	const renderer = item[key];
 	const elem = document.createElement('div');
@@ -1146,25 +1146,25 @@ function initLayer() {
 		default: console.log(item);
 	}
 	return elem;
- }
- 
- /**
-  * @param {LiveChat.RendererContent} renderer
-  * @returns {'normal' | 'owner' | 'moderator' | 'member' | 'verified'}
-  */
- function getAuthorType(renderer) {
+}
+
+/**
+ * @param {LiveChat.RendererContent} renderer
+ * @returns {'normal' | 'owner' | 'moderator' | 'member' | 'verified'}
+ */
+function getAuthorType(renderer) {
 	/** @type { ['owner', 'moderator', 'member', 'verified'] } */
 	const statuses = ['owner', 'moderator', 'member', 'verified'];
 	const classes = renderer.authorBadges?.map(b => b.liveChatAuthorBadgeRenderer.customThumbnail ? 'member' : b.liveChatAuthorBadgeRenderer.icon?.iconType.toLowerCase() || '') || [];
 	for (const s of statuses) if (classes.includes(s)) return s;
 	return 'normal';
- }
- 
- /**
-  * @param { LiveChat.Runs | LiveChat.SimpleText | undefined } message
-  * @param { { start?: number, end?: number, emoji?: number, filterMode?: number } } options
-  */
- function getChatMessage(message, options = {}) {
+}
+
+/**
+ * @param { LiveChat.Runs | LiveChat.SimpleText | undefined } message
+ * @param { { start?: number, end?: number, emoji?: number, filterMode?: number } } options
+ */
+function getChatMessage(message, options = {}) {
 	if (message) {
 		const { start, end, filterMode } = options;
 		if ('runs' in message) {
@@ -1225,23 +1225,23 @@ function initLayer() {
 	} else {
 		return '';
 	}
- }
- 
- /** @param {string} str */
- function escapeHtml(str) {
+}
+
+/** @param {string} str */
+function escapeHtml(str) {
 	return str.replace(/&/g, '&amp;').replace(/>/g, '&gt;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
- }
- 
+}
+
 /** @param {string} str */
 function escapeRegExp(str) {
 	return str.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
 }
 
- /**
-  * @param {Element} before 
-  * @param {Element} after 
-  */
- function isCatchable(before, after) {
+/**
+ * @param {Element} before 
+ * @param {Element} after 
+ */
+function isCatchable(before, after) {
 	const sec = parseFloat(g.storage.styles.animation_duration) || 4;
 	const [b, a] = [before, after].map(elm => elm.getBoundingClientRect());
 	if (b.top <= a.top && a.top < b.bottom) {
@@ -1258,17 +1258,17 @@ function escapeRegExp(str) {
 	} else {
 		return false;
 	}
- }
- 
- /**
-  * @param {Element} parent 
-  * @param {Element} child 
-  */
- function isOverflow(parent, child) {
+}
+
+/**
+ * @param {Element} parent 
+ * @param {Element} child 
+ */
+function isOverflow(parent, child) {
 	const p = parent.getBoundingClientRect();
 	const c = child.getBoundingClientRect();
 	return c.bottom > p.top + p.height;
- }
+}
  
 /**
  * @param {string} str 
@@ -1313,18 +1313,18 @@ function filterMessage(str, mode = 0) {
 	return { value: str, result: replaced };
 }
 
- /**
-  * @param {number} long
-  */
- function getColorRGB(long) {
+/**
+ * @param {number} long
+ */
+function getColorRGB(long) {
 	return (long.toString(16).match(/[0-9a-f]{2}/g) || []).map(hex => parseInt(hex, 16)).slice(1);
- }
- 
- /**
-  * @param {string} css 
-  * @param {string} inherit 
-  */
- function formatHexColor(css, inherit = '#ffffff') {
+}
+
+/**
+ * @param {string} css 
+ * @param {string} inherit 
+ */
+function formatHexColor(css, inherit = '#ffffff') {
 	const color = css.trim();
 	if (color.startsWith('#')) {
 		if (color.length > 6) {
@@ -1339,4 +1339,4 @@ function filterMessage(str, mode = 0) {
 		}
 	}
 	return inherit;
- }
+}

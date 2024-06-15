@@ -14,6 +14,7 @@ declare namespace LiveChat {
 		timestampText?: SimpleText	// replay
 		timestampUsec: string
 		trackingParams: string	// streaming
+		message?: Runs
 	}
 	type AnyRenderer = TextMessageRenderer | MembershipItemRenderer | PaidMessageRenderer | PaidStickerRenderer | ViewerEngagementMessageRenderer;
 	type TextMessageRenderer = {
@@ -85,18 +86,26 @@ declare namespace LiveChat {
 		}
 	}
 	type SponsorshipsHeaderRenderer = {
-		authorBudges: AuthorBadgeRenderer[]
-		authorName: SimpleText
-		contextMenuAccessibility: AccessibilityData
-		contextMenuEndpoint: {
-			clickTrackingParams: string
-			commandMetadata: WebCommandMetadata
-			liveChatItemContextMenuEndpoint: {
-				param: string
+		liveChatSponsorshipsHeaderRenderer: {
+			authorBudges: AuthorBadgeRenderer[]
+			authorName: SimpleText,
+			authorPhoto: {
+				thumbnails: Thumbnail[]
+				webThumbnailDetailsExtensionData?: {
+					isPreloaded: boolean
+				}
 			}
+			contextMenuAccessibility: AccessibilityData
+			contextMenuEndpoint: {
+				clickTrackingParams: string
+				commandMetadata: WebCommandMetadata
+				liveChatItemContextMenuEndpoint: {
+					param: string
+				}
+			}
+			image: Thumbnail[]
+			primaryText: Runs<Text>
 		}
-		image: Thumbnail[]
-		primaryText: Runs
 	}
 	type SponsorshipsGiftRedemptionAnnouncementRenderer = {
 		liveChatSponsorshipsGiftRedemptionAnnouncementRenderer: RendererContent & {
@@ -175,8 +184,8 @@ declare namespace LiveChat {
 	type SimpleText = {
 		simpleText: string
 	}
-	type Runs = {
-		runs: (Text | Emoji)[]
+	type Runs<T = Text | Emoji> = {
+		runs: T[]
 	}
 	type Text = {
 		text: string
