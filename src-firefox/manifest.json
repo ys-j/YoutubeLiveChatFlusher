@@ -4,7 +4,7 @@
 	"version": "0.5.3",
 	"browser_specific_settings": {
 		"gecko": {
-			"id": "ytlcf@ysj.works",
+			"id": "{5a898e4e-6b5c-4acf-9e29-4c791d3b5f2e}",
 			"strict_min_version": "109.0"
 		},
 		"gecko_android": {
