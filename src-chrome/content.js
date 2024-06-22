@@ -1211,7 +1211,7 @@ function getChatMessage(message, options = {}) {
 						}
 						if (!skip) {
 							const thumbnail = r.emoji.image.thumbnails.slice(-1)[0];
-							const img = thumbnail ? `<img src="${thumbnail.url}" alt="">` : r.emoji.emojiId;
+							const img = thumbnail ? `<img src="${thumbnail.url}" alt="${escapeHtml(r.emoji.image.accessibility.accessibilityData.label)}">` : r.emoji.emojiId;
 							rslt += `<span class="emoji" data-label="${escapeHtml(r.emoji.image.accessibility.accessibilityData.label)}" data-shortcut="${escapeHtml(r.emoji.shortcuts?.[0] || '')}">${img}</span>`;
 						}
 					}
