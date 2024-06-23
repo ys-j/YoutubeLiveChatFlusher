@@ -719,9 +719,11 @@ function detectPageType() {
 		chrome.storage.local.get('others').then(storage => {
 			const autostart = storage?.others?.autostart;
 			if (autostart) {
-				/** @type {HTMLElement?} */
-				const chatButton = document.querySelector('#show-hide-button button');
-				chatButton?.click();
+				const buttonContainer = document.getElementById('show-hide-button');
+				if (buttonContainer && !buttonContainer.hidden) {
+					const button = buttonContainer.querySelector('button');
+					button?.click();
+				}
 			}
 		});
 	}
