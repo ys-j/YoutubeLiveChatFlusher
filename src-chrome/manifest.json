@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "__MSG_manifestName__",
-	"version": "0.5.3",
+	"version": "0.6.0",
 	"author": "_y_s",
 	"content_scripts": [
 		{
@@ -16,9 +16,10 @@
 	"description": "__MSG_manifestDescription__",
 	"homepage_url": "https://github.com/ys-j/YoutubeLiveChatFlusher",
 	"icons": {
-		"16": "icon16.png",
-		"48": "icon48.png",
-		"128": "icon128.png"
+		"16": "images/icon16.png",
+		"32": "images/icon32.png",
+		"48": "images/icon48.png",
+		"128": "images/icon128.png"
 	},
 	"permissions": ["storage"],
 	"web_accessible_resources": [

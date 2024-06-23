@@ -92,6 +92,9 @@
 	"displayLimit": {
 		"message": "最大表示数"
 	},
+	"containerLimit": {
+		"message": "チャット欄表示数"
+	},
 	"unlimited": {
 		"message": "無制限"
 	},
@@ -221,6 +224,9 @@
 	"disabled": {
 		"message": "しない"
 	},
+	"enabled": {
+		"message": "する"
+	},
 	"addableByFirefoxLanguageSettings": {
 		"message": "選択肢はabout:preferences#languagesGroupから追加可能です"
 	},
@@ -238,6 +244,9 @@
 	},
 	"hotkey_panel": {
 		"message": "設定パネル"
+	},
+	"autostart": {
+		"message": "自動スタート"
 	},
 	"mutedWordsMode": {
 		"message": "モード"

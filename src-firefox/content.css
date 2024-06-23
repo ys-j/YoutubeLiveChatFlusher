@@ -78,15 +78,6 @@
 	overflow: hidden;
 	pointer-events: none;
 	position: absolute;
-	text-shadow:
-	var(--yt-lcf-stroke-color) calc(var(--yt-lcf-stroke-offset) * -1) calc(var(--yt-lcf-stroke-offset) * -1) var(--yt-lcf-stroke-blur),
-	var(--yt-lcf-stroke-color) calc(var(--yt-lcf-stroke-offset) * -1) 0 var(--yt-lcf-stroke-blur),
-	var(--yt-lcf-stroke-color) calc(var(--yt-lcf-stroke-offset) * -1) var(--yt-lcf-stroke-offset) var(--yt-lcf-stroke-blur),
-	var(--yt-lcf-stroke-color) 0 calc(var(--yt-lcf-stroke-offset) * -1) var(--yt-lcf-stroke-blur),
-	var(--yt-lcf-stroke-color) 0 var(--yt-lcf-stroke-offset) var(--yt-lcf-stroke-blur),
-	var(--yt-lcf-stroke-color) var(--yt-lcf-stroke-offset) calc(var(--yt-lcf-stroke-offset) * -1) var(--yt-lcf-stroke-blur),
-	var(--yt-lcf-stroke-color) var(--yt-lcf-stroke-offset) 0 var(--yt-lcf-stroke-blur),
-	var(--yt-lcf-stroke-color) var(--yt-lcf-stroke-offset) var(--yt-lcf-stroke-offset) var(--yt-lcf-stroke-blur);
 	white-space: pre;
 	width: 100%;
 	z-index: 12;
@@ -285,4 +276,14 @@
 #yt-lcf-panel br {
 	display: block;
 	line-height: .5;
+}
+
+/*
+	Chat frame
+*/
+yt-live-chat-item-list-renderer #item-scroller {
+	scrollbar-width: none;
+}
+yt-live-chat-item-list-renderer #item-scroller:hover {
+	scrollbar-width: auto;
 }

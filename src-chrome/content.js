@@ -1,4 +1,3 @@
-/* Copyright 2021 _y_s */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -50,10 +49,12 @@ const g = {
 			type_of_lines: 0,
 			wrap: 1,
 			limit: 0,
+			container_limit: 0,
 			simultaneous: 2,
 			emoji: 1,
 			translation: 0,
 			except_lang: 0,
+			autostart: 0,
 		},
 		parts: {
 			normal: { photo: false, name: false, message: true, color: '' },
@@ -220,6 +221,9 @@ class LiveChatPanel {
 			top?.addEventListener('mouseup', onmouseup, { passive: true });
 			window.addEventListener('mouseup', onmouseup, { passive: true });
 		}, { passive: true });
+		this.element.addEventListener('keyup', e => {
+			e.stopPropagation();
+		});
  
 		this.form = document.createElement('form');
 		const changeTab = e => {
@@ -270,11 +274,13 @@ class LiveChatPanel {
 			`<div><div>${getMessage('backgroundOpacity')}</div><div>${getMessage('opacity_0')}<input type="range" class="styles" name="background_opacity" min="0" max="1" step="0.05" value="${parseFloat(g.storage.styles.background_opacity) || 0.5}">${getMessage('opacity_1')}</div></div>`,
 			`<div><div>${getMessage('maxWidth')}/${getMessage('wordWrap')}</div><div><label><input type="number" class="styles" name="max_width" min="50" size="8" value="${parseInt(g.storage.styles.max_width) || 100}" data-unit="%"><span>%</span></label> /<select name="wrap">${Object.values(g.index.wrap).map(v => `<option value="${v}">` + getMessage(`wordWrap_${v}`)).join('')}</select>▼</div></div>`,
 			`<div><div>${getMessage('displayLimit')}</div><div><input type="number" class="others" name="limit_number" min="1" size="8" value="${g.storage.others.limit || 100}"><label><input type="checkbox" name="unlimited">${getMessage('unlimited')}</label></div></div>`,
+			`<div><div>${getMessage('containerLimit')}</div><div><input type="number" class="others" name="container_limit_number" min="1" size="8" value="${g.storage.others.container_limit || 20}"><label><input type="checkbox" name="container_unlimited">${getMessage('unlimited')}</label></div></div>`,
 			`<div><div>${getMessage('simultaneousMessage')}</div><div><select name="simultaneous">${Object.values(g.index.simultaneous).map(v => `<option value="${v}">` + getMessage(`simultaneousMessage_${v}`)).join('')}</select>▼</div></div>`,
 			`<div><div>${getMessage('emojiExpression')}</div><div><select name="emoji">${Object.values(g.index.emoji).map(v => `<option value="${v}">` + getMessage(`emojiExpression_${v}`)).join('')}</select>▼</div></div>`,
 			`<div><div>${getMessage('commonCSS')}</div><div><input type="text" name="_css" placeholder="${getMessage('placeholder_customCSS')}" value="${escapeHtml(g.storage.cssTexts['div'])}" style="width:20.5em"></div></div>`,
 			`<div><div>${getMessage('translation')}</div><div><select name="translation" title="${getMessage('addableByFirefoxLanguageSettings')}"><option value="0">${getMessage('disabled')}${navigator.languages.map((lang, i) => `<option value="${i + 1}">` + lang).join('')}</select>▼ /<label><input type="checkbox" name="prefix_lang"><span>${getMessage('prefixOriginalLanguage')}</span></label><br><span>${getMessage('exception')}</span>${navigator.languages.map((lang, i) => `<label><input type="checkbox" name="except_lang" value="${i}"><span>${lang}</span></label>`).join('')}</div><div></div></div>`,
 			`<div><div>${getMessage('hotkey')}</div><div><label><span>${getMessage('hotkey_layer')}</span><input type="text" name="hotkey_layer" pattern="^.?$" size="3" value="${g.storage.hotkeys.layer}"></label> / <label><span>${getMessage('hotkey_panel')}</span><input type="text" name="hotkey_panel" pattern="^.?$" size="3" value="${g.storage.hotkeys.panel}"></label></div></div>`,
+			`<div><div>${getMessage('autostart')}</div><div><label><select name="autostart"><option value="0">${getMessage('disabled')}<option value="1">${getMessage('enabled')}</select>▼</div></div>`,
 		].join('');
 		fields[1].innerHTML = [
 			...['normal', 'member', 'moderator', 'owner', 'verified', 'you'].map(type => `<div><div>${getMessage(type)}</div><div><div><div><label class="toggle photo" title="${getMessage('tooltip_authorPhoto')}"><input type="checkbox" name="${type}_display" value="photo"><svg viewBox="-8 -8 16 16"><g id="yt-lcf-photo"><circle r="7"/><ellipse rx="2.5" ry="3.5" cy="-1"/><ellipse rx="4" ry="2" cy="4"/></g></svg></label><label class="toggle name" title="${getMessage('tooltip_authorName')}"><input type="checkbox" name="${type}_display" value="name"><span>${getMessage('display_authorName')}</span></label><label class="toggle body" title="${getMessage('tooltip_chatMessage')}"><input type="checkbox" name="${type}_display" value="message"><span>${getMessage('display_chatMessage')}</span></label></div><div><label title="${getMessage('tooltip_customColor')}"><input type="checkbox" name="${type}_display" value="color">${getMessage('display_customColor')}</label><input type="color" name="${type}_color"></div></div><input type="text" name="${type}_css" placeholder="${getMessage('placeholder_customCSS')}" value="${escapeHtml(g.storage.cssTexts['.' + type])}"></div></div>`),
@@ -363,6 +369,10 @@ class LiveChatPanel {
 					case 'unlimited': {
 						this.form.limit_number.disabled = cb.checked = g.storage.others.limit === 0;
 						if (g.layer) g.layer.limit = g.storage.others.limit;
+						break;
+					}
+					case 'container_unlimited': {
+						this.form.container_limit_number.disabled = cb.checked = g.storage.others.container_limit === 0;
 						break;
 					}
 					case 'prefix_lang': {
@@ -570,6 +580,10 @@ class LiveChatPanel {
 			this.form.limit_number.disabled = checked;
 			g.storage.others.limit = checked ? 0 : this.form.limit_number.valueAsNumber;
 			if (g.layer) g.layer.limit = g.storage.others.limit;
+		} else if (['container_unlimited', 'container_limit_number'].includes(name)) {
+			const checked = this.form.container_unlimited.checked;
+			this.form.container_limit_number.disabled = checked;
+			g.storage.others.container_limit = checked ? 0 : this.form.container_limit_number.valueAsNumber;
 		}
 		chrome.storage.local.set(g.storage);
 	}
@@ -687,6 +701,7 @@ function detectPageType() {
 					}
 				}, { passive: true });
 			});
+			createContainerObserver();
 		}
 	} else if (g.path.watch.includes(selfPath1)) {
 		document.addEventListener('yt-action', e => {
@@ -701,6 +716,43 @@ function detectPageType() {
 				}
 			}
 		}, { passive: true });
+		chrome.storage.local.get('others').then(storage => {
+			const autostart = storage?.others?.autostart;
+			if (autostart) {
+				/** @type {HTMLElement?} */
+				const chatButton = document.querySelector('#show-hide-button button');
+				chatButton?.click();
+			}
+		});
+	}
+}
+
+/**
+ * @param {Element} [renderer] 
+ */
+function createContainerObserver(renderer) {
+	const io = new MutationObserver(records => {
+		const children = records[0].target.childNodes;
+		const limit = g.storage.others.container_limit;
+		if (limit) while (children.length > limit) children[0].remove();
+	});
+	if (renderer) {
+		const ro = new MutationObserver(records => {
+			ro.disconnect();
+			for (const r of records) {
+				const t = /** @type {Element} */ (r.target);
+				if (r.oldValue === '') {
+					const items = t.querySelector('yt-live-chat-item-list-renderer #items');
+					if (items) io.observe(items, { childList: true });
+				} else {
+					io.disconnect();
+				}
+			}
+		});
+		ro.observe(renderer, { attributes: true, attributeOldValue: true, attributeFilter: ['loading'] });
+	} else {
+		const items = document.querySelector('yt-live-chat-item-list-renderer #items');
+		if (items) io.observe(items, { childList: true });
 	}
 }
 
@@ -756,22 +808,32 @@ function startLiveChatFlusher() {
 			if (renderer) {
 				clearInterval(timer);
 				renderer.addEventListener('yt-action', handleYtAction, { passive: true });
-				renderer.addEventListener('yt-load-reload-continuation', skipRenderingOnce, { passive: true });
+				renderer.addEventListener('yt-load-reload-continuation', () => {
+					skipRenderingOnce();
+					createContainerObserver(renderer);
+				}, { passive: true });
 			}
 		}, 1000);
- 
-		fetch('/account_advanced').then(r => r.text()).then(t => {
-			const m = t.match(/"(UC[\w-]{22})"/);
-			if (m) g.channel = m[1] || '';
-			if (g.channel) {
-				const style = g.layer?.element.shadowRoot?.querySelector('#yourcss');
-				if (style) {
-					const you = `[data-author-id="${g.channel}"]`;
-					style.textContent = `${you}{color:var(--yt-lcf-you-color)}:host(.has-you-name) ${you}.text{background-color:var(--yt-live-chat-you-message-background-color);border-radius:.5em;padding:0 .25em}${you}.text .photo{display:var(--yt-lcf-you-display-photo)}${you}.text .name{display:var(--yt-lcf-you-display-name)}${you}.text .message{display:var(--yt-lcf-you-display-message)}`;
-				}
-			}
-		});
 	}
+
+	setYourCss();
+}
+
+async function setYourCss() {
+	return fetch('/account_advanced').then(r => r.text()).then(t => {
+		const m = t.match(/"(UC[\w-]{22})"/);
+		if (m) g.channel = m[1] || '';
+		if (g.channel) {
+			const style = g.layer?.element.shadowRoot?.querySelector('#yourcss');
+			if (style) {
+				const you = `[data-author-id="${g.channel}"]`;
+				style.textContent = `${you}{color:var(--yt-lcf-you-color)}:host(.has-you-name) ${you}.text{background-color:var(--yt-live-chat-you-message-background-color);border-radius:.5em;padding:0 .25em}${you}.text .photo{display:var(--yt-lcf-you-display-photo)}${you}.text .name{display:var(--yt-lcf-you-display-name)}${you}.text .message{display:var(--yt-lcf-you-display-message)}`;
+			}
+		}
+		return true;
+	}).catch(() => {
+		return false;
+	});
 }
 
 function addSettingMenu() {
@@ -1211,8 +1273,9 @@ function getChatMessage(message, options = {}) {
 						}
 						if (!skip) {
 							const thumbnail = r.emoji.image.thumbnails.slice(-1)[0];
-							const img = thumbnail ? `<img src="${thumbnail.url}" alt="${escapeHtml(r.emoji.image.accessibility.accessibilityData.label)}">` : r.emoji.emojiId;
-							rslt += `<span class="emoji" data-label="${escapeHtml(r.emoji.image.accessibility.accessibilityData.label)}" data-shortcut="${escapeHtml(r.emoji.shortcuts?.[0] || '')}">${img}</span>`;
+							const label = escapeHtml(r.emoji.image.accessibility.accessibilityData.label);
+							const img = thumbnail ? `<img src="${thumbnail.url}" alt="${label}">` : r.emoji.emojiId;
+							rslt += `<span class="emoji" data-label="${label}" data-shortcut="${escapeHtml(r.emoji.shortcuts?.[0] || '')}">${img}</span>`;
 						}
 					}
 				}

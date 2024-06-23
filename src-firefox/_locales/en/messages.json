@@ -90,7 +90,10 @@
 		"message": "Wrap Mode 2"
 	},
 	"displayLimit": {
-		"message": "Display Limit"
+		"message": "Flow Disp. Limit"
+	},
+	"containerLimit": {
+		"message": "Container Disp. Limit"
 	},
 	"unlimited": {
 		"message": "Unlimited"
@@ -221,6 +224,9 @@
 	"disabled": {
 		"message": "Disabled"
 	},
+	"enabled": {
+		"message": "Enabled"
+	},
 	"addableByFirefoxLanguageSettings": {
 		"message": "Choices are addable by about:preferences#languagesGroup"
 	},
@@ -239,6 +245,9 @@
 	"hotkey_panel": {
 		"message": "Config Panel"
 	},
+	"autostart": {
+		"message": "Auto Start"
+	},
 	"mutedWordsMode": {
 		"message": "Mode"
 	},
@@ -255,7 +264,7 @@
 		"message": "Replace the character"
 	},
 	"mutedWordsReplacement": {
-		"message": "Replacement Word/Charactor"
+		"message": "Repl. Word/Char"
 	},
 	"placeholder_mutedWordsReplacement": {
 		"message": "Empty means hidden"
