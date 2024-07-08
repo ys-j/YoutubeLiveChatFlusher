@@ -1,16 +1,19 @@
 # Youtube LiveChat Flusher
 
-Firefox Add-on / Chrome Extension; Provides bullet chatting (Danmaku) on YouTube Live, like niconico or bilibili.<br>Firefoxアドオン／Chrome拡張機能です。YouTube Liveでニコニコ動画やビリビリ動画のようにライブチャットを弾幕風に流します。
+Firefox Add-on / Chrome Extension; Provides bullet chatting (Danmaku) on YouTube Live, like niconico or bilibili.\
+Firefoxアドオン／Chrome拡張機能です。YouTube Liveでニコニコ動画やビリビリ動画のようにライブチャットを弾幕風に流します。
 
 - [Firefox Browser Add-on](https://addons.mozilla.org/firefox/addon/youtube-livechat-flusher/)
 - [Chrome Web Store](https://chrome.google.com/webstore/detail/youtube-livechat-flusher/kkjglcpgfpjlaloboikfcoofameeljbe)
 
-I'd be glad if you could point out my bad English.
+Please refer to **[wiki](https://github.com/ys-j/YoutubeLiveChatFlusher/wiki)** for installation instructions and detailed explanations of configuration. \
+インストール方法、設定項目の詳しい説明については **[wiki](https://github.com/ys-j/YoutubeLiveChatFlusher/wiki)** を参照してください。
 
 ## Features / 特徴
 - Written in vanilla JavaScript and CSS<br>Vanilla JavaScriptとCSSで書いています。
 - No external library<br>外部ライブラリは使用していません。
-- Only simple function<br>シンプルな機能のみ実装しています。
+- Translation function is available<br>翻訳機能が有効です。
+- Customizable to your preference<br>好みに応じてカスタマイズ可能です。
 
 ## Screenshots / スクリーンショット
 - [NEXT COLOR PLANET / 星街すいせい(official) - YouTube](https://www.youtube.com/watch?v=vQHVGXdcqEQ)
