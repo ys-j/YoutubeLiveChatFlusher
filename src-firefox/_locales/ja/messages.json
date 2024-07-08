@@ -128,6 +128,51 @@
 	"emojiExpression_3": {
 		"message": "ショートカットに置換する"
 	},
+	"overlapping": {
+		"message": "オーバーラップ"
+	},
+	"overlapping_transparent": {
+		"message": "透過させる"
+	},
+	"overlapping_translate": {
+		"message": "ずらす"
+	},
+	"layerCSS": {
+		"message": "レイヤCSS"
+	},
+	"commonCSS": {
+		"message": "共通CSS"
+	},
+	"translation": {
+		"message": "メッセージ翻訳"
+	},
+	"disabled": {
+		"message": "しない"
+	},
+	"enabled": {
+		"message": "する"
+	},
+	"addableByFirefoxLanguageSettings": {
+		"message": "選択肢はabout:preferencesから追加可能です"
+	},
+	"prefixOriginalLanguage": {
+		"message": "元の言語を文頭につける"
+	},
+	"exception": {
+		"message": "除外"
+	},
+	"hotkey": {
+		"message": "ホットキー"
+	},
+	"hotkey_layer": {
+		"message": "レイヤ"
+	},
+	"hotkey_panel": {
+		"message": "設定パネル"
+	},
+	"autostart": {
+		"message": "自動スタート"
+	},
 	"normal": {
 		"message": "通常"
 	},
@@ -214,39 +259,6 @@
 	},
 	"placeholder_customCSS": {
 		"message": "カスタムCSS"
-	},
-	"commonCSS": {
-		"message": "共通CSS"
-	},
-	"translation": {
-		"message": "メッセージ翻訳"
-	},
-	"disabled": {
-		"message": "しない"
-	},
-	"enabled": {
-		"message": "する"
-	},
-	"addableByFirefoxLanguageSettings": {
-		"message": "選択肢はabout:preferences#languagesGroupから追加可能です"
-	},
-	"prefixOriginalLanguage": {
-		"message": "元の言語を文頭につける"
-	},
-	"exception": {
-		"message": "除外"
-	},
-	"hotkey": {
-		"message": "ホットキー"
-	},
-	"hotkey_layer": {
-		"message": "レイヤ"
-	},
-	"hotkey_panel": {
-		"message": "設定パネル"
-	},
-	"autostart": {
-		"message": "自動スタート"
 	},
 	"mutedWordsMode": {
 		"message": "モード"

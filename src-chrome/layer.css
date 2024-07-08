@@ -126,6 +126,9 @@ div.body, figure.body {
 	margin: 0;
 	padding: 0 .5em 2px;
 }
+div.body:empty {
+	padding-bottom: 1px;
+}
 .sticker {
 	height: var(--yt-lcf-sticker-size);
 	width: var(--yt-lcf-sticker-size);

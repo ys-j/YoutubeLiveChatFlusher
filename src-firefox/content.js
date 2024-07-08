@@ -42,6 +42,7 @@ const g = {
 			background_opacity: '0.5',
 			max_width: '100%',
 			sticker_size: '3em',
+			layer_css: '',
 		},
 		others: {
 			px_per_sec: 0,
@@ -52,6 +53,7 @@ const g = {
 			container_limit: 0,
 			simultaneous: 2,
 			emoji: 1,
+			overlapping: 0,
 			translation: 0,
 			except_lang: 0,
 			autostart: 0,
@@ -113,25 +115,26 @@ const g = {
 const getMessage = browser.i18n.getMessage;
 
 class LiveChatLayer {
+	limit = 0;
+	element;
+	root;
 	/** @param div {?HTMLDivElement | undefined} */
 	constructor(div = undefined) {
-		this.limit = 0;
 		this.element = div || document.createElement('div');
 		this.element.id = g.tag.layer;
 		this.element.dataset.layer = '1';
 		this.element.setAttribute('role', 'marquee');
 		this.element.setAttribute('aria-live', 'off');
-		const resizeObserver = new ResizeObserver(entries => {
-			this.init();
+		const resizeObserver = new ResizeObserver(() => {
 			this.resetAnimationDuration();
 			this.resetFontSize();
 		});
 		resizeObserver.observe(this.element);
+		this.root = this.element.shadowRoot || this.element.attachShadow({ mode: 'open' });
 		this.init();
 	}
 	init() {
-		const root = this.element.shadowRoot || this.element.attachShadow({ mode: 'open' });
-		root.innerHTML = '';
+		this.root.innerHTML = '';
 		const fragment = document.createDocumentFragment();
 		const link = document.createElement('link');
 		link.rel = 'stylesheet';
@@ -144,13 +147,13 @@ class LiveChatLayer {
 		ys.id = 'yourcss';
 		link.style.display = cs.style.display = ys.style.display = 'none';
 		fragment.appendChild(ys);
-		root.appendChild(fragment);
+		this.root.appendChild(fragment);
 		const mutationObserver = new MutationObserver(() => {
-			const over = root.childElementCount - (this.limit || Infinity);
+			const over = this.root.childElementCount - (this.limit || Infinity);
 			let i = 3;
 			while (i++ < over) ys.nextElementSibling?.remove();
 		});
-		mutationObserver.observe(root, { childList: true });
+		mutationObserver.observe(this.root, { childList: true });
 		return this;
 	}
 	hide() {
@@ -186,10 +189,17 @@ class LiveChatLayer {
 			this.element.style.setProperty('--yt-lcf-font-size', g.storage.styles.font_size);
 		}
 	}
+	/** @param {string} [type] */
+	updateCurrentItemStyle(type = undefined) {
+		const items = Array.from(this.root.children).filter(type ? c => c.classList.contains(type) : c => c.tagName === 'DIV');
+		/** @type {HTMLElement[]} */ (items).forEach(updateCurrentItem);
+	}
 }
 
 class LiveChatPanel {
-	/** @param div {?HTMLDivElement | undefined} */
+	element;
+	form;
+	/** @param {HTMLDivElement} [div] */
 	constructor(div = undefined) {
 		this.element = div || document.createElement('div');
 		this.element.id = g.tag.panel;
@@ -277,6 +287,8 @@ class LiveChatPanel {
 			`<div><div>${getMessage('containerLimit')}</div><div><input type="number" class="others" name="container_limit_number" min="1" size="8" value="${g.storage.others.container_limit || 20}"><label><input type="checkbox" name="container_unlimited">${getMessage('unlimited')}</label></div></div>`,
 			`<div><div>${getMessage('simultaneousMessage')}</div><div><select name="simultaneous">${Object.values(g.index.simultaneous).map(v => `<option value="${v}">` + getMessage(`simultaneousMessage_${v}`)).join('')}</select>▼</div></div>`,
 			`<div><div>${getMessage('emojiExpression')}</div><div><select name="emoji">${Object.values(g.index.emoji).map(v => `<option value="${v}">` + getMessage(`emojiExpression_${v}`)).join('')}</select>▼</div></div>`,
+			`<div><div>${getMessage('overlapping')}</div><div>${['overlapping_transparent', 'overlapping_translate'].map((m, i) => `<label><input type="checkbox" name="overlapping" value="${i}"><span>${getMessage(m)}</span></label>`).join('')}</div></div>`,
+			`<div><div>${getMessage('layerCSS')}</div><div><input type="text" name="layer_css" placeholder="${getMessage('placeholder_customCSS')}" value="${escapeHtml(g.storage.styles.layer_css)}" style="width:20.5em"></div></div>`,
 			`<div><div>${getMessage('commonCSS')}</div><div><input type="text" name="_css" placeholder="${getMessage('placeholder_customCSS')}" value="${escapeHtml(g.storage.cssTexts['div'])}" style="width:20.5em"></div></div>`,
 			`<div><div>${getMessage('translation')}</div><div><select name="translation" title="${getMessage('addableByFirefoxLanguageSettings')}"><option value="0">${getMessage('disabled')}${navigator.languages.map((lang, i) => `<option value="${i + 1}">` + lang).join('')}</select>▼ /<label><input type="checkbox" name="prefix_lang"><span>${getMessage('prefixOriginalLanguage')}</span></label><br><span>${getMessage('exception')}</span>${navigator.languages.map((lang, i) => `<label><input type="checkbox" name="except_lang" value="${i}"><span>${lang}</span></label>`).join('')}</div><div></div></div>`,
 			`<div><div>${getMessage('hotkey')}</div><div><label><span>${getMessage('hotkey_layer')}</span><input type="text" name="hotkey_layer" pattern="^.?$" size="3" value="${g.storage.hotkeys.layer}"></label> / <label><span>${getMessage('hotkey_panel')}</span><input type="text" name="hotkey_panel" pattern="^.?$" size="3" value="${g.storage.hotkeys.panel}"></label></div></div>`,
@@ -375,6 +387,11 @@ class LiveChatPanel {
 						this.form.container_limit_number.disabled = cb.checked = g.storage.others.container_limit === 0;
 						break;
 					}
+					case 'overlapping': {
+						const val = parseInt(cb.value);
+						cb.checked = g.storage.others.overlapping & 1 << val ? true : false;
+						break;
+					}
 					case 'prefix_lang': {
 						cb.checked = g.storage.others.translation < 0;
 						cb.disabled = this.form.translation.selectedIndex === 0;
@@ -424,7 +441,7 @@ class LiveChatPanel {
 		this.element.ariaHidden = 'false';
 		this.element.style.display = 'block';
 	}
-	/** @param elem {HTMLInputElement | HTMLSelectElement}  */
+	/** @param {HTMLInputElement | HTMLSelectElement} elem */
 	updateStorage(elem) {
 		const name = elem.name;
 		const le = g.layer?.element;
@@ -451,7 +468,7 @@ class LiveChatPanel {
 				if (le) switch (name) {
 					case 'emoji': {
 						le.dataset.emoji = Object.keys(g.index.emoji)[val];
-						updateCurrentItemStyle();
+						g.layer?.updateCurrentItemStyle();
 						break;
 					}
 					case 'wrap': {
@@ -459,7 +476,7 @@ class LiveChatPanel {
 						le.style.setProperty('--yt-lcf-message-word-break', g.array.wordBreak[val]);
 						le.style.setProperty('--yt-lcf-message-white-space', g.array.whiteSpace[val]);
 						le.style.setProperty('--yt-lcf-max-width', g.storage.styles.max_width);
-						updateCurrentItemStyle();
+						g.layer?.updateCurrentItemStyle();
 						break;
 					}
 				}
@@ -482,7 +499,7 @@ class LiveChatPanel {
 						this.form.px_per_sec.valueAsNumber = Math.round(speed);
 						break;
 					}
-					case 'max_width': updateCurrentItemStyle();
+					case 'max_width': g.layer?.updateCurrentItemStyle();
 				}
 				le.style.setProperty('--yt-lcf-' + name.replace(/_/g, '-'), g.storage.styles[name]);
 			}
@@ -506,7 +523,7 @@ class LiveChatPanel {
 							le.style.removeProperty('--yt-lcf-' + type.replace(/_/g, '-') + '-color');
 						}
 					}
-					updateCurrentItemStyle(type);
+					g.layer?.updateCurrentItemStyle(type);
 				}
 			}
 		} else if (name.endsWith('_color')) {
@@ -521,6 +538,11 @@ class LiveChatPanel {
 					le?.style.removeProperty('--yt-lcf-' + type.replace('_', '-') + '-color');
 				}
 			}
+		} else if (name === 'layer_css') {
+			const newCss = this.form.elements[name]?.value || '';
+			g.storage.styles.layer_css = newCss;
+			const le = g.layer?.element;
+			if (le) le.style.cssText = le.style.cssText.replace(/\-\-yt\-lcf\-layer\-css: below;.*$/, '--yt-lcf-layer-css: below; ' + newCss);
 		} else if (name.endsWith('_css')) {
 			const match = name.match(/^(.*)_css$/);
 			if (match) {
@@ -538,8 +560,8 @@ class LiveChatPanel {
 			const val = g.storage.others.translation;
 			g.storage.others.translation = Math.abs(val) * (checked ? -1 : 1);
 			le?.classList[checked ? 'add' : 'remove']('prefix_lang');
-			updateCurrentItemStyle();
-		} else if (name === 'except_lang') {
+			g.layer?.updateCurrentItemStyle();
+		} else if (name === 'except_lang' || name === 'overlapping') {
 			/** @type {NodeListOf<HTMLInputElement>} */
 			const list = this.form[name];
 			g.storage.others[name] = Array.from(list).map((l) => Number(l.checked)).reduce((a, c, i) => a + (c << i), 0);
@@ -596,29 +618,6 @@ class LiveChatPanel {
 
 detectPageType();
 window.addEventListener('yt-navigate-finish', detectPageType, { passive: true });
-window.addEventListener('resize', e => {
-	if (!g.layer) return;
-	const le = g.layer.element;
-	if (g.panel) g.panel.move(10, 10);
-	const speed = g.storage.others.px_per_sec;
-	if (speed) {
-		const durationBySpeed = le.getBoundingClientRect().width / speed;
-		le.style.setProperty('--yt-lcf-animation-duration', durationBySpeed.toFixed(1) + 's');
-		/** @type {?HTMLInputElement | undefined} */
-		const input = g.app?.querySelector('#' + g.tag.panel + ' [name="animation_duration"]');
-		if (input) input.value = durationBySpeed.toFixed(1);
-	}
-	const lines = g.storage.others.number_of_lines;
-	if (lines) {
-		const sizeByLines = Math.floor(le.getBoundingClientRect().height * .8 / lines);
-		le.style.setProperty('--yt-lcf-font-size', [
-			`${sizeByLines}px`,
-			`max(${g.storage.styles.font_size}, ${sizeByLines}px)`,
-			`min(${g.storage.styles.font_size}, ${sizeByLines}px)`,
-		][g.storage.others.type_of_lines]);
-	}
-	updateCurrentItemStyle();
-}, { passive: true });
 
 function detectPageType() {
 	const selfPath1 = location.pathname.split('/')[1];
@@ -626,7 +625,6 @@ function detectPageType() {
 	if (g.path.live_chat.includes(selfPath1) && top && g.path.watch.includes(topPath1)) {
 		g.app = top.document.querySelector('#ytd-player');
 		if (g.app) {
-			startLiveChatFlusher();
 			const storageList = ['styles', 'others', 'parts', 'cssTexts', 'hotkeys', 'mutedWords'];
 			browser.storage.local.get(storageList).then(storage => {
 				for (const type of storageList) {
@@ -636,6 +634,8 @@ function detectPageType() {
 						}
 					}
 				}
+			}).then(() => {
+				startLiveChatFlusher();
 				updateMutedWordsList();
 				if (g.layer) {
 					const le = g.layer.element;
@@ -700,6 +700,7 @@ function detectPageType() {
 						}
 					}
 				}, { passive: true });
+				if (g.layer) g.layer.element.style.cssText += '--yt-lcf-layer-css: below;' + g.storage.styles.layer_css;
 			});
 			createContainerObserver();
 		}
@@ -713,20 +714,30 @@ function detectPageType() {
 					/** @type {HTMLDivElement?} */
 					const panel = document.querySelector('#' + g.tag.panel);
 					if (panel) new LiveChatPanel(panel).hide();
+					checkAutoStart();
 				}
 			}
 		}, { passive: true });
-		browser.storage.local.get('others').then(storage => {
-			const autostart = storage?.others?.autostart;
-			if (autostart) {
-				const buttonContainer = document.getElementById('show-hide-button');
-				if (buttonContainer && !buttonContainer.hidden) {
-					const button = buttonContainer.querySelector('button');
-					button?.click();
-				}
-			}
-		});
+		checkAutoStart();
 	}
+}
+
+async function checkAutoStart() {
+	const storage = await browser.storage.local.get('others');
+	const autostart = storage?.others?.autostart;
+	if (autostart) {
+		const buttonContainer = document.getElementById('show-hide-button');
+		if (buttonContainer && !buttonContainer.hidden) {
+			const button = buttonContainer.querySelector('button');
+			const isClose = button?.closest('#close-button');
+			if (!isClose) {
+				button?.click();
+
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 /**
@@ -760,7 +771,8 @@ function createContainerObserver(renderer) {
 
 function getLayer() {
 	const layer = new LiveChatLayer();
-	layer.element.addEventListener('contextmenu', e => {
+	const le = layer.element;
+	le.addEventListener('contextmenu', e => {
 		const origin = /** @type {HTMLElement?} */ (e.composedPath().find(p => 'id' in p));
 		if (origin) {
 			e.preventDefault();
@@ -768,7 +780,7 @@ function getLayer() {
 			origin.classList.toggle('paused');
 		}
 	}, { passive: false });
-	layer.element.addEventListener('click', e => {
+	le.addEventListener('click', e => {
 		const origin = /** @type {HTMLElement?} */ (e.composedPath()[0]);
 		if (origin?.tagName === 'A') {
 			e.stopPropagation();
@@ -776,7 +788,7 @@ function getLayer() {
 			/** @type {HTMLElement?} */ (e.target)?.parentElement?.click();
 		}
 	}, { passive: true });
-	layer.element.addEventListener('wheel', e => {
+	le.addEventListener('wheel', e => {
 		const origin = /** @type {HTMLElement?} */ (e.composedPath().find(p => 'id' in p));
 		if (origin?.classList.contains('paused')) {
 			e.preventDefault();
@@ -789,9 +801,6 @@ function getLayer() {
 
 function skipRenderingOnce() {
 	g.skip = true;
-}
-function initLayer() {
-	g.layer?.init();
 }
 
 function startLiveChatFlusher() {
@@ -861,25 +870,22 @@ function addSettingMenu() {
 		`<div class="ytp-menuitem-icon"><svg height="24" width="24" viewBox="-40 -40 80 80"><path d="M0,24Q8,24,24,23,31,22,31,19,32,12,32,0M0,24Q-8,24,-24,23,-31,22,-31,19,-32,12,-32,0M0,-24Q-8,-24,-24,-23,-31,-22,-31,-19,-32,-12,-32,0M0,-24Q8,-24,24,-23,31,-22,31,-19,32,-12,32,0" fill="none" stroke="white" stroke-width="3"/><g fill="white" transform="translate(0,10)"><path d="M4,-10l12,12h8l-12,-12,12,-12h-8z"/><circle r="3"/><circle cx="-10" r="3"/><circle cx="-20" r="3"/></g></svg></div><div class="ytp-menuitem-label">${getMessage('ytp_menuitem_label_switch')}</div><div class="ytp-menuitem-content"><div class="ytp-menuitem-toggle-checkbox"></div></div></div>`,
 		`<div class="ytp-menuitem-icon"><svg height="24" width="24" viewBox="-40 -64 108 108"><mask id="m"><path d="M-40-80h120v120h-120z" fill="white" /><circle r="9"/></mask><path d="M0,24Q8,24,24,23,31,22,31,19,32,12,32,0M0,24Q-8,24,-24,23,-31,22,-31,19,-32,12,-32,0M0,-24Q-8,-24,-24,-23,-31,-22,-31,-19,-32,-12,-32,0" fill="none" stroke="white" stroke-width="4"/><g fill="white" transform="translate(0,10)"><circle cx="8" r="3"/><circle cx="-4" r="3"/><circle cx="-16" r="3"/><g transform="translate(32,-32) scale(1.25)" mask="url(#m)"><path id="p" d="M0,0L-10,-8L-6,-24Q0,-26,6,-24L10,-8L-10,8L-6,24Q0,26,6,24L10,8z"/><use xlink:href="#p" transform="rotate(60)"/><use xlink:href="#p" transform="rotate(120)"/></g></g></svg></div><div class="ytp-menuitem-label">${getMessage('ytp_menuitem_label_config')}</div><div class="ytp-menuitem-content"></div>`,
 	];
-	/** @type { { [K in keyof GlobalEventHandlersEventMap]?: (ev: GlobalEventHandlersEventMap[K]) => void }[]} */
-	const events = [
-		{
-			click: e => {
-				const cb = /** @type {HTMLElement?} */ (e.currentTarget);
-				if (cb) {
-					const checked = cb.getAttribute('aria-checked') === 'true';
-					cb.setAttribute('aria-checked', (!checked).toString());
-					initLayer();
-					g.layer?.[checked ? 'hide' : 'show']();
-				}
-			},
+	/** @type { { [K in keyof GlobalEventHandlersEventMap]?: EventListener }[]} */
+	const events = [ {
+		click: e => {
+			const cb = /** @type {HTMLElement?} */ (e.currentTarget);
+			if (cb) {
+				const checked = cb.getAttribute('aria-checked') === 'true';
+				cb.setAttribute('aria-checked', (!checked).toString());
+				g.layer?.init();
+				g.layer?.[checked ? 'hide' : 'show']();
+			}
 		},
-		{
-			click: _ => {
-				panel[panel.element.hidden ? 'show' : 'hide']();
-			},
-		}
-	];
+	}, {
+		click: _ => {
+			panel[panel.element.hidden ? 'show' : 'hide']();
+		},
+	} ];
 	/** @type {HTMLElement?} */
 	const ytpPanelMenu = g.app.querySelector('.ytp-settings-menu .ytp-panel-menu');
 	if (ytpPanelMenu) {
@@ -891,22 +897,11 @@ function addSettingMenu() {
 			const menuitem = div.cloneNode();
 			for (const [k, v] of Object.entries(attr)) menuitem.setAttribute(k, v);
 			menuitem.innerHTML = htmls[i];
-			// @ts-ignore
 			for (const [k, v] of Object.entries(events[i])) menuitem.addEventListener(k, v, { passive: true });
 			ytpPanelMenu.appendChild(menuitem);
 		});
 	}
 	g.layer?.element.insertAdjacentElement('afterend', panel.element);
-}
-
-/** @param {string | undefined} type */
-function updateCurrentItemStyle(type = undefined) {
-	if (!g.layer) return;
-	const children = g.layer.element.shadowRoot?.children;
-	if (children) {
-		const items = Array.from(children).filter(type ? c => c.classList.contains(type) : c => c.tagName === 'DIV');
-		/** @type {HTMLElement[]} */ (items).forEach(updateCurrentItem);
-	}
 }
 
 /** @param {HTMLElement} item */
@@ -919,14 +914,10 @@ function updateCurrentItem(item) {
 
 function updateMutedWordsList() {
 	const { regexp, plainList } = g.storage.mutedWords;
-	if (regexp) {
-		g.list.mutedWords = plainList.map(s => new RegExp(s, 'g'));
-	} else {
-		g.list.mutedWords = plainList.length > 0 ? [ new RegExp(plainList.map(escapeRegExp).join('|'), 'g') ] : [];
-	}
+	g.list.mutedWords = regexp ? plainList.map(s => new RegExp(s, 'g')) : plainList.length > 0 ? [ new RegExp(plainList.map(escapeRegExp).join('|'), 'g') ] : [];
 	return g.list.mutedWords;
- }
- 
+}
+
 /**
  * @param {CustomEvent<{ actionName: string, args: any[][] }>} e 
  */
@@ -993,12 +984,12 @@ function handleYtAction(e) {
 					console.log(`Message duplication #${elem.id}: %c${elem.dataset.text || elem.lastElementChild?.textContent}`, color ? 'color:' + color : '');
 					return resolve(elem.id);
 				}
-				elem.addEventListener('animationend', e => {
-					/** @type {HTMLElement} */ (e.target).remove();
+				elem.addEventListener('animationend', () => {
+					elem.remove();
 				}, { passive: true });
-				const children = Array.from(/** @type {HTMLCollectionOf<HTMLElement>} */ (root.children));
+				const children = Array.from(/** @type {HTMLCollectionOf<HTMLElement>} */ (root.children)).filter(child => child.tagName === 'DIV');
 				root.appendChild(elem);
-				const { clientHeight: ch, clientWidth: cw } = le;
+				const ch = le.clientHeight, cw = le.clientWidth;
 				if (elem.clientWidth >= cw * (parseInt(g.storage.styles.max_width) / 100 || 1)) elem.classList.add('wrap');
 				elem.style.setProperty('--yt-lcf-translate-x', `-${cw + elem.clientWidth}px`);
 				const body = /** @type {HTMLElement?} */ (elem.lastElementChild);
@@ -1013,7 +1004,7 @@ function handleYtAction(e) {
 					elem.dataset.line = '0';
 					return resolve(elem.id);
 				}
-				const overline = Math.ceil(ch / lh);
+				const overline = Math.floor(ch / lh);
 				let y = 0;
 				do {
 					if (children.length > 0) {
@@ -1025,17 +1016,33 @@ function handleYtAction(e) {
 						elem.dataset.line = '0';
 						return resolve(elem.id);
 					}
-				} while (y++ < overline);
+				} while (++y <= overline);
+
+				elem.classList.add(`overlap`);
+				const line = new Array(overline).fill(0), zIndex = new Array(overline).fill(0);
+				for (let j = 0; j < children.length; j++) {
+					const before = children[j];
+					const overlapping = isOverlapping(before, elem);
+					const ln = parseInt(before.dataset.line || '');
+					if (Number.isInteger(ln)) {
+						line[ln] = Math.max(overlapping, line[ln]);
+						if (overlapping) zIndex[ln]--;
+					}
+				}
+				y = 0;
+				const st = g.storage.others.overlapping;
+				const o = st & 0b01 ? .8 : 1;
+				const dy = st & 0b10 ? .5 : 0;
 				do {
-					const tops = children.map(child => parseInt(child.dataset.line || '')).filter(v => !isNaN(v));
-					const lines = new Array(y).fill(0);
-					tops.forEach(v => {lines[v] += 1});
-					let ln = -1, i = -1;
-					do ln = lines.indexOf(++i);
-					while (ln < 0);
-					elem.style.top = `${ln * lhf}em`;
-					elem.dataset.line = `${ln}`;
-				} while (isOverflow(le, elem) && y-- > 0);
+					const min = Math.min(...line), max = Math.max(...line);
+					y = min < max ? line.indexOf(min) : zIndex.indexOf(Math.max(...zIndex));
+					if (y < 0) break;
+					elem.style.top = `${(y + dy) * lhf}em`;
+					elem.style.opacity = `${Math.max(.5, Math.pow(o, -zIndex[y] || 1))}`;
+					elem.style.zIndex = zIndex[y];
+					elem.dataset.line = `${y}`;
+					line[y] = Infinity;
+				} while (y && isOverflow(le, elem));
 				return resolve(elem.id);
 			}));
 			
@@ -1323,6 +1330,28 @@ function isCatchable(before, after) {
 	} else {
 		return false;
 	}
+}
+
+/**
+ * @param {Element} before 
+ * @param {Element} after 
+ */
+function isOverlapping(before, after) {
+	const [b, a] = [before, after].map(elm => elm.getBoundingClientRect());
+	const [bDur, aDur] = [before, after].map(elm => {
+		const dur = getComputedStyle(elm).animationDuration;
+		const [_, num, unit] = dur.match(/([\d\.]+)(\D+)/) || [];
+		if (num && unit) switch (unit) {
+			case 'ms': return parseFloat(num);
+			case 's': return parseFloat(num) * 1000;
+		}
+		return parseFloat(g.storage.styles.animation_duration) * 1000 || 4000;
+	});
+	const bSpeed = b.width / bDur, aSpeed = a.width / aDur;
+	const speedDiff = aSpeed - bSpeed;
+	const start = (a.left - b.right) / speedDiff;
+	const end = (a.right - b.left) / speedDiff;
+	return end > start ? Math.min(Math.round(end - start), bDur) : 0;
 }
 
 /**

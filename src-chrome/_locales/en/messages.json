@@ -128,6 +128,51 @@
 	"emojiExpression_3": {
 		"message": "Replace with shortcuts"
 	},
+	"overlapping": {
+		"message": "Overlapping"
+	},
+	"overlapping_transparent": {
+		"message": "Make transparent"
+	},
+	"overlapping_translate": {
+		"message": "Shift"
+	},
+	"layerCSS": {
+		"message": "Layer CSS"
+	},
+	"commonCSS": {
+		"message": "Common CSS"
+	},
+	"translation": {
+		"message": "Message Translation"
+	},
+	"disabled": {
+		"message": "Disabled"
+	},
+	"enabled": {
+		"message": "Enabled"
+	},
+	"addableByFirefoxLanguageSettings": {
+		"message": "Choices are addable by chrome://settings/languages"
+	},
+	"prefixOriginalLanguage": {
+		"message": "Prefix original lang"
+	},
+	"exception": {
+		"message": "except"
+	},
+	"hotkey": {
+		"message": "Hotkeys"
+	},
+	"hotkey_layer": {
+		"message": "Layer"
+	},
+	"hotkey_panel": {
+		"message": "Config Panel"
+	},
+	"autostart": {
+		"message": "Auto Start"
+	},
 	"normal": {
 		"message": "Normal"
 	},
@@ -214,39 +259,6 @@
 	},
 	"placeholder_customCSS": {
 		"message": "Custom CSS"
-	},
-	"commonCSS": {
-		"message": "Common CSS"
-	},
-	"translation": {
-		"message": "Message Translation"
-	},
-	"disabled": {
-		"message": "Disabled"
-	},
-	"enabled": {
-		"message": "Enabled"
-	},
-	"addableByFirefoxLanguageSettings": {
-		"message": "Choices are addable by about:preferences#languagesGroup"
-	},
-	"prefixOriginalLanguage": {
-		"message": "Prefix original lang"
-	},
-	"exception": {
-		"message": "except"
-	},
-	"hotkey": {
-		"message": "Hotkeys"
-	},
-	"hotkey_layer": {
-		"message": "Layer"
-	},
-	"hotkey_panel": {
-		"message": "Config Panel"
-	},
-	"autostart": {
-		"message": "Auto Start"
 	},
 	"mutedWordsMode": {
 		"message": "Mode"
