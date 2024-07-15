@@ -287,6 +287,16 @@
 	height: .5ex;
 }
 
+#yt-lcf-panel dialog {
+	border: none;
+}
+#yt-lcf-panel dialog::backdrop {
+	background: rgba(0, 0, 0, .6);
+}
+#yt-lcf-panel dialog ol {
+	margin-left: 1.5em;
+}
+
 /*
 	Chat frame
 */

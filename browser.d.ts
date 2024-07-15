@@ -615,8 +615,7 @@ declare namespace browser {
 	namespace i18n {
 		type LanguageCode = string
 		function getAcceptLanguages(): Promise<LanguageCode[]>
-		function getMessage(messageName: string): string
-		function getMessage(messageName: string, substitutions: string | string[]): string
+		function getMessage(messageName: string, substitutions?: string | string[]): string
 		function getUILanguage(): LanguageCode
 		function detectLanguage(text: string): Promise<{ isReliable: boolean, languages: { language: LanguageCode, percentage: number }[]}>
 	}

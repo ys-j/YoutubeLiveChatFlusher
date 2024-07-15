@@ -50,6 +50,9 @@
 	"fontWeight": {
 		"message": "太さ"
 	},
+	"fontFamily_select_from_local": {
+		"message": "ローカルフォントから選択する"
+	},
 	"strokeStyle": {
 		"message": "縁取りのスタイル"
 	},

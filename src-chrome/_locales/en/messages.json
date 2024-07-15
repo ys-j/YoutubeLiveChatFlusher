@@ -50,6 +50,9 @@
 	"fontWeight": {
 		"message": "Weight"
 	},
+	"fontFamily_select_from_local": {
+		"message": "Select from local fonts"
+	},
 	"strokeStyle": {
 		"message": "Stroke Style"
 	},
