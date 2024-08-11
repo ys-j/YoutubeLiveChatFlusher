@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "__MSG_manifestName__",
-	"version": "0.6.2",
+	"version": "0.7.0",
 	"browser_specific_settings": {
 		"gecko": {
 			"id": "{5a898e4e-6b5c-4acf-9e29-4c791d3b5f2e}",
@@ -33,7 +33,7 @@
 	"permissions": ["storage"],
 	"web_accessible_resources": [
 		{
-			"resources": ["layer.css"],
+			"resources": ["layer.css", "utils.js"],
 			"matches": ["*://www.youtube.com/*"]
 		}
 	]

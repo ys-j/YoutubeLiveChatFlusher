@@ -23,6 +23,9 @@
 	"mutedWordsTab": {
 		"message": "NGワード設定"
 	},
+	"userDefinedCssTab": {
+		"message": "ユーザーCSS設定"
+	},
 	"animationDuration": {
 		"message": "アニメーション秒数"
 	},
@@ -142,9 +145,6 @@
 	},
 	"layerCSS": {
 		"message": "レイヤCSS"
-	},
-	"commonCSS": {
-		"message": "共通CSS"
 	},
 	"translation": {
 		"message": "メッセージ翻訳"

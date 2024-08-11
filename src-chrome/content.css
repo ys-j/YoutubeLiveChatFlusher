@@ -271,6 +271,9 @@
 #yt-lcf-panel input:invalid {
 	box-shadow: 0 0 1px 1px var(--yt-spec-static-brand-red, red);
 }
+#yt-lcf-panel input[name^="hotkey"] {
+	text-align: center;
+}
 #yt-lcf-panel input[size="3"] {
 	width: 2em;
 }

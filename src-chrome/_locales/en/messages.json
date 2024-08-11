@@ -23,6 +23,9 @@
 	"mutedWordsTab": {
 		"message": "Banned Words"
 	},
+	"userDefinedCssTab": {
+		"message": "User CSS"
+	},
 	"animationDuration": {
 		"message": "Animation Duration"
 	},
@@ -142,9 +145,6 @@
 	},
 	"layerCSS": {
 		"message": "Layer CSS"
-	},
-	"commonCSS": {
-		"message": "Common CSS"
 	},
 	"translation": {
 		"message": "Message Translation"

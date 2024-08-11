@@ -1,4 +1,4 @@
-export const $msg = chrome.i18n.getMessage;
+export const $msg = browser.i18n.getMessage;
 
 /** @param {string} str */
 export function escapeHtml(str) {
@@ -82,7 +82,7 @@ export class LiveChatPanel {
 		this.element.addEventListener('keyup', e => {
 			e.stopPropagation();
 		});
- 
+
 		this.form = document.createElement('form');
 		const changeTab = e => {
 			buttons.forEach(b => {
@@ -126,8 +126,8 @@ export class LiveChatPanel {
 			`<div><div>${$msg('animationDuration')}</div><div><label><input type="number" class="styles" name="animation_duration" min="1" step="0.1" size="5" value="${(parseFloat(g.storage.styles.animation_duration) || 8).toFixed(1)}" data-unit="s">s</label> /<input type="checkbox" name="speed"><label><input type="number" name="px_per_sec" min="1" size="5" value="${g.storage.others.px_per_sec || 160}" data-unit="px/s"><span>px/s</span></label></div></div>`,
 			`<div><div>${$msg('fontSize')}</div><div><label><input type="number" class="styles" name="font_size" min="12" size="5" value="${parseInt(g.storage.styles.font_size) || 36}" data-unit="px">px</label> /<input type="checkbox" name="lines"><label><input type="number" name="number_of_lines" min="6" size="5" value="${g.storage.others.number_of_lines || 20}"><span>${$msg('lines')}</span></label><select name="type_of_lines">${Object.values(g.index.lines).map(v => `<option value="${v}">` + $msg(`typeOfLines_${v}`)).join('')}</select><span>▼</span></div></div>`,
 			`<div><div>${$msg('lineHeight')}</div><div><input type="number" class="styles" name="line_height" min="1" step="0.05" value="${g.storage.styles.line_height || 1.25}"></div></div>`,
-			`<div><div>${$msg('fontFamily')} / ${$msg('fontWeight')}</div><div><input type="text" class="styles" name="font_family" value="${escapeHtml(g.storage.styles.font_family) || 'inherit'}"> <button type="button" id="font_helper" class="ytp-button" title="${$msg('fontFamily_select_from_local')}">[?]</button> / <input type="number" class="styles" name="font_weight" min="100" max="900" step="100" size="5" value="${g.storage.styles.font_weight || '500'}"></div></div>`,
-			`<div><div>${$msg('strokeStyle')}</div><div><label><input type="color" name="stroke_color" value="${g.storage.styles.stroke_color || '#000000'}"></label> / <label>${$msg('strokeOffset')}<input type="number" name="stroke_offset" min="0" size="5" value="${parseInt(g.storage.styles.stroke_offset) || 1}" data-unit="px">px</label> / <label>${$msg('strokeBlur')}<input type="number" name="strolke_blur" min="0" size="5" value="${parseInt(g.storage.styles.stroke_blur) || 0}" data-unit="px">px</label></div></div>`,
+			`<div><div>${$msg('fontFamily')} / ${$msg('fontWeight')}</div><div><input type="text" class="styles" name="font_family" value="${escapeHtml(g.storage.styles.font_family) || 'inherit'}"> / <input type="number" class="styles" name="font_weight" min="100" max="900" step="100" size="5" value="${g.storage.styles.font_weight || '500'}"></div></div>`,
+			`<div><div>${$msg('strokeStyle')}</div><div><label><input type="color" name="stroke_color" value="${g.storage.styles.stroke_color || '#000000'}"></label> / <label>${$msg('strokeOffset')}<input type="number" name="stroke_offset" min="0" size="3" value="${parseInt(g.storage.styles.stroke_offset) || 1}" data-unit="px">px</label> / <label>${$msg('strokeBlur')}<input type="number" name="strolke_blur" min="0" size="3" value="${parseInt(g.storage.styles.stroke_blur) || 0}" data-unit="px">px</label></div></div>`,
 			`<div><div>${$msg('layerOpacity')}</div><div>${$msg('opacity_0')}<input type="range" class="styles" name="layer_opacity" min="0" max="1" step="0.05" value="${parseFloat(g.storage.styles.layer_opacity) || 1}">${$msg('opacity_1')}</div></div>`,
 			`<div><div>${$msg('backgroundOpacity')}</div><div>${$msg('opacity_0')}<input type="range" class="styles" name="background_opacity" min="0" max="1" step="0.05" value="${parseFloat(g.storage.styles.background_opacity) || 0.5}">${$msg('opacity_1')}</div></div>`,
 			`<div><div>${$msg('maxWidth')}/${$msg('wordWrap')}</div><div><label><input type="number" class="styles" name="max_width" min="50" size="8" value="${parseInt(g.storage.styles.max_width) || 100}" data-unit="%"><span>%</span></label> /<select name="wrap">${Object.values(g.index.wrap).map(v => `<option value="${v}">` + $msg(`wordWrap_${v}`)).join('')}</select>▼</div></div>`,
@@ -138,7 +138,7 @@ export class LiveChatPanel {
 			`<div><div>${$msg('overlapping')}</div><div>${['overlapping_transparent', 'overlapping_translate'].map((m, i) => `<label><input type="checkbox" name="overlapping" value="${i}"><span>${$msg(m)}</span></label>`).join('')}</div></div>`,
 			`<div><div>${$msg('layerCSS')}</div><div><input type="text" name="layer_css" placeholder="${$msg('placeholder_customCSS')}" value="${escapeHtml(g.storage.styles.layer_css)}" style="width:20.5em"></div></div>`,
 			`<div><div>${$msg('translation')}</div><div><select name="translation" title="${$msg('addableByFirefoxLanguageSettings')}"><option value="0">${$msg('disabled')}${navigator.languages.map((lang, i) => `<option value="${i + 1}">` + lang).join('')}</select>▼ /<label><input type="checkbox" name="prefix_lang"><span>${$msg('prefixOriginalLanguage')}</span></label><br><span>${$msg('exception')}</span>${navigator.languages.map((lang, i) => `<label><input type="checkbox" name="except_lang" value="${i}"><span>${lang}</span></label>`).join('')}</div><div></div></div>`,
-			`<div><div>${$msg('hotkey')}</div><div><label><span>${$msg('hotkey_layer')}</span><input type="text" name="hotkey_layer" pattern="^.?$" size="3" value="${g.storage.hotkeys.layer}"></label> / <label><span>${$msg('hotkey_panel')}</span><input type="text" name="hotkey_panel" pattern="^.?$" size="3" value="${g.storage.hotkeys.panel}"></label></div></div>`,
+			`<div><div>${$msg('hotkey')}</div><div><label><span>${$msg('hotkey_layer')}</span><input type="text" name="hotkey_layer" maxlength="1" size="1" value="${g.storage.hotkeys.layer}"></label> / <label><span>${$msg('hotkey_panel')}</span><input type="text" name="hotkey_panel" maxlength="1" size="1" value="${g.storage.hotkeys.panel}"></label></div></div>`,
 			`<div><div>${$msg('autostart')}</div><div><label><select name="autostart"><option value="0">${$msg('disabled')}<option value="1">${$msg('enabled')}</select>▼</div></div>`,
 		].join('');
 		fields[1].innerHTML = [
@@ -157,100 +157,8 @@ export class LiveChatPanel {
 		fields[3].innerHTML = [
 			`<div><div>${$msg('user_defined_css')}</div><div></div></div>`,
 			`<textarea name="user_defined_css" rows="30" placeholder=".name::after {\n  content: '\\a';\n}" style="width:32em;font-family:Consolas,'Courier New',monospace">${escapeHtml(g.storage.cssTexts[''] || ('div {\n  ' + (g.storage.cssTexts['div'] || '') + '\n}'))}</textarea>`,
-		].join('');		
+		].join('');
 		this.form.append(tablist, ...fields);
-
-		/** @type {HTMLElement?} */
-		const fontHelper = this.form.querySelector('#font_helper');
-		if ('queryLocalFonts' in window) {
-			const fontDialog = document.createElement('dialog');
-			fontDialog.classList.add('ytp-sfn');
-			const fontForm = document.createElement('form');
-			fontForm.method = 'dialog';
-			const fontOList = document.createElement('ol');
-			const listButtons = [
-				`<button type="button" class="yt-spec-button-shape-next yt-spec-button-shape-next--tonal yt-spec-button-shape-next--mono yt-spec-button-shape-next--size-xs" data-function="up" title="Up">Up</button>`,
-				`<button type="button" class="yt-spec-button-shape-next yt-spec-button-shape-next--tonal yt-spec-button-shape-next--mono yt-spec-button-shape-next--size-xs" data-function="down" title="Down">Down</button>`,
-				`<button type="button" class="yt-spec-button-shape-next yt-spec-button-shape-next--tonal yt-spec-button-shape-next--mono yt-spec-button-shape-next--size-xs" data-function="delete" title="Delete">Delete</button>`,
-			];
-			if (this.form.font_family) {
-				/** @type {string?} */
-				const val = this.form.font_family.value;
-				if (val) {
-					const families = val.split(/,\s*/).map(s => s.replace(/^"(.*)"$/, "$1"));
-					fontOList.innerHTML = families.map(family => `<li data-value="${family}"><div style="display:flex;"><span style="font-family:'${family}';flex:3 0;">${family}</span>${listButtons.join('')}</div></li>`).join('');
-				}
-			}
-			const selectWrapper = document.createElement('div');
-			selectWrapper.classList.add('top-level-buttons', 'ytd-menu-renderer');
-			const fontSelect = document.createElement('select');
-			const fontOption = new Option('Select font family...', 'inherit', true);
-			fontSelect.appendChild(fontOption);
-			// @ts-ignore
-			window.queryLocalFonts().then(fonts => {
-				const families = new Set();
-				for (const font of fonts) families.add(font.family);
-				const fragment = document.createDocumentFragment();
-				for (const family of families) fragment.appendChild(new Option(family));
-				fontSelect.appendChild(fragment);
-			});
-			const addFontButton = document.createElement('button');
-			addFontButton.type = 'button';
-			addFontButton.classList.add('yt-spec-button-shape-next', 'yt-spec-button-shape-next--tonal', 'yt-spec-button-shape-next--mono', 'yt-spec-button-shape-next--size-s');
-			addFontButton.textContent = 'Add';
-			addFontButton.addEventListener('click', () => {
-				const family = fontSelect.value;
-				if (family !== 'inherit') {
-					fontOList.insertAdjacentHTML('beforeend', `<li data-value="${family}"><div style="display:flex;align-items:center;"><span style="font-family:'${family}';flex:3 0;">${family}</span>${listButtons.join('')}</div></li>`);
-				}
-			}, { passive: true });
-			fontOList.addEventListener('click', e => {
-				const t = /** @type {HTMLElement?} */ (e.target);
-				if (t && t.tagName === 'BUTTON') {
-					const li = t.closest('li');
-					if (li) switch (t.dataset.function) {
-						case 'up': fontOList.insertBefore(li, li.previousSibling || fontOList.firstChild); break;
-						case 'down': fontOList.insertBefore(li, li.nextSibling?.nextSibling || null); break;
-						case 'delete': li.remove(); break;
-					}
-				}
-			}, { passive: true });
-			selectWrapper.append(fontSelect, addFontButton);
-			const buttonWrapper = document.createElement('div');
-			buttonWrapper.classList.add('top-level-buttons', 'ytd-menu-renderer');
-			buttonWrapper.style.marginTop = '12px';
-			const confirmButton = document.createElement('button');
-			confirmButton.classList.add('yt-spec-button-shape-next', 'yt-spec-button-shape-next--filled', 'yt-spec-button-shape-next--mono', 'yt-spec-button-shape-next--size-s');
-			confirmButton.textContent = 'Confirm';
-			const cancelButton = document.createElement('button');
-			cancelButton.type = 'reset';
-			cancelButton.classList.add('yt-spec-button-shape-next', 'yt-spec-button-shape-next--tonal', 'yt-spec-button-shape-next--mono', 'yt-spec-button-shape-next--size-s');
-			cancelButton.textContent = 'Cancel';
-			cancelButton.addEventListener('click', () => {
-				fontDialog.close();
-			}, { passive: true });
-			buttonWrapper.append(confirmButton, cancelButton);
-			fontForm.append(fontOList, selectWrapper, buttonWrapper);
-			fontForm.addEventListener('submit', e => {
-				const families = Array.from(fontOList.children).map(li => {
-					const val = /** @type {HTMLLIElement} */ (li).dataset.value;
-					return val ? val.includes(' ') ? `"${val}"` : val: undefined;
-				});
-				const font_family = this.form.font_family;
-				if (font_family) {
-					font_family.value = families.filter(f => !!f).join(', ');
-					this.updateStorage(font_family);
-				}
-			}, { passive: true });
-			fontDialog.append(fontForm);
-			this.form.append(fontDialog);
-
-			fontHelper?.addEventListener('click', () => {
-				fontDialog.showModal();
-			}, { passive: true });
-		} else if (fontHelper) {
-			fontHelper.hidden = true;
-		}
 
 		const selects = this.form.querySelectorAll('select');
 		for (const select of selects) {
@@ -525,7 +433,7 @@ export class LiveChatPanel {
 					g.storage.mutedWords.regexp = /** @type {HTMLInputElement} */ (this.form.elements['muted_words_regexp']).checked;
 					g.storage.mutedWords.plainList = /** @type {HTMLTextAreaElement} */ (this.form.elements['muted_words_list']).value.split(/\n+/).filter(s => s.length > 0);
 					updateMutedWordsList();
-				}
+				}	
 			}
 		}
 		if (['speed', 'px_per_sec'].includes(name)) {
@@ -551,7 +459,7 @@ export class LiveChatPanel {
 			this.form.container_limit_number.disabled = checked;
 			g.storage.others.container_limit = checked ? 0 : this.form.container_limit_number.valueAsNumber;
 		}
-		chrome.storage.local.set(g.storage);
+		browser.storage.local.set(g.storage);
 	}
 	/** @type {(x: number, y: number) => void} */
 	move(x, y) {

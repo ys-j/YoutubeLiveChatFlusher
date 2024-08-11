@@ -24,7 +24,7 @@ const g = {
 	},
 	/** @type {LiveChatLayer?} */
 	layer: null,
-	/** @type {LiveChatPanel?} */
+	/** @type {import('./utils.js').LiveChatPanel?} */
 	panel: null,
 	skip: false,
 	storage: {
@@ -81,7 +81,7 @@ const g = {
 			'.paid_sticker': '',
 			'.membership': '',
 			'.milestone': '',
-			'div': '',
+			'': '',
 		},
 		hotkeys: {
 			layer: '',
@@ -133,23 +133,19 @@ class LiveChatLayer {
 	}
 	init() {
 		this.root.innerHTML = '';
-		const fragment = document.createDocumentFragment();
 		const link = document.createElement('link');
 		link.rel = 'stylesheet';
 		link.href = chrome.runtime.getURL('layer.css');
-		fragment.appendChild(link);
-		const cs = document.createElement('style');
-		cs.id = 'customcss';
-		fragment.appendChild(cs);
-		const ys = document.createElement('style');
-		ys.id = 'yourcss';
-		link.style.display = cs.style.display = ys.style.display = 'none';
-		fragment.appendChild(ys);
-		this.root.appendChild(fragment);
+		const styles = ['customcss', 'yourcss', 'userdefinedcss'].map(id => {
+			const element = document.createElement('style');
+			element.id = id;
+			return element;
+		});
+		this.root.append(link, ...styles);
 		const mutationObserver = new MutationObserver(() => {
 			const over = this.root.childElementCount - (this.limit || Infinity);
-			let i = 3;
-			while (i++ < over) ys.nextElementSibling?.remove();
+			let i = 4; // link + styles(3)
+			while (i++ < over) styles[length - 1].nextElementSibling?.remove();
 		});
 		mutationObserver.observe(this.root, { childList: true });
 		return this;
@@ -194,7 +190,8 @@ class LiveChatLayer {
 	}
 }
 
-import('./utils.js').then(utils => {
+import(chrome.runtime.getURL('utils.js')).then(utils => {
+	/** @type import('./utils.js') } */
 	const { $msg, escapeHtml, getColorRGB, updateMutedWordsList, LiveChatPanel } = utils;
 
 	detectPageType();
@@ -574,7 +571,7 @@ import('./utils.js').then(utils => {
 		elem.id = renderer.id || '';
 		elem.dataset.authorId = renderer.authorExternalChannelId;
 		const name = getChatMessage(renderer.authorName);
-		const author = name ? `<a href="/channel/${renderer.authorExternalChannelId}" target="_blank" title="${name}"><img class="photo" src="${renderer.authorPhoto.thumbnails[0].url}" loading="lazy"></a><span class="name">${name}</span>` : '';
+		const author = name ? `<a href="/channel/${renderer.authorExternalChannelId}" target="_blank" title="${name}"><img part="photo" class="photo" src="${renderer.authorPhoto.thumbnails[0].url}" loading="lazy"></a><span part="name" class="name">${name}</span>` : '';
 		const msg = {
 			orig: renderer.message ? getChatMessage(renderer.message, { filterMode: g.storage.mutedWords.mode }) : '',
 			trans: '',
@@ -614,7 +611,7 @@ import('./utils.js').then(utils => {
 				const authorType = getAuthorType(renderer);
 				if (Object.values(g.storage.parts[authorType]).includes(true)) {
 					elem.className = 'text ' + authorType;
-					elem.innerHTML = `<span class="header">${author}</span><span class="body">${msg.trans || msg.orig}</span>`;
+					elem.innerHTML = `<span class="header">${author}</span><span part="message" class="body">${msg.trans || msg.orig}</span>`;
 					elem.dataset.text = getChatMessage(renderer.message, { emoji: -1 });
 				} else {
 					return null;
@@ -626,7 +623,7 @@ import('./utils.js').then(utils => {
 				const messageType = primary ? 'milestone' : 'membership';
 				elem.className = messageType;
 				if (Object.values(g.storage.parts[messageType]).includes(true)) {
-					elem.innerHTML = `<div class="header" style="background-color:rgba(${getColorRGB(0xff0f9d58).join()},var(--yt-lcf-background-opacity))">${author}<span class="months">${getChatMessage(primary || sub, { start: primary ? 1 : 0 })}</span></div><div class="body" style="background-color:rgba(${getColorRGB(0xff0a8043).join()},var(--yt-lcf-background-opacity))">${msg.trans || msg.orig}</div>`;
+					elem.innerHTML = `<div class="header" style="background-color:rgba(${getColorRGB(0xff0f9d58).join()},var(--yt-lcf-background-opacity))">${author}<span part="months" class="months">${getChatMessage(primary || sub, { start: primary ? 1 : 0 })}</span></div><div part="message" class="body" style="background-color:rgba(${getColorRGB(0xff0a8043).join()},var(--yt-lcf-background-opacity))">${msg.trans || msg.orig}</div>`;
 				} else {
 					return null;
 				}
@@ -635,7 +632,7 @@ import('./utils.js').then(utils => {
 			case 'liveChatPaidMessageRenderer': {
 				if (Object.values(g.storage.parts.paid_message).includes(true)) {
 					elem.className = 'superchat';
-					elem.innerHTML = `<div class="header" style="background-color:rgba(${getColorRGB(renderer.headerBackgroundColor).join()},var(--yt-lcf-background-opacity))">${author}<span class="amount">${getChatMessage(renderer.purchaseAmountText)}</span></div><div class="body" style="background-color:rgba(${getColorRGB(renderer.bodyBackgroundColor).join()},var(--yt-lcf-background-opacity))">${msg.trans || msg.orig}</div>`;
+					elem.innerHTML = `<div class="header" style="background-color:rgba(${getColorRGB(renderer.headerBackgroundColor).join()},var(--yt-lcf-background-opacity))">${author}<span part="amount" class="amount">${getChatMessage(renderer.purchaseAmountText)}</span></div><div part="message" class="body" style="background-color:rgba(${getColorRGB(renderer.bodyBackgroundColor).join()},var(--yt-lcf-background-opacity))">${msg.trans || msg.orig}</div>`;
 				} else {
 					return null;
 				}
@@ -644,7 +641,7 @@ import('./utils.js').then(utils => {
 			case 'liveChatPaidStickerRenderer': {
 				if (Object.values(g.storage.parts.paid_sticker).includes(true)) {
 					elem.className = 'supersticker';
-					elem.innerHTML = `<div class="header" style="background-color:rgba(${getColorRGB(renderer.backgroundColor).join()},var(--yt-lcf-background-opacity))">${author}<span class="amount">${getChatMessage(renderer.purchaseAmountText)}</span></div><figure class="body" style="background-color:rgba(${getColorRGB(renderer.moneyChipBackgroundColor).join()},var(--yt-lcf-background-opacity)"><img class="sticker" src="${(renderer.sticker.thumbnails.find(t => 2 * 36 <= (t.width || 36)) || renderer.sticker.thumbnails[0]).url}" loading="lazy"></figure>`;
+					elem.innerHTML = `<div class="header" style="background-color:rgba(${getColorRGB(renderer.backgroundColor).join()},var(--yt-lcf-background-opacity))">${author}<span part="amount" class="amount">${getChatMessage(renderer.purchaseAmountText)}</span></div><figure part="sticker" class="body" style="background-color:rgba(${getColorRGB(renderer.moneyChipBackgroundColor).join()},var(--yt-lcf-background-opacity)"><img class="sticker" src="${(renderer.sticker.thumbnails.find(t => 2 * 36 <= (t.width || 36)) || renderer.sticker.thumbnails[0]).url}" loading="lazy"></figure>`;
 				} else {
 					return null;
 				}
@@ -655,12 +652,12 @@ import('./utils.js').then(utils => {
 					elem.className = 'membership gift';
 					const h = renderer.header.liveChatSponsorshipsHeaderRenderer;
 					const name = getChatMessage(h.authorName);
-					const author = name ? `<a href="/channel/${renderer.authorExternalChannelId}" target="_blank" title="${name}"><img class="photo" src="${h.authorPhoto.thumbnails[0].url}" loading="lazy"></a><span class="name">${name}</span>` : '';
+					const author = name ? `<a href="/channel/${renderer.authorExternalChannelId}" target="_blank" title="${name}"><img part="photo" class="photo" src="${h.authorPhoto.thumbnails[0].url}" loading="lazy"></a><span part="name" class="name">${name}</span>` : '';
 					const icon = document.querySelector('iron-iconset-svg #gift-filled');
 					const count = h.primaryText?.runs?.filter(r => !Number.isNaN(parseInt(r.text)))[0]?.text;
 					if (count) {
 						const gifts = (icon ? `<svg viewBox="0 2 24 24" fill="currentColor" stroke="#000" paint-order="stroke">${icon.innerHTML}</svg>` : '🎁') + count;
-						elem.innerHTML = `<div class="header" style="background-color:rgba(${getColorRGB(0xff0f9d58).join()},var(--yt-lcf-background-opacity))">${author}<span class="gifts">${gifts}</span></div>`;
+						elem.innerHTML = `<div class="header" style="background-color:rgba(${getColorRGB(0xff0f9d58).join()},var(--yt-lcf-background-opacity))">${author}<span part="gifts" class="gifts">${gifts}</span></div>`;
 					}
 				} else {
 					return null;
@@ -671,7 +668,7 @@ import('./utils.js').then(utils => {
 				switch (renderer.icon.iconType) {
 					case 'POLL': {
 						elem.className = 'engagement-poll';
-						elem.innerHTML = `<div class="body">${msg.trans || msg.orig}</div>`;
+						elem.innerHTML = `<div part="message" class="body">${msg.trans || msg.orig}</div>`;
 						break;
 					}
 					case 'YOUTUBE_ROUND': break;
@@ -701,7 +698,7 @@ import('./utils.js').then(utils => {
 				for (const r of runs) {
 					if ('text' in r) {
 						const filtered = filterMessage(r.text, filterMode);
-						if (filtered.result && filterMode === g.index.mutedWords.all) break;
+						if (filtered.result && filterMode === g.index.mutedWords.all) return '';
 						let text = escapeHtml(filtered.value).replace(/\n/g, '<br>');
 						if (r.italics) text = '<i>' + text + '</i>';
 						if (r.bold) text = '<b>' + text + '</b>';
@@ -767,7 +764,6 @@ async function checkAutoStart() {
 			const isClose = button?.closest('#close-button');
 			if (!isClose) {
 				button?.click();
-
 				return true;
 			}
 		}
@@ -942,6 +938,7 @@ function filterMessage(str, mode = 0) {
 		case g.index.mutedWords.all: {
 			for (const rule of list) {
 				if (rule.test(str)) {
+					rule.lastIndex = 0;
 					return { value: '', result: true };
 				}
 			}

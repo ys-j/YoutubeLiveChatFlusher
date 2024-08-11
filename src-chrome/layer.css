@@ -25,7 +25,10 @@
 	var(--yt-lcf-stroke-color) var(--yt-lcf-stroke-offset) 0 var(--yt-lcf-stroke-blur),
 	var(--yt-lcf-stroke-color) var(--yt-lcf-stroke-offset) var(--yt-lcf-stroke-offset) var(--yt-lcf-stroke-blur);
 }
-:host > :not(.text) {
+[hidden], link, style {
+	display: none !important;
+}
+:host > div:not(.text) {
 	border-radius: .5em;
 	display: flex;
 	flex-flow: column nowrap;

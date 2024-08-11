@@ -1449,8 +1449,3 @@ declare namespace browser {
 	}
 }
 declare var chrome: typeof browser;
-declare namespace content {
-	const WebSocket: WebSocket
-	const XMLHttpRequest: XMLHttpRequest
-	const fetch: WindowOrWorkerGlobalScope['fetch']
-}
