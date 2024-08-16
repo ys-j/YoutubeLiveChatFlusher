@@ -143,6 +143,15 @@
 	"overlapping_translate": {
 		"message": "Shift"
 	},
+	"direction": {
+		"message": "Direction"
+	},
+	"direction_bottom_to_top": {
+		"message": "Bottom to top"
+	},
+	"direction_left_to_right": {
+		"message": "Left to right"
+	},
 	"layerCSS": {
 		"message": "Layer CSS"
 	},

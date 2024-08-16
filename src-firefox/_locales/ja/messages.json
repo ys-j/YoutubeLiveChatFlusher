@@ -140,6 +140,15 @@
 	"overlapping_translate": {
 		"message": "ずらす"
 	},
+	"direction": {
+		"message": "方向"
+	},
+	"direction_bottom_to_top": {
+		"message": "下から上へ"
+	},
+	"direction_left_to_right": {
+		"message": "左から右へ"
+	},
 	"layerCSS": {
 		"message": "レイヤCSS"
 	},

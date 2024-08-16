@@ -25,6 +25,12 @@
 	var(--yt-lcf-stroke-color) var(--yt-lcf-stroke-offset) 0 var(--yt-lcf-stroke-blur),
 	var(--yt-lcf-stroke-color) var(--yt-lcf-stroke-offset) var(--yt-lcf-stroke-offset) var(--yt-lcf-stroke-blur);
 }
+:host(.direction-reversed-x) > div {
+	animation-direction: reverse;
+}
+:host(.direction-reversed-y), :host(.direction-reversed-y) > div {
+	scale: 1 -1;
+}
 [hidden], link, style {
 	display: none !important;
 }

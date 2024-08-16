@@ -82,7 +82,7 @@ export class LiveChatPanel {
 		this.element.addEventListener('keyup', e => {
 			e.stopPropagation();
 		});
- 
+
 		this.form = document.createElement('form');
 		const changeTab = e => {
 			buttons.forEach(b => {
@@ -127,7 +127,7 @@ export class LiveChatPanel {
 			`<div><div>${$msg('fontSize')}</div><div><label><input type="number" class="styles" name="font_size" min="12" size="5" value="${parseInt(g.storage.styles.font_size) || 36}" data-unit="px">px</label> /<input type="checkbox" name="lines"><label><input type="number" name="number_of_lines" min="6" size="5" value="${g.storage.others.number_of_lines || 20}"><span>${$msg('lines')}</span></label><select name="type_of_lines">${Object.values(g.index.lines).map(v => `<option value="${v}">` + $msg(`typeOfLines_${v}`)).join('')}</select><span>▼</span></div></div>`,
 			`<div><div>${$msg('lineHeight')}</div><div><input type="number" class="styles" name="line_height" min="1" step="0.05" value="${g.storage.styles.line_height || 1.25}"></div></div>`,
 			`<div><div>${$msg('fontFamily')} / ${$msg('fontWeight')}</div><div><input type="text" class="styles" name="font_family" value="${escapeHtml(g.storage.styles.font_family) || 'inherit'}"> <button type="button" id="font_helper" class="ytp-button" title="${$msg('fontFamily_select_from_local')}">[?]</button> / <input type="number" class="styles" name="font_weight" min="100" max="900" step="100" size="5" value="${g.storage.styles.font_weight || '500'}"></div></div>`,
-			`<div><div>${$msg('strokeStyle')}</div><div><label><input type="color" name="stroke_color" value="${g.storage.styles.stroke_color || '#000000'}"></label> / <label>${$msg('strokeOffset')}<input type="number" name="stroke_offset" min="0" size="5" value="${parseInt(g.storage.styles.stroke_offset) || 1}" data-unit="px">px</label> / <label>${$msg('strokeBlur')}<input type="number" name="strolke_blur" min="0" size="5" value="${parseInt(g.storage.styles.stroke_blur) || 0}" data-unit="px">px</label></div></div>`,
+			`<div><div>${$msg('strokeStyle')}</div><div><label><input type="color" name="stroke_color" value="${g.storage.styles.stroke_color || '#000000'}"></label> / <label>${$msg('strokeOffset')}<input type="number" name="stroke_offset" min="0" step="0.1" size="5" value="${(parseFloat(g.storage.styles.stroke_offset) || 1).toFixed(1)}" data-unit="px">px</label> / <label>${$msg('strokeBlur')}<input type="number" name="strolke_blur" min="0" step="0.1" size="5" value="${(parseFloat(g.storage.styles.stroke_blur) || 0).toFixed(1)}" data-unit="px">px</label></div></div>`,
 			`<div><div>${$msg('layerOpacity')}</div><div>${$msg('opacity_0')}<input type="range" class="styles" name="layer_opacity" min="0" max="1" step="0.05" value="${parseFloat(g.storage.styles.layer_opacity) || 1}">${$msg('opacity_1')}</div></div>`,
 			`<div><div>${$msg('backgroundOpacity')}</div><div>${$msg('opacity_0')}<input type="range" class="styles" name="background_opacity" min="0" max="1" step="0.05" value="${parseFloat(g.storage.styles.background_opacity) || 0.5}">${$msg('opacity_1')}</div></div>`,
 			`<div><div>${$msg('maxWidth')}/${$msg('wordWrap')}</div><div><label><input type="number" class="styles" name="max_width" min="50" size="8" value="${parseInt(g.storage.styles.max_width) || 100}" data-unit="%"><span>%</span></label> /<select name="wrap">${Object.values(g.index.wrap).map(v => `<option value="${v}">` + $msg(`wordWrap_${v}`)).join('')}</select>▼</div></div>`,
@@ -136,9 +136,10 @@ export class LiveChatPanel {
 			`<div><div>${$msg('simultaneousMessage')}</div><div><select name="simultaneous">${Object.values(g.index.simultaneous).map(v => `<option value="${v}">` + $msg(`simultaneousMessage_${v}`)).join('')}</select>▼</div></div>`,
 			`<div><div>${$msg('emojiExpression')}</div><div><select name="emoji">${Object.values(g.index.emoji).map(v => `<option value="${v}">` + $msg(`emojiExpression_${v}`)).join('')}</select>▼</div></div>`,
 			`<div><div>${$msg('overlapping')}</div><div>${['overlapping_transparent', 'overlapping_translate'].map((m, i) => `<label><input type="checkbox" name="overlapping" value="${i}"><span>${$msg(m)}</span></label>`).join('')}</div></div>`,
+			`<div><div>${$msg('direction')}</div><div>${['direction_bottom_to_top', 'direction_left_to_right'].map((m, i) => `<label><input type="checkbox" name="direction" value="${i}"><span>${$msg(m)}</span></label>`).join('')}</div></div>`,
 			`<div><div>${$msg('layerCSS')}</div><div><input type="text" name="layer_css" placeholder="${$msg('placeholder_customCSS')}" value="${escapeHtml(g.storage.styles.layer_css)}" style="width:20.5em"></div></div>`,
 			`<div><div>${$msg('translation')}</div><div><select name="translation" title="${$msg('addableByFirefoxLanguageSettings')}"><option value="0">${$msg('disabled')}${navigator.languages.map((lang, i) => `<option value="${i + 1}">` + lang).join('')}</select>▼ /<label><input type="checkbox" name="prefix_lang"><span>${$msg('prefixOriginalLanguage')}</span></label><br><span>${$msg('exception')}</span>${navigator.languages.map((lang, i) => `<label><input type="checkbox" name="except_lang" value="${i}"><span>${lang}</span></label>`).join('')}</div><div></div></div>`,
-			`<div><div>${$msg('hotkey')}</div><div><label><span>${$msg('hotkey_layer')}</span><input type="text" name="hotkey_layer" pattern="^.?$" size="3" value="${g.storage.hotkeys.layer}"></label> / <label><span>${$msg('hotkey_panel')}</span><input type="text" name="hotkey_panel" pattern="^.?$" size="3" value="${g.storage.hotkeys.panel}"></label></div></div>`,
+			`<div><div>${$msg('hotkey')}</div><div><label><span>${$msg('hotkey_layer')}</span><input type="text" name="hotkey_layer" maxlength="1" size="3" value="${g.storage.hotkeys.layer}"></label> / <label><span>${$msg('hotkey_panel')}</span><input type="text" name="hotkey_panel" maxlength="1" size="3" value="${g.storage.hotkeys.panel}"></label></div></div>`,
 			`<div><div>${$msg('autostart')}</div><div><label><select name="autostart"><option value="0">${$msg('disabled')}<option value="1">${$msg('enabled')}</select>▼</div></div>`,
 		].join('');
 		fields[1].innerHTML = [
@@ -330,9 +331,10 @@ export class LiveChatPanel {
 						this.form.container_limit_number.disabled = cb.checked = g.storage.others.container_limit === 0;
 						break;
 					}
-					case 'overlapping': {
+					case 'overlapping':
+					case 'direction': {
 						const val = parseInt(cb.value);
-						cb.checked = g.storage.others.overlapping & 1 << val ? true : false;
+						cb.checked = g.storage.others[cb.name] & 1 << val ? true : false;
 						break;
 					}
 					case 'prefix_lang': {
@@ -505,10 +507,15 @@ export class LiveChatPanel {
 			g.storage.others.translation = Math.abs(val) * (checked ? -1 : 1);
 			le?.classList[checked ? 'add' : 'remove']('prefix_lang');
 			g.layer?.updateCurrentItemStyle();
-		} else if (name === 'except_lang' || name === 'overlapping') {
+		} else if (name === 'except_lang' || name === 'overlapping' || name === 'direction') {
 			/** @type {NodeListOf<HTMLInputElement>} */
 			const list = this.form[name];
-			g.storage.others[name] = Array.from(list).map((l) => Number(l.checked)).reduce((a, c, i) => a + (c << i), 0);
+			const val = Array.from(list).map((l) => Number(l.checked)).reduce((a, c, i) => a + (c << i), 0);
+			g.storage.others[name] = val;
+			if (name === 'direction' && le) {
+				le.classList[0b01 & val ? 'add': 'remove']('direction-reversed-y');
+				le.classList[0b10 & val ? 'add': 'remove']('direction-reversed-x');
+			}
 		} else if (name.startsWith('hotkey_')) {
 			const match = name.match(/^hotkey_(.*)$/);
 			if (match) {

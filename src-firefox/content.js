@@ -45,6 +45,7 @@ const g = {
 			layer_css: '',
 		},
 		others: {
+			disabled: 0,
 			px_per_sec: 0,
 			number_of_lines: 0,
 			type_of_lines: 0,
@@ -54,6 +55,7 @@ const g = {
 			simultaneous: 2,
 			emoji: 1,
 			overlapping: 0,
+			direction: 0,
 			translation: 0,
 			except_lang: 0,
 			autostart: 0,
@@ -260,7 +262,14 @@ import(browser.runtime.getURL('utils.js')).then(utils => {
 							le.style.setProperty(name, `rgba(${getColorRGB(rgb).join()},${alpha < 0 ? 'var(--yt-lcf-background-opacity)' : alpha})`);
 						}
 						const style = le.shadowRoot?.querySelector('style');
-						if (style) style.textContent = Object.entries(g.storage.cssTexts).map(([selector, css]) => selector ? `:host>${selector}{${css}}` : css).join('');
+						if (style) {
+							style.textContent = Object.entries(g.storage.cssTexts).map(([selector, css]) => selector ? `:host>${selector}{${css}}` : css).join('');
+						}
+						const dir = g.storage.others.direction;
+						if (dir) {
+							le.classList[0b01 & dir ? 'add': 'remove']('direction-reversed-y');
+							le.classList[0b10 & dir ? 'add': 'remove']('direction-reversed-x');
+						}
 					}
 				}).then(() => {
 					addSettingMenu();
@@ -309,6 +318,7 @@ import(browser.runtime.getURL('utils.js')).then(utils => {
 			const current = g.app.querySelector('#' + g.tag.layer);
 			if (current) current.remove();
 			g.layer = getLayer();
+			if (g.storage.others.disabled) g.layer.hide();
 			videoContainer.insertAdjacentElement('afterend', g.layer.element);
 			
 			const timer = setInterval(() => {
@@ -338,7 +348,7 @@ import(browser.runtime.getURL('utils.js')).then(utils => {
 			{
 				id: g.tag.checkbox,
 				role: 'menuitemcheckbox',
-				'aria-checked': 'true',
+				'aria-checked': g.storage.others.disabled ? 'false' : 'true',
 			},
 			{
 				id: g.tag.popupmenu,
@@ -359,6 +369,8 @@ import(browser.runtime.getURL('utils.js')).then(utils => {
 					cb.setAttribute('aria-checked', (!checked).toString());
 					g.layer?.init();
 					g.layer?.[checked ? 'hide' : 'show']();
+					g.storage.others.disabled = checked ? 1 : 0;
+					browser.storage.local.set(g.storage);
 				}
 			},
 		}, {
