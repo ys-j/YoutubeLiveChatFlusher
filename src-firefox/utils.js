@@ -1,3 +1,4 @@
+var browser = browser || chrome;
 export const $msg = browser.i18n.getMessage;
 
 /** @param {string} str */
@@ -54,7 +55,7 @@ export class LiveChatPanel {
 		this.element.className = 'ytp-sfn';
 		this.element.dataset.layer = '4';
 		this.hide();
-
+		
 		const le = g.layer?.element;
 		const c = { x: 10, y: 10 };
 		/** @type {(e: MouseEvent) => void} */
@@ -440,7 +441,7 @@ export class LiveChatPanel {
 					g.storage.mutedWords.regexp = /** @type {HTMLInputElement} */ (this.form.elements['muted_words_regexp']).checked;
 					g.storage.mutedWords.plainList = /** @type {HTMLTextAreaElement} */ (this.form.elements['muted_words_list']).value.split(/\n+/).filter(s => s.length > 0);
 					updateMutedWordsList();
-				}	
+				}
 			}
 		}
 		if (['speed', 'px_per_sec'].includes(name)) {

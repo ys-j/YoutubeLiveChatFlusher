@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
+// @ts-ignore
+var browser = browser || chrome;
 const g = {
 	app: /** @type {HTMLElement?} */ (null),
 	array: {
@@ -137,7 +139,7 @@ class LiveChatLayer {
 		this.root.innerHTML = '';
 		const link = document.createElement('link');
 		link.rel = 'stylesheet';
-		link.href = chrome.runtime.getURL('layer.css');
+		link.href = browser.runtime.getURL('layer.css');
 		const styles = ['customcss', 'yourcss', 'userdefinedcss'].map(id => {
 			const element = document.createElement('style');
 			element.id = id;
@@ -192,7 +194,7 @@ class LiveChatLayer {
 	}
 }
 
-import(chrome.runtime.getURL('utils.js')).then(utils => {
+import(browser.runtime.getURL('utils.js')).then(utils => {
 	/** @type import('./utils.js') } */
 	const { $msg, escapeHtml, getColorRGB, updateMutedWordsList, LiveChatPanel } = utils;
 
@@ -206,7 +208,7 @@ import(chrome.runtime.getURL('utils.js')).then(utils => {
 			g.app = top.document.querySelector('#ytd-player');
 			if (g.app) {
 				const storageList = ['styles', 'others', 'parts', 'cssTexts', 'hotkeys', 'mutedWords'];
-				chrome.storage.local.get(storageList).then(storage => {
+				browser.storage.local.get(storageList).then(storage => {
 					for (const type of storageList) {
 						if (storage && storage[type]) {
 							for (const [key, value] of Object.entries(storage[type])){
@@ -333,7 +335,7 @@ import(chrome.runtime.getURL('utils.js')).then(utils => {
 				}
 			}, 1000);
 		}
-	
+		
 		setYourCss();
 	}
 
@@ -417,7 +419,7 @@ import(chrome.runtime.getURL('utils.js')).then(utils => {
 					g.skip = false;
 					return;
 				}
-		
+				
 				// Add
 				const fs = parseInt(g.storage.styles.font_size) || 36, lhf = parseFloat(g.storage.styles.line_height) || 1.25, lh = fs * lhf;
 				const sv = g.storage.others.simultaneous, si = g.index.simultaneous;
@@ -473,7 +475,7 @@ import(chrome.runtime.getURL('utils.js')).then(utils => {
 					const body = /** @type {HTMLElement?} */ (elem.lastElementChild);
 					if (body) {
 						const content = body.textContent;
-						if (content) chrome.i18n.detectLanguage(content).then(result => {
+						if (content) browser.i18n.detectLanguage(content).then(result => {
 							if (result.isReliable) body.lang = result.languages?.[0].language;
 						});
 					}
@@ -495,7 +497,7 @@ import(chrome.runtime.getURL('utils.js')).then(utils => {
 							return resolve(elem.id);
 						}
 					} while (++y <= overline);
-	
+
 					elem.classList.add(`overlap`);
 					const line = new Array(overline).fill(0), zIndex = new Array(overline).fill(0);
 					for (let j = 0; j < children.length; j++) {
@@ -535,7 +537,7 @@ import(chrome.runtime.getURL('utils.js')).then(utils => {
 						reject('Failed to delete message: #' + id);
 					}
 				}));
-		
+				
 				// Delete by author
 				const deletingAuthor = filtered.delete_author.map(action => new Promise((resolve, reject) => {
 					const id = action.markChatItemsByAuthorAsDeletedAction.externalChannelId;
@@ -599,7 +601,7 @@ import(chrome.runtime.getURL('utils.js')).then(utils => {
 				if (q.startsWith('<')) {
 					return q;
 				} else {
-					const detection = await chrome.i18n.detectLanguage(q);
+					const detection = await browser.i18n.detectLanguage(q);
 					const sl = detection.languages[0]?.language;
 					if (el.includes(sl)) {
 						return q;
@@ -767,7 +769,7 @@ import(chrome.runtime.getURL('utils.js')).then(utils => {
 });
 
 async function checkAutoStart() {
-	const storage = await chrome.storage.local.get('others');
+	const storage = await browser.storage.local.get('others');
 	const autostart = storage?.others?.autostart;
 	if (autostart) {
 		const buttonContainer = document.getElementById('show-hide-button');
@@ -937,7 +939,7 @@ function isOverflow(parent, child) {
 	const c = child.getBoundingClientRect();
 	return c.bottom > p.top + p.height;
 }
- 
+
 /**
  * @param {string} str 
  * @param {number} [mode=0] 

@@ -1,4 +1,5 @@
-export const $msg = chrome.i18n.getMessage;
+var browser = browser || chrome;
+export const $msg = browser.i18n.getMessage;
 
 /** @param {string} str */
 export function escapeHtml(str) {
@@ -54,7 +55,7 @@ export class LiveChatPanel {
 		this.element.className = 'ytp-sfn';
 		this.element.dataset.layer = '4';
 		this.hide();
-
+		
 		const le = g.layer?.element;
 		const c = { x: 10, y: 10 };
 		/** @type {(e: MouseEvent) => void} */
@@ -158,7 +159,7 @@ export class LiveChatPanel {
 		fields[3].innerHTML = [
 			`<div><div>${$msg('user_defined_css')}</div><div></div></div>`,
 			`<textarea name="user_defined_css" rows="30" placeholder=".name::after {\n  content: '\\a';\n}" style="width:32em;font-family:Consolas,'Courier New',monospace">${escapeHtml(g.storage.cssTexts[''] || ('div {\n  ' + (g.storage.cssTexts['div'] || '') + '\n}'))}</textarea>`,
-		].join('');		
+		].join('');
 		this.form.append(tablist, ...fields);
 
 		/** @type {HTMLElement?} */
@@ -252,7 +253,7 @@ export class LiveChatPanel {
 		} else if (fontHelper) {
 			fontHelper.hidden = true;
 		}
-
+		
 		const selects = this.form.querySelectorAll('select');
 		for (const select of selects) {
 			if (select.name in g.storage.others) {
@@ -558,7 +559,7 @@ export class LiveChatPanel {
 			this.form.container_limit_number.disabled = checked;
 			g.storage.others.container_limit = checked ? 0 : this.form.container_limit_number.valueAsNumber;
 		}
-		chrome.storage.local.set(g.storage);
+		browser.storage.local.set(g.storage);
 	}
 	/** @type {(x: number, y: number) => void} */
 	move(x, y) {

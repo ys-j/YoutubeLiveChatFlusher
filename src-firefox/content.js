@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 'use strict';
+// @ts-ignore
+var browser = browser || chrome;
 const g = {
 	app: /** @type {HTMLElement?} */ (null),
 	array: {
@@ -333,7 +335,7 @@ import(browser.runtime.getURL('utils.js')).then(utils => {
 				}
 			}, 1000);
 		}
-
+		
 		setYourCss();
 	}
 
@@ -417,7 +419,7 @@ import(browser.runtime.getURL('utils.js')).then(utils => {
 					g.skip = false;
 					return;
 				}
-		
+				
 				// Add
 				const fs = parseInt(g.storage.styles.font_size) || 36, lhf = parseFloat(g.storage.styles.line_height) || 1.25, lh = fs * lhf;
 				const sv = g.storage.others.simultaneous, si = g.index.simultaneous;
@@ -535,7 +537,7 @@ import(browser.runtime.getURL('utils.js')).then(utils => {
 						reject('Failed to delete message: #' + id);
 					}
 				}));
-		
+				
 				// Delete by author
 				const deletingAuthor = filtered.delete_author.map(action => new Promise((resolve, reject) => {
 					const id = action.markChatItemsByAuthorAsDeletedAction.externalChannelId;
@@ -767,7 +769,7 @@ import(browser.runtime.getURL('utils.js')).then(utils => {
 });
 
 async function checkAutoStart() {
-	const storage = await chrome.storage.local.get('others');
+	const storage = await browser.storage.local.get('others');
 	const autostart = storage?.others?.autostart;
 	if (autostart) {
 		const buttonContainer = document.getElementById('show-hide-button');

@@ -1448,4 +1448,3 @@ declare namespace browser {
 		const onFocusChanged: events.Event<[windowId: integer]>
 	}
 }
-declare var chrome: typeof browser;
