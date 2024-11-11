@@ -11,6 +11,9 @@
 	"ytp_menuitem_label_config": {
 		"message": "Configure Flusher"
 	},
+	"ytp_menuitem_label_pip": {
+		"message": "PiP w/ chat (beta)"
+	},
 	"close": {
 		"message": "close"
 	},
@@ -304,5 +307,8 @@
 	},
 	"placeholder_mutedWordsList": {
 		"message": "Multiple keywords can be prohibited in a new line."
+	},
+	"pip_marker": {
+		"message": "This video is playing in picture-in-picture mode"
 	}
 }

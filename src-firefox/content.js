@@ -24,8 +24,7 @@ const g = {
 		/** @type { { none: 0, all: 1, word: 2, char: 3 } } */
 		mutedWords: { none: 0, all: 1, word: 2, char: 3 },
 	},
-	/** @type {LiveChatLayer?} */
-	layer: null,
+	layer: /** @type {LiveChatLayer?} */ (null),
 	/** @type {import('./utils.js').LiveChatPanel?} */
 	panel: null,
 	skip: false,
@@ -263,10 +262,10 @@ import(browser.runtime.getURL('utils.js')).then(utils => {
 						for (const [name, rgb, alpha] of colormap) {
 							le.style.setProperty(name, `rgba(${getColorRGB(rgb).join()},${alpha < 0 ? 'var(--yt-lcf-background-opacity)' : alpha})`);
 						}
-						const style = le.shadowRoot?.querySelector('style');
-						if (style) {
-							style.textContent = Object.entries(g.storage.cssTexts).map(([selector, css]) => selector ? `:host>${selector}{${css}}` : css).join('');
-						}
+						const customCss = le.shadowRoot?.querySelector('#customcss');
+						if (customCss) customCss.textContent = Object.entries(g.storage.cssTexts).map(([selector, css]) => selector ? `:host>${selector}{${css}}` : '').join('');
+						const userDefinedCss = le.shadowRoot?.querySelector('#userdefinedcss');
+						if (userDefinedCss) userDefinedCss.textContent = g.storage.cssTexts[''] || '';
 						const dir = g.storage.others.direction;
 						if (dir) {
 							le.classList[0b01 & dir ? 'add': 'remove']('direction-reversed-y');
@@ -618,7 +617,7 @@ import(browser.runtime.getURL('utils.js')).then(utils => {
 					}
 				}
 			})).then(s => s.join(''));
-			if (msg.src && msg.trans) msg.trans = `<span data-srclang="${msg.src}">${msg.trans}</span>`;
+			if (msg.src && msg.trans !== msg.orig) msg.trans = `<span data-srclang="${msg.src}">${msg.trans}</span>`;
 		}
 		switch (key) {
 			case 'liveChatTextMessageRenderer': {

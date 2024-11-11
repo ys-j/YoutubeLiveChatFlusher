@@ -309,3 +309,14 @@ yt-live-chat-item-list-renderer #item-scroller {
 yt-live-chat-item-list-renderer #item-scroller:hover {
 	scrollbar-width: auto;
 }
+
+/*
+	PiP
+*/
+#yt-lcf-pip-marker {
+	position: absolute;
+	top: 12px;
+	left: 12px;
+	font-size: 2em;
+	color: var(--yt-spec-text-primary);
+}

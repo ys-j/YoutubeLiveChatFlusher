@@ -268,7 +268,7 @@ export class LiveChatPanel {
 		}
 		this.form.addEventListener('change', e => {
 			if (!this.form.reportValidity()) return;
-			const elem = /** @type {HTMLInputElement | HTMLSelectElement} */ (e.target);
+			const elem = /** @type {HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement} */ (e.target);
 			this.updateStorage(elem);
 		}, { passive: true });
 
@@ -295,7 +295,7 @@ export class LiveChatPanel {
 		this.element.ariaHidden = 'false';
 		this.element.style.display = 'block';
 	}
-	/** @param {HTMLInputElement | HTMLSelectElement} elem */
+	/** @param {HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement} elem */
 	updateStorage(elem) {
 		const name = elem.name;
 		const le = g.layer?.element;
@@ -356,7 +356,7 @@ export class LiveChatPanel {
 		} else if (name.startsWith('stroke_')) {
 			g.storage.styles[name] = elem.value + (elem.dataset.unit || '');
 			le?.style.setProperty(name.replace('stroke_', '--yt-lcf-stroke-'), g.storage.styles[name]);
-		} else if (name.endsWith('_display')) {
+		} else if (name.endsWith('_display') && elem instanceof HTMLInputElement) {
 			const match = name.match(/^(.+)_display$/);
 			if (match) {
 				const [_, type] = match;
@@ -443,6 +443,8 @@ export class LiveChatPanel {
 					updateMutedWordsList();
 				}
 			}
+		} else if (name === 'user_defined_css') {
+			g.storage.cssTexts[''] = elem.value;
 		}
 		if (['speed', 'px_per_sec'].includes(name)) {
 			const checked = this.form.speed.checked;

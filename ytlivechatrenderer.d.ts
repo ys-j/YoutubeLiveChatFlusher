@@ -162,7 +162,7 @@ declare namespace LiveChat {
 					navigationType: string
 					param: string
 				}
-				clickTrackingPrams: string
+				clickTrackingParams: string
 				commandMetadata: {
 					webCommandMetadata: {
 						apiUrl: string

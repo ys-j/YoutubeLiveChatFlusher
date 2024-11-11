@@ -11,6 +11,9 @@
 	"ytp_menuitem_label_config": {
 		"message": "チャット設定"
 	},
+	"ytp_menuitem_label_pip": {
+		"message": "PiP w/ chat (beta)"
+	},
 	"close": {
 		"message": "閉じる"
 	},
@@ -304,5 +307,8 @@
 	},
 	"placeholder_mutedWordsList": {
 		"message": "改行で複数のキーワードを設定できます"
+	},
+	"pip_marker": {
+		"message": "この動画はピクチャーインピクチャーで再生されています"
 	}
 }
