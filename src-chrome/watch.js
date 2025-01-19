@@ -32,13 +32,18 @@ export async function openPip(element) {
 	for (const attr of document.documentElement.attributes) {
 		pipWindow.document.documentElement.attributes.setNamedItem(attr.cloneNode());
 	}
+	const pipMetaCharset = document.createElement('meta');
+	pipMetaCharset.name = 'charset';
+	pipMetaCharset.content = 'utf-8';
+	const pipTitle = document.createElement('title');
+	pipTitle.textContent = /** @type {HTMLElement?} */ (document.querySelector('h1.ytd-watch-metadata'))?.innerText || 'YouTube';
 	const pipLink = document.createElement('link');
 	pipLink.rel = 'stylesheet';
 	pipLink.type = 'text/css';
 	pipLink.href = browser.runtime.getURL('content.css');
 	const pipStyle = document.createElement('style');
 	pipStyle.textContent = `:root,body,body>*{height:100%;overflow:hidden}.ytp-miniplayer-button,.ytp-size-button,.ytp-fullscreen-button{display:none!important}#${tags.popuppip}{display:none!important}`;
-	pipWindow.document.head.append(...Array.from(element.ownerDocument.styleSheets, sheet => {
+	pipWindow.document.head.append(pipMetaCharset, pipTitle, ...Array.from(element.ownerDocument.styleSheets, sheet => {
 		if (sheet.href) {
 			const link = document.createElement('link');
 			link.rel = 'stylesheet';
@@ -61,7 +66,7 @@ export async function openPip(element) {
 	let video = pipWindow.document.querySelector('video');
 	const observeOptions = { attributes: true, attributeFilter: ['data-time', 'class'] };
 	const observer = new MutationObserver(records => {
-		if (video) for (const record of records) {
+		if (video) for (const _ of records) {
 			const { innerWidth: ww, innerHeight: wh } = pipWindow;
 			const vw = video.videoWidth, vh = video.videoHeight, cw = video.clientWidth;;
 			const aspect = vw / vh;
@@ -76,6 +81,8 @@ export async function openPip(element) {
 		setTimeout(/** @param {HTMLVideoElement?} v */ v => {
 			if (v) v.dataset.time = `${v.currentTime}`;
 		}, 500, video || pipWindow.document.querySelector('video'));
+		const pipTitle = pipWindow.document.getElementsByTagName('title')[0];
+		if (pipTitle) pipTitle.textContent = /** @type {HTMLElement?} */ (document.querySelector('h1.ytd-watch-metadata'))?.innerText || 'YouTube';
 	});
 	pipWindow.dispatchEvent(new CustomEvent('ytd-watch-player-data-changed'));
 	pipWindow.addEventListener('resize', () => {
@@ -96,7 +103,7 @@ export async function openPip(element) {
 					/** @type {HTMLElement?} */
 					const b = parent.querySelector('.ytp-chrome-bottom');
 					if (b) {
-						const left = parseInt(b.style.left);
+						const left = Number.parseInt(b.style.left);
 						b.style.width = `${v.clientWidth - left * 2}px`;
 					}
 				}

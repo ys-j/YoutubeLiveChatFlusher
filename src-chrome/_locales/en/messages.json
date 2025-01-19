@@ -308,6 +308,48 @@
 	"placeholder_mutedWordsList": {
 		"message": "Multiple keywords can be prohibited in a new line."
 	},
+	"user_defined_css_shortcut": {
+		"message": "ショートカット"
+	},
+	"font_helper_select": {
+		"message": "Select font family..."
+	},
+	"up": {
+		"message": "Up"
+	},
+	"down": {
+		"message": "Down"
+	},
+	"delete": {
+		"message": "Delete"
+	},
+	"add": {
+		"message": "Add"
+	},
+	"confirm": {
+		"message": "Confirm"
+	},
+	"cancel": {
+		"message": "Cancel"
+	},
+	"addUserStyle": {
+		"message": "Add per-user styling"
+	},
+	"label": {
+		"message": "Label"
+	},
+	"Channel_ID": {
+		"message": "Channel ID"
+	},
+	"displayStyle": {
+		"message": "Display style"
+	},
+	"placeholder_channelId": {
+		"message": "24 letters starting with &quot;UC&quot;"
+	},
+	"placeholder_userStyleTextArea": {
+		"message": "/* Preview of CSS is displayed in this area. */"
+	},
 	"pip_marker": {
 		"message": "This video is playing in picture-in-picture mode"
 	}

@@ -47,6 +47,9 @@ function whenWatchPage(modules) {
 			case 'ytd-watch-player-data-changed': {
 				const ev = new CustomEvent(name);
 				top?.['chatframe']?.contentWindow?.dispatchEvent(ev);
+				[tags.layer, tags.panel, tags.checkbox, tags.popupmenu, tags.popuppip, tags.pipmarker].forEach(id => {
+					document.getElementById(id)?.remove();
+				});
 				//@ts-ignore
 				if (!isNotPip()) documentPictureInPicture?.window?.dispatchEvent(ev);
 				checkAutoStart();
@@ -94,7 +97,7 @@ function whenWatchPage(modules) {
  * @param {import('./livechat.js')} modules 
  */
 async function whenLivechatPage(modules) {
-	const { runApp, LiveChatLayer, LiveChatPanel } = modules;
+	const { runApp } = modules;
 	// @ts-ignore
 	const root = isNotPip() ? top || window : top?.documentPictureInPicture?.window;
 	runApp(root?.document.querySelector('#ytd-player')).then(isStarted => {

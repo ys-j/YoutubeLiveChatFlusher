@@ -1025,7 +1025,7 @@ export class LiveChatPanel {
 		});
 		tablist.append(...buttons);
 
-		const fields = Array.from({ length: 4 }, (_, i) => {
+		const fields = Array.from({ length: buttons.length }, (_, i) => {
 			const f = document.createElement('fieldset');
 			f.className = 'ytp-sfn-content';
 			f.id = `yt-lcf-panel-tabpanel-${i}`;
@@ -1050,17 +1050,17 @@ export class LiveChatPanel {
 			`<div><div>${$msg('emojiExpression')}</div><div><select name="emoji">${Object.values(g.index.emoji).map(v => `<option value="${v}">` + $msg(`emojiExpression_${v}`)).join('')}</select>▼</div></div>`,
 			`<div><div>${$msg('overlapping')}</div><div>${['overlapping_transparent', 'overlapping_translate'].map((m, i) => `<label><input type="checkbox" name="overlapping" value="${i}"><span>${$msg(m)}</span></label>`).join('')}</div></div>`,
 			`<div><div>${$msg('direction')}</div><div>${['direction_bottom_to_top', 'direction_left_to_right'].map((m, i) => `<label><input type="checkbox" name="direction" value="${i}"><span>${$msg(m)}</span></label>`).join('')}</div></div>`,
-			`<div><div>${$msg('layerCSS')}</div><div><input type="text" name="layer_css" placeholder="${$msg('placeholder_customCSS')}" value="${escapeHtml(g.storage.styles.layer_css)}" style="width:20.5em"></div></div>`,
+			`<div><div>${$msg('layerCSS')}</div><div><input type="text" name="layer_css" placeholder="${$msg('placeholder_customCSS')}" value="${escapeHtml(g.storage.styles.layer_css)}" style="width:20.5em" data-lang="text/css"></div></div>`,
 			`<div><div>${$msg('translation')}</div><div><select name="translation" title="${$msg('addableByFirefoxLanguageSettings')}"><option value="0">${$msg('disabled')}${navigator.languages.map((lang, i) => `<option value="${i + 1}">` + lang).join('')}</select>▼ /<label><input type="checkbox" name="prefix_lang"><span>${$msg('prefixOriginalLanguage')}</span></label><br><span>${$msg('exception')}</span>${navigator.languages.map((lang, i) => `<label><input type="checkbox" name="except_lang" value="${i}"><span>${lang}</span></label>`).join('')}</div><div></div></div>`,
 			`<div><div>${$msg('hotkey')}</div><div><label><span>${$msg('hotkey_layer')}</span><input type="text" name="hotkey_layer" maxlength="1" size="3" value="${g.storage.hotkeys.layer}"></label> / <label><span>${$msg('hotkey_panel')}</span><input type="text" name="hotkey_panel" maxlength="1" size="3" value="${g.storage.hotkeys.panel}"></label></div></div>`,
 			`<div><div>${$msg('autostart')}</div><div><label><select name="autostart"><option value="0">${$msg('disabled')}<option value="1">${$msg('enabled')}</select>▼</div></div>`,
 		].join('');
 		fields[1].innerHTML = [
-			...['normal', 'member', 'moderator', 'owner', 'verified', 'you'].map(type => `<div><div>${$msg(type)}</div><div><div><div><label class="toggle photo" title="${$msg('tooltip_authorPhoto')}"><input type="checkbox" name="${type}_display" value="photo"><svg viewBox="-8 -8 16 16"><g id="yt-lcf-photo"><circle r="7"/><ellipse rx="2.5" ry="3.5" cy="-1"/><ellipse rx="4" ry="2" cy="4"/></g></svg></label><label class="toggle name" title="${$msg('tooltip_authorName')}"><input type="checkbox" name="${type}_display" value="name"><span>${$msg('display_authorName')}</span></label><label class="toggle body" title="${$msg('tooltip_chatMessage')}"><input type="checkbox" name="${type}_display" value="message"><span>${$msg('display_chatMessage')}</span></label></div><div><label title="${$msg('tooltip_customColor')}"><input type="checkbox" name="${type}_display" value="color">${$msg('display_customColor')}</label><input type="color" name="${type}_color"></div></div><input type="text" name="${type}_css" placeholder="${$msg('placeholder_customCSS')}" value="${escapeHtml(g.storage.cssTexts['.' + type])}"></div></div>`),
-			`<div><div>${$msg('superchat')}</div><div><div><div class="superchat"><label class="toggle photo" title="${$msg('tooltip_authorPhoto')}"><input type="checkbox" name="paid_message_display" value="photo">${svg}</label><label class="toggle name" title="${$msg('tooltip_authorName')}"><input type="checkbox" name="paid_message_display" value="name"><span>${$msg('display_authorName')}</span></label><label class="toggle amount" title="${$msg('tooltip_purchaseAmount')}"><input type="checkbox" name="paid_message_display" value="amount"><span>${$msg('display_purchaseAmount')}</span></label><br><label class="toggle body" title="${$msg('tooltip_chatMessage')}"><input type="checkbox" name="paid_message_display" value="message"><span>${$msg('display_chatMessage')}</span></label></div><div><label title="${$msg('tooltip_customColor')}"><input type="checkbox" name="paid_message_display" value="color">${$msg('display_customColor')}</label><input type="color" name="paid_message_color"></div></div><input type="text" name="paid_message_css" placeholder="${$msg('placeholder_customCSS')}" value="${escapeHtml(g.storage.cssTexts['.paid_message'])}"></div></div>`,
+			...['normal', 'member', 'moderator', 'owner', 'verified', 'you'].map(type => `<div><div>${$msg(type)}</div><div><div><div><label class="toggle photo" title="${$msg('tooltip_authorPhoto')}"><input type="checkbox" name="${type}_display" value="photo"><svg viewBox="-8 -8 16 16"><g id="yt-lcf-photo"><circle r="7"/><ellipse rx="2.5" ry="3.5" cy="-1"/><ellipse rx="4" ry="2" cy="4"/></g></svg></label><label class="toggle name" title="${$msg('tooltip_authorName')}"><input type="checkbox" name="${type}_display" value="name"><span>${$msg('display_authorName')}</span></label><label class="toggle body" title="${$msg('tooltip_chatMessage')}"><input type="checkbox" name="${type}_display" value="message"><span>${$msg('display_chatMessage')}</span></label></div><div><label title="${$msg('tooltip_customColor')}"><input type="checkbox" name="${type}_display" value="color">${$msg('display_customColor')}</label><input type="color" name="${type}_color"></div></div><input type="text" name="${type}_css" placeholder="${$msg('placeholder_customCSS')}" value="${escapeHtml(g.storage.cssTexts['.' + type])}" data-lang="text/css"></div></div>`),
+			`<div><div>${$msg('superchat')}</div><div><div><div class="superchat"><label class="toggle photo" title="${$msg('tooltip_authorPhoto')}"><input type="checkbox" name="paid_message_display" value="photo">${svg}</label><label class="toggle name" title="${$msg('tooltip_authorName')}"><input type="checkbox" name="paid_message_display" value="name"><span>${$msg('display_authorName')}</span></label><label class="toggle amount" title="${$msg('tooltip_purchaseAmount')}"><input type="checkbox" name="paid_message_display" value="amount"><span>${$msg('display_purchaseAmount')}</span></label><br><label class="toggle body" title="${$msg('tooltip_chatMessage')}"><input type="checkbox" name="paid_message_display" value="message"><span>${$msg('display_chatMessage')}</span></label></div><div><label title="${$msg('tooltip_customColor')}"><input type="checkbox" name="paid_message_display" value="color">${$msg('display_customColor')}</label><input type="color" name="paid_message_color"></div></div><input type="text" name="paid_message_css" placeholder="${$msg('placeholder_customCSS')}" value="${escapeHtml(g.storage.cssTexts['.paid_message'])}" data-lang="text/css"></div></div>`,
 			`<div><div>${$msg('sticker')}</div><div><div><div class="superchat"><label class="toggle photo" title="${$msg('tooltip_authorPhoto')}"><input type="checkbox" name="paid_sticker_display" value="photo">${svg}</label><label class="toggle name" title="${$msg('tooltip_authorName')}"><input type="checkbox" name="paid_sticker_display" value="name"><span>${$msg('display_authorName')}</span></label><label class="toggle amount" title="${$msg('tooltip_purchaseAmount')}"><input type="checkbox" name="paid_sticker_display" value="amount"><span>${$msg('display_purchaseAmount')}</span></label><br><label class="toggle body" title="${$msg('tooltip_sticker')}"><input type="checkbox" name="paid_sticker_display" value="sticker"><span>${$msg('display_sticker')}</span></label></div><div><label title="${$msg('tooltip_stickerSize')}" style="padding:0 0 0 4px">${$msg('display_stickerSize')}: x<input type="number" class="styles" name="sticker_size" min="1" max="10" step="0.1" size="5" value="${parseFloat(g.storage.styles.sticker_size) || 2}" data-unit="em"></label></div></div></div></div>`,
-			`<div><div>${$msg('membership')}</div><div><div><div class="superchat"><label class="toggle photo" title="${$msg('tooltip_authorPhoto')}"><input type="checkbox" name="membership_display" value="photo">${svg}</label><label class="toggle name" title="${$msg('tooltip_authorName')}"><input type="checkbox" name="membership_display" value="name"><span>${$msg('display_authorName')}</span></label><label class="toggle body" title="${$msg('tooltip_membershipMessage')}"><input type="checkbox" name="membership_display" value="message"><span>${$msg('display_membershipMessage')}</span></label></div><div><label title="${$msg('tooltip_customColor')}"><input type="checkbox" name="membership_display" value="color">${$msg('display_customColor')}</label><input type="color" name="membership_color"></div></div><input type="text" name="membership_css" placeholder="${$msg('placeholder_customCSS')}" value="${escapeHtml(g.storage.cssTexts['.membership'])}"></div></div>`,
-			`<div><div>${$msg('milestone')}</div><div><div><div class="superchat"><label class="toggle photo" title="${$msg('tooltip_authorPhoto')}"><input type="checkbox" name="milestone_display" value="photo">${svg}</label><label class="toggle name" title="${$msg('tooltip_authorName')}"><input type="checkbox" name="milestone_display" value="name"><span>${$msg('display_authorName')}</span></label><label class="toggle amount" title="${$msg('tooltip_milestoneMonths')}"><input type="checkbox" name="milestone_display" value="months"><span>${$msg('display_milestoneMonths')}</span></label><br><label class="toggle body" title="${$msg('tooltip_chatMessage')}"><input type="checkbox" name="milestone_display" value="message"><span>${$msg('display_chatMessage')}</span></label></div><div><label title="${$msg('tooltip_customColor')}"><input type="checkbox" name="milestone_display" value="color">${$msg('display_customColor')}</label><input type="color" name="milestone_color"></div></div><input type="text" name="milestone_css" placeholder="${$msg('placeholder_customCSS')}" value="${escapeHtml(g.storage.cssTexts['.milestone'])}"></div></div>`,
+			`<div><div>${$msg('membership')}</div><div><div><div class="superchat"><label class="toggle photo" title="${$msg('tooltip_authorPhoto')}"><input type="checkbox" name="membership_display" value="photo">${svg}</label><label class="toggle name" title="${$msg('tooltip_authorName')}"><input type="checkbox" name="membership_display" value="name"><span>${$msg('display_authorName')}</span></label><label class="toggle body" title="${$msg('tooltip_membershipMessage')}"><input type="checkbox" name="membership_display" value="message"><span>${$msg('display_membershipMessage')}</span></label></div><div><label title="${$msg('tooltip_customColor')}"><input type="checkbox" name="membership_display" value="color">${$msg('display_customColor')}</label><input type="color" name="membership_color"></div></div><input type="text" name="membership_css" placeholder="${$msg('placeholder_customCSS')}" value="${escapeHtml(g.storage.cssTexts['.membership'])}" data-lang="text/css"></div></div>`,
+			`<div><div>${$msg('milestone')}</div><div><div><div class="superchat"><label class="toggle photo" title="${$msg('tooltip_authorPhoto')}"><input type="checkbox" name="milestone_display" value="photo">${svg}</label><label class="toggle name" title="${$msg('tooltip_authorName')}"><input type="checkbox" name="milestone_display" value="name"><span>${$msg('display_authorName')}</span></label><label class="toggle amount" title="${$msg('tooltip_milestoneMonths')}"><input type="checkbox" name="milestone_display" value="months"><span>${$msg('display_milestoneMonths')}</span></label><br><label class="toggle body" title="${$msg('tooltip_chatMessage')}"><input type="checkbox" name="milestone_display" value="message"><span>${$msg('display_chatMessage')}</span></label></div><div><label title="${$msg('tooltip_customColor')}"><input type="checkbox" name="milestone_display" value="color">${$msg('display_customColor')}</label><input type="color" name="milestone_color"></div></div><input type="text" name="milestone_css" placeholder="${$msg('placeholder_customCSS')}" value="${escapeHtml(g.storage.cssTexts['.milestone'])}" data-lang="text/css"></div></div>`,
 		].join('');
 		fields[2].innerHTML = [
 			`<div><div>${$msg('mutedWordsMode')}</div><div><select name="muted_words_mode">${Object.values(g.index.mutedWords).map(v => `<option value="${v}">` + $msg(`mutedWordsMode_${v}`)).join('')}</select>▼</div></div>`,
@@ -1069,23 +1069,24 @@ export class LiveChatPanel {
 			`<textarea name="muted_words_list" rows="20" placeholder="${$msg('placeholder_mutedWordsList')}" style="width:32em">${g.storage.mutedWords.plainList.join('\n')}</textarea>`,
 		].join('');
 		fields[3].innerHTML = [
-			`<div><div>${$msg('user_defined_css')}</div><div></div></div>`,
-			`<textarea name="user_defined_css" rows="30" placeholder=".name::after {\n  content: '\\a';\n}" style="width:32em;font-family:Consolas,'Courier New',monospace">${escapeHtml(g.storage.cssTexts[''] || ('div {\n  ' + (g.storage.cssTexts['div'] || '') + '\n}'))}</textarea>`,
+			`<div><div>${$msg('user_defined_css_shortcut')}</div><div><button type="button" id="user_css_helper" class="yt-spec-button-shape-next yt-spec-button-shape-next--tonal yt-spec-button-shape-next--mono yt-spec-button-shape-next--size-xs" title="${$msg('addUserStyle')}">${$msg('addUserStyle')}</button></div></div>`,
+			`<textarea name="user_defined_css" rows="30" placeholder=".name::after {\n  content: '\\a';\n}" style="width:32em" data-lang="text/css">${escapeHtml(g.storage.cssTexts[''] || ('div {\n  ' + (g.storage.cssTexts['div'] || '') + '\n}'))}</textarea>`,
 		].join('');
 		this.form.append(tablist, ...fields);
 
-		/** @type {HTMLElement?} */
+		/** @type {HTMLButtonElement?} */
 		const fontHelper = this.form.querySelector('#font_helper');
 		if ('queryLocalFonts' in window) {
 			const fontDialog = document.createElement('dialog');
+			fontDialog.id = 'ytlcf-dialog-font_helper';
 			fontDialog.classList.add('ytp-sfn');
 			const fontForm = document.createElement('form');
 			fontForm.method = 'dialog';
 			const fontOList = document.createElement('ol');
 			const listButtons = [
-				`<button type="button" class="yt-spec-button-shape-next yt-spec-button-shape-next--tonal yt-spec-button-shape-next--mono yt-spec-button-shape-next--size-xs" data-function="up" title="Up">Up</button>`,
-				`<button type="button" class="yt-spec-button-shape-next yt-spec-button-shape-next--tonal yt-spec-button-shape-next--mono yt-spec-button-shape-next--size-xs" data-function="down" title="Down">Down</button>`,
-				`<button type="button" class="yt-spec-button-shape-next yt-spec-button-shape-next--tonal yt-spec-button-shape-next--mono yt-spec-button-shape-next--size-xs" data-function="delete" title="Delete">Delete</button>`,
+				`<button type="button" class="yt-spec-button-shape-next yt-spec-button-shape-next--tonal yt-spec-button-shape-next--mono yt-spec-button-shape-next--size-xs" data-function="up" title="Up">${$msg('up')}</button>`,
+				`<button type="button" class="yt-spec-button-shape-next yt-spec-button-shape-next--tonal yt-spec-button-shape-next--mono yt-spec-button-shape-next--size-xs" data-function="down" title="Down">${$msg('down')}</button>`,
+				`<button type="button" class="yt-spec-button-shape-next yt-spec-button-shape-next--tonal yt-spec-button-shape-next--mono yt-spec-button-shape-next--size-xs" data-function="delete" title="Delete">${$msg('delete')}</button>`,
 			];
 			if (this.form.font_family) {
 				/** @type {string?} */
@@ -1098,7 +1099,7 @@ export class LiveChatPanel {
 			const selectWrapper = document.createElement('div');
 			selectWrapper.classList.add('top-level-buttons', 'ytd-menu-renderer');
 			const fontSelect = document.createElement('select');
-			const fontOption = new Option('Select font family...', 'inherit', true);
+			const fontOption = new Option($msg('font_helper_select'), 'inherit', true);
 			fontSelect.appendChild(fontOption);
 			// @ts-ignore
 			window.queryLocalFonts().then(fonts => {
@@ -1111,7 +1112,7 @@ export class LiveChatPanel {
 			const addFontButton = document.createElement('button');
 			addFontButton.type = 'button';
 			addFontButton.classList.add('yt-spec-button-shape-next', 'yt-spec-button-shape-next--tonal', 'yt-spec-button-shape-next--mono', 'yt-spec-button-shape-next--size-s');
-			addFontButton.textContent = 'Add';
+			addFontButton.textContent = $msg('add');
 			addFontButton.addEventListener('click', () => {
 				const family = fontSelect.value;
 				if (family !== 'inherit') {
@@ -1135,11 +1136,11 @@ export class LiveChatPanel {
 			buttonWrapper.style.marginTop = '12px';
 			const confirmButton = document.createElement('button');
 			confirmButton.classList.add('yt-spec-button-shape-next', 'yt-spec-button-shape-next--filled', 'yt-spec-button-shape-next--mono', 'yt-spec-button-shape-next--size-s');
-			confirmButton.textContent = 'Confirm';
+			confirmButton.textContent = $msg('confirm');
 			const cancelButton = document.createElement('button');
-			cancelButton.type = 'reset';
+			cancelButton.type = 'button';
 			cancelButton.classList.add('yt-spec-button-shape-next', 'yt-spec-button-shape-next--tonal', 'yt-spec-button-shape-next--mono', 'yt-spec-button-shape-next--size-s');
-			cancelButton.textContent = 'Cancel';
+			cancelButton.textContent = $msg('cancel');
 			cancelButton.addEventListener('click', () => {
 				fontDialog.close();
 			}, { passive: true });
@@ -1165,6 +1166,74 @@ export class LiveChatPanel {
 		} else if (fontHelper) {
 			fontHelper.hidden = true;
 		}
+
+		/** @type {HTMLButtonElement?} */
+		const userCssHelper = this.form.querySelector('#user_css_helper');
+		if (userCssHelper) {
+			const userCssDialog = document.createElement('dialog');
+			userCssDialog.id = 'ytlcf-dialog-user_css_helper';
+			userCssDialog.classList.add('ytp-sfn');
+			const userCssForm = document.createElement('form');
+			userCssForm.method = 'dialog';
+			userCssForm.id = 'ytlcf-form-user_css_helper';
+			userCssForm.classList.add('ytp-sfn-content');
+			userCssForm.autocomplete = 'off';
+			userCssForm.insertAdjacentHTML('afterbegin', [
+				`<div><div>${$msg('label')}</div><div><input name="label" type="text"></div></div>`,
+				`<div><div>${$msg('Channel_ID')}</div><div><input name="channel_id" type="text" pattern="^UC\\w{22}$" placeholder="${$msg('placeholder_channelId')}" minlength="24" maxlength="24" required></div></div>`,
+				`<div><div>${$msg('displayStyle')}</div><div><div><div><label class="toggle photo" title="${$msg('tooltip_authorPhoto')}"><input type="checkbox" name="this_display_" value="photo" checked><svg viewBox="-8 -8 16 16"><g id="yt-lcf-photo"><circle r="7"/><ellipse rx="2.5" ry="3.5" cy="-1"/><ellipse rx="4" ry="2" cy="4"/></g></svg></label><label class="toggle name" title="${$msg('tooltip_authorName')}"><input type="checkbox" name="this_display_" value="name" checked><span>${$msg('display_authorName')}</span></label><label class="toggle body" title="${$msg('tooltip_chatMessage')}"><input type="checkbox" name="this_display_" value="body" checked><span>${$msg('display_chatMessage')}</span></label></div><div><label title="${$msg('tooltip_customColor')}"><input type="checkbox" name="this_color_display_" value="color" checked>${$msg('display_customColor')}</label><input type="color" name="this_color_" value="#ffffff"></div></div></div></div>`,
+			].join(''));
+			const userCssPreviewTextArea = document.createElement('textarea');
+			userCssPreviewTextArea.readOnly = true;
+			userCssPreviewTextArea.placeholder = $msg('placeholder_userStyleTextArea');
+			userCssPreviewTextArea.dataset.lang = 'text/css';
+			userCssPreviewTextArea.setAttribute('form', userCssForm.id);
+			userCssForm.addEventListener('change', e => {
+				const f = /** @type {HTMLFormElement} */ (e.currentTarget);
+				let text = '';
+				const label = f.label.value;
+				if (label) text += `/* ${label} */\n`;
+				text += `div[data-author-id="${f.channel_id.value}"] {\n`;
+				for (const input of f.this_display_) {
+					const c = input.value;
+					const v = input.checked ? 'inline' : 'none';
+					text += `  .${c} { display: ${v}; }\n`;
+				}
+				if (f.this_color_display_.checked) {
+					text += `  color: ${f.this_color_.value};\n`;
+				}
+				text += '}';
+				userCssPreviewTextArea.textContent = text;
+			}, { passive: true });
+			userCssForm.addEventListener('submit', _ => {
+				this.form.user_defined_css.value += '\n' + userCssPreviewTextArea.textContent;
+				this.updateStorage(this.form.user_defined_css);
+			}, { passive: true });
+
+			const buttonWrapper = document.createElement('div');
+			buttonWrapper.classList.add('top-level-buttons', 'ytd-menu-renderer');
+			buttonWrapper.style.marginTop = '12px';
+			const confirmButton = document.createElement('button');
+			confirmButton.setAttribute('form', userCssForm.id);
+			confirmButton.classList.add('yt-spec-button-shape-next', 'yt-spec-button-shape-next--filled', 'yt-spec-button-shape-next--mono', 'yt-spec-button-shape-next--size-s');
+			confirmButton.textContent = $msg('add');
+			const cancelButton = document.createElement('button');
+			cancelButton.type = 'button';
+			cancelButton.classList.add('yt-spec-button-shape-next', 'yt-spec-button-shape-next--tonal', 'yt-spec-button-shape-next--mono', 'yt-spec-button-shape-next--size-s');
+			cancelButton.textContent = $msg('cancel');
+			cancelButton.addEventListener('click', () => {
+				userCssDialog.close();
+			}, { passive: true });
+			buttonWrapper.append(confirmButton, cancelButton);
+
+			userCssDialog.append(userCssForm, userCssPreviewTextArea, buttonWrapper);
+			this.form.append(userCssDialog);
+
+			userCssHelper.addEventListener('click', () => {
+				userCssDialog.showModal();
+			}, { passive: true });
+		}
+
 		
 		const selects = this.form.querySelectorAll('select');
 		for (const select of selects) {
@@ -1349,7 +1418,7 @@ export class LiveChatPanel {
 			if (le) {
 				switch (name) {
 					case 'animation_duration': {
-						const speed = le.getBoundingClientRect().width / elem.valueAsNumber;
+						const speed = le.getBoundingClientRect().width / /** @type {HTMLInputElement} */ (elem).valueAsNumber;
 						this.form.px_per_sec.valueAsNumber = Math.round(speed);
 						break;
 					}
@@ -1360,10 +1429,11 @@ export class LiveChatPanel {
 		} else if (name.startsWith('stroke_')) {
 			g.storage.styles[name] = elem.value + (elem.dataset.unit || '');
 			le?.style.setProperty(name.replace('stroke_', '--yt-lcf-stroke-'), g.storage.styles[name]);
-		} else if (name.endsWith('_display') && elem instanceof HTMLInputElement) {
+		} else if (name.endsWith('_display')) {
 			const match = name.match(/^(.+)_display$/);
 			if (match) {
 				const [_, type] = match;
+				/** @type {HTMLInputElement} elem */
 				if (type in g.storage.parts && le) {
 					if (elem.value !== 'color') {
 						g.storage.parts[type][elem.value] = elem.checked;

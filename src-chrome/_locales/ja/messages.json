@@ -308,6 +308,48 @@
 	"placeholder_mutedWordsList": {
 		"message": "改行で複数のキーワードを設定できます"
 	},
+	"user_defined_css_shortcut": {
+		"message": "ショートカット"
+	},
+	"font_helper_select": {
+		"message": "フォントを選択してください..."
+	},
+	"up": {
+		"message": "上へ"
+	},
+	"down": {
+		"message": "下へ"
+	},
+	"delete": {
+		"message": "削除"
+	},
+	"add": {
+		"message": "追加"
+	},
+	"confirm": {
+		"message": "決定"
+	},
+	"cancel": {
+		"message": "キャンセル"
+	},
+	"addUserStyle": {
+		"message": "ユーザー別スタイルを追加"
+	},
+	"label": {
+		"message": "ラベル"
+	},
+	"Channel_ID": {
+		"message": "チャンネルID"
+	},
+	"displayStyle": {
+		"message": "表示スタイル"
+	},
+	"placeholder_channelId": {
+		"message": "&quot;UC&quot;から始まる24文字のチャンネルID"
+	},
+	"placeholder_userStyleTextArea": {
+		"message": "/* ここにCSSのプレビューが表示されます */"
+	},
 	"pip_marker": {
 		"message": "この動画はピクチャーインピクチャーで再生されています"
 	}
