@@ -146,6 +146,9 @@
 	"overlapping_translate": {
 		"message": "ずらす"
 	},
+	"overlapping_hidden": {
+		"message": "非表示"
+	},
 	"direction": {
 		"message": "方向"
 	},
@@ -167,7 +170,7 @@
 	"enabled": {
 		"message": "する"
 	},
-	"addableByFirefoxLanguageSettings": {
+	"addableByBrowserLanguageSettings": {
 		"message": "選択肢はchrome://settings/languagesから追加可能です"
 	},
 	"prefixOriginalLanguage": {
@@ -345,7 +348,7 @@
 		"message": "表示スタイル"
 	},
 	"placeholder_channelId": {
-		"message": "&quot;UC&quot;から始まる24文字のチャンネルID"
+		"message": "UCから始まる24文字のチャンネルID"
 	},
 	"placeholder_userStyleTextArea": {
 		"message": "/* ここにCSSのプレビューが表示されます */"

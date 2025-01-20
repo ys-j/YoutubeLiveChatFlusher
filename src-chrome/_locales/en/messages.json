@@ -146,6 +146,9 @@
 	"overlapping_translate": {
 		"message": "Shift"
 	},
+	"overlapping_hidden": {
+		"message": "Hide"
+	},
 	"direction": {
 		"message": "Direction"
 	},
@@ -167,7 +170,7 @@
 	"enabled": {
 		"message": "Enabled"
 	},
-	"addableByFirefoxLanguageSettings": {
+	"addableByBrowserLanguageSettings": {
 		"message": "Choices are addable by chrome://settings/languages"
 	},
 	"prefixOriginalLanguage": {
@@ -309,7 +312,7 @@
 		"message": "Multiple keywords can be prohibited in a new line."
 	},
 	"user_defined_css_shortcut": {
-		"message": "ショートカット"
+		"message": "Shortcut"
 	},
 	"font_helper_select": {
 		"message": "Select font family..."

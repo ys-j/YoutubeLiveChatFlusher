@@ -153,6 +153,9 @@
 			}
 		}
 	}
+	:disabled, :disabled + span {
+		opacity: .4;
+	}
 	.photo > svg {
 		height: 2em;
 		width: 2em;
@@ -243,6 +246,9 @@
 		color: inherit;
 		resize: vertical;
 	}
+	input[data-lang], textarea[data-lang] {
+		font-family: Consolas, 'Courier New', monospace;
+	}
 	details input[type="text"] {
 		margin: 2px 0 0 -1px;
 		width: 100%;
@@ -251,8 +257,20 @@
 		display: block;
 		line-height: .5;
 	}
+	dialog {
+		border: none;
+		&::backdrop {
+			background: rgba(0, 0, 0, .6);
+		}
+		ol {
+			margin-left: 1.5em;
+		}
+		.ytp-sfn-content {
+			background: transparent;
+		}
+	}
 }
-#yt-lcf-panel-tabpanel-1 {
+#yt-lcf-panel-tabpanel-1, #ytlcf-dialog-user_css_helper > form {
 	> div {
 		display: flex;
 		> :first-child {
@@ -263,6 +281,7 @@
 			width: auto;
 			> :first-child {
 				display: flex;
+				align-items: baseline;
 				justify-content: space-between;
 				> :last-child::before {
 					content: '/';
@@ -282,6 +301,15 @@
 			margin: .25em 0;
 			width: 20.5em;
 		}
+	}
+}
+
+#ytlcf-dialog-user_css_helper {
+	textarea, input[type="text"] {
+		width: -moz-available;
+	}
+	textarea {
+		height: 9em;
 	}
 }
 

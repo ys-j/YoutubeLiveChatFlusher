@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "__MSG_manifestName__",
-	"version": "0.8.1",
+	"version": "0.8.3",
 	"author": "_y_s",
 	"content_scripts": [
 		{
@@ -21,6 +21,7 @@
 		"48": "images/icon48.png",
 		"128": "images/icon128.png"
 	},
+	"key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAw8pVqZOdYarVW0a8/bA4CgxR35Mlg3QSHCgZYecnu6fgANWn0rq+Ive4PC99pT6/29kCT2tk1QWnPuYT3KL/A2LyA5ufzsPos3svKnaIgvO8MS10PjjpxriR798YfwunFi+KDdl2Vw2osz4owS+JeXqE86DT4zik3ZULPGQ4KkNnw25cGRtroqlsNT5sQzTwBocyOS2Rl9crsP60CJethw4rhaHCigugTdrnpn35CdKnjau0o9rEAgsu5YsItLkc6eBgzeTtLfT/go854V5ekLGRuY8mZ4hPoGnqEJwWWRiXsCoBtUvLnkadsn80Xk1rs5cp7spIEoBJ3zulnFY7bQIDAQAB",
 	"permissions": ["storage"],
 	"web_accessible_resources": [
 		{

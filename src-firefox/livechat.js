@@ -366,7 +366,7 @@ function handleYtAction(e) {
 			const le = g.layer.element;
 			const root = le.shadowRoot;
 			// @ts-ignore
-			if (!root || (isNotPip() && document.visibilityState === 'hidden') || le.hidden || le.parentElement?.classList.contains('paused-mode')) return;
+			if (!root || (document.visibilityState === 'hidden') || le.hidden || le.parentElement?.classList.contains('paused-mode')) return;
 			const actions = e.detail.args[0];
 			const filtered = {
 				add: actions.filter(a => 'addChatItemAction' in a),
