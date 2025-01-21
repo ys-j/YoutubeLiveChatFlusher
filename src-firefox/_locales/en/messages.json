@@ -339,13 +339,16 @@
 		"message": "Label"
 	},
 	"Channel_ID": {
-		"message": "Channel ID"
+		"message": "Channel ID<br>(Each line)"
 	},
-	"displayStyle": {
-		"message": "Display style"
+	"fontFactor": {
+		"message": "Font size factor"
 	},
 	"placeholder_channelId": {
-		"message": "24 letters starting with &quot;UC&quot;"
+		"message": "24 letters beginning with &quot;UC&quot;"
+	},
+	"validation_channelId": {
+		"message": "Enter 24 characters beginning with &quot;UC&quot; for each line."
 	},
 	"placeholder_userStyleTextArea": {
 		"message": "/* Preview of CSS is displayed in this area. */"

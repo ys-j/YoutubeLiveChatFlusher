@@ -1014,6 +1014,10 @@ export class LiveChatPanel {
 		});
 		tablist.append(...buttons);
 
+		const isDarkMode = top?.document.documentElement.hasAttribute('dark');
+		/** @param {string[]} c */
+		const createButtonClassList = (...c) => 'yt-spec-button-shape-next ' + c.map(v => 'yt-spec-button-shape-next--' + v).join(' ');
+
 		const fields = Array.from({ length: buttons.length }, (_, i) => {
 			const f = document.createElement('fieldset');
 			f.className = 'ytp-sfn-content';
@@ -1058,7 +1062,7 @@ export class LiveChatPanel {
 			`<textarea name="muted_words_list" rows="20" placeholder="${$msg('placeholder_mutedWordsList')}" style="width:32em">${g.storage.mutedWords.plainList.join('\n')}</textarea>`,
 		].join('');
 		fields[3].innerHTML = [
-			`<div><div>${$msg('user_defined_css_shortcut')}</div><div><button type="button" id="user_css_helper" class="yt-spec-button-shape-next yt-spec-button-shape-next--tonal yt-spec-button-shape-next--mono yt-spec-button-shape-next--size-xs" title="${$msg('addUserStyle')}">${$msg('addUserStyle')}</button></div></div>`,
+			`<div><div>${$msg('user_defined_css_shortcut')}</div><div><button type="button" id="user_css_helper" class="${createButtonClassList('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-xs')}" title="${$msg('addUserStyle')}">${$msg('addUserStyle')}</button></div></div>`,
 			`<textarea name="user_defined_css" rows="30" placeholder=".name::after {\n  content: '\\a';\n}" style="width:32em" data-lang="text/css">${escapeHtml(g.storage.cssTexts[''] || ('div {\n  ' + (g.storage.cssTexts['div'] || '') + '\n}'))}</textarea>`,
 		].join('');
 		this.form.append(tablist, ...fields);
@@ -1072,11 +1076,7 @@ export class LiveChatPanel {
 			const fontForm = document.createElement('form');
 			fontForm.method = 'dialog';
 			const fontOList = document.createElement('ol');
-			const listButtons = [
-				`<button type="button" class="yt-spec-button-shape-next yt-spec-button-shape-next--tonal yt-spec-button-shape-next--mono yt-spec-button-shape-next--size-xs" data-function="up" title="Up">${$msg('up')}</button>`,
-				`<button type="button" class="yt-spec-button-shape-next yt-spec-button-shape-next--tonal yt-spec-button-shape-next--mono yt-spec-button-shape-next--size-xs" data-function="down" title="Down">${$msg('down')}</button>`,
-				`<button type="button" class="yt-spec-button-shape-next yt-spec-button-shape-next--tonal yt-spec-button-shape-next--mono yt-spec-button-shape-next--size-xs" data-function="delete" title="Delete">${$msg('delete')}</button>`,
-			];
+			const listButtons = ['up', 'down', 'delete'].map(v => `<button type="button" class="${createButtonClassList('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-xs')}" data-function="${v}" title="${$msg(v)}">${$msg(v)}</button>`);
 			if (this.form.font_family) {
 				/** @type {string?} */
 				const val = this.form.font_family.value;
@@ -1100,7 +1100,7 @@ export class LiveChatPanel {
 			});
 			const addFontButton = document.createElement('button');
 			addFontButton.type = 'button';
-			addFontButton.classList.add('yt-spec-button-shape-next', 'yt-spec-button-shape-next--tonal', 'yt-spec-button-shape-next--mono', 'yt-spec-button-shape-next--size-s');
+			addFontButton.className = createButtonClassList('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-s');
 			addFontButton.textContent = $msg('add');
 			addFontButton.addEventListener('click', () => {
 				const family = fontSelect.value;
@@ -1124,11 +1124,11 @@ export class LiveChatPanel {
 			buttonWrapper.classList.add('top-level-buttons', 'ytd-menu-renderer');
 			buttonWrapper.style.marginTop = '12px';
 			const confirmButton = document.createElement('button');
-			confirmButton.classList.add('yt-spec-button-shape-next', 'yt-spec-button-shape-next--filled', 'yt-spec-button-shape-next--mono', 'yt-spec-button-shape-next--size-s');
+			confirmButton.className = createButtonClassList('filled', isDarkMode ? 'mono' : 'mono-inverse', 'size-s');
 			confirmButton.textContent = $msg('confirm');
 			const cancelButton = document.createElement('button');
 			cancelButton.type = 'button';
-			cancelButton.classList.add('yt-spec-button-shape-next', 'yt-spec-button-shape-next--tonal', 'yt-spec-button-shape-next--mono', 'yt-spec-button-shape-next--size-s');
+			cancelButton.className = createButtonClassList('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-s');
 			cancelButton.textContent = $msg('cancel');
 			cancelButton.addEventListener('click', () => {
 				fontDialog.close();
@@ -1167,36 +1167,51 @@ export class LiveChatPanel {
 			userCssForm.id = 'ytlcf-form-user_css_helper';
 			userCssForm.classList.add('ytp-sfn-content');
 			userCssForm.autocomplete = 'off';
+			userCssForm.spellcheck = false;
 			userCssForm.insertAdjacentHTML('afterbegin', [
 				`<div><div>${$msg('label')}</div><div><input name="label" type="text"></div></div>`,
-				`<div><div>${$msg('Channel_ID')}</div><div><input name="channel_id" type="text" pattern="^UC\\w{22}$" placeholder="${$msg('placeholder_channelId')}" minlength="24" maxlength="24" required></div></div>`,
+				`<div><div>${$msg('Channel_ID')}</div><div><textarea name="channel_id" placeholder="${$msg('placeholder_channelId')}" rows="3" required></textarea></div></div>`,
 				`<div><div>${$msg('displayStyle')}</div><div><div><div><label class="toggle photo" title="${$msg('tooltip_authorPhoto')}"><input type="checkbox" name="this_display_" value="photo" checked><svg viewBox="-8 -8 16 16"><g id="yt-lcf-photo"><circle r="7"/><ellipse rx="2.5" ry="3.5" cy="-1"/><ellipse rx="4" ry="2" cy="4"/></g></svg></label><label class="toggle name" title="${$msg('tooltip_authorName')}"><input type="checkbox" name="this_display_" value="name" checked><span>${$msg('display_authorName')}</span></label><label class="toggle body" title="${$msg('tooltip_chatMessage')}"><input type="checkbox" name="this_display_" value="body" checked><span>${$msg('display_chatMessage')}</span></label></div><div><label title="${$msg('tooltip_customColor')}"><input type="checkbox" name="this_color_display_" value="color" checked>${$msg('display_customColor')}</label><input type="color" name="this_color_" value="#ffffff"></div></div></div></div>`,
+				`<div><div>${$msg('fontFactor')}</div><div>x<input name=font_factor type="number" step="0.1" min="0.1" value="1" size="5" required></div><div></div></div>`,
 			].join(''));
 			const userCssPreviewTextArea = document.createElement('textarea');
 			userCssPreviewTextArea.readOnly = true;
 			userCssPreviewTextArea.placeholder = $msg('placeholder_userStyleTextArea');
+			userCssPreviewTextArea.rows = 9;
 			userCssPreviewTextArea.dataset.lang = 'text/css';
 			userCssPreviewTextArea.setAttribute('form', userCssForm.id);
+			const pattern = /^UC[\w]{22}$/;
 			userCssForm.addEventListener('change', e => {
 				const f = /** @type {HTMLFormElement} */ (e.currentTarget);
 				let text = '';
 				const label = f.label.value;
 				if (label) text += `/* ${label} */\n`;
-				text += `div[data-author-id="${f.channel_id.value}"] {\n`;
-				for (const input of f.this_display_) {
-					const c = input.value;
-					const v = input.checked ? 'inline' : 'none';
-					text += `  .${c} { display: ${v}; }\n`;
+				const textarea = /** @type {HTMLTextAreaElement} */ (f.channel_id);
+				const lines = textarea.value.split('\n');
+				const ids = lines.filter(id => pattern.test(id));
+				if (ids.length > 0) {
+					text += ids.map(id => `div[data-author-id="${id}"]`).join(',\n') + ' {\n';
+					for (const input of f.this_display_) {
+						const c = input.value;
+						const v = input.checked ? 'inline' : 'none';
+						text += `  .${c} { display: ${v}; }\n`;
+					}
+					if (f.this_color_display_.checked) {
+						text += `  color: ${f.this_color_.value};\n`;
+					}
+					if (f.font_factor.valueAsNumber !== 1) {
+						text += `  font-size: ${f.font_factor.value}em;\n`;
+					}
+					text += '}';
 				}
-				if (f.this_color_display_.checked) {
-					text += `  color: ${f.this_color_.value};\n`;
-				}
-				text += '}';
+				const validityMsg = lines.every(id => id ? pattern.test(id) : true) ? '' : $msg('validation_channelId');
+				textarea.setCustomValidity(validityMsg);
 				userCssPreviewTextArea.textContent = text;
 			}, { passive: true });
 			userCssForm.addEventListener('submit', _ => {
 				this.form.user_defined_css.value += '\n' + userCssPreviewTextArea.textContent;
 				this.updateStorage(this.form.user_defined_css);
+				userCssForm.reset();
 			}, { passive: true });
 
 			const buttonWrapper = document.createElement('div');
@@ -1204,11 +1219,11 @@ export class LiveChatPanel {
 			buttonWrapper.style.marginTop = '12px';
 			const confirmButton = document.createElement('button');
 			confirmButton.setAttribute('form', userCssForm.id);
-			confirmButton.classList.add('yt-spec-button-shape-next', 'yt-spec-button-shape-next--filled', 'yt-spec-button-shape-next--mono', 'yt-spec-button-shape-next--size-s');
+			confirmButton.className = createButtonClassList('filled', isDarkMode ? 'mono' : 'mono-inverse', 'size-s');
 			confirmButton.textContent = $msg('add');
 			const cancelButton = document.createElement('button');
 			cancelButton.type = 'button';
-			cancelButton.classList.add('yt-spec-button-shape-next', 'yt-spec-button-shape-next--tonal', 'yt-spec-button-shape-next--mono', 'yt-spec-button-shape-next--size-s');
+			cancelButton.className = createButtonClassList('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-s');
 			cancelButton.textContent = $msg('cancel');
 			cancelButton.addEventListener('click', () => {
 				userCssDialog.close();

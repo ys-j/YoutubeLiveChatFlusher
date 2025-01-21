@@ -308,9 +308,6 @@
 	textarea, input[type="text"] {
 		width: -moz-available;
 	}
-	textarea {
-		height: 9em;
-	}
 }
 
 /*

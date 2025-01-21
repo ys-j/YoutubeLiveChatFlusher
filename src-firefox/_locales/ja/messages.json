@@ -339,13 +339,16 @@
 		"message": "ラベル"
 	},
 	"Channel_ID": {
-		"message": "チャンネルID"
+		"message": "チャンネルID<br>(各行ごと)"
 	},
-	"displayStyle": {
-		"message": "表示スタイル"
+	"fontFactor": {
+		"message": "フォント倍率"
 	},
 	"placeholder_channelId": {
 		"message": "UCから始まる24文字のチャンネルID"
+	},
+	"validation_channelId": {
+		"message": "各行ともUCから始まる24文字を入力してください。"
 	},
 	"placeholder_userStyleTextArea": {
 		"message": "/* ここにCSSのプレビューが表示されます */"

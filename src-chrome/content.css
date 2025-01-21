@@ -117,6 +117,9 @@
 			border-bottom-color: transparent;
 		}
 	}
+	:disabled, :disabled + span {
+		opacity: .4;
+	}
 	.ytp-sfn-content {
 		background: rgba(28, 28, 28, .8);
 		> div {
@@ -204,7 +207,7 @@
 			height: 1.5em;
 			width: 2em;
 		}
-		&:not([type="number"]) {
+		&:not([type="number"]):enabled {
 			cursor: pointer;
 		}
 		&:invalid {
@@ -259,9 +262,8 @@
 		width: 100%;
 	}
 	br {
-		content: '';
 		display: block;
-		height: .5ex;
+		line-height: .5;
 	}
 	dialog {
 		border: none;
@@ -313,9 +315,6 @@
 #ytlcf-dialog-user_css_helper {
 	textarea, input[type="text"] {
 		width: -webkit-fill-available;
-	}
-	textarea {
-		height: 9em;
 	}
 }
 
