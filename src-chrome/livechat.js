@@ -1170,7 +1170,7 @@ export class LiveChatPanel {
 			userCssForm.spellcheck = false;
 			userCssForm.insertAdjacentHTML('afterbegin', [
 				`<div><div>${$msg('label')}</div><div><input name="label" type="text"></div></div>`,
-				`<div><div>${$msg('Channel_ID')}</div><div><textarea name="channel_id" placeholder="${$msg('placeholder_channelId')}" rows="3" required></textarea></div></div>`,
+				`<div><div>${$msg('Channel_ID')}</div><div><textarea name="channel_id" placeholder="${$msg('placeholder_channelId')}" rows="3" required data-lang="text/plain"></textarea></div></div>`,
 				`<div><div>${$msg('displayStyle')}</div><div><div><div><label class="toggle photo" title="${$msg('tooltip_authorPhoto')}"><input type="checkbox" name="this_display_" value="photo" checked><svg viewBox="-8 -8 16 16"><g id="yt-lcf-photo"><circle r="7"/><ellipse rx="2.5" ry="3.5" cy="-1"/><ellipse rx="4" ry="2" cy="4"/></g></svg></label><label class="toggle name" title="${$msg('tooltip_authorName')}"><input type="checkbox" name="this_display_" value="name" checked><span>${$msg('display_authorName')}</span></label><label class="toggle body" title="${$msg('tooltip_chatMessage')}"><input type="checkbox" name="this_display_" value="body" checked><span>${$msg('display_chatMessage')}</span></label></div><div><label title="${$msg('tooltip_customColor')}"><input type="checkbox" name="this_color_display_" value="color" checked>${$msg('display_customColor')}</label><input type="color" name="this_color_" value="#ffffff"></div></div></div></div>`,
 				`<div><div>${$msg('fontFactor')}</div><div>x<input name=font_factor type="number" step="0.1" min="0.1" value="1" size="5" required></div><div></div></div>`,
 			].join(''));
@@ -1180,7 +1180,7 @@ export class LiveChatPanel {
 			userCssPreviewTextArea.rows = 9;
 			userCssPreviewTextArea.dataset.lang = 'text/css';
 			userCssPreviewTextArea.setAttribute('form', userCssForm.id);
-			const pattern = /^UC[\w]{22}$/;
+			const pattern = /^UC[\w-]{22}$/;
 			userCssForm.addEventListener('change', e => {
 				const f = /** @type {HTMLFormElement} */ (e.currentTarget);
 				let text = '';
@@ -1204,7 +1204,8 @@ export class LiveChatPanel {
 					}
 					text += '}';
 				}
-				const validityMsg = lines.every(id => id ? pattern.test(id) : true) ? '' : $msg('validation_channelId');
+				const invalidLineNum = lines.findIndex(id => id ? !pattern.test(id) : false);
+				const validityMsg = invalidLineNum < 0 ? '' : $msg('validation_channelId', invalidLineNum + 1);
 				textarea.setCustomValidity(validityMsg);
 				userCssPreviewTextArea.textContent = text;
 			}, { passive: true });

@@ -354,7 +354,7 @@
 		"message": "24 letters beginning with &quot;UC&quot;"
 	},
 	"validation_channelId": {
-		"message": "Enter 24 characters beginning with &quot;UC&quot; for each line."
+		"message": "Enter 24 characters beginning with &quot;UC&quot; for each line:\nLine #$1 is invalid."
 	},
 	"placeholder_userStyleTextArea": {
 		"message": "/* Preview of CSS is displayed in this area. */"

@@ -354,7 +354,7 @@
 		"message": "UCから始まる24文字のチャンネルID"
 	},
 	"validation_channelId": {
-		"message": "各行ともUCから始まる24文字を入力してください。"
+		"message": "各行ともUCから始まる24文字を入力してください。\n（$1行目が不正です。）"
 	},
 	"placeholder_userStyleTextArea": {
 		"message": "/* ここにCSSのプレビューが表示されます */"
