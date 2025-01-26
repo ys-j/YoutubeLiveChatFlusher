@@ -24,10 +24,13 @@
 		"message": "By Type"
 	},
 	"mutedWordsTab": {
-		"message": "Banned Words"
+		"message": "Words Filter"
 	},
 	"userDefinedCssTab": {
 		"message": "User CSS"
+	},
+	"aboutTab": {
+		"message": "Others/About"
 	},
 	"animationDuration": {
 		"message": "Animation Duration"
@@ -160,24 +163,6 @@
 	},
 	"layerCSS": {
 		"message": "Layer CSS"
-	},
-	"translation": {
-		"message": "Message Translation"
-	},
-	"disabled": {
-		"message": "Disabled"
-	},
-	"enabled": {
-		"message": "Enabled"
-	},
-	"addableByBrowserLanguageSettings": {
-		"message": "Choices are addable by chrome://settings/languages"
-	},
-	"prefixOriginalLanguage": {
-		"message": "Prefix original lang"
-	},
-	"exception": {
-		"message": "except"
 	},
 	"hotkey": {
 		"message": "Hotkeys"
@@ -358,6 +343,51 @@
 	},
 	"placeholder_userStyleTextArea": {
 		"message": "/* Preview of CSS is displayed in this area. */"
+	},
+	"translation": {
+		"message": "Message Translation"
+	},
+	"targetLanguage": {
+		"message": "Target language"
+	},
+	"disabled": {
+		"message": "Disabled"
+	},
+	"enabled": {
+		"message": "Enabled"
+	},
+	"addableByBrowserLanguageSettings": {
+		"message": "Choices are addable by chrome://settings/languages"
+	},
+	"prefixOriginalLanguage": {
+		"message": "Prefix original lang"
+	},
+	"exception": {
+		"message": "except"
+	},
+	"translationUrl": {
+		"message": "Translation URL (GET)"
+	},
+	"about": {
+		"message": "About Extension"
+	},
+	"version": {
+		"message": "Version"
+	},
+	"configFile": {
+		"message": "Config File"
+	},
+	"export": {
+		"message": "Export"
+	},
+	"import": {
+		"message": "Import"
+	},
+	"init": {
+		"message": "Reset"
+	},
+	"page_refresh": {
+		"message": "This page will be refreshed to apply the configurations."
 	},
 	"pip_marker": {
 		"message": "This video is playing in picture-in-picture mode"

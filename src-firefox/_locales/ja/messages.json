@@ -15,16 +15,19 @@
 		"message": "閉じる"
 	},
 	"displayTab": {
-		"message": "基本設定"
+		"message": "基本"
 	},
 	"byTypeTab": {
-		"message": "種類別設定"
+		"message": "種類別"
 	},
 	"mutedWordsTab": {
-		"message": "NGワード設定"
+		"message": "NGワード"
 	},
 	"userDefinedCssTab": {
-		"message": "ユーザーCSS設定"
+		"message": "ユーザーCSS"
+	},
+	"aboutTab": {
+		"message": "その他/About"
 	},
 	"animationDuration": {
 		"message": "アニメーション秒数"
@@ -157,24 +160,6 @@
 	},
 	"layerCSS": {
 		"message": "レイヤCSS"
-	},
-	"translation": {
-		"message": "メッセージ翻訳"
-	},
-	"disabled": {
-		"message": "しない"
-	},
-	"enabled": {
-		"message": "する"
-	},
-	"addableByBrowserLanguageSettings": {
-		"message": "選択肢はabout:preferencesから追加可能です"
-	},
-	"prefixOriginalLanguage": {
-		"message": "元の言語を文頭につける"
-	},
-	"exception": {
-		"message": "除外"
 	},
 	"hotkey": {
 		"message": "ホットキー"
@@ -352,5 +337,50 @@
 	},
 	"placeholder_userStyleTextArea": {
 		"message": "/* ここにCSSのプレビューが表示されます */"
+	},
+	"translation": {
+		"message": "メッセージ翻訳"
+	},
+	"targetLanguage": {
+		"message": "翻訳先"
+	},
+	"disabled": {
+		"message": "しない"
+	},
+	"enabled": {
+		"message": "する"
+	},
+	"addableByBrowserLanguageSettings": {
+		"message": "言語はabout:preferencesから追加可"
+	},
+	"prefixOriginalLanguage": {
+		"message": "元の言語を文頭につける"
+	},
+	"exception": {
+		"message": "除外"
+	},
+	"translationUrl": {
+		"message": "翻訳URL (GET)"
+	},
+	"about": {
+		"message": "アドオンについて"
+	},
+	"version": {
+		"message": "バージョン"
+	},
+	"configFile": {
+		"message": "設定ファイル"
+	},
+	"export": {
+		"message": "エクスポート"
+	},
+	"import": {
+		"message": "インポート"
+	},
+	"init": {
+		"message": "リセット"
+	},
+	"page_refresh": {
+		"message": "設定反映のためページを更新します。"
 	}
 }

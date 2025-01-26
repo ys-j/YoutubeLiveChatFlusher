@@ -1,4 +1,3 @@
-/** Copyright 2021 _y_s */
 /** @type integer */
 type integer = number
 declare namespace browser {

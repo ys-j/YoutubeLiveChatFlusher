@@ -150,6 +150,9 @@
 					opacity: 1;
 				}
 			}
+			+ br {
+				margin-bottom: 0;
+			}
 		}
 	}
 	:disabled, :disabled + span {
@@ -216,10 +219,10 @@
 		&[name^="hotkey"] {
 			text-align: center;
 		}
-		&[size="3"] {
+		&[type="text"][size="3"] {
 			width: 2em;
 		}
-		&[size="5"] {
+		&[type="number"][size="3"], &[size="5"] {
 			width: 4em;
 		}
 		&[size="8"] {
@@ -238,7 +241,7 @@
 			cursor: pointer;
 		}
 	}
-	input[type="text"], textarea {
+	input[type="text"], input[type="url"], textarea {
 		background-color: inherit;
 		border: 1px solid currentColor;
 		border-radius: 2px;
@@ -262,8 +265,13 @@
 		width: 100%;
 	}
 	br {
+		content: '';
 		display: block;
-		line-height: .5;
+		margin-bottom: .5em;
+	}
+	hr {
+		border-bottom: thin solid;
+		margin: 1em 0;
 	}
 	dialog {
 		border: none;
@@ -276,6 +284,9 @@
 		.ytp-sfn-content {
 			background: transparent;
 		}
+	}
+	button[id|="ytlcf-config"] {
+		display: inline-flex;
 	}
 }
 #yt-lcf-panel-tabpanel-1, #ytlcf-dialog-user_css_helper > form {
