@@ -5,7 +5,7 @@ const manifest = browser.runtime.getManifest();
 const defaultSettings = {
 	styles: {
 		animation_duration: '8s',
-		font_size: '32px',
+		font_size: '16px',
 		line_height: '1.25',
 		font_family: 'inherit',
 		font_weight: '500',
