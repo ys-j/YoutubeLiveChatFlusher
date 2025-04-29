@@ -1,7 +1,6 @@
 /// <reference path="../browser.d.ts" />
 /// <reference path="../extends.d.ts" />
 
-'use strict';
 // @ts-ignore
 var browser = browser || chrome;
 const $msg = browser.i18n.getMessage;
@@ -41,16 +40,13 @@ function detectPageType() {
  * @param {import('./modules/watch.js')} modules 
  */
 function whenWatchPage(modules) {
-	const { checkAutoStart, openPip } = modules;
+	const { checkAutoStart, initPipMenu } = modules;
 	document.addEventListener('yt-action', e => {
 		const name = e.detail?.actionName;
 		switch (name) {
 			case 'ytd-watch-player-data-changed': {
 				const ev = new CustomEvent(name);
 				top?.['chatframe']?.contentWindow?.dispatchEvent(ev);
-				[tags.layer, tags.panel, tags.checkbox, tags.popupmenu, tags.popuppip, tags.pipmarker].forEach(id => {
-					document.getElementById(id)?.remove();
-				});
 				if (!isNotPip()) self.documentPictureInPicture?.window?.dispatchEvent(ev);
 				checkAutoStart();
 			}
@@ -59,22 +55,7 @@ function whenWatchPage(modules) {
 	document.addEventListener('ytlcf-ready', e => {
 		e.stopImmediatePropagation();
 		console.log(manifest.name + ' is ready!');
-		const pipmenu = /** @type {HTMLElement} */ (document.querySelector('#' + tags.popuppip));
-		if (pipmenu && 'documentPictureInPicture' in window) {
-			pipmenu.hidden = false;
-			pipmenu.addEventListener('click',  async _ => {
-				const pipWindow = self.documentPictureInPicture?.window;
-				if (pipWindow) {
-					pipWindow.close();
-				} else {
-					const layer = document.querySelector('#' + tags.layer);
-					if (layer) {
-						const player = layer.closest('#player-container');
-						if (player) await openPip(player);
-					}
-				}
-			}, { passive: true });
-		}
+		initPipMenu();
 	});
 	checkAutoStart();
 }
@@ -89,10 +70,12 @@ async function whenLivechatPage(modules) {
 	runApp(root?.document.querySelector('#ytd-player')).then(isStarted => {
 		if (isStarted) {
 			const ev = new CustomEvent('ytlcf-ready');
-			root?.document.dispatchEvent(ev);
+			top?.document.dispatchEvent(ev);
+		} else {
+			console.error('Failed to start ' + manifest.name);
 		}
 	});
-	addEventListener('ytd-watch-player-data-changed', _ => {
+	addEventListener('ytd-watch-player-data-changed', () => {
 		root?.document.querySelector('#' + tags.layer)?.remove();
 		root?.document.querySelector('#' + tags.panel)?.remove();
 	});
