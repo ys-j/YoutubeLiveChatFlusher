@@ -1,4 +1,18 @@
 declare namespace LiveChat {
+	interface LiveChatItemAction {
+		clickTrackingParams: string
+		addChatItemAction?: { item: AnyRenderer }
+		markChatItemAsDeletedAction?: { targetItemId: string }
+		markChatItemsByAuthorAsDeletedAction?: { externalChannelId: string }
+		replaceChatItemAction?: { targetItemId: string, replacementItem: AnyRenderer }
+	}
+	interface ReplayChatItemAction {
+		clickTrackingParams: string
+		replayChatItemAction: {
+			actions: LiveChatItemAction[],
+			videoOffsetTimeMsec: string,
+		}
+	}
 	interface RendererContent {
 		authorBadges?: AuthorBadgeRenderer[]
 		authorExternalChannelId: string

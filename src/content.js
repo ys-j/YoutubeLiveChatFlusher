@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+/// <reference path="../browser.d.ts" />
+/// <reference path="../extends.d.ts" />
+
 'use strict';
 // @ts-ignore
 var browser = browser || chrome;
@@ -12,7 +12,12 @@ const tags = {
 	panel: 'yt-lcf-panel',
 	checkbox: 'yt-lcf-cb',
 	popupmenu: 'yt-lcf-pm',
+	popuppip: 'yt-lcf-pp',
+	pipmarker: 'yt-lcf-pip-marker',
 };
+
+const isNotPip = () => !top?.documentPictureInPicture?.window;
+document.body.dataset.browser = 'browser_specific_settings' in manifest ? 'firefox' : 'chrome';
 
 detectPageType();
 window.addEventListener('yt-navigate-finish', detectPageType, { passive: true });
@@ -25,18 +30,18 @@ function detectPageType() {
 	const selfPath = location.pathname.split('/')[1];
 	const topPath = top?.location.pathname.split('/')[1] || 'never';
 	if (paths.watch.includes(selfPath)) {
-		import(browser.runtime.getURL('./watch.js')).then(whenWatchPage);
+		import(browser.runtime.getURL('./modules/watch.js')).then(whenWatchPage);
 	} else if (paths.livechat.includes(selfPath) && paths.watch.includes(topPath)) {
-		import(browser.runtime.getURL('./livechat.js')).then(whenLivechatPage);
+		import(browser.runtime.getURL('./modules/livechat.js')).then(whenLivechatPage);
 	}
 }
 
 /**
  * When `live` or `watch` page
- * @param {import('./watch.js')} modules 
+ * @param {import('./modules/watch.js')} modules 
  */
 function whenWatchPage(modules) {
-	const { checkAutoStart } = modules;
+	const { checkAutoStart, openPip } = modules;
 	document.addEventListener('yt-action', e => {
 		const name = e.detail?.actionName;
 		switch (name) {
@@ -46,6 +51,7 @@ function whenWatchPage(modules) {
 				[tags.layer, tags.panel, tags.checkbox, tags.popupmenu, tags.popuppip, tags.pipmarker].forEach(id => {
 					document.getElementById(id)?.remove();
 				});
+				if (!isNotPip()) self.documentPictureInPicture?.window?.dispatchEvent(ev);
 				checkAutoStart();
 			}
 		}
@@ -53,17 +59,33 @@ function whenWatchPage(modules) {
 	document.addEventListener('ytlcf-ready', e => {
 		e.stopImmediatePropagation();
 		console.log(manifest.name + ' is ready!');
+		const pipmenu = /** @type {HTMLElement} */ (document.querySelector('#' + tags.popuppip));
+		if (pipmenu && 'documentPictureInPicture' in window) {
+			pipmenu.hidden = false;
+			pipmenu.addEventListener('click',  async _ => {
+				const pipWindow = self.documentPictureInPicture?.window;
+				if (pipWindow) {
+					pipWindow.close();
+				} else {
+					const layer = document.querySelector('#' + tags.layer);
+					if (layer) {
+						const player = layer.closest('#player-container');
+						if (player) await openPip(player);
+					}
+				}
+			}, { passive: true });
+		}
 	});
 	checkAutoStart();
 }
 
 /**
  * When `live_chat` or `live_chat_replay` page
- * @param {import('./livechat.js')} modules 
+ * @param {import('./modules/livechat.js')} modules 
  */
 async function whenLivechatPage(modules) {
 	const { runApp } = modules;
-	const root = top;
+	const root = isNotPip() ? top || window : top?.documentPictureInPicture?.window;
 	runApp(root?.document.querySelector('#ytd-player')).then(isStarted => {
 		if (isStarted) {
 			const ev = new CustomEvent('ytlcf-ready');
@@ -71,11 +93,7 @@ async function whenLivechatPage(modules) {
 		}
 	});
 	addEventListener('ytd-watch-player-data-changed', _ => {
-		/** @type {HTMLDivElement | null | undefined} */
-		const layer = root?.document.querySelector('#' + tags.layer);
-		if (layer) layer.remove();
-		/** @type {HTMLDivElement | null | undefined} */
-		const panel = root?.document.querySelector('#' + tags.panel);
-		if (panel) panel.remove();
+		root?.document.querySelector('#' + tags.layer)?.remove();
+		root?.document.querySelector('#' + tags.panel)?.remove();
 	});
 }

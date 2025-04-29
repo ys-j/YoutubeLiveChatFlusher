@@ -11,6 +11,9 @@
 	"ytp_menuitem_label_config": {
 		"message": "チャット設定"
 	},
+	"ytp_menuitem_label_pip": {
+		"message": "PiP w/ chat (beta)"
+	},
 	"close": {
 		"message": "閉じる"
 	},
@@ -50,11 +53,8 @@
 	"lineHeight": {
 		"message": "行の高さ"
 	},
-	"fontFamily": {
-		"message": "フォント名"
-	},
-	"fontWeight": {
-		"message": "太さ"
+	"fontFamily_fontWeight": {
+		"message": "フォント名/太さ"
 	},
 	"fontFamily_select_from_local": {
 		"message": "ローカルフォントから選択する"
@@ -83,11 +83,8 @@
 	"opacity_1": {
 		"message": "不透過"
 	},
-	"maxWidth": {
-		"message": "最大長さ"
-	},
-	"wordWrap": {
-		"message": "折り返し"
+	"maxWidth_wordWrap": {
+		"message": "最大長さ/折り返し"
 	},
 	"wordWrap_0": {
 		"message": "折り返しなし"
@@ -326,6 +323,9 @@
 	"Channel_ID": {
 		"message": "チャンネルID<br>(各行ごと)"
 	},
+	"displayStyle": {
+		"message": "表示スタイル"
+	},
 	"fontFactor": {
 		"message": "フォント倍率"
 	},
@@ -351,7 +351,7 @@
 		"message": "する"
 	},
 	"addableByBrowserLanguageSettings": {
-		"message": "言語はabout:preferencesから追加可"
+		"message": "項目はブラウザの言語設定から追加可"
 	},
 	"prefixOriginalLanguage": {
 		"message": "元の言語を文頭につける"
@@ -362,8 +362,14 @@
 	"translationUrl": {
 		"message": "翻訳URL (GET)"
 	},
+	"timeshift": {
+		"message": "タイムシフト (beta)"
+	},
+	"timeshift_note": {
+		"message": "※ リプレイでのみ有効"
+	},
 	"about": {
-		"message": "アドオンについて"
+		"message": "拡張機能について"
 	},
 	"version": {
 		"message": "バージョン"
@@ -382,5 +388,8 @@
 	},
 	"page_refresh": {
 		"message": "設定反映のためページを更新します。"
+	},
+	"pip_marker": {
+		"message": "この動画はピクチャーインピクチャーで再生されています"
 	}
 }

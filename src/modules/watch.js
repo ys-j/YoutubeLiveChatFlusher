@@ -1,3 +1,7 @@
+/// <reference path="../../browser.d.ts" />
+/// <reference path="../../extends.d.ts" />
+/// <reference path="../content.js" />
+
 export async function checkAutoStart() {
 	const storage = await browser.storage.local.get('others');
 	const autostart = storage?.others?.autostart;
@@ -33,14 +37,13 @@ export async function openPip(element) {
 		pipWindow.document.documentElement.attributes.setNamedItem(attr.cloneNode());
 	}
 	const pipMetaCharset = document.createElement('meta');
-	pipMetaCharset.name = 'charset';
-	pipMetaCharset.content = 'utf-8';
+	pipMetaCharset.setAttribute('charset', 'utf-8');
 	const pipTitle = document.createElement('title');
 	pipTitle.textContent = /** @type {HTMLElement?} */ (document.querySelector('h1.ytd-watch-metadata'))?.innerText || 'YouTube';
 	const pipLink = document.createElement('link');
 	pipLink.rel = 'stylesheet';
 	pipLink.type = 'text/css';
-	pipLink.href = browser.runtime.getURL('content.css');
+	pipLink.href = browser.runtime.getURL('../styles/content.css');
 	const pipStyle = document.createElement('style');
 	pipStyle.textContent = `:root,body,body>*{height:100%;overflow:hidden}.ytp-miniplayer-button,.ytp-size-button,.ytp-fullscreen-button{display:none!important}#${tags.popuppip}{display:none!important}`;
 	pipWindow.document.head.append(pipMetaCharset, pipTitle, ...Array.from(element.ownerDocument.styleSheets, sheet => {
@@ -63,12 +66,13 @@ export async function openPip(element) {
 	marker.textContent = $msg('pip_marker');
 	element.before(marker);
 	pipWindow.document.body.appendChild(element);
+	pipWindow.document.body.dataset.browser = document.body.dataset.browser;
 	let video = pipWindow.document.querySelector('video');
 	const observeOptions = { attributes: true, attributeFilter: ['data-time', 'class'] };
 	const observer = new MutationObserver(records => {
 		if (video) for (const _ of records) {
 			const { innerWidth: ww, innerHeight: wh } = pipWindow;
-			const vw = video.videoWidth, vh = video.videoHeight, cw = video.clientWidth;;
+			const { videoWidth: vw, videoHeight: vh, clientWidth: cw } = video;
 			const aspect = vw / vh;
 			const w = Math.min(ww, (wh * aspect)|0);
 			video.style.height = `${Math.min(wh, (w / aspect)|0)}px`;
@@ -85,10 +89,17 @@ export async function openPip(element) {
 		if (pipTitle) pipTitle.textContent = /** @type {HTMLElement?} */ (document.querySelector('h1.ytd-watch-metadata'))?.innerText || 'YouTube';
 	});
 	pipWindow.dispatchEvent(new CustomEvent('ytd-watch-player-data-changed'));
-	pipWindow.addEventListener('resize', () => {
-		setTimeout(/** @param {HTMLVideoElement?} v */ v => {
-			if (v) v.dataset.time = `${v.currentTime}`;
-		}, 500, video || pipWindow.document.querySelector('video'));
+	pipWindow.addEventListener('resize', e => {
+		const w = /** @type {Window} */ (e.target);
+		const v = video || w.document.querySelector('video');
+		if (v) {
+			// const { innerWidth: ww, innerHeight: wh } = pipWindow;
+			// const { videoWidth: vw, videoHeight: vh, clientWidth: cw } = v;
+			// w.resizeTo((vw / vh) * wh, wh);
+			setTimeout(/** @param {HTMLVideoElement?} v */ v => {
+				if (v) v.dataset.time = `${v.currentTime}`;
+			}, 500, v);
+		}
 	}, { passive: true });
 	pipWindow.addEventListener('pagehide', () => {
 		if (top?.document.contains(marker)) {
@@ -117,23 +128,18 @@ export async function openPip(element) {
 	return pipWindow;
 }
 
+const shortcutKeys = ['f', 'i', 't'];
+
 /** @param {KeyboardEvent} e */
 function disableKeyboardShortcutOnParentWindow(e) {
-	switch (e.key) {
-		case 'i':
-		case 't':
-		case 'f':
-			e.stopImmediatePropagation();
+	if (shortcutKeys.includes(e.key)) {
+		e.stopImmediatePropagation();
 	}
 }
+
 /**  @param {KeyboardEvent} e */
 function enableKeyboardShortcutOnChildWindow(e) {
-	switch (e.key) {
-		case 'i':
-		case 't':
-		case 'f':
-			break;
-		default:
-			top?.dispatchEvent(e);
+	if (!shortcutKeys.includes(e.key)) {
+		top?.dispatchEvent(e);
 	}
 }

@@ -5,8 +5,19 @@ type FontData = {
 	style: string;
 	blob(): Promise<Blob>;
 }
+type DocumentPictureInPictureOptions = {
+	width?: number;
+	height?: number;
+	disallowReturnToOpener?: boolean;
+	preferInitialWindowPlacement?: boolean;
+}
+interface DocumentPictureInPicture {
+	window?: Window;
+	requestWindow: (options?: DocumentPictureInPictureOptions) => Promise<Window>;
+}
 interface Window {
 	queryLocalFonts?(options?: { postscriptNames: string[] }): Promise<FontData[]>;
+	documentPictureInPicture?: DocumentPictureInPicture;
 }
 interface Node {
 	cloneNode<T extends Node>(this: T, deep?: boolean): T;

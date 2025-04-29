@@ -1,3 +1,4 @@
 .vscode
-temp
 tile
+dist
+*.bat

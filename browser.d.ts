@@ -614,7 +614,7 @@ declare namespace browser {
 	namespace i18n {
 		type LanguageCode = string
 		function getAcceptLanguages(): Promise<LanguageCode[]>
-		function getMessage(messageName: string, substitutions?: string | string[]): string
+		function getMessage(messageName: string, substitutions?: any): string
 		function getUILanguage(): LanguageCode
 		function detectLanguage(text: string): Promise<{ isReliable: boolean, languages: { language: LanguageCode, percentage: number }[]}>
 	}
@@ -1447,3 +1447,4 @@ declare namespace browser {
 		const onFocusChanged: events.Event<[windowId: integer]>
 	}
 }
+declare var chrome: browser;

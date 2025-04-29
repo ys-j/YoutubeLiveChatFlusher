@@ -11,6 +11,9 @@
 	"ytp_menuitem_label_config": {
 		"message": "Configure Flusher"
 	},
+	"ytp_menuitem_label_pip": {
+		"message": "PiP w/ chat (beta)"
+	},
 	"close": {
 		"message": "close"
 	},
@@ -50,11 +53,8 @@
 	"lineHeight": {
 		"message": "Line Height"
 	},
-	"fontFamily": {
-		"message": "Font Family"
-	},
-	"fontWeight": {
-		"message": "Weight"
+	"fontFamily_fontWeight": {
+		"message": "Font Family/Weight"
 	},
 	"fontFamily_select_from_local": {
 		"message": "Select from local fonts"
@@ -83,11 +83,8 @@
 	"opacity_1": {
 		"message": "1"
 	},
-	"maxWidth": {
-		"message": "Max Width"
-	},
-	"wordWrap": {
-		"message": "Wrap"
+	"maxWidth_wordWrap": {
+		"message": "Max Width/Wrap"
 	},
 	"wordWrap_0": {
 		"message": "No Wrap"
@@ -324,7 +321,10 @@
 		"message": "Label"
 	},
 	"Channel_ID": {
-		"message": "Channel ID<br>(Each line)"
+		"message": "Channel ID\n(Each line)"
+	},
+	"displayStyle": {
+		"message": "Display style"
 	},
 	"fontFactor": {
 		"message": "Font size factor"
@@ -351,10 +351,10 @@
 		"message": "Enabled"
 	},
 	"addableByBrowserLanguageSettings": {
-		"message": "Choices are addable by about:preferences"
+		"message": "You can add more options \nvia browser's language settings."
 	},
 	"prefixOriginalLanguage": {
-		"message": "Prefix original lang"
+		"message": "Prefix original language"
 	},
 	"exception": {
 		"message": "except"
@@ -362,8 +362,14 @@
 	"translationUrl": {
 		"message": "Translation URL (GET)"
 	},
+	"timeshift": {
+		"message": "Time-shift (beta)"
+	},
+	"timeshift_note": {
+		"message": "(Only available in replay)"
+	},
 	"about": {
-		"message": "About Addon"
+		"message": "About Extension"
 	},
 	"version": {
 		"message": "Version"
@@ -382,5 +388,8 @@
 	},
 	"page_refresh": {
 		"message": "This page will be refreshed to apply the configurations."
+	},
+	"pip_marker": {
+		"message": "Now playing in picture-in-picture mode"
 	}
 }

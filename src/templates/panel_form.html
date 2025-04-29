@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<title>popupmenu</title>
+<form>
+	<div role="tablist">
+		<button type="button" class="ytp-button" id="yt-lcf-panel-tabbutton-0" role="tab" aria-controls="yt-lcf-panel-tabpanel-0" aria-selected="true" data-i18n="displayTab"></button>
+		<button type="button" class="ytp-button" id="yt-lcf-panel-tabbutton-1" role="tab" aria-controls="yt-lcf-panel-tabpanel-1" aria-selected="false" data-i18n="byTypeTab"></button>
+		<button type="button" class="ytp-button" id="yt-lcf-panel-tabbutton-2" role="tab" aria-controls="yt-lcf-panel-tabpanel-2" aria-selected="false" data-i18n="mutedWordsTab"></button>
+		<button type="button" class="ytp-button" id="yt-lcf-panel-tabbutton-3" role="tab" aria-controls="yt-lcf-panel-tabpanel-3" aria-selected="false" data-i18n="userDefinedCssTab"></button>
+		<button type="button" class="ytp-button" id="yt-lcf-panel-tabbutton-4" role="tab" aria-controls="yt-lcf-panel-tabpanel-4" aria-selected="false" data-i18n="aboutTab"></button>
+	</div>
+	<div class="ytp-sfn-content" id="yt-lcf-panel-tabpanel-0" role="tabpanel" aria-labelledby="yt-lcf-panel-tabbutton-0">
+		<div>
+			<div data-i18n="animationDuration"></div>
+			<div>
+				<label>
+					<input type="number" class="styles" name="animation_duration" min="1" step="0.1" data-unit="s" data-size="5">
+					s
+				</label>
+				/
+				<input type="checkbox" name="speed">
+				<label>
+					<input type="number" name="px_per_sec" min="1" data-unit="px/s" data-size="5">
+					<span>px/s</span>
+				</label>
+			</div>
+			<div></div>
+		</div>
+		<div>
+			<div data-i18n="fontSize"></div>
+			<div>
+				<label>
+					<input type="number" class="styles" name="font_size" min="12" data-unit="px" data-size="3">
+					px
+				</label>
+				/
+				<input type="checkbox" name="lines">
+				<label>
+					<input type="number" name="number_of_lines" min="6" data-size="3">
+					<span data-i18n="lines"></span>
+				</label>
+				<select name="type_of_lines">
+					<option value="0" data-i18n="typeOfLines_0">fixed</option>
+					<option value="1" data-i18n="typeOfLines_1">max</option>
+					<option value="2" data-i18n="typeOfLines_2">min</option>
+				</select>
+				<span>▼</span>
+			</div>
+		</div>
+		<div>
+			<div data-i18n="lineHeight"></div>
+			<div>
+				<input type="number" class="styles" name="line_height" min="1" step="0.05">
+			</div>
+		</div>
+		<div>
+			<div data-i18n="fontFamily_fontWeight"></div>
+			<div>
+				<input type="text" class="styles" name="font_family">
+				<button type="button" id="font_helper" class="ytp-button">[?]</button>
+				/
+				<input type="number" class="styles" name="font_weight" min="100" max="900" step="100" data-size="5">
+			</div>
+		</div>
+		<div>
+			<div data-i18n="strokeStyle"></div>
+			<div>
+				<label>
+					<input type="color" name="stroke_color">
+				</label>
+				/
+				<label>
+					<span data-i18n="strokeOffset"></span>
+					<input type="number" class="styles" name="stroke_offset" min="0" step="0.1" data-unit="px" data-size="3">
+					px
+				</label>
+				/
+				<label>
+					<span data-i18n="strokeBlur"></span>
+					<input type="number" class="styles" name="stroke_blur" min="0" step="0.1" data-unit="px" data-size="3">
+					px
+				</label>
+			</div>
+		</div>
+		<div>
+			<div data-i18n="layerOpacity"></div>
+			<div>
+				<span data-i18n="opacity_0"></span>
+				<input type="range" class="styles" name="layer_opacity" min="0" max="1" step="0.05">
+				<span data-i18n="opacity_1"></span>
+			</div>
+		</div>
+		<div>
+			<div data-i18n="backgroundOpacity"></div>
+			<div>
+				<span data-i18n="opacity_0"></span>
+				<input type="range" class="styles" name="background_opacity" min="0" max="1" step="0.05">
+				<span data-i18n="opacity_1"></span>
+			</div>
+		</div>
+		<div>
+			<div data-i18n="maxWidth_wordWrap"></div>
+			<div>
+				<label>
+					<input type="number" class="styles" name="max_width" min="50" data-unit="%" data-size="8">
+					<span>%</span>
+				</label>
+				/
+				<select name="wrap">
+					<option value="0" data-i18n="wordWrap_0">none</option>
+					<option value="1" data-i18n="wordWrap_1">normal</option>
+					<option value="2" data-i18n="wordWrap_2">auto</option>
+				</select>
+				▼
+			</div>
+		</div>
+		<div>
+			<div data-i18n="displayLimit"></div>
+			<div>
+				<input type="number" class="others" name="limit_number" min="1" data-size="8">
+				<label>
+					<input type="checkbox" name="unlimited">
+					<span data-i18n="unlimited"></span>
+				</label>
+			</div>
+		</div>
+		<div>
+			<div data-i18n="containerLimit"></div>
+			<div>
+				<input type="number" class="others" name="container_limit_number" min="1" data-size="8">
+				<label>
+					<input type="checkbox" name="container_unlimited">
+					<span data-i18n="unlimited"></span>
+				</label>
+			</div>
+		</div>
+		<div>
+			<div data-i18n="simultaneousMessage"></div>
+			<div>
+				<select name="simultaneous">
+					<option value="0" data-i18n="simultaneousMessage_0">all</option>
+					<option value="1" data-i18n="simultaneousMessage_1">first</option>
+					<option value="2" data-i18n="simultaneousMessage_2">merge</option>
+					<option value="3" data-i18n="simultaneousMessage_3">last_merge</option>
+				</select>
+				▼
+			</div>
+		</div>
+		<div>
+			<div data-i18n="emojiExpression"></div>
+			<div>
+				<select name="emoji">
+					<option value="0" data-i18n="emojiExpression_0">none</option>
+					<option value="1" data-i18n="emojiExpression_1">all</option>
+					<option value="2" data-i18n="emojiExpression_2">label</option>
+					<option value="3" data-i18n="emojiExpression_3">shortcut</option>
+				</select>
+				▼
+			</div>
+		</div>
+		<div>
+			<div data-i18n="overlapping"></div>
+			<div>
+				<label>
+					<input type="checkbox" name="overlapping" value="0">
+					<span data-i18n="overlapping_transparent"></span>
+				</label>
+				<label>
+					<input type="checkbox" name="overlapping" value="1">
+					<span data-i18n="overlapping_translate"></span>
+				</label>
+			</div>
+		</div>
+		<div>
+			<div data-i18n="direction"></div>
+			<div>
+				<label>
+					<input type="checkbox" name="direction" value="0">
+					<span data-i18n="direction_bottom_to_top"></span>
+				</label>
+				<label>
+					<input type="checkbox" name="direction" value="1">
+					<span data-i18n="direction_left_to_right"></span>
+				</label>
+			</div>
+		</div>
+		<div>
+			<div data-i18n="layerCSS"></div>
+			<div>
+				<input type="text" name="layer_css" placeholder="property: value;" style="width:20.5em" data-lang="text/css">
+			</div>
+		</div>
+		<div>
+			<div data-i18n="hotkey"></div>
+			<div>
+				<label>
+					<span data-i18n="hotkey_layer"></span>
+					<input type="text" name="hotkey_layer" maxlength="1" size="3">
+				</label>
+				/
+				<label>
+					<span data-i18n="hotkey_panel"></span>
+					<input type="text" name="hotkey_panel" maxlength="1" size="3">
+				</label>
+			</div>
+		</div>
+		<div>
+			<div data-i18n="autostart">${$msg('autostart')}</div>
+			<div>
+				<select name="autostart">
+					<option value="0" data-i18n="disabled">disabled</option>
+					<option value="1" data-i18n="enabled">enabled</option>
+				</select>
+				▼
+			</div>
+		</div>
+	</div>
+	<div class="ytp-sfn-content" id="yt-lcf-panel-tabpanel-1" role="tabpanel" aria-labelledby="yt-lcf-panel-tabbutton-1" hidden>
+		<div>
+			<div data-i18n="normal"></div>
+			<div>
+				<div>
+					<div>
+						<label class="toggle photo" data-i18n-title="tooltip_authorPhoto">
+							<input type="checkbox" name="normal_display" value="photo">
+							<svg viewBox="-8 -8 16 16">
+								<g id="yt-lcf-photo">
+									<circle r="7"/>
+									<ellipse rx="2.5" ry="3.5" cy="-1"/>
+									<ellipse rx="4" ry="2" cy="4"/>
+								</g>
+							</svg>
+						</label>
+						<label class="toggle name" data-i18n-title="tooltip_authorName">
+							<input type="checkbox" name="normal_display" value="name">
+							<span data-i18n="display_authorName"></span>
+						</label>
+						<label class="toggle body" data-i18n-title="tooltip_chatMessage">
+							<input type="checkbox" name="normal_display" value="message">
+							<span data-i18n="display_chatMessage"></span>
+						</label>
+					</div>
+					<div>
+						<label data-i18n-title="tooltip_customColor">
+							<input type="checkbox" name="normal_display" value="color">
+							<span data-i18n="display_customColor"></span>
+						</label>
+						<input type="color" name="normal_color">
+					</div>
+				</div>
+				<input type="text" name="normal_css" placeholder="property: value;" data-lang="text/css">
+			</div>
+		</div>
+		<div>
+			<div data-i18n="member"></div>
+			<div>
+				<div>
+					<div>
+						<label class="toggle photo" data-i18n-title="tooltip_authorPhoto">
+							<input type="checkbox" name="member_display" value="photo">
+							<svg viewBox="-8 -8 16 16">
+								<use xlink:href="#yt-lcf-photo" />
+							</svg>
+						</label>
+						<label class="toggle name" data-i18n-title="tooltip_authorName">
+							<input type="checkbox" name="member_display" value="name">
+							<span data-i18n="display_authorName"></span>
+						</label>
+						<label class="toggle body" data-i18n-title="tooltip_chatMessage">
+							<input type="checkbox" name="member_display" value="message">
+							<span data-i18n="display_chatMessage"></span>
+						</label>
+					</div>
+					<div>
+						<label data-i18n-title="tooltip_customColor">
+							<input type="checkbox" name="member_display" value="color">
+							<span data-i18n="display_customColor"></span>
+						</label>
+						<input type="color" name="member_color">
+					</div>
+				</div>
+				<input type="text" name="member_css" placeholder="property: value;" data-lang="text/css">
+			</div>
+		</div>
+		<div>
+			<div data-i18n="moderator"></div>
+			<div>
+				<div>
+					<div>
+						<label class="toggle photo" data-i18n-title="tooltip_authorPhoto">
+							<input type="checkbox" name="moderator_display" value="photo">
+							<svg viewBox="-8 -8 16 16">
+								<use xlink:href="#yt-lcf-photo" />
+							</svg>
+						</label>
+						<label class="toggle name" data-i18n-title="tooltip_authorName">
+							<input type="checkbox" name="moderator_display" value="name">
+							<span data-i18n="display_authorName"></span>
+						</label>
+						<label class="toggle body" data-i18n-title="tooltip_chatMessage">
+							<input type="checkbox" name="moderator_display" value="message">
+							<span data-i18n="display_chatMessage"></span>
+						</label>
+					</div>
+					<div>
+						<label data-i18n-title="tooltip_customColor">
+							<input type="checkbox" name="moderator_display" value="color">
+							<span data-i18n="display_customColor"></span>
+						</label>
+						<input type="color" name="moderator_color">
+					</div>
+				</div>
+				<input type="text" name="moderator_css" placeholder="property: value;" data-lang="text/css">
+			</div>
+		</div>
+		<div>
+			<div data-i18n="owner"></div>
+			<div>
+				<div>
+					<div>
+						<label class="toggle photo" data-i18n-title="tooltip_authorPhoto">
+							<input type="checkbox" name="owner_display" value="photo">
+							<svg viewBox="-8 -8 16 16">
+								<use xlink:href="#yt-lcf-photo" />
+							</svg>
+						</label>
+						<label class="toggle name" data-i18n-title="tooltip_authorName">
+							<input type="checkbox" name="owner_display" value="name">
+							<span data-i18n="display_authorName"></span>
+						</label>
+						<label class="toggle body" data-i18n-title="tooltip_chatMessage">
+							<input type="checkbox" name="owner_display" value="message">
+							<span data-i18n="display_chatMessage"></span>
+						</label>
+					</div>
+					<div>
+						<label data-i18n-title="tooltip_customColor">
+							<input type="checkbox" name="owner_display" value="color">
+							<span data-i18n="display_customColor"></span>
+						</label>
+						<input type="color" name="owner_color">
+					</div>
+				</div>
+				<input type="text" name="owner_css" placeholder="property: value;" data-lang="text/css">
+			</div>
+		</div>
+		<div>
+			<div data-i18n="verified"></div>
+			<div>
+				<div>
+					<div>
+						<label class="toggle photo" data-i18n-title="tooltip_authorPhoto">
+							<input type="checkbox" name="verified_display" value="photo">
+							<svg viewBox="-8 -8 16 16">
+								<use xlink:href="#yt-lcf-photo" />
+							</svg>
+						</label>
+						<label class="toggle name" data-i18n-title="tooltip_authorName">
+							<input type="checkbox" name="verified_display" value="name">
+							<span data-i18n="display_authorName"></span>
+						</label>
+						<label class="toggle body" data-i18n-title="tooltip_chatMessage">
+							<input type="checkbox" name="verified_display" value="message">
+							<span data-i18n="display_chatMessage"></span>
+						</label>
+					</div>
+					<div>
+						<label data-i18n-title="tooltip_customColor">
+							<input type="checkbox" name="verified_display" value="color">
+							<span data-i18n="display_customColor"></span>
+						</label>
+						<input type="color" name="verified_color">
+					</div>
+				</div>
+				<input type="text" name="verified_css" placeholder="property: value;" data-lang="text/css">
+			</div>
+		</div>
+		<div>
+			<div data-i18n="you"></div>
+			<div>
+				<div>
+					<div>
+						<label class="toggle photo" data-i18n-title="tooltip_authorPhoto">
+							<input type="checkbox" name="you_display" value="photo">
+							<svg viewBox="-8 -8 16 16">
+								<use xlink:href="#yt-lcf-photo" />
+							</svg>
+						</label>
+						<label class="toggle name" data-i18n-title="tooltip_authorName">
+							<input type="checkbox" name="you_display" value="name">
+							<span data-i18n="display_authorName"></span>
+						</label>
+						<label class="toggle body" data-i18n-title="tooltip_chatMessage">
+							<input type="checkbox" name="you_display" value="message">
+							<span data-i18n="display_chatMessage"></span>
+						</label>
+					</div>
+					<div>
+						<label data-i18n-title="tooltip_customColor">
+							<input type="checkbox" name="you_display" value="color">
+							<span data-i18n="display_customColor"></span>
+						</label>
+						<input type="color" name="you_color">
+					</div>
+				</div>
+				<input type="text" name="you_css" placeholder="property: value;" data-lang="text/css">
+			</div>
+		</div>
+		<div>
+			<div data-i18n="superchat"></div>
+			<div>
+				<div>
+					<div class="superchat">
+						<label class="toggle photo" data-i18n-title="tooltip_authorPhoto">
+							<input type="checkbox" name="paid_message_display" value="photo">
+							<svg viewBox="-8 -8 16 16">
+								<use xlink:href="#yt-lcf-photo" />
+							</svg>
+						</label>
+						<label class="toggle name" data-i18n-title="tooltip_authorName">
+							<input type="checkbox" name="paid_message_display" value="name">
+							<span data-i18n="display_authorName"></span>
+						</label>
+						<label class="toggle amount" data-i18n-title="tooltip_purchaseAmount">
+							<input type="checkbox" name="paid_message_display" value="amount">
+							<span data-i18n="display_purchaseAmount"></span>
+						</label>
+						<br>
+						<label class="toggle body" data-i18n-title="tooltip_chatMessage">
+							<input type="checkbox" name="paid_message_display" value="message">
+							<span data-i18n="display_chatMessage"></span>
+						</label>
+					</div>
+					<div>
+						<label data-i18n-title="tooltip_customColor">
+							<input type="checkbox" name="paid_message_display" value="color">
+							<span data-i18n="display_customColor"></span>
+						</label>
+						<input type="color" name="paid_message_color">
+					</div>
+				</div>
+				<input type="text" name="paid_message_css" placeholder="property: value;" data-lang="text/css">
+			</div>
+		</div>
+		<div>
+			<div data-i18n="sticker"></div>
+			<div>
+				<div>
+					<div class="superchat">
+						<label class="toggle photo" data-i18n-title="tooltip_authorPhoto">
+							<input type="checkbox" name="paid_sticker_display" value="photo">
+							<svg viewBox="-8 -8 16 16">
+								<use xlink:href="#yt-lcf-photo" />
+							</svg>
+						</label>
+						<label class="toggle name" data-i18n-title="tooltip_authorName">
+							<input type="checkbox" name="paid_sticker_display" value="name">
+							<span data-i18n="display_authorName"></span>
+						</label>
+						<label class="toggle amount" data-i18n-title="tooltip_purchaseAmount">
+							<input type="checkbox" name="paid_sticker_display" value="amount">
+							<span data-i18n="display_purchaseAmount"></span>
+						</label>
+						<br>
+						<label class="toggle body" data-i18n-title="tooltip_sticker">
+							<input type="checkbox" name="paid_sticker_display" value="sticker">
+							<span data-i18n="display_sticker"></span>
+						</label>
+					</div>
+					<div>
+						<label title="${$msg('tooltip_stickerSize')}" style="padding:0 0 0 4px">
+							<span data-i18n="display_stickerSize"></span>
+							: x
+							<input type="number" class="styles" name="sticker_size" min="1" max="10" step="0.1" data-size="5" data-unit="em">
+						</label>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div>
+			<div data-i18n="membership"></div>
+			<div>
+				<div>
+					<div class="superchat">
+						<label class="toggle photo" data-i18n-title="tooltip_authorPhoto">
+							<input type="checkbox" name="membership_display" value="photo">
+							<svg viewBox="-8 -8 16 16">
+								<use xlink:href="#yt-lcf-photo" />
+							</svg>
+						</label>
+						<label class="toggle name" data-i18n-title="tooltip_authorName">
+							<input type="checkbox" name="membership_display" value="name">
+							<span data-i18n="display_authorName"></span>
+						</label>
+						<label class="toggle body" data-i18n-title="tooltip_membershipMessage">
+							<input type="checkbox" name="membership_display" value="message">
+							<span data-i18n="display_membershipMessage"></span>
+						</label>
+					</div>
+					<div>
+						<label data-i18n-title="tooltip_customColor">
+							<input type="checkbox" name="membership_display" value="color">
+							<span data-i18n="display_customColor"></span>
+						</label>
+						<input type="color" name="membership_color">
+					</div>
+				</div>
+				<input type="text" name="membership_css" placeholder="property: value;" data-lang="text/css">
+			</div>
+		</div>
+		<div>
+			<div data-i18n="milestone"></div>
+			<div>
+				<div>
+					<div class="superchat">
+						<label class="toggle photo" data-i18n-title="tooltip_authorPhoto">
+							<input type="checkbox" name="milestone_display" value="photo">
+							<svg viewBox="-8 -8 16 16">
+								<use xlink:href="#yt-lcf-photo" />
+							</svg>
+						</label>
+						<label class="toggle name" data-i18n-title="tooltip_authorName">
+							<input type="checkbox" name="milestone_display" value="name">
+							<span data-i18n="display_authorName"></span>
+						</label>
+						<label class="toggle amount" data-i18n-title="tooltip_milestoneMonths">
+							<input type="checkbox" name="milestone_display" value="months">
+							<span data-i18n="display_milestoneMonths"></span>
+						</label>
+						<br>
+						<label class="toggle body" data-i18n-title="tooltip_chatMessage">
+							<input type="checkbox" name="milestone_display" value="message">
+							<span data-i18n="display_chatMessage"></span>
+						</label>
+					</div>
+					<div>
+						<label data-i18n-title="tooltip_customColor">
+							<input type="checkbox" name="milestone_display" value="color">
+							<span data-i18n="display_customColor"></span>
+						</label>
+						<input type="color" name="milestone_color">
+					</div>
+				</div>
+				<input type="text" name="milestone_css" placeholder="property: value;" data-lang="text/css">
+			</div>
+		</div>
+	</div>
+	<div class="ytp-sfn-content" id="yt-lcf-panel-tabpanel-2" role="tabpanel" aria-labelledby="yt-lcf-panel-tabbutton-2" hidden>
+		<div>
+			<div data-i18n="mutedWordsMode"></div>
+			<div>
+				<select name="muted_words_mode">
+					<option value="0" data-i18n="mutedWordsMode_0">none</option>
+					<option value="1" data-i18n="mutedWordsMode_1">all</option>
+					<option value="2" data-i18n="mutedWordsMode_2">word</option>
+					<option value="3" data-i18n="mutedWordsMode_3">char</option>
+				</select>
+				▼
+			</div>
+		</div>
+		<div>
+			<div data-i18n="mutedWordsReplacement"></div>
+			<div>
+				<input type="text" name="muted_words_replacement" style="width:20.5em" data-i18n-placeholder="placeholder_mutedWordsReplacement">
+			</div>
+		</div>
+		<div>
+			<div data-i18n="mutedWordsGrammer"></div>
+			<div>
+				<label>
+					<input type="checkbox" name="muted_words_regexp">
+					<span data-i18n="regexp"></span>
+				</label>
+			</div>
+		</div>
+		<textarea name="muted_words_list" rows="20" style="width:32em" data-i18n-placeholder="placeholder_mutedWordsList"></textarea>
+	</div>
+	<div class="ytp-sfn-content" id="yt-lcf-panel-tabpanel-3" role="tabpanel" aria-labelledby="yt-lcf-panel-tabbutton-3" hidden>
+		<div>
+			<div data-i18n="user_defined_css_shortcut"></div>
+			<div>
+				<button type="button" id="user_css_helper" class data-i18n-title="addUserStyle" data-i18n="addUserStyle"></button>
+			</div>
+		</div>
+		<textarea name="user_defined_css" rows="30" placeholder=".name::after {\n  content: '\\a';\n}" style="width:32em" data-lang="text/css"></textarea>
+	</div>
+	<div class="ytp-sfn-content" id="yt-lcf-panel-tabpanel-4" role="tabpanel" aria-labelledby="yt-lcf-panel-tabbutton-4" hidden>
+		<div>
+			<div data-i18n="translation"></div>
+			<div>
+				<span data-i18n="targetLanguage"></span>
+				<select name="translation">
+					<option value="0" data-i18n="disabled">disabled</option>
+				</select>
+				▼
+				<br>
+				<label>
+					<input type="checkbox" name="prefix_lang">
+					<span data-i18n="prefixOriginalLanguage"></span>
+				</label>
+				<br>
+				<span id="language_exception_marker" data-i18n="exception"></span>
+				<br>
+				<span data-i18n="addableByBrowserLanguageSettings"></span>
+			</div>
+			<div></div>
+		</div>
+		<div>
+			<div data-i18n="translationUrl"></div>
+			<div>
+				<input type="url" name="translation_url" style="width:20.5em">
+			</div>
+		</div>
+		<div>
+			<div data-i18n="timeshift"></div>
+			<div>
+				<input type="number" name="time_shift" step="0.1" data-size="5">
+				s
+				<span data-i18n="timeshift_note"></span>
+			</div>
+		</div>
+		<hr>
+		<div>
+			<div data-i18n="about"></div>
+			<div data-i18n="manifestName"></div>
+		</div>
+		<div>
+			<div data-i18n="version"></div>
+			<div id="manifest_version"></div>
+		</div>
+		<div>
+			<div>GitHub</div>
+			<div>
+				<a href="https://github.com/ys-j/YoutubeLiveChatFlusher" target="_blank">Home</a>
+				/
+				<a href="https://github.com/ys-j/YoutubeLiveChatFlusher/wiki" target="_blank">Wiki</a>
+			</div>
+		</div>
+		<div>
+			<div data-i18n="configFile"></div>
+			<div>
+				<button type="button" id="ytlcf-config-export" class data-i18n-title="export" data-i18n="export"></button>
+				<button type="button" id="ytlcf-config-import" class data-i18n-title="import" data-i18n="import"></button>
+				<button type="button" id="ytlcf-config-init" class data-i18n-title="init" data-i18n="init"></button>
+			</div>
+		</div>
+	</div>
+</form>
+<dialog id="ytlcf-dialog-font_helper" class="ytp-sfn">
+	<form method="dialog">
+		<ol></ol>
+		<div class="top-level-buttons ytd-menu-renderer">
+			<select>
+				<option value="inherit" selected data-i18n="font_helper_select">inherit</option>
+			</select>
+			<button type="button" data-i18n="add" data-i18n-title="add">add</button>
+		</div>
+		<div class="top-level-buttons ytd-menu-renderer" style="margin-top: 12px;">
+			<button data-i18n="confirm" data-i18n-title="confirm">confirm</button>
+			<button type="button" data-i18n="cancel" data-i18n-title="cancel">cancel</button>
+		</div>
+	</form>
+</dialog>
+<dialog id="ytlcf-dialog-user_css_helper" class="ytp-sfn">
+	<form method="dialog" id="ytlcf-form-user_css_helper" class="ytp-sfn-content" autocomplete="off" spellcheck="false">
+		<div>
+			<div data-i18n="label"></div>
+			<div>
+				<input name="label" type="text">
+			</div>
+		</div>
+		<div>
+			<div data-i18n="Channel_ID"></div>
+			<div>
+				<textarea name="channel_id" rows="3" required data-18n-placeholder="placeholder_channelId" data-lang="text/plain"></textarea>
+			</div>
+		</div>
+		<div>
+			<div data-i18n="displayStyle"></div>
+			<div>
+				<div>
+					<div>
+						<label class="toggle photo" data-i18n-title="tooltip_authorPhoto">
+							<input type="checkbox" name="this_display_" value="photo" checked>
+							<svg viewBox="-8 -8 16 16">
+								<g id="yt-lcf-photo">
+									<circle r="7" />
+									<ellipse rx="2.5" ry="3.5" cy="-1" />
+									<ellipse rx="4" ry="2" cy="4" />
+								</g>
+							</svg>
+						</label>
+						<label class="toggle name" data-i18n-title="tooltip_authorName">
+							<input type="checkbox" name="this_display_" value="name" checked>
+							<span data-i18n="display_authorName"></span>
+						</label>
+						<label class="toggle body" data-i18n-title="tooltip_chatMessage">
+							<input type="checkbox" name="this_display_" value="body" checked>
+							<span data-i18n="display_chatMessage"></span>
+						</label>
+					</div>
+					<div>
+						<label data-i18n-title="tooltip_customColor">
+							<input type="checkbox" name="this_color_display_" value="color" checked>
+							<span data-i18n="display_customColor"></span>
+						</label>
+						<input type="color" name="this_color_" value="#ffffff">
+					</div>
+				</div>
+			</div>
+		</div>
+		<div>
+			<div data-i18n="fontFactor"></div>
+			<div>
+				x
+				<input name=font_factor type="number" step="0.1" min="0.1" value="1" required  data-size="5">
+			</div>
+			<div></div>
+		</div>
+	</form>
+	<textarea id="ytlcf-textarea-user_css_helper" form="ytlcf-form-user_css_helper" readonly rows="9" data-18n-placeholder="placeholder_userStyleTextArea" data-lang="text/css"></textarea>
+	<div class="top-level-buttons ytd-menu-renderer" style="margin-top: 12px;">
+		<button form="ytlcf-form-user_css_helper" class data-i18n="add">add</button>
+		<button type="button" class data-i18n="cancel">cancel</button>
+	</div>
+</dialog>
