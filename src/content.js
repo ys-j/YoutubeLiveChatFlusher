@@ -18,10 +18,7 @@ const tags = {
 const isNotPip = () => !top?.documentPictureInPicture?.window;
 document.body.dataset.browser = 'browser_specific_settings' in manifest ? 'firefox' : 'chrome';
 
-detectPageType();
-window.addEventListener('yt-navigate-finish', detectPageType, { passive: true });
-
-function detectPageType() {
+const detectPageType = () => {
 	const paths = {
 		livechat: ['live_chat', 'live_chat_replay'],
 		watch: ['live', 'watch'],
@@ -34,13 +31,15 @@ function detectPageType() {
 		import(browser.runtime.getURL('./modules/livechat.js')).then(whenLivechatPage);
 	}
 }
+detectPageType();
+window.addEventListener('yt-navigate-finish', detectPageType, { passive: true });
 
 /**
  * When `live` or `watch` page
  * @param {import('./modules/watch.js')} modules 
  */
 function whenWatchPage(modules) {
-	const { checkAutoStart, initPipMenu } = modules;
+	const { checkAutoStart, fetchChatReplayActions, initPipMenu } = modules;
 	document.addEventListener('yt-action', e => {
 		const name = e.detail?.actionName;
 		switch (name) {
@@ -57,6 +56,12 @@ function whenWatchPage(modules) {
 		console.log(manifest.name + ' is ready!');
 		initPipMenu();
 	});
+	self.addEventListener('yt-navigate-finish', e => {
+		if (e.detail?.pageType === 'watch') {
+			const response = e.detail?.response?.response;
+			if (response) fetchChatReplayActions(response);
+		}
+	}, { passive: true });
 	checkAutoStart();
 }
 
@@ -75,7 +80,7 @@ async function whenLivechatPage(modules) {
 			console.error('Failed to start ' + manifest.name);
 		}
 	});
-	addEventListener('ytd-watch-player-data-changed', () => {
+	self.addEventListener('ytd-watch-player-data-changed', () => {
 		root?.document.querySelector('#' + tags.layer)?.remove();
 		root?.document.querySelector('#' + tags.panel)?.remove();
 	});

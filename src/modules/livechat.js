@@ -233,7 +233,6 @@ export async function runApp(app) {
 								div.classList[method]('outlined');
 								le.classList[method](`has-${type}-name`);
 							}, { passive: true });
-							break;
 						}
 						default: {
 							le.style.setProperty(`--yt-lcf-${type.replace(/_/g, '-')}-display-${cb.value}`, cb.checked ? 'inline' : 'none');
@@ -409,41 +408,6 @@ function createContainerObserver(renderer) {
 	}
 }
 
-async function* fetchChatActionsAsyncIterable(json) {
-	const url = new URL('/youtubei/v1/live_chat/get_live_chat_replay', location.origin);
-	url.searchParams.set('prettyPrint', 'false');
-	let contents = json?.continuationContents?.liveChatContinuation;
-	if (!contents) return;
-	while (contents?.actions) {
-		let continuation;
-		for (const c of contents?.continuations) {
-			if ('liveChatReplayContinuationData' in c) {
-				continuation = c.liveChatReplayContinuationData?.continuation;
-			}
-		}
-		if (!continuation) return;
-		yield /** @type { LiveChat.ReplayChatItemAction[] } */ (contents.actions);
-		const response = await fetch(url, {
-			method: 'post',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({
-				context: {
-					client: {
-						clientName: 'WEB',
-						clientVersion: '2.20240731.40.00',
-						mainAppWebInfo: { graftUrl: location.href },
-					},
-				},
-				continuation,
-			}),
-		});
-		const json = await response.json();
-		contents = json?.continuationContents?.liveChatContinuation;
-	}
-}
-
 function startLiveChatFlusher() {
 	const video = g.app?.querySelector('video');
 	const videoContainer = video?.parentElement;
@@ -462,39 +426,48 @@ function startLiveChatFlusher() {
 			clearInterval(timer);
 
 			const isReplay = location.pathname.endsWith('_replay');
-			let syncing = true;
-			/** @type { LiveChat.ReplayChatItemAction["replayChatItemAction"][] } */
-			const queue = [];
-			/** @type { LiveChat.ReplayChatItemAction["replayChatItemAction"][] } */
-			const dequeue = [];
-			if (isReplay) {
-				const script = Array.from(document.getElementsByTagName('script'), script => script.text).filter(text => text.includes('ytInitialData'))[0];
-				if (script) {
-					const jsonText = script.substring(script.indexOf('{'), script.lastIndexOf('}') + 1);
-					const json = JSON.parse(jsonText);
-					const initialContents = json?.continuationContents?.liveChatContinuation;
-					if (initialContents) {
-						let continuation;
-						for (const c of initialContents?.continuations || []) {
-							if ('liveChatReplayContinuationData' in c) {
-								continuation = c.liveChatReplayContinuationData?.continuation;
-							}
+			if (isReplay && g.storage.others.time_shift !== 0) {
+				skipRenderingOnce();
+
+				video.addEventListener('seeked', () => {
+					// /** @type { Record<string, LiveChat.ReplayChatItemAction["replayChatItemAction"][]> } */
+					// const { queue, dequeue } = top?.['ytlcf'];
+					const currentOffset = (video.currentTime - g.storage.others.time_shift) * 1000;
+					const isForward = Number.parseInt(top?.['ytlcf']?.dequeue?.at(-1)?.videoOffsetTimeMsec || '0') < currentOffset;
+					if (isForward) {
+						const index = top?.['ytlcf']?.queue?.findIndex(action => Number.parseInt(action.videoOffsetTimeMsec) >= currentOffset);
+						if (index > 0) {
+							const stack = top?.['ytlcf'].queue.splice(0, index);
+							top?.['ytlcf']?.dequeue?.push(...stack);
 						}
-						const initialActions = initialContents?.actions;
-						if (continuation && initialActions) {
-							queue.push(...initialActions);
-							syncing = false;
-							const generator = fetchChatActionsAsyncIterable(json);
-							setTimeout(async () => {
-								for await (const actions of generator) {
-									queue.push(...actions.map(action => action.replayChatItemAction));
-								}
-							});
+					} else {
+						const index = top?.['ytlcf'].dequeue?.findIndex(action => Number.parseInt(action.videoOffsetTimeMsec) >= currentOffset);
+						if (index >= 0) {
+							const stack = top?.['ytlcf'].dequeue?.splice(index);
+							top?.['ytlcf']?.queue?.unshift(...stack);
 						}
 					}
-				}
-			}
-			if (syncing) {
+				}, { passive: true });
+
+				video.addEventListener('timeupdate', () => {
+					const player = g.layer?.element.parentElement;
+					if (player) {
+						const isAdShowing = ['ad-showing', 'ad-interrupting'].map(c => player.classList.contains(c)).includes(true);
+						if (isAdShowing) return;
+					}
+					// /** @type { Record<string, LiveChat.ReplayChatItemAction["replayChatItemAction"][]> } */
+					// const { queue, dequeue } = top?.['ytlcf'];
+					const currentOffset = (video.currentTime - g.storage.others.time_shift) * 1000;
+					const index = top?.['ytlcf']?.queue?.findIndex(action => Number.parseInt(action.videoOffsetTimeMsec) > currentOffset);
+					if (index > 0) {
+						const targets = top?.['ytlcf']?.queue?.splice(0, index);
+						const detail = targets.flatMap(t => t.actions).slice(-20);
+						const ev = new CustomEvent('ytlcf-actions', { detail });
+						renderer.dispatchEvent(ev);
+						top?.['ytlcf']?.dequeue?.push(...targets);
+					}
+				}, { passive: true });
+			} else {
 				renderer.addEventListener('yt-action', e => {
 					switch (e.detail?.actionName) {
 						case 'yt-live-chat-actions': {
@@ -506,44 +479,6 @@ function startLiveChatFlusher() {
 						case 'yt-live-chat-reload-success':
 						case 'yt-live-chat-seek-success':
 							skipRenderingOnce();
-					}
-				}, { passive: true });
-			} else {
-				skipRenderingOnce();
-
-				video.addEventListener('seeked', () => {
-					const currentOffset = (video.currentTime - g.storage.others.time_shift) * 1000;
-					const isForward = Number.parseInt(dequeue.at(-1)?.videoOffsetTimeMsec || '0') < currentOffset;
-					if (isForward) {
-						// skipRenderingOnce(); // not working
-						const index = queue.findIndex(action => Number.parseInt(action.videoOffsetTimeMsec) >= currentOffset);
-						if (index > 0) {
-							const stack = queue.splice(0, index);
-							dequeue.push(...stack);
-						}
-					} else {
-						const index = dequeue.findIndex(action => Number.parseInt(action.videoOffsetTimeMsec) >= currentOffset);
-						if (index >= 0) {
-							const stack = dequeue.splice(index);
-							queue.unshift(...stack);
-						}
-					}
-				}, { passive: true });
-
-				video.addEventListener('timeupdate', () => {
-					const player = g.layer?.element.parentElement;
-					if (player) {
-						const isAdShowing = ['ad-showing', 'ad-interrupting'].map(c => player.classList.contains(c)).includes(true);
-						if (isAdShowing) return;
-					}
-					const currentOffset = (video.currentTime - g.storage.others.time_shift) * 1000;
-					const index = queue.findIndex(action => Number.parseInt(action.videoOffsetTimeMsec) > currentOffset);
-					if (index > 0) {
-						const targets = queue.splice(0, index);
-						const detail = targets.flatMap(t => t.actions);
-						const ev = new CustomEvent('ytlcf-actions', { detail });
-						renderer.dispatchEvent(ev);
-						dequeue.push(...targets);
 					}
 				}, { passive: true });
 			}
@@ -954,7 +889,7 @@ async function parseChatItem(item) {
 				elem.className = 'supersticker';
 				const header = document.createElement('div');
 				header.className = 'header';
-				header.style.backgroundColor = `background-color:rgba(${getColorRGB(renderer.backgroundColor).join()},var(--yt-lcf-background-opacity))`;
+				header.style.backgroundColor = `rgba(${getColorRGB(renderer.backgroundColor).join()},var(--yt-lcf-background-opacity))`;
 				const amount = document.createElement('span');
 				amount.part = amount.className = 'amount';
 				amount.append(getRawText(renderer.purchaseAmountText));

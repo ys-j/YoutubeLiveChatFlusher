@@ -26,6 +26,9 @@ interface MouseEvent {
 	originalTarget?: EventTarget;
 	explicitOriginalTarget?: EventTarget;
 }
+interface WindowEventMap {
+	[K: string]: CustomEvent;
+}
 interface DocumentEventMap {
 	[K: string]: CustomEvent;
 }
