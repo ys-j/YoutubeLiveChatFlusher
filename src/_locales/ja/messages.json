@@ -321,7 +321,7 @@
 		"message": "ラベル"
 	},
 	"Channel_ID": {
-		"message": "チャンネルID<br>(各行ごと)"
+		"message": "チャンネルID\n(各行ごと)"
 	},
 	"displayStyle": {
 		"message": "表示スタイル"
