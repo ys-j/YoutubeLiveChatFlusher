@@ -120,6 +120,10 @@ export const g = {
 export function runApp(player) {
 	g.app = player;
 
+
+	const videoContainer = g.app?.querySelector('#ytd-player video')?.parentElement;
+	if (!videoContainer) return Promise.reject();
+
 	// remove old panel and generate new panel
 	// g.app.querySelector('#yt-lcf-panel')?.remove();
 	const panel = new LiveChatPanel();
@@ -160,11 +164,9 @@ export function runApp(player) {
 		});
 	})
 	.then(() => {
-		const video = g.app?.querySelector('video');
-		const videoContainer = video?.parentElement;
 		g.layer = getLayer();
 		if (g.storage.others.disabled) g.layer.hide();
-		videoContainer?.after(g.layer.element);
+		videoContainer.after(g.layer.element);
 		self.addEventListener('ytlcf-actions', e => {
 			doChatActions(e.detail);
 		}, { passive: true });

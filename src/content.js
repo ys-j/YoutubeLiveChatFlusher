@@ -46,7 +46,7 @@ document.addEventListener('yt-action', e => {
 function initialize(e) {
 	const scriptsPaths = ['./modules/livechat.js', './modules/chat_actions.js', './modules/pip.js'];
 	const importings = scriptsPaths.map(path => import(browser.runtime.getURL(path)));
-	Promise.all(importings).then(modules => {
+	Promise.all(importings).then(async modules => {
 		/** @type {import('./modules/livechat.js')} */
 		const { g, runApp, skipRenderingOnce } = modules[0];
 		/** @type {import('./modules/chat_actions.js')} */
@@ -55,16 +55,22 @@ function initialize(e) {
 		const { initPipMenu } = modules[2];
 	
 		// run app
-		const player = root.document.getElementById('ytd-player');
-		if (player) {
-			runApp(player).then(initPipMenu).then(() => {
-				onYtNavigateFinish(e);
-				const iframe = /** @type {HTMLIFrameElement?} */ (document.getElementById('chatframe'));
-				const pathname = iframe?.contentWindow?.location?.pathname;
-				if (pathname === '/live_chat') {
-					onLoadIFrame.bind(iframe)();
-				}
-			}).catch(console.warn);
+		let succeeded = true;
+		const player = /** @type {HTMLElement} */ (e.target);
+		await runApp(player)
+		.then(initPipMenu)
+		.then(() => {
+			onYtNavigateFinish(e);
+			const iframe = /** @type {HTMLIFrameElement?} */ (document.getElementById('chatframe'));
+			const pathname = iframe?.contentWindow?.location?.pathname;
+			if (pathname === '/live_chat') {
+				onLoadIFrame.bind(iframe)();
+			}
+		}).catch(() => {
+			succeeded = false;
+		});
+		if (succeeded) {
+			skipRenderingOnce();
 		} else {
 			self.addEventListener('yt-navigate-finish', initialize, { passive: true, once: true });
 			return;
@@ -129,6 +135,12 @@ function initialize(e) {
 		 */
 		function onYtNavigateFinish(e) {
 			if (e.detail?.pageType !== 'watch') return;
+			
+			const video = g.app?.querySelector('#ytd-player video');
+			const videoContainer = video?.parentElement;
+			if (videoContainer && g.layer && !videoContainer.parentElement?.contains(g.layer.element)) {
+				videoContainer.after(g.layer.element);
+			}
 	
 			const mainResponse = e.detail?.response;
 			const response = (mainResponse && 'contents' in mainResponse) ? mainResponse : mainResponse?.response;
@@ -160,8 +172,7 @@ function initialize(e) {
 			} else {
 				iframe?.addEventListener('load', onLoadIFrame, { passive: true });
 			}
-	
-			const video = g.app?.querySelector('video');
+
 			if (video) {
 				video.removeEventListener('seeking', onSeeking);
 				video.removeEventListener('timeupdate', onTimeUpdate);
