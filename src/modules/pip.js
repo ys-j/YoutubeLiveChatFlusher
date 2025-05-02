@@ -1,110 +1,16 @@
 /// <reference path="../../browser.d.ts" />
-/// <reference path="../../extends.d.ts" />
-/// <reference path="../content.js" />
-
-export async function checkAutoStart() {
-	const storage = await browser.storage.local.get('others');
-	const autostart = storage?.others?.autostart;
-	if (autostart) {
-		const buttonContainer = document.getElementById('show-hide-button');
-		if (buttonContainer && !buttonContainer.hidden) {
-			const button = buttonContainer.querySelector('button');
-			const isClose = button?.closest('#close-button');
-			if (!isClose) {
-				button?.click();
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
-/**
- * @param {string} initialContinuation 
- */
-async function* fetchChatActionsAsyncIterable(initialContinuation) {
-	const url = new URL('/youtubei/v1/live_chat/get_live_chat_replay', location.origin);
-	url.searchParams.set('prettyPrint', 'false');
-
-	/** @type { (continuation: string) => Promise } */
-	const getContentsAsync = async continuation => {
-		const json = await fetch(url, {
-			method: 'post',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({
-				context: {
-					client: {
-						clientName: 'WEB',
-						clientVersion: '2.20240731.40.00',
-						mainAppWebInfo: { graftUrl: location.href },
-					},
-				},
-				continuation,
-			}),
-		}).then(res => res.json());
-		return json?.continuationContents?.liveChatContinuation;
-	};
-	/** @type { (contents: any) => string? } */
-	const getContinuation = contents => {
-		for (const c of contents?.continuations || []) {
-			if ('liveChatReplayContinuationData' in c) {
-				return c.liveChatReplayContinuationData?.continuation;
-			}
-		}
-		return null;
-	}
-	/** @type {string?} */
-	let continuation = initialContinuation;
-	let contents = { actions: [] };
-	while (continuation && contents.actions) {
-		contents = await getContentsAsync(continuation);
-		yield /** @type { LiveChat.ReplayChatItemAction[] } */ (contents.actions || []);
-		continuation = getContinuation(contents);
-	}
-}
-
-/**
- * @param {*} [response] 
- */
-export async function fetchChatReplayActions(response) {
-	let json;
-	if (response) {
-		json = response
-	} else {
-		const script = Array.from(document.getElementsByTagName('script'), element => element.textContent).filter(text => text?.includes('ytInitialData'))[0];
-		if (script) {
-			const jsonText = script.substring(script.indexOf('{'), script.lastIndexOf('}') + 1);
-			json = JSON.parse(jsonText);
-		}
-	}
-	if (json) {
-		const liveChatRenderer = json?.contents?.twoColumnWatchNextResults?.conversationBar?.liveChatRenderer;
-		const continuation = liveChatRenderer?.continuations?.[0]?.reloadContinuationData?.continuation;
-		if (liveChatRenderer?.isReplay && continuation) {
-			delete self['ytlcf'];
-			self['ytlcf'] = { queue: [], dequeue: [] };
-			const queue = self['ytlcf'].queue;
-			const generator = fetchChatActionsAsyncIterable(continuation);
-			for await (const actions of generator) {
-				queue.push(...actions.map(action => action.replayChatItemAction));
-			}
-		}
-	}
-}
 
 export function initPipMenu() {
 	/** @type {HTMLElement?} */
-	const pipmenu = document.getElementById(tags.popuppip);
+	const pipmenuTop = document.getElementById('yt-lcf-pp');
 	if ('documentPictureInPicture' in window) {
-		const menu = pipmenu || self.documentPictureInPicture?.window?.document.getElementById(tags.popuppip);
-		menu?.addEventListener('click',  async () => {
+		const pipmenu = pipmenuTop || self.documentPictureInPicture?.window?.document.getElementById('yt-lcf-pp');
+		pipmenu?.addEventListener('click',  async () => {
 			const pipWindow = self.documentPictureInPicture?.window;
 			if (pipWindow) {
 				pipWindow.close();
 			} else {
-				const layer = top?.document.querySelector('#' + tags.layer);
+				const layer = document.getElementById('yt-lcf-layer');
 				if (layer) {
 					const player = layer.closest('#player-container');
 					if (player) await openPip(player);
@@ -112,7 +18,7 @@ export function initPipMenu() {
 			}
 		}, { passive: true });
 	} else {
-		if (pipmenu) pipmenu.hidden = true;
+		if (pipmenuTop) pipmenuTop.hidden = true;
 	}
 }
 
@@ -144,7 +50,7 @@ export async function openPip(element) {
 	pipLink.type = 'text/css';
 	pipLink.href = browser.runtime.getURL('../styles/content.css');
 	const pipStyle = document.createElement('style');
-	pipStyle.textContent = `:root,body,body>*{height:100%;overflow:hidden}.ytp-miniplayer-button,.ytp-size-button,.ytp-fullscreen-button{display:none!important}#${tags.popuppip}{display:none!important}`;
+	pipStyle.textContent = `:root,body,body>*{height:100%;overflow:hidden}.ytp-miniplayer-button,.ytp-size-button,.ytp-fullscreen-button{display:none!important}#yt-lcf-pp{display:none!important}`;
 	
 	pipWindow.document.head.append(pipMetaCharset, pipTitle, ...Array.from(element.ownerDocument.styleSheets, sheet => {
 		if (sheet.href) {
@@ -162,8 +68,8 @@ export async function openPip(element) {
 	}), pipLink, pipStyle);
 
 	const pipMarker = document.createElement('span');
-	pipMarker.id = tags.pipmarker;
-	pipMarker.textContent = $msg('pip_marker');
+	pipMarker.id = 'yt-lcf-pip-marker';
+	pipMarker.textContent = browser.i18n.getMessage('pip_marker');
 	element.before(pipMarker);
 	pipWindow.document.body.appendChild(element);
 	pipWindow.document.body.dataset.browser = document.body.dataset.browser;

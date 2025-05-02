@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "__MSG_manifestName__",
-	"version": "0.9.2",
+	"version": "0.10.0",
 	"author": "_y_s",
 	"browser_specific_settings": {
 		"gecko": {
@@ -14,7 +14,6 @@
 	},
 	"content_scripts": [
 		{
-			"all_frames": true,
 			"css": ["styles/content.css"],
 			"js": ["content.js"],
 			"matches": ["*://www.youtube.com/*"],

@@ -61,8 +61,8 @@ declare namespace browser {
 		function setTitle(details: { title: string | null, tabId?: integer, windowId?: integer }): Promise<void>
 		function getTitle(details: { tabId?: integer, windowId?: integer }): Promise<string>
 		function setIcon(details: {
-			imageData?: ImageDataType | { [key: number]: ImageDataType }
-			path?: string | { [key: number]: string }
+			imageData?: ImageDataType | Record<number, ImageDataType>
+			path?: string | Record<number, string>
 			tabId?: integer
 			windowId?: integer
 		}): Promise<void>
@@ -699,7 +699,7 @@ declare namespace browser {
 			contexts?: ContextType[]
 			documentUrlPatterns?: string[]
 			enabled?: boolean
-			icons?: { [key: string]: string }
+			icons?: Record<string, string>
 			id?: string
 			onclick?: (info: OnClickData, tab: tabs.Tab) => void
 			parentId?: integer | string
@@ -720,7 +720,7 @@ declare namespace browser {
 			contexts?: ContextType[]
 			documentUrlPatterns?: string[]
 			enabled?: boolean
-			icons?: { [key: string]: string }
+			icons?: Record<string, string>
 			id?: string
 			onclick?: (info: OnClickData, tab: tabs.Tab) => void
 			parentId?: integer | string
@@ -755,7 +755,7 @@ declare namespace browser {
 		function clear(id: string): Promise<boolean>
 		function create(id: string, options: NotificationOptions): Promise<string>
 		function create(options: NotificationOptions): Promise<string>
-		function getAll(): Promise<{ [key: string]: NotificationOptions }>
+		function getAll(): Promise<Record<string, NotificationOptions>>
 		// function update(id: string, options: NotificationOptions): Promise<boolean>
 		const onButtonClicked: events.Event<[notificationId: string, buttonIndex: integer]>
 		const onClicked: events.Event<[notificationId: string]>
@@ -782,8 +782,8 @@ declare namespace browser {
 		function setTitle(details: { tabId: integer, title: string | null }): Promise<void>
 		function getTitle(details: { tabId: integer }): Promise<string>
 		function setIcon(details: {
-			imageData?: ImageDataType | { [key: number]: ImageData }
-			path?: string | { [key: number]: string }
+			imageData?: ImageDataType | Record<number, ImageData>
+			path?: string | Record<number, string>
 			tabId: integer
 		}): Promise<void>
 		function setPopup(details: { tabId: integer, popup: string | null }): Promise<void>
@@ -907,7 +907,7 @@ declare namespace browser {
 		const id: string
 		function getBackgroundPage(): Promise<Window>
 		function openOptionsPage(): Promise<void>
-		function getManifest(): { [key: string]: any }
+		function getManifest(): Record<string, any>
 		function getURL(path: string): string
 		function setUninstallURL(url: string): Promise<void>
 		function reload(): void
@@ -971,8 +971,8 @@ declare namespace browser {
 		function isOpen(details: { windowId?: integer }): Promise<boolean>
 		function open(): Promise<void>
 		function setIcon(details: {
-			imageData?: ImageDataType | { [key: number]: string }[]
-			path?: string | { [key: number]: string }[]
+			imageData?: ImageDataType | Record<number, string>[]
+			path?: string | Record<number, string>[]
 			tabId?: integer
 			windowId?: integer
 		}): Promise<void>
@@ -982,11 +982,11 @@ declare namespace browser {
 	}
 	namespace storage {
 		type StorageArea = {
-			get(keys?: string | string[] | null): Promise<{ [key: string]: any }>
-			get(defaultValues: { [key: string]: any }): Promise<{ [key: string]: any }>
+			get(keys?: string | string[] | null): Promise<Record<string, any>>
+			get(defaultValues: Record<string, any>): Promise<Record<string, any>>
 			getBytesInUse(keys?: string | string[] | null): Promise<integer>
 			set(keys: object): Promise<void>
-			remove(keys?: string | string[] | null): Promise<{ [key: string]: any }>
+			remove(keys?: string | string[] | null): Promise<Record<string, any>>
 			clear(): Promise<void>
 		}
 		type StorageChange = {
@@ -996,7 +996,7 @@ declare namespace browser {
 		const sync: StorageArea
 		const local: StorageArea
 		const managed: Pick<StorageArea, "get">
-		const onChanged: events.Event<[changes: { [key: string]: StorageChange }, areaName: "sync" | "local" | "managed"]>
+		const onChanged: events.Event<[changes: Record<string, StorageChange>, areaName: "sync" | "local" | "managed"]>
 	}
 	namespace tabs {
 		type MutedInfoReason = "capture" | "extension" | "user"
@@ -1361,7 +1361,7 @@ declare namespace browser {
 			proxyInfo: { host: string, port: integer, type: "http" | "https" | "socks" | "socks4" | "direct" | "unknown", username: string, proxyDNS: boolean, failoverTimeout: number }
 			realm: string | undefined
 			redirectUrl: string
-			requestBody: { error?: string, formData?: { [key: string]: any }, raw?: UploadData[] } | undefined
+			requestBody: { error?: string, formData?: Record<string, any>, raw?: UploadData[] } | undefined
 			requestHeaders: HttpHeaders | undefined
 			requestId: string
 			scheme: "basic" | "digest"

@@ -2,7 +2,6 @@
 /// <reference path="../../browser.d.ts" />
 /// <reference path="../../extends.d.ts" />
 /// <reference path="../../ytlivechatrenderer.d.ts" />
-/// <reference path="../content.js" />
 
 const manifest = browser.runtime.getManifest();
 const parser = new DOMParser();
@@ -91,10 +90,6 @@ export const g = {
 	},
 	channel: '',
 	index: {
-		/** @type { { fixed: 0, max: 1, min: 2 } } */
-		lines: { fixed: 0, max: 1, min: 2 },
-		/** @type { {  none: 0, normal: 1, auto: 2} } */
-		wrap: { none: 0, normal: 1, auto: 2 },
 		/** @type { { all: 0, first: 1, merge: 2, last_merge: 3 } } */
 		simultaneous: { all: 0, first: 1, merge: 2, last_merge: 3 },
 		/** @type { { none: 0, all: 1, label: 2, shortcut: 3 } } */
@@ -104,7 +99,7 @@ export const g = {
 	},
 	/** @type {LiveChatLayer?} */
 	layer: null,
-	/** @type {import('./livechat.js').LiveChatPanel?} */
+	/** @type {LiveChatPanel?} */
 	panel: null,
 	skip: false,
 	storage: defaultSettings,
@@ -118,19 +113,22 @@ export const g = {
 	},
 };
 
-/** @param {HTMLElement | null | undefined} app  */
-export async function runApp(app) {
-	if (app) g.app = app;
-	else return false;
-	createContainerObserver();
-	
-	const current = g.app?.querySelector('#' + tags.panel);
-	if (current) current.remove();
+/**
+ * Start app.
+ * @param {HTMLElement} player 
+ */
+export function runApp(player) {
+	g.app = player;
+
+	// remove old panel and generate new panel
+	// g.app.querySelector('#yt-lcf-panel')?.remove();
 	const panel = new LiveChatPanel();
 	g.panel = panel;
 
+	// get storage data
 	const storageList = ['styles', 'others', 'parts', 'cssTexts', 'hotkeys', 'mutedWords', 'translation'];
-	await browser.storage.local.get(storageList).then(storage => {
+	return browser.storage.local.get(storageList)
+	.then(storage => {
 		for (const type of storageList) {
 			if (storage && storage[type]) {
 				for (const [key, value] of Object.entries(storage[type])){
@@ -138,363 +136,45 @@ export async function runApp(app) {
 				}
 			}
 		}
-	});
-	await panel.createForm().then(form => {
+	})
+	.then(() => panel.createForm())
+	.then(form => {
+		// bind i18n labels
 		/** @type {NodeListOf<HTMLElement>} */
 		const i18nElems = form.querySelectorAll('[data-i18n]');
 		i18nElems.forEach(e => {
 			const key = e.dataset.i18n;
-			if (key) e.textContent = $msg(key);
+			if (key) e.textContent = browser.i18n.getMessage(key);
 		});
 		/** @type {NodeListOf<HTMLElement>} */
 		const i18nTitleElems = form.querySelectorAll('[data-i18n-title]');
 		i18nTitleElems.forEach(e => {
 			const key = e.dataset.i18nTitle;
-			if (key) e.title = $msg(key);
+			if (key) e.title = browser.i18n.getMessage(key);
 		});
 		/** @type {NodeListOf<HTMLInputElement | HTMLTextAreaElement>} */
 		const i18nPlaceholderElems = form.querySelectorAll('[data-i18n-placeholder]');
 		i18nPlaceholderElems.forEach(e => {
 			const key = e.dataset.i18nPlaceholder;
-			if (key) e.placeholder = $msg(key);
+			if (key) e.placeholder = browser.i18n.getMessage(key);
 		});
-	});
-	startLiveChatFlusher();
-	updateMutedWordsList();
-
-	if (g.layer) {
-		const le = g.layer.element;
-		le.after(panel.element);
-		
-		const form = panel.form;
-		const ctrls = form.elements;
-		const marker = form.querySelector('#language_exception_marker');
-		if (ctrls.translation && marker) {
-			const options = navigator.languages.map((lang, i) => new Option(lang, `${i + 1}`));
-			/** @type {HTMLSelectElement} */ (ctrls.translation).append(...options);
-			const checkboxes = navigator.languages.map((lang, i) => {
-				const label = document.createElement('label');
-				const input = document.createElement('input');
-				input.type = 'checkbox';
-				input.name = 'except_lang';
-				input.value = i.toString();
-				const span = document.createElement('span');
-				span.textContent = lang;
-				label.append(input, span);
-				return label;
-			});
-			marker.after(...checkboxes);
-		}
-
-		const selects = form.querySelectorAll('select');
-		for (const select of selects) {
-			if (select.name in g.storage.others) {
-				/** @type {number} */
-				const val = g.storage.others[select.name];
-				select.selectedIndex = Math.abs(val);
-				switch (select.name) {
-					case 'emoji': {
-						le.dataset.emoji = Object.keys(g.index.emoji)[val];
-						break;
-					}
-					case 'wrap': {
-						le.style.setProperty('--yt-lcf-message-hyphens', g.array.hyphens[val]);
-						le.style.setProperty('--yt-lcf-message-word-break', g.array.wordBreak[val]);
-						le.style.setProperty('--yt-lcf-message-white-space', g.array.whiteSpace[val]);
-						le.style.setProperty('--yt-lcf-max-width', g.storage.styles.max_width);
-						break;
-					}
-				}
-			} else if (select.name === 'muted_words_mode') {
-				select.selectedIndex = g.storage.mutedWords.mode;
-			}
-		}
-		const checkboxes = /** @type {NodeListOf<HTMLInputElement>} */ (form.querySelectorAll('input[type="checkbox"]'));
-		for (const cb of checkboxes) {
-			const match = cb.name.match(/^(.+)_display$/);
-			if (match) {
-				const [_, type] = match;
-				if (type in g.storage.parts) {
-					cb.checked = g.storage.parts[type][cb.value];
-					switch (cb.value) {
-						case 'color': {
-							const saved = g.storage.parts[type].color;
-							if (saved) le.style.setProperty(`--yt-lcf-${type.replace(/_/g, '-')}-color`, saved);
-							else le.style.removeProperty(`--yt-lcf-${type.replace(/_/g, '-')}-color`);
-							const picker = /** @type {HTMLInputElement?} */ (cb.parentElement?.nextElementSibling);
-							if (picker) picker.value = saved || formatHexColor(getComputedStyle(le).getPropertyValue('--yt-lcf-' + picker.name.replace(/_/g, '-')));
-							break;
-						}
-						case 'name': {
-							const div = /** @type {HTMLDivElement} */ (cb.closest('div'));
-							if (cb.checked) div.classList.add('outlined');
-							cb.addEventListener('change', () => {
-								const method = cb.checked ? 'add' : 'remove';
-								div.classList[method]('outlined');
-								le.classList[method](`has-${type}-name`);
-							}, { passive: true });
-						}
-						default: {
-							le.style.setProperty(`--yt-lcf-${type.replace(/_/g, '-')}-display-${cb.value}`, cb.checked ? 'inline' : 'none');
-						}
-					}
-				}
-			} else {
-				switch (cb.name) {
-					case 'speed': {
-						cb.checked = g.storage.others.px_per_sec > 0;
-						/** @type {HTMLInputElement} */ (ctrls.animation_duration).disabled = cb.checked;
-						/** @type {HTMLInputElement} */ (ctrls.px_per_sec).disabled = !cb.checked;
-						break;
-					}
-					case 'lines': {
-						cb.checked = g.storage.others.number_of_lines > 0;
-						/** @type {HTMLInputElement} */ (ctrls.font_size).disabled = cb.checked;
-						/** @type {HTMLInputElement} */ (ctrls.number_of_lines).disabled = !cb.checked;
-						/** @type {HTMLInputElement} */ (ctrls.type_of_lines).disabled = !cb.checked;
-						break;
-					}
-					case 'unlimited': {
-						/** @type {HTMLInputElement} */ (ctrls.limit_number).disabled = cb.checked = g.storage.others.limit === 0;
-						g.layer.limit = g.storage.others.limit;
-						break;
-					}
-					case 'container_unlimited': {
-						/** @type {HTMLInputElement} */ (ctrls.container_limit_number).disabled = cb.checked = g.storage.others.container_limit === 0;
-						break;
-					}
-					case 'overlapping':
-					case 'direction': {
-						const val = Number.parseInt(cb.value);
-						cb.checked = g.storage.others[cb.name] & 1 << val ? true : false;
-						break;
-					}
-					case 'prefix_lang': {
-						cb.checked = g.storage.others.translation < 0;
-						cb.disabled = /** @type {HTMLSelectElement} */ (ctrls.translation).selectedIndex === 0;
-						le.classList[cb.checked ? 'add' : 'remove'](cb.name);
-						break;
-					}
-					case 'except_lang': {
-						const val = Number.parseInt(cb.value);
-						cb.checked = g.storage.others.except_lang & 1 << val ? true : false;
-						const abs = Math.abs(g.storage.others.translation);
-						cb.disabled = abs === 0 || abs === val + 1;
-						break;
-					}
-					case 'muted_words_regexp': {
-						cb.checked = g.storage.mutedWords.regexp;
-						break;
-					}
-				}
-			}
-		}
-
-		for (const [prop, value] of Object.entries(g.storage.styles)) {
-			le.style.setProperty('--yt-lcf-' + prop.replace(/_/g, '-'), value);
-			/** @type {HTMLInputElement?} */
-			const input = form.querySelector(`input.styles[name="${prop}"]`);
-			if (input)
-			if (input.type === 'number') input.valueAsNumber = Number.parseFloat(value);
-			else input.value = value;
-		}
-		// number
-		/** @type {HTMLInputElement} */ (ctrls.px_per_sec).valueAsNumber = /** @type {HTMLInputElement} */ (ctrls.speed).checked
-			? g.storage.others.px_per_sec
-			: Math.round(le.getBoundingClientRect().width / /** @type {HTMLInputElement} */ (ctrls.animation_duration).valueAsNumber);
-		/** @type {HTMLInputElement} */ (ctrls.limit_number).valueAsNumber = g.storage.others.limit || 100;
-		/** @type {HTMLInputElement} */ (ctrls.container_limit_number).valueAsNumber = g.storage.others.container_limit || 20;
-		/** @type {HTMLInputElement} */ (ctrls.time_shift).valueAsNumber = g.storage.others.time_shift || 0;
-		
-		const lines = g.storage.others.number_of_lines;
-		if (lines) {
-			const sizeByLines = Math.floor(le.getBoundingClientRect().height * .8 / lines);
-			
-			const inputFs = /** @type {HTMLInputElement} */ (ctrls.font_size);
-			const inputLn = /** @type {HTMLInputElement} */ (ctrls.number_of_lines);
-			if (g.storage.others.type_of_lines > 0) {
-				le.style.setProperty('--yt-lcf-font-size', `max(${g.storage.styles.font_size}, ${sizeByLines}px)`);
-				inputFs.setAttribute('value', `${sizeByLines}`);
-				inputLn.setAttribute('value', `${lines}`);
-			} else {
-				le.style.setProperty('--yt-lcf-font-size', `${sizeByLines}px`);
-				inputLn.setAttribute('value', `${defaultSettings.others.number_of_lines}`);
-			}
-		}
-
-		/** @type { [ string, number, number ][] } */
-		const colormap = [
-			['--yt-live-chat-normal-message-background-color', 0xffc0c0c0, -1],
-			['--yt-live-chat-verified-message-background-color', 0xffc0c0c0, -1],
-			['--yt-live-chat-member-message-background-color', 0xffc0c0c0, -1],
-			['--yt-live-chat-moderator-message-background-color', 0xffc0c0c0, -1],
-			['--yt-live-chat-owner-message-background-color', 0xffc0c0c0, -1],
-			['--yt-live-chat-you-message-background-color', 0xffc0c0c0, -1],
-			['--yt-live-chat-paid-sticker-background-color', 0xffffb300, -1],
-			['--yt-live-chat-author-chip-owner-background-color', 0xffffd600, -1],
-		];
-		for (const [name, rgb, alpha] of colormap) {
-			le.style.setProperty(name, `rgba(${getColorRGB(rgb).join()},${alpha < 0 ? 'var(--yt-lcf-background-opacity)' : alpha})`);
-		}
-
-		const customCss = le.shadowRoot?.querySelector('#customcss');
-		const userDefinedCss = le.shadowRoot?.querySelector('#userdefinedcss');
-		for (const [selector, css] of Object.entries(g.storage.cssTexts)) {
-			if (selector) {
-				if (customCss) customCss.textContent += `:host>${selector}{${css}}`;
-				const name = selector.substring(1) + '_css';
-				const input = /** @type {HTMLInputElement?} */ (ctrls[name]);
-				if (input) input.value = css;
-			} else {
-				if (userDefinedCss) userDefinedCss.textContent = css;
-				const textarea = /** @type {HTMLTextAreaElement?} */ (ctrls.user_defined_css);
-				if (textarea) textarea.value = css;
-			}
-		}
-		const dir = g.storage.others.direction;
-		if (dir) {
-			le.classList[dir & 1 ? 'add': 'remove']('direction-reversed-y');
-			le.classList[dir & 2 ? 'add': 'remove']('direction-reversed-x');
-		}
-
-		/** @type {HTMLInputElement} */ (ctrls.muted_words_replacement).value = g.storage.mutedWords.replacement;
-		/** @type {HTMLTextAreaElement} */ (ctrls.muted_words_list).value = g.storage.mutedWords.plainList.join('\n');
-		/** @type {HTMLInputElement} */ (ctrls.translation_url).value = g.storage.translation.url;
-	}
-
-	await addSettingMenu();
-	top?.document.body.addEventListener('keydown', e => {
-		if (!e.repeat) switch (e.key) {
-			case g.storage.hotkeys.layer: {
-				const checkbox = /** @type {HTMLElement?} */ (g.app?.querySelector('#' + tags.checkbox));
-				checkbox?.click();
-				break;
-			}
-			case g.storage.hotkeys.panel: {
-				const popupmenu = /** @type {HTMLElement?} */ (g.app?.querySelector('#' + tags.popupmenu));
-				popupmenu?.click();
-				break;
-			}
-		}
-	}, { passive: true });
-	if (g.layer) g.layer.element.style.cssText += '--yt-lcf-layer-css: below;' + g.storage.styles.layer_css;
-	return true;
-}
-
-/** @param {Element} [renderer] */
-function createContainerObserver(renderer) {
-	const io = new MutationObserver(records => {
-		const children = records[0].target.childNodes;
-		const limit = g.storage.others.container_limit;
-		if (limit) while (children.length > limit) children[0].remove();
-	});
-	if (renderer) {
-		const ro = new MutationObserver(records => {
-			ro.disconnect();
-			for (const r of records) {
-				const t = /** @type {Element} */ (r.target);
-				if (r.oldValue === '') {
-					const items = t.querySelector('yt-live-chat-item-list-renderer #items');
-					if (items) io.observe(items, { childList: true });
-				} else {
-					io.disconnect();
-				}
-			}
-		});
-		ro.observe(renderer, { attributes: true, attributeOldValue: true, attributeFilter: ['loading'] });
-	} else {
-		const items = document.querySelector('yt-live-chat-item-list-renderer #items');
-		if (items) io.observe(items, { childList: true });
-	}
-}
-
-function startLiveChatFlusher() {
-	const video = g.app?.querySelector('video');
-	const videoContainer = video?.parentElement;
-	
-	if (video && videoContainer) {
-		const current = g.app?.querySelector('#' + tags.layer);
-		if (current) current.remove();
+	})
+	.then(() => {
+		const video = g.app?.querySelector('video');
+		const videoContainer = video?.parentElement;
 		g.layer = getLayer();
 		if (g.storage.others.disabled) g.layer.hide();
-		videoContainer.insertAdjacentElement('afterend', g.layer.element);
-		
-		const timer = setInterval(() => {
-			/** @type {HTMLElement?} */ 
-			const renderer = document.querySelector(tags.chat);
-			if (!renderer) return;
-			clearInterval(timer);
-
-			const isReplay = location.pathname.endsWith('_replay');
-			if (isReplay && g.storage.others.time_shift !== 0) {
-				skipRenderingOnce();
-
-				video.addEventListener('seeked', () => {
-					// /** @type { Record<string, LiveChat.ReplayChatItemAction["replayChatItemAction"][]> } */
-					// const { queue, dequeue } = top?.['ytlcf'];
-					const currentOffset = (video.currentTime - g.storage.others.time_shift) * 1000;
-					const isForward = Number.parseInt(top?.['ytlcf']?.dequeue?.at(-1)?.videoOffsetTimeMsec || '0') < currentOffset;
-					if (isForward) {
-						const index = top?.['ytlcf']?.queue?.findIndex(action => Number.parseInt(action.videoOffsetTimeMsec) >= currentOffset);
-						if (index > 0) {
-							const stack = top?.['ytlcf'].queue.splice(0, index);
-							top?.['ytlcf']?.dequeue?.push(...stack);
-						}
-					} else {
-						const index = top?.['ytlcf'].dequeue?.findIndex(action => Number.parseInt(action.videoOffsetTimeMsec) >= currentOffset);
-						if (index >= 0) {
-							const stack = top?.['ytlcf'].dequeue?.splice(index);
-							top?.['ytlcf']?.queue?.unshift(...stack);
-						}
-					}
-				}, { passive: true });
-
-				video.addEventListener('timeupdate', () => {
-					const player = g.layer?.element.parentElement;
-					if (player) {
-						const isAdShowing = ['ad-showing', 'ad-interrupting'].map(c => player.classList.contains(c)).includes(true);
-						if (isAdShowing) return;
-					}
-					// /** @type { Record<string, LiveChat.ReplayChatItemAction["replayChatItemAction"][]> } */
-					// const { queue, dequeue } = top?.['ytlcf'];
-					const currentOffset = (video.currentTime - g.storage.others.time_shift) * 1000;
-					const index = top?.['ytlcf']?.queue?.findIndex(action => Number.parseInt(action.videoOffsetTimeMsec) > currentOffset);
-					if (index > 0) {
-						const targets = top?.['ytlcf']?.queue?.splice(0, index);
-						const detail = targets.flatMap(t => t.actions).slice(-20);
-						const ev = new CustomEvent('ytlcf-actions', { detail });
-						renderer.dispatchEvent(ev);
-						top?.['ytlcf']?.dequeue?.push(...targets);
-					}
-				}, { passive: true });
-			} else {
-				renderer.addEventListener('yt-action', e => {
-					switch (e.detail?.actionName) {
-						case 'yt-live-chat-actions': {
-							const detail = e.detail?.args?.[0];
-							const ev = new CustomEvent('ytlcf-actions', { detail });
-							renderer.dispatchEvent(ev);
-						}
-						break;
-						case 'yt-live-chat-reload-success':
-						case 'yt-live-chat-seek-success':
-							skipRenderingOnce();
-					}
-				}, { passive: true });
-			}
-			renderer.addEventListener('yt-load-reload-continuation', () => {
-				skipRenderingOnce();
-				createContainerObserver(renderer);
-			}, { passive: true });
-			renderer.addEventListener('ytlcf-actions', e => {
-				doChatActions(e.detail);
-			}, { passive: true });
-		}, 1000);
-	}
-	
-	fetch('/account_advanced').then(r => r.text()).then(t => {
-		const m = t.match(/"(UC[\w-]{22})"/);
-		if (m) g.channel = m[1] || '';
+		videoContainer?.after(g.layer.element);
+		self.addEventListener('ytlcf-actions', e => {
+			doChatActions(e.detail);
+		}, { passive: true });
+	})
+	.then(async () => {
+		// fetching your channel ID and set styles for you
+		const res = await fetch('/account_advanced');
+		const text = await res.text();
+		const matches = text.match(/"(UC[\w-]{22})"/);
+		g.channel = matches?.[1] || '';
 		if (g.channel) {
 			const style = g.layer?.element.shadowRoot?.querySelector('#yourcss');
 			if (style) {
@@ -502,13 +182,20 @@ function startLiveChatFlusher() {
 				style.textContent = `${you}{color:var(--yt-lcf-you-color)}:host(.has-you-name) ${you}.text{background-color:var(--yt-live-chat-you-message-background-color);border-radius:.5em;padding:0 .25em}${you}.text .photo{display:var(--yt-lcf-you-display-photo)}${you}.text .name{display:var(--yt-lcf-you-display-name)}${you}.text .message{display:var(--yt-lcf-you-display-message)}`;
 			}
 		}
-		return true;
-	}).catch(() => {
-		return false;
+	})
+	.then(updateMutedWordsList)
+	.then(setupPanel)
+	.then(addSettingMenu)
+	.then(() => {
+		if (g.layer) g.layer.element.style.cssText += '--yt-lcf-layer-css: below;' + g.storage.styles.layer_css;
+	})
+	.then(() => {
+		const ev = new CustomEvent('ytlcf-ready');
+		self.dispatchEvent(ev);
 	});
 }
 
-function getLayer() {
+export function getLayer() {
 	const layer = new LiveChatLayer();
 	const le = layer.element;
 	le.addEventListener('contextmenu', e => {
@@ -538,13 +225,216 @@ function getLayer() {
 	return layer;
 }
 
-function updateMutedWordsList() {
-	const { regexp, plainList } = g.storage.mutedWords;
-	g.list.mutedWords = regexp ? plainList.map(s => new RegExp(s, 'g')) : plainList.length > 0 ? [ new RegExp(plainList.map(escapeRegExp).join('|'), 'g') ] : [];
-	return g.list.mutedWords;
+
+export function setupPanel() {
+	const le = /** @type {LiveChatLayer} */ (g.layer).element;
+	le.after(/** @type {LiveChatPanel} */ (g.panel).element);
+	
+	const form = /** @type {LiveChatPanel} */ (g.panel).form;
+	const ctrls = form.elements;
+	const marker = form.querySelector('#language_exception_marker');
+	if (ctrls.translation && marker) {
+		const options = navigator.languages.map((lang, i) => new Option(lang, `${i + 1}`));
+		/** @type {HTMLSelectElement} */ (ctrls.translation).append(...options);
+		const checkboxes = navigator.languages.map((lang, i) => {
+			const label = document.createElement('label');
+			const input = document.createElement('input');
+			input.type = 'checkbox';
+			input.name = 'except_lang';
+			input.value = i.toString();
+			const span = document.createElement('span');
+			span.textContent = lang;
+			label.append(input, span);
+			return label;
+		});
+		marker.after(...checkboxes);
+	}
+
+	const selects = form.querySelectorAll('select');
+	for (const select of selects) {
+		if (select.name in g.storage.others) {
+			/** @type {number} */
+			const val = g.storage.others[select.name];
+			select.selectedIndex = Math.abs(val);
+			switch (select.name) {
+				case 'emoji': {
+					le.dataset.emoji = Object.keys(g.index.emoji)[val];
+					break;
+				}
+				case 'wrap': {
+					le.style.setProperty('--yt-lcf-message-hyphens', g.array.hyphens[val]);
+					le.style.setProperty('--yt-lcf-message-word-break', g.array.wordBreak[val]);
+					le.style.setProperty('--yt-lcf-message-white-space', g.array.whiteSpace[val]);
+					le.style.setProperty('--yt-lcf-max-width', g.storage.styles.max_width);
+					break;
+				}
+			}
+		} else if (select.name === 'muted_words_mode') {
+			select.selectedIndex = g.storage.mutedWords.mode;
+		}
+	}
+	const checkboxes = /** @type {NodeListOf<HTMLInputElement>} */ (form.querySelectorAll('input[type="checkbox"]'));
+	for (const cb of checkboxes) {
+		const match = cb.name.match(/^(.+)_display$/);
+		if (match) {
+			const [_, type] = match;
+			if (type in g.storage.parts) {
+				cb.checked = g.storage.parts[type][cb.value];
+				switch (cb.value) {
+					case 'color': {
+						const saved = g.storage.parts[type].color;
+						if (saved) le.style.setProperty(`--yt-lcf-${type.replace(/_/g, '-')}-color`, saved);
+						else le.style.removeProperty(`--yt-lcf-${type.replace(/_/g, '-')}-color`);
+						const picker = /** @type {HTMLInputElement?} */ (cb.parentElement?.nextElementSibling);
+						if (picker) picker.value = saved || formatHexColor(getComputedStyle(le).getPropertyValue('--yt-lcf-' + picker.name.replace(/_/g, '-')));
+						break;
+					}
+					case 'name': {
+						const div = /** @type {HTMLDivElement} */ (cb.closest('div'));
+						if (cb.checked) div.classList.add('outlined');
+						cb.addEventListener('change', () => {
+							const method = cb.checked ? 'add' : 'remove';
+							div.classList[method]('outlined');
+							le.classList[method](`has-${type}-name`);
+						}, { passive: true });
+					}
+					default: {
+						le.style.setProperty(`--yt-lcf-${type.replace(/_/g, '-')}-display-${cb.value}`, cb.checked ? 'inline' : 'none');
+					}
+				}
+			}
+		} else {
+			switch (cb.name) {
+				case 'speed': {
+					cb.checked = g.storage.others.px_per_sec > 0;
+					/** @type {HTMLInputElement} */ (ctrls.animation_duration).disabled = cb.checked;
+					/** @type {HTMLInputElement} */ (ctrls.px_per_sec).disabled = !cb.checked;
+					break;
+				}
+				case 'lines': {
+					cb.checked = g.storage.others.number_of_lines > 0;
+					/** @type {HTMLInputElement} */ (ctrls.font_size).disabled = cb.checked;
+					/** @type {HTMLInputElement} */ (ctrls.number_of_lines).disabled = !cb.checked;
+					/** @type {HTMLInputElement} */ (ctrls.type_of_lines).disabled = !cb.checked;
+					break;
+				}
+				case 'unlimited': {
+					/** @type {HTMLInputElement} */ (ctrls.limit_number).disabled = cb.checked = g.storage.others.limit === 0;
+					/** @type {LiveChatLayer} */ (g.layer).limit = g.storage.others.limit;
+					break;
+				}
+				case 'container_unlimited': {
+					/** @type {HTMLInputElement} */ (ctrls.container_limit_number).disabled = cb.checked = g.storage.others.container_limit === 0;
+					break;
+				}
+				case 'overlapping':
+				case 'direction': {
+					const val = Number.parseInt(cb.value);
+					cb.checked = g.storage.others[cb.name] & 1 << val ? true : false;
+					break;
+				}
+				case 'prefix_lang': {
+					cb.checked = g.storage.others.translation < 0;
+					cb.disabled = /** @type {HTMLSelectElement} */ (ctrls.translation).selectedIndex === 0;
+					le.classList[cb.checked ? 'add' : 'remove'](cb.name);
+					break;
+				}
+				case 'except_lang': {
+					const val = Number.parseInt(cb.value);
+					cb.checked = g.storage.others.except_lang & 1 << val ? true : false;
+					const abs = Math.abs(g.storage.others.translation);
+					cb.disabled = abs === 0 || abs === val + 1;
+					break;
+				}
+				case 'muted_words_regexp': {
+					cb.checked = g.storage.mutedWords.regexp;
+					break;
+				}
+			}
+		}
+	}
+
+	for (const [prop, value] of Object.entries(g.storage.styles)) {
+		le.style.setProperty('--yt-lcf-' + prop.replace(/_/g, '-'), value);
+		/** @type {HTMLInputElement?} */
+		const input = form.querySelector(`input.styles[name="${prop}"]`);
+		if (input)
+		if (input.type === 'number') input.valueAsNumber = Number.parseFloat(value);
+		else input.value = value;
+	}
+	// number
+	/** @type {HTMLInputElement} */ (ctrls.px_per_sec).valueAsNumber = /** @type {HTMLInputElement} */ (ctrls.speed).checked
+		? g.storage.others.px_per_sec
+		: Math.round(le.getBoundingClientRect().width / /** @type {HTMLInputElement} */ (ctrls.animation_duration).valueAsNumber);
+	/** @type {HTMLInputElement} */ (ctrls.limit_number).valueAsNumber = g.storage.others.limit || 100;
+	/** @type {HTMLInputElement} */ (ctrls.container_limit_number).valueAsNumber = g.storage.others.container_limit || 20;
+	/** @type {HTMLInputElement} */ (ctrls.time_shift).valueAsNumber = g.storage.others.time_shift || 0;
+	
+	const lines = g.storage.others.number_of_lines;
+	if (lines) {
+		const sizeByLines = Math.floor(le.getBoundingClientRect().height * .8 / lines);
+		
+		const inputFs = /** @type {HTMLInputElement} */ (ctrls.font_size);
+		const inputLn = /** @type {HTMLInputElement} */ (ctrls.number_of_lines);
+		if (g.storage.others.type_of_lines > 0) {
+			le.style.setProperty('--yt-lcf-font-size', `max(${g.storage.styles.font_size}, ${sizeByLines}px)`);
+			inputFs.setAttribute('value', `${sizeByLines}`);
+			inputLn.setAttribute('value', `${lines}`);
+		} else {
+			le.style.setProperty('--yt-lcf-font-size', `${sizeByLines}px`);
+			inputLn.setAttribute('value', `${defaultSettings.others.number_of_lines}`);
+		}
+	}
+
+	/** @type { [ string, number, number ][] } */
+	const colormap = [
+		['--yt-live-chat-normal-message-background-color', 0xffc0c0c0, -1],
+		['--yt-live-chat-verified-message-background-color', 0xffc0c0c0, -1],
+		['--yt-live-chat-member-message-background-color', 0xffc0c0c0, -1],
+		['--yt-live-chat-moderator-message-background-color', 0xffc0c0c0, -1],
+		['--yt-live-chat-owner-message-background-color', 0xffc0c0c0, -1],
+		['--yt-live-chat-you-message-background-color', 0xffc0c0c0, -1],
+		['--yt-live-chat-paid-sticker-background-color', 0xffffb300, -1],
+		['--yt-live-chat-author-chip-owner-background-color', 0xffffd600, -1],
+	];
+	for (const [name, rgb, alpha] of colormap) {
+		le.style.setProperty(name, `rgba(${getColorRGB(rgb).join()},${alpha < 0 ? 'var(--yt-lcf-background-opacity)' : alpha})`);
+	}
+
+	const customCss = le.shadowRoot?.querySelector('#customcss');
+	const userDefinedCss = le.shadowRoot?.querySelector('#userdefinedcss');
+	for (const [selector, css] of Object.entries(g.storage.cssTexts)) {
+		if (selector) {
+			if (customCss) customCss.textContent += `:host>${selector}{${css}}`;
+			const name = selector.substring(1) + '_css';
+			const input = /** @type {HTMLInputElement?} */ (ctrls[name]);
+			if (input) input.value = css;
+		} else {
+			if (userDefinedCss) userDefinedCss.textContent = css;
+			const textarea = /** @type {HTMLTextAreaElement?} */ (ctrls.user_defined_css);
+			if (textarea) textarea.value = css;
+		}
+	}
+	const dir = g.storage.others.direction;
+	if (dir) {
+		le.classList[dir & 1 ? 'add': 'remove']('direction-reversed-y');
+		le.classList[dir & 2 ? 'add': 'remove']('direction-reversed-x');
+	}
+
+	// layer CSS
+	/** @type {HTMLInputElement} */ (ctrls.layer_css).value = g.storage.styles.layer_css;
+
+	// hotkeys
+	/** @type {HTMLInputElement} */ (ctrls.hotkey_layer).value = g.storage.hotkeys.layer;
+	/** @type {HTMLInputElement} */ (ctrls.hotkey_panel).value = g.storage.hotkeys.panel;
+
+	/** @type {HTMLInputElement} */ (ctrls.muted_words_replacement).value = g.storage.mutedWords.replacement;
+	/** @type {HTMLTextAreaElement} */ (ctrls.muted_words_list).value = g.storage.mutedWords.plainList.join('\n');
+	/** @type {HTMLInputElement} */ (ctrls.translation_url).value = g.storage.translation.url;
+
 }
 
-async function addSettingMenu() {
+export async function addSettingMenu() {
 	/** @type {HTMLElement | null | undefined} */
 	const ytpPanelMenu = g.app?.querySelector('.ytp-settings-menu .ytp-panel-menu');
 	if (ytpPanelMenu) {
@@ -570,7 +460,7 @@ async function addSettingMenu() {
 		}, { passive: true });
 		doc.querySelectorAll('[data-i18n]').forEach(e => {
 			const key = /** @type {HTMLElement} */ (e).dataset.i18n;
-			if (key) e.textContent = $msg(key);
+			if (key) e.textContent = browser.i18n.getMessage(key);
 		});
 		ytpPanelMenu.querySelector('#' + checkbox.id)?.remove();
 		ytpPanelMenu.querySelector('#' + popupmenu.id)?.remove();
@@ -580,11 +470,10 @@ async function addSettingMenu() {
 }
 
 /**
- * 
  * @param {LiveChat.LiveChatItemAction[]} actions 
  * @returns 
  */
-function doChatActions(actions) {
+export function doChatActions(actions) {
 	if (!g.layer) return;
 	const le = g.layer.element;
 	const root = le.shadowRoot;
@@ -744,22 +633,8 @@ function doChatActions(actions) {
 	}));
 }
 
-function skipRenderingOnce() {
+export function skipRenderingOnce() {
 	g.skip = true;
-}
-
-/** @param {CustomEvent<{ actionName: string, args: any[][] }>} e */
-function handleYtAction(e) {
-	switch (e.detail?.actionName) {
-		case 'yt-live-chat-actions': {
-			// const ev = new CustomEvent('ytlcf-actions');
-			doChatActions(e.detail.args[0]);
-		}
-		break;
-		case 'yt-live-chat-reload-success':
-		case 'yt-live-chat-seek-success':
-			skipRenderingOnce();
-	}
 }
 
 /** @param {LiveChat.AnyRenderer} item */
@@ -773,7 +648,7 @@ async function parseChatItem(item) {
 	const authorElems = document.createDocumentFragment();
 	if (name) {
 		const a = document.createElement('a');
-		a.pathname = '/channel/' + renderer.authorExternalChannelId;
+		a.href = '/channel/' + renderer.authorExternalChannelId;
 		a.target = '_blank';
 		a.title = name;
 		const img = new Image();
@@ -1079,42 +954,6 @@ function getChatMessage(message, options = {}) {
 	return rslt;
 }
 
-/** @param {string} str */
-function escapeHtml(str) {
-	return str.replace(/&/g, '&amp;').replace(/>/g, '&gt;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
-}
-
-/** @param {string} str */
-function escapeRegExp(str) {
-	return str.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
-}
-
-/** @param {number} long */
-function getColorRGB(long) {
-	return (long.toString(16).match(/[0-9a-f]{2}/g) || []).map(hex => parseInt(hex, 16)).slice(1);
-}
-
-/**
- * @param {string} css 
- * @param {string} inherit 
- */
-function formatHexColor(css, inherit = '#ffffff') {
-	const color = css.trim();
-	if (color.startsWith('#')) {
-		if (color.length > 6) {
-			return color.slice(0, 7);
-		} else if (color.length > 3) {
-			return color[0] + color[1] + color[1] + color[2] + color[2] + color[3] + color[3];
-		}
-	} else if (color.startsWith('rgb')) {
-		const [_, r, g, b] = color.match(/(\d+),\s*(\d+),\s*(\d+)/) || [];
-		if (_) {
-			return '#' + [r, g, b].map(s => parseInt(s).toString(16).padStart(2, '0')).join('');
-		}
-	}
-	return inherit;
-}
-
 /** @param {HTMLElement} item */
 function updateCurrentItem(item) {
 	if (!g.layer) return;
@@ -1169,10 +1008,10 @@ function isOverlapping(before, after) {
 		const dur = getComputedStyle(elm).animationDuration;
 		const [_, num, unit] = dur.match(/([\d\.]+)(\D+)/) || [];
 		if (num && unit) switch (unit) {
-			case 'ms': return parseFloat(num);
-			case 's': return parseFloat(num) * 1000;
+			case 'ms': return Number.parseFloat(num);
+			case 's': return Number.parseFloat(num) * 1000;
 		}
-		return parseFloat(g.storage.styles.animation_duration) * 1000 || 4000;
+		return Number.parseFloat(g.storage.styles.animation_duration) * 1000 || 4000;
 	});
 	const bSpeed = b.width / bDur, aSpeed = a.width / aDur;
 	const speedDiff = aSpeed - bSpeed;
@@ -1242,7 +1081,7 @@ export class LiveChatLayer {
 	/** @param {HTMLDivElement | undefined} div */
 	constructor(div = undefined) {
 		this.element = div || document.createElement('div');
-		this.element.id = tags.layer;
+		this.element.id = 'yt-lcf-layer';
 		this.element.dataset.layer = '1';
 		this.element.setAttribute('role', 'marquee');
 		this.element.setAttribute('aria-live', 'off');
@@ -1325,7 +1164,7 @@ export class LiveChatPanel {
 	 */
 	constructor(div = undefined) {
 		this.element = div || document.createElement('div');
-		this.element.id = tags.panel;
+		this.element.id = 'yt-lcf-panel';
 		this.element.className = 'ytp-sfn';
 		this.element.dataset.layer = '4';
 		this.hide();
@@ -1343,15 +1182,15 @@ export class LiveChatPanel {
 			c.x = e.clientX, c.y = e.clientY;
 		};
 		const onmouseup = () => {
-			top?.removeEventListener('mousemove', onmousemove);
-			top?.removeEventListener('mouseup', onmouseup);
+			self.removeEventListener('mousemove', onmousemove);
+			self.removeEventListener('mouseup', onmouseup);
 			window.removeEventListener('mouseup', onmouseup);
 		};
 		this.element.addEventListener('mousedown', e => {
 			if (['INPUT', 'TEXTAREA', 'SELECT'].includes(/** @type {HTMLElement} */ (e.target)?.tagName)) return;
 			c.x = e.clientX, c.y = e.clientY;
-			top?.addEventListener('mousemove', onmousemove, { passive: true });
-			top?.addEventListener('mouseup', onmouseup, { passive: true });
+			self.addEventListener('mousemove', onmousemove, { passive: true });
+			self.addEventListener('mouseup', onmouseup, { passive: true });
 			window.addEventListener('mouseup', onmouseup, { passive: true });
 		}, { passive: true });
 		this.element.addEventListener('keyup', e => {
@@ -1384,7 +1223,7 @@ export class LiveChatPanel {
 			}, { passive: true });
 		});
 
-		const isDarkMode = top?.document.documentElement.hasAttribute('dark');
+		const isDarkMode = document.documentElement.hasAttribute('dark');
 		/** @param {string[]} c */
 		const createButtonClassList = (...c) => {
 			const base = 'yt-spec-button-shape-next';
@@ -1410,7 +1249,7 @@ export class LiveChatPanel {
 					button.type = 'button';
 					button.className = createButtonClassList('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-xs');
 					button.dataset.function = fn;
-					const label = $msg(fn);
+					const label = browser.i18n.getMessage(fn);
 					button.title = label;
 					button.textContent = label;
 					return button;
@@ -1542,7 +1381,7 @@ export class LiveChatPanel {
 							text += '}';
 						}
 						const invalidLineNum = lines.findIndex(id => id ? !pattern.test(id) : false);
-						const validityMsg = invalidLineNum < 0 ? '' : $msg('validation_channelId', invalidLineNum + 1);
+						const validityMsg = invalidLineNum < 0 ? '' : browser.i18n.getMessage('validation_channelId', invalidLineNum + 1);
 						textarea.setCustomValidity(validityMsg);
 						preview.value = text;
 					}, { passive: true });
@@ -1593,7 +1432,7 @@ export class LiveChatPanel {
 
 		const closeBtn = document.createElement('button');
 		closeBtn.className = 'ytp-sfn-close ytp-button';
-		closeBtn.title = $msg('close');
+		closeBtn.title = browser.i18n.getMessage('close');
 		closeBtn.textContent = '[X]';
 		closeBtn.addEventListener('click', () => {
 			this.hide();
@@ -1663,7 +1502,7 @@ export class LiveChatPanel {
 				const mode = parseInt(elem.value);
 				g.storage.mutedWords.mode = mode;
 				const replacement = /** @type {HTMLInputElement} */ (ctrls.muted_words_replacement);
-				replacement.title = mode === g.index.mutedWords.char ? $msg('tooltip_mutedWordsReplacement') : '';
+				replacement.title = mode === g.index.mutedWords.char ? browser.i18n.getMessage('tooltip_mutedWordsReplacement') : '';
 			}
 		} else if (elem.classList.contains('styles') && name) {
 			g.storage.styles[name] = elem.value + (elem.dataset.unit || '');
@@ -1847,7 +1686,59 @@ export class LiveChatPanel {
 	}
 }
 
+export function updateMutedWordsList() {
+	/** @type { (str: string) => string } */
+	const escapeRegExp = str => str.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
+	const { regexp, plainList } = g.storage.mutedWords;
+	g.list.mutedWords = regexp
+		? plainList.map(s => new RegExp(s, 'g'))
+		: plainList.length > 0
+			? [ new RegExp(plainList.map(escapeRegExp).join('|'), 'g') ]
+			: [];
+}
+
+/**
+ * Check if now in PiP-mode
+ * @returns {boolean} if not PiP-mode now
+ */
+export function isNotPip() {
+	return !self.documentPictureInPicture?.window;
+}
+
+/**
+ * Convert color from long integer to array of integer.
+ * @param {number} long integer of color `0xAARRGGBB`
+ * @returns {number[]} array of integer `[RR, GG, BB]`
+ */
+export function getColorRGB(long) {
+	const separated = /** @type {string[]} */ (long.toString(16).match(/[0-9a-f]{2}/g) || [])
+	return separated.map(hex => Number.parseInt(hex, 16)).slice(1);
+}
+
+/**
+ * Convert CSS color value from short hex-format or rgb()-format to normal hex-format.
+ * @param {string} css short hex-format or rgb()-format color value (e.g. `#abc`, `rgb(0, 128, 255)`)
+ * @param {string} [inherit='#ffffff'] default value
+ * @returns {string} normal hex-format color (e.g. `#123456`)
+ */
+export function formatHexColor(css, inherit = '#ffffff') {
+	const color = css.trim();
+	if (color.startsWith('#')) {
+		if (color.length > 6) {
+			return color.slice(0, 7);
+		} else if (color.length > 3) {
+			return color[0] + color[1] + color[1] + color[2] + color[2] + color[3] + color[3];
+		}
+	} else if (color.startsWith('rgb')) {
+		const [_, r, g, b] = color.match(/(\d+),\s*(\d+),\s*(\d+)/) || [];
+		if (_) {
+			return '#' + [r, g, b].map(s => parseInt(s).toString(16).padStart(2, '0')).join('');
+		}
+	}
+	return inherit;
+}
+
 function refreshPage() {
-	top?.alert($msg('page_refresh'));
-	top?.location.reload();
+	alert(browser.i18n.getMessage('page_refresh'));
+	location.reload();
 }
