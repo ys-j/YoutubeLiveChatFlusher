@@ -146,7 +146,7 @@ function initialize(e) {
 			const response = (mainResponse && 'contents' in mainResponse) ? mainResponse : mainResponse?.response;
 			if (!response) return;
 			const videoDetails = mainResponse?.playerResponse?.videoDetails;
-			const isLive = videoDetails?.isLive;
+			const isLive = videoDetails?.isLive || videoDetails?.isUpcoming;
 			
 			const iframe = /** @type {HTMLIFrameElement} */ (document.getElementById('chatframe'));
 			let timer = 0;
@@ -163,7 +163,7 @@ function initialize(e) {
 				// Fetching chat actions async
 				fetchChatActions(response, actionMap).catch(reason => {
 					const videoId = videoDetails?.videoId;
-					const message = videoId ? reason.replace('.', ': ' + videoId) : reason;
+					const message = videoId ? reason?.replace('.', ': ' + videoId) : reason;
 					console.warn(message);
 				}).finally(() => {
 					clearInterval(timer);

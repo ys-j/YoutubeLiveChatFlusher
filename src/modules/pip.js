@@ -37,6 +37,8 @@ export async function openPip(element) {
 
 	top?.addEventListener('keydown', disableKeyboardShortcutOnParentWindow, true);
 	pipWindow?.addEventListener('keydown', enableKeyboardShortcutOnChildWindow, true);
+
+	top?.addEventListener('yt-navigate-finish', onYtNavigateFinishDispatchPip, { passive: true });
 	
 	for (const attr of document.documentElement.attributes) {
 		pipWindow.document.documentElement.attributes.setNamedItem(attr.cloneNode());
@@ -75,41 +77,23 @@ export async function openPip(element) {
 	pipWindow.document.body.dataset.browser = document.body.dataset.browser;
 
 	const video = pipWindow.document.querySelector('video');
-	const observeOptions = { attributes: true, attributeFilter: ['data-time', 'class'] };
-	const observer = new MutationObserver(records => {
-		if (video) for (const _ of records) {
-			const { innerWidth: ww, innerHeight: wh } = pipWindow;
-			const { videoWidth: vw, videoHeight: vh, clientWidth: cw } = video;
-			const aspect = vw / vh;
-			const w = Math.min(ww, (wh * aspect)|0);
-			video.style.height = `${Math.min(wh, (w / aspect)|0)}px`;
-			video.style.width = `${w}px`;
-			video.style.left = `${Math.max(ww - cw, 0) * .5}px`;
-		}
-	});
-	if (video) observer.observe(video, observeOptions);
-	pipWindow.addEventListener('ytd-watch-player-data-changed', () => {
-		setTimeout(/** @param {HTMLVideoElement?} v */ v => {
-			if (v) v.dataset.time = `${v.currentTime}`;
-		}, 500, video || pipWindow.document.querySelector('video'));
+	video?.addEventListener('ytlcf-resize', onResizeVideo, { passive: true });
+	video?.addEventListener('loadeddata', e => {
+		video.dispatchEvent(new CustomEvent('ytlcf-resize', { detail: pipWindow }));
+	}, { passive: true });
+
+	pipWindow.addEventListener('ytlcf-pip-update', () => {
 		const pipTitle = pipWindow.document.getElementsByTagName('title')[0];
 		if (pipTitle) {
-			pipTitle.textContent = /** @type {HTMLElement?} */ (document.querySelector('h1.ytd-watch-metadata'))?.innerText || 'YouTube';
+			const title = document.querySelector('h1.ytd-watch-metadata')?.textContent;
+			pipTitle.textContent = title || 'YouTube';
 		}
-	});
-	pipWindow.dispatchEvent(new CustomEvent('ytd-watch-player-data-changed'));
+	}, { passive: true });
+	pipWindow.dispatchEvent(new CustomEvent('ytlcf-pip-update'));
 
-	pipWindow.addEventListener('resize', e => {
-		const w = /** @type {Window} */ (e.target);
-		const v = video || w.document.querySelector('video');
-		if (v) {
-			// const { innerWidth: ww, innerHeight: wh } = pipWindow;
-			// const { videoWidth: vw, videoHeight: vh, clientWidth: cw } = v;
-			// w.resizeTo((vw / vh) * wh, wh);
-			setTimeout(/** @param {HTMLVideoElement?} v */ v => {
-				if (v) v.dataset.time = `${v.currentTime}`;
-			}, 500, v);
-		}
+	pipWindow.addEventListener('resize', () => {
+		const video = pipWindow.document.querySelector('video');
+		video?.dispatchEvent(new CustomEvent('ytlcf-resize', { detail: pipWindow }));
 	}, { passive: true });
 
 	pipWindow.addEventListener('pagehide', () => {
@@ -127,28 +111,86 @@ export async function openPip(element) {
 					const left = Number.parseInt(b.style.left);
 					b.style.width = `${v.clientWidth - left * 2}px`;
 				}
+				v.removeEventListener('ytlcf-resize', onResizeVideo);
 			}
 		}
-		observer.disconnect();
 		if (top?.document.contains(pipMarker)) pipMarker.remove();
 		top?.removeEventListener('keydown', disableKeyboardShortcutOnParentWindow, true);
 		pipWindow.removeEventListener('keydown', enableKeyboardShortcutOnChildWindow, true);
+		top?.removeEventListener('yt-navigate-finish', onYtNavigateFinishDispatchPip);
 	}, { passive: true });
 	return pipWindow;
+
+	/**
+	 * @param {CustomEvent} e 
+	 */
+	function onYtNavigateFinishDispatchPip(e) {
+		pipWindow?.dispatchEvent(new CustomEvent('ytlcf-pip-update'));
+	}
+}
+
+/**
+ * @param {Window} win 
+ */
+function updatePregressBarSize(win) {
+	/** @type {HTMLElement?} */
+	const bottomElem = win.document.querySelector('.ytp-chrome-bottom');
+	if (bottomElem) {
+		const left = Number.parseInt(bottomElem.style.left);
+		const bottomWidth = win.innerWidth - left * 2;
+		bottomElem.style.width = `${bottomWidth}px`;
+
+		/** @type {HTMLElement?} */
+		const progressBar = bottomElem.querySelector('.ytp-progress-bar');
+		if (progressBar) {
+			/** @type {HTMLElement?} */
+			const hoverContainer = bottomElem.querySelector('.ytp-chapter-hover-container');
+			const containerWidth = Number.parseInt(hoverContainer?.style.width || '0');
+			if (containerWidth > 0) {
+				progressBar.style.transformOrigin = '0 0 0';
+				progressBar.style.transform = `scaleX(${bottomWidth / containerWidth})`;
+			}
+		}
+		/** @type {HTMLElement?} */
+		const heatMap = bottomElem.querySelector('.ytp-heat-map-chapter');
+		if (heatMap) {
+			heatMap.style.width = '100%';
+		}
+	}
+}
+
+/**
+ * @this {HTMLVideoElement}
+ * @param {CustomEvent<Window>} e 
+ */
+function onResizeVideo(e) {
+	const { innerWidth: ww, innerHeight: wh } = e.detail;
+	const { videoWidth: vw, videoHeight: vh } = this;
+	if (!vw || !vh) return;
+	const aspect = vw / vh;
+	const w = Math.min(ww, (wh * aspect)|0);
+	this.style.height = `${Math.min(wh, (w / aspect)|0)}px`;
+	this.style.width = `${w}px`;
+	this.style.left = `${Math.max(ww - w, 0) * .5}px`;
+	updatePregressBarSize(e.detail);
 }
 
 const shortcutKeys = ['f', 'i', 't'];
 
-/** @param {KeyboardEvent} e */
+/** 
+ * @param {KeyboardEvent} e 
+ */
 function disableKeyboardShortcutOnParentWindow(e) {
 	if (shortcutKeys.includes(e.key)) {
 		e.stopImmediatePropagation();
 	}
 }
 
-/**  @param {KeyboardEvent} e */
+/**
+ * @param {KeyboardEvent} e 
+ */
 function enableKeyboardShortcutOnChildWindow(e) {
 	if (!shortcutKeys.includes(e.key)) {
-		top?.dispatchEvent(e);
+		top?.dispatchEvent(new KeyboardEvent('keydown', e));
 	}
 }

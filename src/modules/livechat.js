@@ -886,7 +886,7 @@ function getChatMessage(message, options = {}) {
 					const ep = r.navigationEndpoint.urlEndpoint || r.navigationEndpoint.watchEndpoint;
 					if (ep) {
 						/** @type {SVGGElement?} */
-						const iconref = document.querySelector('iron-iconset-svg #open_in_new');
+						const iconref = document.querySelector('iron-iconset-svg #open-in-new');
 						node.pathname = 'url' in ep ? ep.url : (ep.videoId ? '/watch?v=' + ep.videoId : '');
 						node.classList.add('open_in_new');
 						node.target = '_blank';
