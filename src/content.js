@@ -48,7 +48,7 @@ function initialize(e) {
 	const importings = scriptsPaths.map(path => import(browser.runtime.getURL(path)));
 	Promise.all(importings).then(async modules => {
 		/** @type {import('./modules/livechat.js')} */
-		const { g, runApp, skipRenderingOnce } = modules[0];
+		const { g, runApp, skipRenderingOnce, doChatActions } = modules[0];
 		/** @type {import('./modules/chat_actions.js')} */
 		const { fetchChatActions } = modules[1];
 		/** @type {import('./modules/pip.js')} */
@@ -59,18 +59,12 @@ function initialize(e) {
 		const player = /** @type {HTMLElement} */ (e.target);
 		await runApp(player)
 		.then(initPipMenu)
-		.then(() => {
-			onYtNavigateFinish(e);
-			const iframe = /** @type {HTMLIFrameElement?} */ (document.getElementById('chatframe'));
-			const pathname = iframe?.contentWindow?.location?.pathname;
-			if (pathname === '/live_chat') {
-				onLoadIFrame.bind(iframe)();
-			}
-		}).catch(() => {
+		.catch(reason => {
+			console.warn(reason);
 			succeeded = false;
 		});
 		if (succeeded) {
-			skipRenderingOnce();
+			onYtNavigateFinish(e);
 		} else {
 			self.addEventListener('yt-navigate-finish', initialize, { passive: true, once: true });
 			return;
@@ -98,7 +92,9 @@ function initialize(e) {
 			}
 			lastOffset ||= Math.max(-g.storage.others.time_shift * 1000, 1) | 0;
 			const currentOffset = (this.currentTime - g.storage.others.time_shift) * 1000 | 0;
-			const targetKeys = actionMap.keys().filter(time => lastOffset < time && time <= currentOffset);
+			const allKeys = actionMap.keys();
+			const targetKeys = ('filter' in Object.getPrototypeOf(allKeys) ? allKeys : Array.from(allKeys))
+				.filter(time => lastOffset < time && time <= currentOffset);
 			for (const k of targetKeys) {
 				const ev = new CustomEvent('ytlcf-actions', { detail: actionMap.get(k) });
 				self.dispatchEvent(ev);
@@ -122,9 +118,18 @@ function initialize(e) {
 			}
 		}
 
+		/**
+		 * @param {CustomEvent} e 
+		 */
+		function onYtlcfActions(e) {
+			doChatActions(e.detail);
+		}
+
 		// when page load started
 		self.addEventListener('yt-navigate-start', () => {
+			self.removeEventListener('ytlcf-actions', onYtlcfActions);
 			actionMap.clear();
+			g.layer?.clear();
 		}, { passive: true });
 	
 		// when page load ended
@@ -134,11 +139,14 @@ function initialize(e) {
 		 * @param {CustomEvent<NavigateFinishEventDetail>} e 
 		 */
 		function onYtNavigateFinish(e) {
+			self.addEventListener('ytlcf-actions', onYtlcfActions, { passive: true });
 			if (e.detail?.pageType !== 'watch') return;
 			
 			const video = g.app?.querySelector('#ytd-player video');
 			const videoContainer = video?.parentElement;
-			if (videoContainer && g.layer && !videoContainer.parentElement?.contains(g.layer.element)) {
+			if (!videoContainer) return;
+			const parent = videoContainer.parentElement;
+			if (g.layer && parent?.contains(g.layer.element)) {
 				videoContainer.after(g.layer.element);
 			}
 	
@@ -148,12 +156,23 @@ function initialize(e) {
 			const videoDetails = mainResponse?.playerResponse?.videoDetails;
 			const isLive = videoDetails?.isLive || videoDetails?.isUpcoming;
 			
-			const iframe = /** @type {HTMLIFrameElement} */ (document.getElementById('chatframe'));
 			let timer = 0;
-			if (!isLive /* && g.storage.others.time_shift !== 0 */) {
+			if (isLive) {
+				function waitIFrame() {
+					const iframe = /** @type {HTMLIFrameElement?} */ (document.getElementById('chatframe'));
+					const doc = iframe?.contentDocument;
+					if (doc?.location.pathname === '/live_chat') {
+						clearInterval(timer);
+						skipRenderingOnce();
+						doc.addEventListener('yt-action', onYtAction, { passive: true });
+					}
+				}
+				timer = setInterval(waitIFrame, 1000);
+			} else {
 				timer = setInterval(() => {
 					if (actionMap.size > 0) {
 						clearInterval(timer);
+						// skipRenderingOnce();
 						// when the video has chat replay
 						video?.addEventListener('seeking', onSeeking, { passive: true });
 						video?.addEventListener('timeupdate', onTimeUpdate, { passive: true });
@@ -168,24 +187,11 @@ function initialize(e) {
 				}).finally(() => {
 					clearInterval(timer);
 				});
-				iframe?.removeEventListener('load', onLoadIFrame);
-			} else {
-				iframe?.addEventListener('load', onLoadIFrame, { passive: true });
 			}
-
 			if (video) {
 				video.removeEventListener('seeking', onSeeking);
 				video.removeEventListener('timeupdate', onTimeUpdate);
 			}
-		}
-
-		/**
-		 * @this {HTMLIFrameElement}
-		 * @param {Event} e 
-		 */
-		function onLoadIFrame(e) {
-			const doc = this.contentDocument;
-			doc?.addEventListener('yt-action', onYtAction, { passive: true });
 		}
 	
 		document.body.addEventListener('keydown', e => {

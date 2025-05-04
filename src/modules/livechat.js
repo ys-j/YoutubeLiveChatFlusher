@@ -117,84 +117,79 @@ export const g = {
  * Start app.
  * @param {HTMLElement} player 
  */
-export function runApp(player) {
+export async function runApp(player) {
 	g.app = player;
 
-
 	const videoContainer = g.app?.querySelector('#ytd-player video')?.parentElement;
-	if (!videoContainer) return Promise.reject();
+	if (!videoContainer) return Promise.reject('No video container element.');
 
-	// remove old panel and generate new panel
-	// g.app.querySelector('#yt-lcf-panel')?.remove();
+	document.getElementById('ytlcf-panel')?.remove();
 	const panel = new LiveChatPanel();
 	g.panel = panel;
 
 	// get storage data
 	const storageList = ['styles', 'others', 'parts', 'cssTexts', 'hotkeys', 'mutedWords', 'translation'];
-	return browser.storage.local.get(storageList)
-	.then(storage => {
-		for (const type of storageList) {
-			if (storage && storage[type]) {
-				for (const [key, value] of Object.entries(storage[type])){
-					g.storage[type][key] = value;
-				}
+	const storage = await browser.storage.local.get(storageList);
+	if (storage)
+	for (const type of storageList) {
+		if (storage[type]) {
+			for (const [key, value] of Object.entries(storage[type])) {
+				g.storage[type][key] = value;
 			}
 		}
-	})
-	.then(() => panel.createForm())
-	.then(form => {
-		// bind i18n labels
-		/** @type {NodeListOf<HTMLElement>} */
-		const i18nElems = form.querySelectorAll('[data-i18n]');
-		i18nElems.forEach(e => {
-			const key = e.dataset.i18n;
-			if (key) e.textContent = browser.i18n.getMessage(key);
-		});
-		/** @type {NodeListOf<HTMLElement>} */
-		const i18nTitleElems = form.querySelectorAll('[data-i18n-title]');
-		i18nTitleElems.forEach(e => {
-			const key = e.dataset.i18nTitle;
-			if (key) e.title = browser.i18n.getMessage(key);
-		});
-		/** @type {NodeListOf<HTMLInputElement | HTMLTextAreaElement>} */
-		const i18nPlaceholderElems = form.querySelectorAll('[data-i18n-placeholder]');
-		i18nPlaceholderElems.forEach(e => {
-			const key = e.dataset.i18nPlaceholder;
-			if (key) e.placeholder = browser.i18n.getMessage(key);
-		});
-	})
-	.then(() => {
-		g.layer = getLayer();
-		if (g.storage.others.disabled) g.layer.hide();
-		videoContainer.after(g.layer.element);
-		self.addEventListener('ytlcf-actions', e => {
-			doChatActions(e.detail);
-		}, { passive: true });
-	})
-	.then(async () => {
-		// fetching your channel ID and set styles for you
-		const res = await fetch('/account_advanced');
-		const text = await res.text();
+	}
+	const form = await panel.createForm();
+	// bind i18n labels
+	/** @type {NodeListOf<HTMLElement>} */
+	const i18nElems = form.querySelectorAll('[data-i18n]');
+	i18nElems.forEach(elem => {
+		const key = elem.dataset.i18n;
+		if (key) elem.textContent = browser.i18n.getMessage(key);
+	});
+	/** @type {NodeListOf<HTMLElement>} */
+	const i18nTitleElems = form.querySelectorAll('[data-i18n-title]');
+	i18nTitleElems.forEach(elem => {
+		const key = elem.dataset.i18nTitle;
+		if (key) elem.title = browser.i18n.getMessage(key);
+	});
+	/** @type {NodeListOf<HTMLInputElement | HTMLTextAreaElement>} */
+	const i18nPlaceholderElems = form.querySelectorAll('[data-i18n-placeholder]');
+	i18nPlaceholderElems.forEach(elem => {
+		const key = elem.dataset.i18nPlaceholder;
+		if (key) elem.placeholder = browser.i18n.getMessage(key);
+	});
+
+	document.getElementById('ytlcf-layer')?.remove();
+	g.layer = getLayer();
+	if (g.storage.others.disabled) g.layer.hide();
+	videoContainer.after(g.layer.element);
+
+	/** @type {Promise[]} */
+	const promises = [];
+
+	// fetching your channel ID and set styles for you
+	promises.push(fetch('/account_advanced').then(res => res.text()).then(text => {
 		const matches = text.match(/"(UC[\w-]{22})"/);
 		g.channel = matches?.[1] || '';
 		if (g.channel) {
 			const style = g.layer?.element.shadowRoot?.querySelector('#yourcss');
 			if (style) {
 				const you = `[data-author-id="${g.channel}"]`;
-				style.textContent = `${you}{color:var(--yt-lcf-you-color)}:host(.has-you-name) ${you}.text{background-color:var(--yt-live-chat-you-message-background-color);border-radius:.5em;padding:0 .25em}${you}.text .photo{display:var(--yt-lcf-you-display-photo)}${you}.text .name{display:var(--yt-lcf-you-display-name)}${you}.text .message{display:var(--yt-lcf-you-display-message)}`;
+				style.textContent = `\
+${you} { color: var(--yt-lcf-you-color) }
+:host(.has-you-name) ${you}.text { background-color: var(--yt-live-chat-you-message-background-color); border-radius: .5em; padding: 0 .25em }
+${you}.text .photo { display: var(--yt-lcf-you-display-photo) }
+${you}.text .name { display: var(--yt-lcf-you-display-name) }
+${you}.text .message { display: var(--yt-lcf-you-display-message) }`
 			}
 		}
-	})
-	.then(updateMutedWordsList)
-	.then(setupPanel)
-	.then(addSettingMenu)
-	.then(() => {
-		if (g.layer) g.layer.element.style.cssText += '--yt-lcf-layer-css: below;' + g.storage.styles.layer_css;
-	})
-	.then(() => {
-		const ev = new CustomEvent('ytlcf-ready');
-		self.dispatchEvent(ev);
-	});
+	}));
+	updateMutedWordsList();
+	setupPanel();
+	promises.push(addSettingMenu());
+	if (g.layer) g.layer.element.style.cssText += '--yt-lcf-layer-css: below;' + g.storage.styles.layer_css;
+	await Promise.allSettled(promises);
+	self.dispatchEvent(new CustomEvent('ytlcf-ready'));
 }
 
 export function getLayer() {
@@ -226,7 +221,6 @@ export function getLayer() {
 	}, { passive: false });
 	return layer;
 }
-
 
 export function setupPanel() {
 	const le = /** @type {LiveChatLayer} */ (g.layer).element;
@@ -450,7 +444,7 @@ export async function addSettingMenu() {
 			if (cb) {
 				const checked = cb.getAttribute('aria-checked') === 'true';
 				cb.setAttribute('aria-checked', (!checked).toString());
-				g.layer?.init();
+				g.layer?.clear();
 				g.layer?.[checked ? 'hide' : 'show']();
 				g.storage.others.disabled = checked ? 1 : 0;
 				browser.storage.local.set(g.storage);
@@ -1093,9 +1087,9 @@ export class LiveChatLayer {
 		});
 		resizeObserver.observe(this.element);
 		this.root = this.element.shadowRoot || this.element.attachShadow({ mode: 'open' });
-		this.init();
+		this.clear();
 	}
-	init() {
+	clear() {
 		while (this.root.lastChild) this.root.removeChild(this.root.lastChild);
 		const link = document.createElement('link');
 		link.rel = 'stylesheet';
@@ -1118,7 +1112,7 @@ export class LiveChatLayer {
 		this.element.hidden = true;
 		this.element.ariaHidden = 'true';
 		this.element.style.display = 'none';
-		this.init();
+		this.clear();
 	}
 	show() {
 		this.element.hidden = false;
@@ -1126,14 +1120,18 @@ export class LiveChatLayer {
 		this.element.style.display = 'block';
 	}
 	resetAnimationDuration(pxPerSec = g.storage.others.px_per_sec) {
-		if (pxPerSec) {
+		if (pxPerSec > 0) {
 			const durationBySpeed = this.element.getBoundingClientRect().width / pxPerSec;
 			g.storage.styles.animation_duration = durationBySpeed.toFixed(1) + 's';
-			if (g.panel?.form)
-			/** @type {HTMLInputElement} */ (g.panel.form.elements.animation_duration).value = durationBySpeed.toFixed(1);
+			if (g.panel?.form) {
+				const input = /** @type {HTMLInputElement?} */ (g.panel.form.elements.animation_duration);
+				if (input) input.value = durationBySpeed.toFixed(1);
+			}
 		} else {
-			if (g.panel?.form)
-			g.storage.styles.animation_duration = /** @type {HTMLInputElement} */ (g.panel.form.elements.animation_duration).value + 's';
+			if (g.panel?.form) {
+				const input = /** @type {HTMLInputElement?} */ (g.panel.form.elements.animation_duration);
+				if (input) g.storage.styles.animation_duration = input.value + 's';
+			}
 		}
 		this.element.style.setProperty('--yt-lcf-animation-duration', g.storage.styles.animation_duration);
 	}
@@ -1511,8 +1509,11 @@ export class LiveChatPanel {
 			if (le) {
 				switch (name) {
 					case 'animation_duration': {
-						const speed = le.getBoundingClientRect().width / /** @type {HTMLInputElement} */ (elem).valueAsNumber;
-						/** @type {HTMLInputElement} */ (ctrls.px_per_sec).valueAsNumber = Math.round(speed);
+						const value = /** @type {HTMLInputElement} */ (elem).valueAsNumber;
+						if (value > 0) {
+							const speed = le.getBoundingClientRect().width / value;
+							/** @type {HTMLInputElement} */ (ctrls.px_per_sec).valueAsNumber = Math.round(speed);
+						}
 						break;
 					}
 					case 'max_width': g.layer?.updateCurrentItemStyle();

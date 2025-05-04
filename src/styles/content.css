@@ -203,15 +203,10 @@
 			padding: 2px 0 2px .25em;
 		}
 		&[type="range"] {
+			appearance: none;
+			background-color: var(--yt-spec-static-brand-red, red);
+			height: 3px;
 			vertical-align: middle;
-			[data-browser="chrome"] & {
-				appearance: none;
-				background-color: var(--yt-spec-static-brand-red, red);
-				height: 3px;
-			}
-			[data-browser="firefox"] & {
-				background-color: inherit;
-			}
 			&::-webkit-slider-thumb {
 				appearance: none;
 				background-color: var(--yt-spec-static-brand-white, white);
