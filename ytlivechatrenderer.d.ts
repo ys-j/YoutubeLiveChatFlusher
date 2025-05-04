@@ -30,7 +30,7 @@ declare namespace LiveChat {
 		trackingParams: string	// streaming
 		message?: Runs
 	}
-	type AnyRenderer = TextMessageRenderer | MembershipItemRenderer | PaidMessageRenderer | PaidStickerRenderer | ViewerEngagementMessageRenderer;
+	type AnyRenderer = TextMessageRenderer | MembershipItemRenderer | PaidMessageRenderer | PaidStickerRenderer | ViewerEngagementMessageRenderer | SponsorshipsGiftPurchaseAnnouncementRenderer;
 	type TextMessageRenderer = {
 		liveChatTextMessageRenderer: RendererContent & {
 			message: Runs
@@ -88,6 +88,8 @@ declare namespace LiveChat {
 			icon: { iconType: "POLL" }
 			id: string
 			message: Runs
+		} | {
+			icon: { iconType: "YOUTUBE_ROUND" }
 		}
 	}
 	type SponsorshipsGiftPurchaseAnnouncementRenderer = {

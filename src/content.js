@@ -156,6 +156,10 @@ function initialize(e) {
 			const videoDetails = mainResponse?.playerResponse?.videoDetails;
 			const isLive = videoDetails?.isLive || videoDetails?.isUpcoming;
 			
+			const onPlayerModeChange = () => onYtNavigateFinish(e);
+			self.removeEventListener('yt-set-theater-mode-enabled', onPlayerModeChange);
+			document.removeEventListener('fullscreenchange', onPlayerModeChange);
+
 			let timer = 0;
 			if (isLive) {
 				function waitIFrame() {
@@ -168,6 +172,8 @@ function initialize(e) {
 					}
 				}
 				timer = setInterval(waitIFrame, 1000);
+				self.addEventListener('yt-set-theater-mode-enabled', onPlayerModeChange, { passive: true, once: true });
+				document.addEventListener('fullscreenchange', onPlayerModeChange, { passive: true, once: true });
 			} else {
 				timer = setInterval(() => {
 					if (actionMap.size > 0) {

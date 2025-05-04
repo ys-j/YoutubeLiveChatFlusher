@@ -158,6 +158,9 @@
 	"layerCSS": {
 		"message": "Layer CSS"
 	},
+	"resizeLayer": {
+		"message": "Resize layer"
+	},
 	"hotkey": {
 		"message": "Hotkeys"
 	},

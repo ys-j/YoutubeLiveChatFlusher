@@ -633,9 +633,12 @@ export function skipRenderingOnce() {
 	g.skip = true;
 }
 
-/** @param {LiveChat.AnyRenderer} item */
+/**
+ * @param {LiveChat.AnyRenderer} item
+ */
 async function parseChatItem(item) {
 	const key = Object.keys(item)[0];
+	/** @type {LiveChat.RendererContent} */
 	const renderer = item[key];
 	const elem = document.createElement('div');
 	elem.id = renderer.id || '';
@@ -695,127 +698,113 @@ async function parseChatItem(item) {
 	switch (key) {
 		case 'liveChatTextMessageRenderer': {
 			const authorType = getAuthorType(renderer);
-			if (Object.values(g.storage.parts[authorType]).includes(true)) {
-				elem.className = 'text ' + authorType;
-				const header = document.createElement('span');
-				header.className = 'header';
-				header.appendChild(authorElems);
-				const body = document.createElement('span');
-				body.part = 'message';
-				body.className = 'body';
-				body.append(...(msg.trans || msg.orig || []));
-				elem.append(header, body);
-				elem.dataset.text = getRawText(renderer.message);
-				return elem;
-			} else {
-				return null;
-			}
+			const allHidden = !Object.values(g.storage.parts[authorType]).includes(true);
+			if (allHidden) return null;
+			elem.className = 'text ' + authorType;
+			const header = document.createElement('span');
+			header.className = 'header';
+			header.appendChild(authorElems);
+			const body = document.createElement('span');
+			body.part = 'message';
+			body.className = 'body';
+			body.append(...(msg.trans || msg.orig || []));
+			elem.append(header, body);
+			elem.dataset.text = getRawText(renderer.message);
+			return elem;
 		}
-		case 'liveChatMembershipItemRenderer': {
-			const { headerPrimaryText: primary, headerSubtext: sub } = renderer;
+		case 'liveChatMembershipItemRenderer': {			
+			const { headerPrimaryText: primary, headerSubtext: sub } 
+				= /** @type {LiveChat.MembershipItemRenderer["liveChatMembershipItemRenderer"]} */ (renderer);
 			const messageType = primary ? 'milestone' : 'membership';
 			elem.className = messageType;
-			if (Object.values(g.storage.parts[messageType]).includes(true)) {
-				const header = document.createElement('div');
-				header.className = 'header';
-				header.style.backgroundColor = `rgba(${getColorRGB(0xff0f9d58).join()},var(--yt-lcf-background-opacity))`;
-				const months = document.createElement('span');
-				months.part = months.className = 'months';
-				months.append(...getChatMessage(primary || sub, { start: primary ? 1 : 0 }));
-				header.append(authorElems, months);
-				const body = document.createElement('div');
-				body.part = 'message';
-				body.className = 'body';
-				body.style.backgroundColor = `rgba(${getColorRGB(0xff0a8043).join()},var(--yt-lcf-background-opacity))`;
-				body.append(...(msg.trans || msg.orig || []));
-				elem.append(header, body);
-				return elem;
-			} else {
-				return null;
-			}
+			const allHidden = !Object.values(g.storage.parts[messageType]).includes(true);
+			if (allHidden) return null;
+			const header = document.createElement('div');
+			header.className = 'header';
+			header.style.backgroundColor = `rgba(${getColorRGB(0xff0f9d58).join()},var(--yt-lcf-background-opacity))`;
+			const months = document.createElement('span');
+			months.part = months.className = 'months';
+			months.append(...getChatMessage(primary || sub, { start: primary ? 1 : 0 }));
+			header.append(authorElems, months);
+			const body = document.createElement('div');
+			body.part = 'message';
+			body.className = 'body';
+			body.style.backgroundColor = `rgba(${getColorRGB(0xff0a8043).join()},var(--yt-lcf-background-opacity))`;
+			body.append(...(msg.trans || msg.orig || []));
+			elem.append(header, body);
+			return elem;
 		}
 		case 'liveChatPaidMessageRenderer': {
-			if (Object.values(g.storage.parts.paid_message).includes(true)) {
-				elem.className = 'superchat';
-				const header = document.createElement('div');
-				header.className = 'header';
-				header.style.backgroundColor = `rgba(${getColorRGB(renderer.headerBackgroundColor).join()},var(--yt-lcf-background-opacity))`;
-				const amount = document.createElement('span');
-				amount.part = amount.className = 'amount';
-				amount.append(getRawText(renderer.purchaseAmountText));
-				header.append(authorElems, amount);
-				const body = document.createElement('div');
-				body.part = 'message';
-				body.className = 'body';
-				body.style.backgroundColor = `rgba(${getColorRGB(renderer.bodyBackgroundColor).join()},var(--yt-lcf-background-opacity))`;
-				body.append(...(msg.trans || msg.orig || []));
-				elem.append(header, body);
-				return elem;
-			} else {
-				return null;
-			}
+			const allHidden = !Object.values(g.storage.parts.paid_message).includes(true);
+			if (allHidden) return null;
+			const { headerBackgroundColor, purchaseAmountText, bodyBackgroundColor }
+				= /** @type {LiveChat.PaidMessageRenderer["liveChatPaidMessageRenderer"]} */ (renderer);
+			elem.className = 'superchat';
+			const header = document.createElement('div');
+			header.className = 'header';
+			header.style.backgroundColor = `rgba(${getColorRGB(headerBackgroundColor).join()},var(--yt-lcf-background-opacity))`;
+			const amount = document.createElement('span');
+			amount.part = amount.className = 'amount';
+			amount.append(getRawText(purchaseAmountText));
+			header.append(authorElems, amount);
+			const body = document.createElement('div');
+			body.part = 'message';
+			body.className = 'body';
+			body.style.backgroundColor = `rgba(${getColorRGB(bodyBackgroundColor).join()},var(--yt-lcf-background-opacity))`;
+			body.append(...(msg.trans || msg.orig || []));
+			elem.append(header, body);
+			return elem;
 		}
 		case 'liveChatPaidStickerRenderer': {
-			if (Object.values(g.storage.parts.paid_sticker).includes(true)) {
-				elem.className = 'supersticker';
-				const header = document.createElement('div');
-				header.className = 'header';
-				header.style.backgroundColor = `rgba(${getColorRGB(renderer.backgroundColor).join()},var(--yt-lcf-background-opacity))`;
-				const amount = document.createElement('span');
-				amount.part = amount.className = 'amount';
-				amount.append(getRawText(renderer.purchaseAmountText));
-				header.append(authorElems, amount);
-				const body = document.createElement('figure');
-				body.part = 'sticker';
-				body.className = 'body';
-				body.style.backgroundColor = `rgba(${getColorRGB(renderer.moneyChipBackgroundColor).join()},var(--yt-lcf-background-opacity)`;
-				const sticker = new Image();
-				sticker.className = 'sticker';
-				sticker.src = (renderer.sticker.thumbnails.find(t => 2 * 36 <= (t.width || 36)) || renderer.sticker.thumbnails[0]).url;
-				sticker.loading = 'lazy';
-				body.appendChild(sticker);
-				elem.append(header, body);
-				return elem;
-			} else {
-				return null;
-			}
+			const allHidden = !Object.values(g.storage.parts.paid_sticker).includes(true);
+			if (allHidden) return null;
+			const { backgroundColor, purchaseAmountText, moneyChipBackgroundColor, sticker }
+				= /** @type {LiveChat.PaidStickerRenderer["liveChatPaidStickerRenderer"]} */ (renderer);
+			elem.className = 'supersticker';
+			const header = document.createElement('div');
+			header.className = 'header';
+			header.style.backgroundColor = `rgba(${getColorRGB(backgroundColor).join()},var(--yt-lcf-background-opacity))`;
+			const amount = document.createElement('span');
+			amount.part = amount.className = 'amount';
+			amount.append(getRawText(purchaseAmountText));
+			header.append(authorElems, amount);
+			const body = document.createElement('figure');
+			body.part = 'sticker';
+			body.className = 'body';
+			body.style.backgroundColor = `rgba(${getColorRGB(moneyChipBackgroundColor).join()},var(--yt-lcf-background-opacity)`;
+			const image = new Image();
+			image.className = 'sticker';
+			image.src = (sticker.thumbnails.find(t => 2 * 36 <= (t.width || 36)) || sticker.thumbnails[0]).url;
+			image.loading = 'lazy';
+			body.appendChild(image);
+			elem.append(header, body);
+			return elem;
 		}
 		case 'liveChatSponsorshipsGiftPurchaseAnnouncementRenderer': {
-			if (Object.values(g.storage.parts.membership).includes(true)) {
-				elem.className = 'membership gift';
-				const h = renderer.header.liveChatSponsorshipsHeaderRenderer;
-				authorElems;
-				/** @type {SVGGElement?} */
-				const iconref = document.querySelector('iron-iconset-svg #gift-filled');
-				const count = h.primaryText?.runs?.filter(r => !Number.isNaN(parseInt(r.text)))[0]?.text;
-				if (count) {
-					const header = document.createElement('div');
-					header.className = 'header';
-					header.style.backgroundColor = `rgba(${getColorRGB(0xff0f9d58).join()},var(--yt-lcf-background-opacity))`;
-					const gifts = document.createElement('span');
-					gifts.part = gifts.className = 'gifts';
-					if (iconref) {
-						const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-						svg.setAttribute('viewBox', '0 2 24 24');
-						svg.setAttribute('fill', 'currentColor');
-						svg.setAttribute('stroke', '#000');
-						svg.setAttribute('paint-order', 'stroke');
-						svg.appendChild(iconref.cloneNode(true));
-						gifts.append(svg, count);
-					} else {
-						gifts.append('🎁', count);
-					}
-					header.append(authorElems, gifts);
-					elem.appendChild(header);
-					return elem;
-				}
-			} else {
-				return null;
-			}
-			break;
+			const allHidden = !Object.values(g.storage.parts.membership).includes(true);
+			if (allHidden) return null;
+			elem.className = 'membership gift';
+			const { header }
+				// @ts-ignore
+				= /** @type {LiveChat.SponsorshipsGiftPurchaseAnnouncementRenderer["liveChatSponsorshipsGiftPurchaseAnnouncementRenderer"]} */ (renderer);
+			const headerRenderer = header.liveChatSponsorshipsHeaderRenderer;
+			const count = headerRenderer.primaryText?.runs?.filter(r => !Number.isNaN(parseInt(r.text)))[0]?.text;
+			if (!count) break;
+			const div = document.createElement('div');
+			div.className = 'header';
+			div.style.backgroundColor = `rgba(${getColorRGB(0xff0f9d58).join()},var(--yt-lcf-background-opacity))`;
+			const gifts = document.createElement('span');
+			gifts.part = gifts.className = 'gifts';
+			gifts.textContent = `\u{1f381}\ufe0e ${count}`;
+			div.append(authorElems, gifts);
+			elem.appendChild(div);
+			return elem;
 		}
 		case 'liveChatViewerEngagementMessageRenderer': {
-			switch (renderer.icon.iconType) {
+			const { icon }
+				// @ts-ignore
+				= /** @type {LiveChat.ViewerEngagementMessageRenderer["liveChatViewerEngagementMessageRenderer"]} */ (renderer);
+			switch (icon.iconType) {
 				case 'POLL': {
 					elem.className = 'engagement-poll';
 					const div = document.createElement('div');
@@ -1081,7 +1070,9 @@ export class LiveChatLayer {
 		this.element.dataset.layer = '1';
 		this.element.setAttribute('role', 'marquee');
 		this.element.setAttribute('aria-live', 'off');
+		this.element.tabIndex = -1;
 		const resizeObserver = new ResizeObserver(() => {
+			g.layer?.clear();
 			this.resetAnimationDuration();
 			this.resetFontSize();
 		});
@@ -1152,6 +1143,11 @@ export class LiveChatLayer {
 		const items = Array.from(this.root.children).filter(type ? c => c.classList.contains(type) : c => c.tagName === 'DIV');
 		/** @type {HTMLElement[]} */ (items).forEach(updateCurrentItem);
 	}
+	/** @type {(x: number, y: number) => void} */
+	move(x, y) {
+		this.element.style.left = `${x}px`;
+		this.element.style.top = `${y}px`;
+	}
 }
 
 export class LiveChatPanel {
@@ -1187,7 +1183,8 @@ export class LiveChatPanel {
 			window.removeEventListener('mouseup', onmouseup);
 		};
 		this.element.addEventListener('mousedown', e => {
-			if (['INPUT', 'TEXTAREA', 'SELECT'].includes(/** @type {HTMLElement} */ (e.target)?.tagName)) return;
+			const tagName = /** @type {HTMLElement} */ (e.target)?.tagName;
+			if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tagName)) return;
 			c.x = e.clientX, c.y = e.clientY;
 			self.addEventListener('mousemove', onmousemove, { passive: true });
 			self.addEventListener('mouseup', onmouseup, { passive: true });
@@ -1339,6 +1336,90 @@ export class LiveChatPanel {
 			}
 		} else {
 			fontHelper.hidden = true;
+		}
+
+		/** @type {HTMLButtonElement?} */
+		const layerResizeHelper = this.form.querySelector('#layer_resize_helper');
+		if (layerResizeHelper) {
+			layerResizeHelper.className = createButtonClassList('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-xs');
+			layerResizeHelper.addEventListener('click', () => {
+				const le = g.layer?.element;
+				const vc = g.app?.querySelector('#ytd-player');
+				if (!le || !vc) return;
+				le.classList.add('resize-mode');
+				le.focus();
+				/** @type { (e: MouseEvent) => void } */
+				const stopPropagation = e => e.stopPropagation();
+				/** @type {(e: KeyboardEvent) => void} */
+				const onkeydown = e => {
+					if (!['Enter', 'Escape'].includes(e.key)) return;
+					le.classList.remove('resize-mode');
+					document.removeEventListener('click', stopPropagation, { capture: true });
+					self.removeEventListener('keydown', onkeydown);
+					const input = /** @type {HTMLInputElement?} */ (g.panel?.form.elements.layer_css);
+					const value = input?.value;
+					const styleMap = new Map(value ? value.split(/;\s*/).map(entry => {
+						const [prop, val] = entry.split(/:\s*/, 2);
+						return [prop, val];
+					}) : undefined);
+					if (e.key === 'Enter') {
+						const defaults = { left: 0, top: 0, width: 100, height: 100 };
+						const percents = {
+							left: ((le.offsetLeft - vc.clientLeft) / vc.clientWidth) * 100,
+							top: ((le.offsetTop - vc.clientTop) / vc.clientHeight) * 100,
+							width: (le.clientWidth / vc.clientWidth) * 100,
+							height: (le.clientHeight / vc.clientHeight) * 100,
+						}
+						Object.entries(percents).forEach(([prop, val]) => {
+							if (val === defaults[prop]) {
+								styleMap.delete(prop);
+							} else if (val) {
+								styleMap.set(prop, val.toFixed(1) + '%');
+							}
+						});
+						styleMap.delete('');
+						if (input) {
+							const newValue = Array.from(styleMap.entries(), entry => entry.join(': ')).join('; ');
+							input.value = newValue ? newValue + ';' : '';
+							g.panel?.updateStorage(input);
+						}
+					} else {
+						le.style.left = styleMap.get('left') || '';
+						le.style.top = styleMap.get('top') || '';
+						le.style.width = styleMap.get('width') || '';
+						le.style.height = styleMap.get('height') || '';
+					}
+					le.blur();
+				}
+				self.addEventListener('keydown', onkeydown, { passive: true });
+
+				const c = { x: le.clientLeft || 0, y: le.clientTop || 0 };
+				/** @type {(val: number, min: number, max: number) => number} */
+				const clamp = (val, min, max) => Math.max(min, Math.min(val, max));
+				/** @type {(e: MouseEvent) => void} */
+				const onmousemove = e => {
+					if (!le || !isNotPip()) return;
+					if (!vc) return;
+					const x = clamp(le.offsetLeft + e.clientX - c.x, 0, vc.clientWidth - le.clientWidth);
+					const y = clamp(le.offsetTop + e.clientY - c.y, 0, vc.clientHeight - le.clientHeight);
+					g.layer?.move(x, y);
+					c.x = e.clientX, c.y = e.clientY;
+				};
+				/** @type {(e: MouseEvent) => void} */
+				const onmouseup = e => {
+					self.removeEventListener('mousemove', onmousemove);
+					self.removeEventListener('mouseup', onmouseup);
+					window.removeEventListener('mouseup', onmouseup);
+				};
+				le.addEventListener('mousedown', e => {
+					if (e.clientX > le.clientWidth - 64 && e.clientY > le.clientHeight - 64) return;
+					c.x = e.clientX, c.y = e.clientY;
+					self.addEventListener('mousemove', onmousemove, { passive: true });
+					self.addEventListener('mouseup', onmouseup, { passive: true });
+					window.addEventListener('mouseup', onmouseup, { passive: true });
+				}, { passive: true });
+				document.addEventListener('click', stopPropagation, { capture: true });
+			}, { passive: true });
 		}
 
 		/** @type {HTMLButtonElement?} */
