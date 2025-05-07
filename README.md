@@ -1,4 +1,4 @@
-# Youtube LiveChat Flusher
+# YouTube LiveChat Flusher
 
 Firefox Add-on / Chrome Extension; Provides bullet chatting (Danmaku) on YouTube Live, like niconico or bilibili.\
 Firefoxアドオン／Chrome拡張機能です。YouTube Liveでニコニコ動画やビリビリ動画のようにライブチャットを弾幕風に流します。
@@ -11,16 +11,16 @@ Please refer to *[wiki](https://github.com/ys-j/YoutubeLiveChatFlusher/wiki)* fo
 
 ## Features / 特徴
 
-- Written in vanilla JavaScript and CSS.\
-  Vanilla JavaScriptとCSSで書いています。
-- No external library.\
-  外部ライブラリは使用していません。
-- Translation function is available.\
-  翻訳機能が有効です。
-- Customizable to your preference.\
-  好みに応じてカスタマイズ可能です。
+- Written in Vanilla JS and CSS (No libraries used)\
+  Vanilla JSとCSSで書かれています（ライブラリを使用していません）
+- Translation function is available\
+  翻訳機能が利用可能です
+- Customizable styles\
+  スタイルをカスタマイズ可能です
 - Document Picture-in-Picture (PiP w/ chat) is available on Chrome\
-  Chrome版は Document Picture-in-Picture (PiP w/ chat) が有効です。
+  Chrome版は Document Picture-in-Picture (PiP w/ chat) が利用可能です
+- Time-shifted chat is available (Replay only)\
+  タイムシフト機能が利用可能です（リプレイのみ）
 
 ## Screenshots / スクリーンショット
 
