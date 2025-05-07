@@ -172,13 +172,13 @@ function initialize(e) {
 					}
 				}
 				timer = setInterval(waitIFrame, 1000);
+				waitIFrame();
 				self.addEventListener('yt-set-theater-mode-enabled', onPlayerModeChange, { passive: true, once: true });
 				document.addEventListener('fullscreenchange', onPlayerModeChange, { passive: true, once: true });
 			} else {
 				timer = setInterval(() => {
 					if (actionMap.size > 0) {
 						clearInterval(timer);
-						// skipRenderingOnce();
 						// when the video has chat replay
 						video?.addEventListener('seeking', onSeeking, { passive: true });
 						video?.addEventListener('timeupdate', onTimeUpdate, { passive: true });

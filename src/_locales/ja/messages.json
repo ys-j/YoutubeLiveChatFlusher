@@ -159,7 +159,7 @@
 		"message": "レイヤCSS"
 	},
 	"resizeLayer": {
-		"message": "レイヤのリサイズ"
+		"message": "レイヤサイズ変更"
 	},
 	"hotkey": {
 		"message": "ホットキー"

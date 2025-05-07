@@ -11,7 +11,7 @@ const defaultSettings = {
 		animation_duration: '8s',
 		font_size: '32px',
 		line_height: '1.25',
-		font_family: 'inherit',
+		font_family: 'sans-serif',
 		font_weight: '500',
 		stroke_color: '#000000',
 		stroke_offset: '1px',
@@ -486,7 +486,9 @@ export function doChatActions(actions) {
 	}
 	
 	// Add
-	const fs = parseInt(g.storage.styles.font_size) || 36, lhf = parseFloat(g.storage.styles.line_height) || 1.25, lh = fs * lhf;
+	const fs = Number.parseInt(g.storage.styles.font_size) || 36;
+	const lhf = Number.parseFloat(g.storage.styles.line_height) || 1.25;
+	const lh = fs * lhf;
 	const sv = g.storage.others.simultaneous, si = g.index.simultaneous;
 	const last = sv === si.last_merge ? /** @type {HTMLElement?} */ (root.lastElementChild) : null;
 	const bodies = last ? [ `<!-- ${last.className} -->` + (last.dataset.text || '') ] : [];
@@ -546,8 +548,9 @@ export function doChatActions(actions) {
 				if (result.isReliable) body.lang = result.languages?.[0].language;
 			});
 		}
+		const dir = g.storage.others.direction & 1 ? 'bottom' : 'top';
 		if (elem.clientHeight >= ch) {
-			elem.style.top = '0px';
+			elem.style[dir] = '0px';
 			elem.dataset.line = '0';
 			return resolve(elem.id);
 		}
@@ -555,11 +558,11 @@ export function doChatActions(actions) {
 		let y = 0;
 		do {
 			if (children.length > 0) {
-				elem.style.top = `${y * lhf}em`;
+				elem.style[dir] = `${y * lhf}em`;
 				elem.dataset.line = `${y}`;
 				if (!children.some(before => isCatchable(before, elem)) && !isOverflow(le, elem)) return resolve(elem.id);
 			} else {
-				elem.style.top = '0px';
+				elem.style[dir] = '0px';
 				elem.dataset.line = '0';
 				return resolve(elem.id);
 			}
@@ -644,6 +647,7 @@ async function parseChatItem(item) {
 	elem.id = renderer.id || '';
 	elem.dataset.authorId = renderer.authorExternalChannelId;
 	const name = getRawText(renderer.authorName);
+	elem.dataset.authorName = name;
 	const authorElems = document.createDocumentFragment();
 	if (name) {
 		const a = document.createElement('a');
@@ -1078,10 +1082,6 @@ export class LiveChatLayer {
 		});
 		resizeObserver.observe(this.element);
 		this.root = this.element.shadowRoot || this.element.attachShadow({ mode: 'open' });
-		this.clear();
-	}
-	clear() {
-		while (this.root.lastChild) this.root.removeChild(this.root.lastChild);
 		const link = document.createElement('link');
 		link.rel = 'stylesheet';
 		link.href = browser.runtime.getURL('../styles/layer.css');
@@ -1094,9 +1094,16 @@ export class LiveChatLayer {
 		const mutationObserver = new MutationObserver(() => {
 			const over = this.root.childElementCount - (this.limit || Infinity);
 			let i = 4; // link + styles(3)
-			while (i++ < over) styles[styles.length - 1].nextElementSibling?.remove();
+			while (i++ < over) this.root.children[4]?.remove();
 		});
 		mutationObserver.observe(this.root, { childList: true });
+		this.clear();
+	}
+	clear() {
+		while (this.root.childElementCount > 4) {
+			// @ts-ignore
+			this.root.removeChild(this.root.lastChild);
+		}
 		return this;
 	}
 	hide() {
@@ -1128,7 +1135,9 @@ export class LiveChatLayer {
 	}
 	resetFontSize(numberOfLines = g.storage.others.number_of_lines) {
 		if (numberOfLines) {
-			const sizeByLines = Math.floor(this.element.getBoundingClientRect().height / parseFloat(g.storage.styles.line_height) / numberOfLines);
+			const rect = this.element.getBoundingClientRect();
+			const lh = Number.parseFloat(g.storage.styles.line_height) || 1.25;
+			const sizeByLines = Math.floor(rect.height / lh / numberOfLines);
 			this.element.style.setProperty('--yt-lcf-font-size', [
 				`${sizeByLines}px`,
 				`max(${g.storage.styles.font_size}, ${sizeByLines}px)`,
@@ -1252,25 +1261,6 @@ export class LiveChatPanel {
 					return button;
 				});
 	
-				/** @type {string?} */
-				if (ol) {
-					const families = g.storage.styles.font_family.split(/,\s*/).map(s => s.replace(/^"(.*)"$/, "$1"));
-					const listitems = families.map(family => {
-						const li = document.createElement('li');
-						li.dataset.value = family;
-						const div = document.createElement('div');
-						div.style.display = 'flex';
-						const span = document.createElement('span');
-						span.style.fontFamily = family;
-						span.style.flex = '3 0';
-						span.textContent = family;
-						div.append(span, ...buttons.map(b => b.cloneNode(true)));
-						li.appendChild(div);
-						return li;
-					});
-					ol.append(...listitems);
-				}
-	
 				const select = dialog.querySelector('select');
 				// @ts-ignore
 				window.queryLocalFonts().then(fonts => {
@@ -1284,7 +1274,7 @@ export class LiveChatPanel {
 				addBtn.className = createButtonClassList('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-s');
 				addBtn.addEventListener('click', () => {
 					const family = select?.value;
-					if (family && family !== 'inherit') {
+					if (family) {
 						const li = document.createElement('li');
 						li.dataset.value = family;
 						const div = document.createElement('div');
@@ -1331,6 +1321,22 @@ export class LiveChatPanel {
 				}, { passive: true });
 	
 				fontHelper.addEventListener('click', () => {
+					while (ol?.childElementCount) ol?.lastElementChild?.remove();
+					const families = g.storage.styles.font_family.split(/,\s*/).map(s => s.replace(/^"(.*)"$/, "$1"));
+					const listitems = families.map(family => {
+						const li = document.createElement('li');
+						li.dataset.value = family;
+						const div = document.createElement('div');
+						div.style.display = 'flex';
+						const span = document.createElement('span');
+						span.style.fontFamily = family;
+						span.style.flex = '3 0';
+						span.textContent = family;
+						div.append(span, ...buttons.map(b => b.cloneNode(true)));
+						li.appendChild(div);
+						return li;
+					});
+					ol?.append(...listitems);
 					dialog.showModal();
 				}, { passive: true });
 			}
@@ -1580,7 +1586,7 @@ export class LiveChatPanel {
 					}
 				}
 			} else if (name === 'muted_words_mode') {
-				const mode = parseInt(elem.value);
+				const mode = Number.parseInt(elem.value);
 				g.storage.mutedWords.mode = mode;
 				const replacement = /** @type {HTMLInputElement} */ (ctrls.muted_words_replacement);
 				replacement.title = mode === g.index.mutedWords.char ? browser.i18n.getMessage('tooltip_mutedWordsReplacement') : '';
@@ -1816,7 +1822,7 @@ export function formatHexColor(css, inherit = '#ffffff') {
 	} else if (color.startsWith('rgb')) {
 		const [_, r, g, b] = color.match(/(\d+),\s*(\d+),\s*(\d+)/) || [];
 		if (_) {
-			return '#' + [r, g, b].map(s => parseInt(s).toString(16).padStart(2, '0')).join('');
+			return '#' + [r, g, b].map(s => Number.parseInt(s).toString(16).padStart(2, '0')).join('');
 		}
 	}
 	return inherit;

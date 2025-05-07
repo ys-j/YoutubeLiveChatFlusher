@@ -28,9 +28,6 @@
 :host(.direction-reversed-x) > div {
 	animation-direction: reverse;
 }
-:host(.direction-reversed-y), :host(.direction-reversed-y) > div {
-	scale: 1 -1;
-}
 [hidden], link, style {
 	display: none !important;
 }
