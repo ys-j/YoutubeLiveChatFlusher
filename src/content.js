@@ -1,3 +1,4 @@
+/// <reference lib="esnext" />
 /// <reference path="../browser.d.ts" />
 /// <reference path="../extends.d.ts" />
 /// <reference path="../ytlivechatrenderer.d.ts" />
@@ -8,6 +9,17 @@ const manifest = browser.runtime.getManifest();
 
 const isNotPip = () => !self.documentPictureInPicture?.window;
 document.body.dataset.browser = 'browser_specific_settings' in manifest ? 'firefox' : 'chrome';
+
+// inject script
+self.addEventListener('ytlcf-message', e => {
+	if (!e.detail) return;
+	const { ytcfg } = e.detail;
+	// if (ytInitialData) sessionStorage.setItem('ytlcf-initial-data', ytInitialData);
+	if (ytcfg) sessionStorage.setItem('ytlcf-cfg', ytcfg);
+}, { passive: true });
+const script = document.createElement('script');
+script.src = browser.runtime.getURL('./modules/injection.js');
+document.body.append(script);
 
 /** @type {Map<number, LiveChat.LiveChatItemAction[]>} */
 const actionMap = new Map();
@@ -54,8 +66,12 @@ function initialize(e) {
 		/** @type {import('./modules/pip.js')} */
 		const { initPipMenu } = modules[2];
 	
-		// run app
+		let isLive = false;
 		let succeeded = true;
+		/** @type {AbortController} */
+		let controller;
+
+		// run app
 		const player = /** @type {HTMLElement} */ (e.target);
 		await runApp(player)
 		.then(initPipMenu)
@@ -77,7 +93,8 @@ function initialize(e) {
 		 * @param {Event} e 
 		 */
 		function onSeeking(e) {
-			lastOffset = (this.currentTime - g.storage.others.time_shift) * 1000 | 0;
+			const shiftSec = !isLive && g.storage.others.time_shift || 0;
+			lastOffset = (this.currentTime - shiftSec) * 1000 | 0;
 		}
 
 		/**
@@ -85,16 +102,17 @@ function initialize(e) {
 		 * @param {Event} e 
 		 */
 		function onTimeUpdate(e) {
+			const shiftSec = !isLive && g.storage.others.time_shift || 0;
 			const player = g.layer?.element.parentElement;
 			if (player) {
 				const isAdShowing = ['ad-showing', 'ad-interrupting'].map(c => player.classList.contains(c)).includes(true);
 				if (isAdShowing) return;
 			}
-			lastOffset ||= Math.max(-g.storage.others.time_shift * 1000, 1) | 0;
-			const currentOffset = (this.currentTime - g.storage.others.time_shift) * 1000 | 0;
+			lastOffset ||= Math.max(-shiftSec * 1000, 1) | 0;
+			const currentOffset = (this.currentTime - shiftSec) * 1000 | 0;
 			const allKeys = actionMap.keys();
 			const targetKeys = ('filter' in Object.getPrototypeOf(allKeys) ? allKeys : Array.from(allKeys))
-				.filter(time => lastOffset < time && time <= currentOffset);
+				.filter(time => Math.max(lastOffset, currentOffset - 1000) < time && time <= currentOffset);
 			for (const k of targetKeys) {
 				const ev = new CustomEvent('ytlcf-actions', { detail: actionMap.get(k) });
 				self.dispatchEvent(ev);
@@ -128,6 +146,7 @@ function initialize(e) {
 		// when page load started
 		self.addEventListener('yt-navigate-start', () => {
 			self.removeEventListener('ytlcf-actions', onYtlcfActions);
+			controller?.abort();
 			actionMap.clear();
 			g.layer?.clear();
 		}, { passive: true });
@@ -139,65 +158,46 @@ function initialize(e) {
 		 * @param {CustomEvent<NavigateFinishEventDetail>} e 
 		 */
 		function onYtNavigateFinish(e) {
-			self.addEventListener('ytlcf-actions', onYtlcfActions, { passive: true });
+			self.addEventListener('ytlcf-actions', () => {
+				self.addEventListener('ytlcf-actions', onYtlcfActions, { passive: true });
+			}, { passive: true, once: true });
 			if (e.detail?.pageType !== 'watch') return;
 			
-			const video = g.app?.querySelector('#ytd-player video');
+			const video = g.app?.querySelector('#ytd-player video') || self.documentPictureInPicture?.window?.document.querySelector('#ytd-player video');
 			const videoContainer = video?.parentElement;
 			if (!videoContainer) return;
 			const parent = videoContainer.parentElement;
 			if (g.layer && parent?.contains(g.layer.element)) {
 				videoContainer.after(g.layer.element);
 			}
-	
 			const mainResponse = e.detail?.response;
 			const response = (mainResponse && 'contents' in mainResponse) ? mainResponse : mainResponse?.response;
 			if (!response) return;
 			const videoDetails = mainResponse?.playerResponse?.videoDetails;
-			const isLive = videoDetails?.isLive || videoDetails?.isUpcoming;
-			
-			const onPlayerModeChange = () => onYtNavigateFinish(e);
-			self.removeEventListener('yt-set-theater-mode-enabled', onPlayerModeChange);
-			document.removeEventListener('fullscreenchange', onPlayerModeChange);
+			isLive = videoDetails?.isLive || videoDetails?.isUpcoming;
 
 			let timer = 0;
-			if (isLive) {
-				function waitIFrame() {
-					const iframe = /** @type {HTMLIFrameElement?} */ (document.getElementById('chatframe'));
-					const doc = iframe?.contentDocument;
-					if (doc?.location.pathname === '/live_chat') {
-						clearInterval(timer);
-						skipRenderingOnce();
-						doc.addEventListener('yt-action', onYtAction, { passive: true });
-					}
-				}
-				timer = setInterval(waitIFrame, 1000);
-				waitIFrame();
-				self.addEventListener('yt-set-theater-mode-enabled', onPlayerModeChange, { passive: true, once: true });
-				document.addEventListener('fullscreenchange', onPlayerModeChange, { passive: true, once: true });
-			} else {
-				timer = setInterval(() => {
-					if (actionMap.size > 0) {
-						clearInterval(timer);
-						// when the video has chat replay
-						video?.addEventListener('seeking', onSeeking, { passive: true });
-						video?.addEventListener('timeupdate', onTimeUpdate, { passive: true });
-					}
-				}, 100);
-	
-				// Fetching chat actions async
-				fetchChatActions(response, actionMap).catch(reason => {
-					const videoId = videoDetails?.videoId;
-					const message = videoId ? reason?.replace('.', ': ' + videoId) : reason;
-					console.warn(message);
-				}).finally(() => {
+			timer = setInterval(() => {
+				if (actionMap.size > 0) {
 					clearInterval(timer);
-				});
-			}
+					video?.addEventListener('seeking', onSeeking, { passive: true });
+					video?.addEventListener('timeupdate', onTimeUpdate, { passive: true });
+				}
+			}, 250);
+
+			// Fetching chat actions async
+			controller = new AbortController();
 			if (video) {
 				video.removeEventListener('seeking', onSeeking);
 				video.removeEventListener('timeupdate', onTimeUpdate);
 			}
+			fetchChatActions(response, actionMap, controller.signal).catch(reason => {
+				const videoId = videoDetails?.videoId;
+				const message = videoId ? reason?.replace('.', ': ' + videoId) : reason;
+				console.warn(message);
+			}).finally(() => {
+				clearInterval(timer);
+			});
 		}
 	
 		document.body.addEventListener('keydown', e => {

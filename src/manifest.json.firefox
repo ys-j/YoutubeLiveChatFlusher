@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "__MSG_manifestName__",
-	"version": "0.10.5",
+	"version": "0.10.6",
 	"author": "_y_s",
 	"browser_specific_settings": {
 		"gecko": {

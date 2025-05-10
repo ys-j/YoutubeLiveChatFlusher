@@ -9,6 +9,7 @@
 	animation: flush var(--yt-lcf-animation-duration) linear var(--yt-lcf-animation-play-state);
 	contain: content;
 	left: 100%;
+	line-height: var(--yt-lcf-line-height);
 	max-width: var(--yt-lcf-max-width);
 	overflow: hidden;
 	pointer-events: auto;

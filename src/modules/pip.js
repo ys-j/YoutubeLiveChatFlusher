@@ -1,4 +1,5 @@
 /// <reference path="../../browser.d.ts" />
+/// <reference path="../../extends.d.ts" />
 
 export function initPipMenu() {
 	/** @type {HTMLElement?} */

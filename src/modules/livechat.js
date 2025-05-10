@@ -1,7 +1,8 @@
-/// <reference lib="esnext" />
 /// <reference path="../../browser.d.ts" />
 /// <reference path="../../extends.d.ts" />
 /// <reference path="../../ytlivechatrenderer.d.ts" />
+
+import { filterMessage, formatHexColor, getColorRGB, getText, isCatchable, isNotPip, isOverflow } from './utils.js';
 
 const manifest = browser.runtime.getManifest();
 const parser = new DOMParser();
@@ -10,7 +11,7 @@ const defaultSettings = {
 	styles: {
 		animation_duration: '8s',
 		font_size: '32px',
-		line_height: '1.25',
+		line_height: '1.4',
 		font_family: 'sans-serif',
 		font_weight: '500',
 		stroke_color: '#000000',
@@ -487,7 +488,7 @@ export function doChatActions(actions) {
 	
 	// Add
 	const fs = Number.parseInt(g.storage.styles.font_size) || 36;
-	const lhf = Number.parseFloat(g.storage.styles.line_height) || 1.25;
+	const lhf = Number.parseFloat(g.storage.styles.line_height) || 1.4;
 	const lh = fs * lhf;
 	const sv = g.storage.others.simultaneous, si = g.index.simultaneous;
 	const last = sv === si.last_merge ? /** @type {HTMLElement?} */ (root.lastElementChild) : null;
@@ -555,12 +556,15 @@ export function doChatActions(actions) {
 			return resolve(elem.id);
 		}
 		const overline = Math.floor(ch / lh);
+		const reversed = (g.storage.others.direction & 2) > 0;
 		let y = 0;
 		do {
 			if (children.length > 0) {
 				elem.style[dir] = `${y * lhf}em`;
 				elem.dataset.line = `${y}`;
-				if (!children.some(before => isCatchable(before, elem)) && !isOverflow(le, elem)) return resolve(elem.id);
+				const catchable = children.some(before => isCatchable(before, elem, reversed));
+				const overflow = isOverflow(le, elem);
+				if (!catchable && !overflow) return resolve(elem.id);
 			} else {
 				elem.style[dir] = '0px';
 				elem.dataset.line = '0';
@@ -646,7 +650,7 @@ async function parseChatItem(item) {
 	const elem = document.createElement('div');
 	elem.id = renderer.id || '';
 	elem.dataset.authorId = renderer.authorExternalChannelId;
-	const name = getRawText(renderer.authorName);
+	const name = getText(renderer.authorName);
 	elem.dataset.authorName = name;
 	const authorElems = document.createDocumentFragment();
 	if (name) {
@@ -666,7 +670,7 @@ async function parseChatItem(item) {
 	}
 	/** @type { { orig: Node[]?, trans: Node[]?, src: string } } */
 	const msg = {
-		orig: renderer.message ? getChatMessage(renderer.message, { filterMode: g.storage.mutedWords.mode }) : null,
+		orig: renderer.message ? getChatMessage(renderer.message) : null,
 		trans: null,
 		src: '',
 	};
@@ -713,10 +717,10 @@ async function parseChatItem(item) {
 			body.className = 'body';
 			body.append(...(msg.trans || msg.orig || []));
 			elem.append(header, body);
-			elem.dataset.text = getRawText(renderer.message);
+			elem.dataset.text = getText(renderer.message);
 			return elem;
 		}
-		case 'liveChatMembershipItemRenderer': {			
+		case 'liveChatMembershipItemRenderer': {
 			const { headerPrimaryText: primary, headerSubtext: sub } 
 				= /** @type {LiveChat.MembershipItemRenderer["liveChatMembershipItemRenderer"]} */ (renderer);
 			const messageType = primary ? 'milestone' : 'membership';
@@ -728,7 +732,7 @@ async function parseChatItem(item) {
 			header.style.backgroundColor = `rgba(${getColorRGB(0xff0f9d58).join()},var(--yt-lcf-background-opacity))`;
 			const months = document.createElement('span');
 			months.part = months.className = 'months';
-			months.append(...getChatMessage(primary || sub, { start: primary ? 1 : 0 }));
+			months.append(...getChatMessage(primary || sub, { start: primary ? 1 : 0, filterMode: 0 }));
 			header.append(authorElems, months);
 			const body = document.createElement('div');
 			body.part = 'message';
@@ -749,7 +753,7 @@ async function parseChatItem(item) {
 			header.style.backgroundColor = `rgba(${getColorRGB(headerBackgroundColor).join()},var(--yt-lcf-background-opacity))`;
 			const amount = document.createElement('span');
 			amount.part = amount.className = 'amount';
-			amount.append(getRawText(purchaseAmountText));
+			amount.append(getText(purchaseAmountText));
 			header.append(authorElems, amount);
 			const body = document.createElement('div');
 			body.part = 'message';
@@ -770,7 +774,7 @@ async function parseChatItem(item) {
 			header.style.backgroundColor = `rgba(${getColorRGB(backgroundColor).join()},var(--yt-lcf-background-opacity))`;
 			const amount = document.createElement('span');
 			amount.part = amount.className = 'amount';
-			amount.append(getRawText(purchaseAmountText));
+			amount.append(getText(purchaseAmountText));
 			header.append(authorElems, amount);
 			const body = document.createElement('figure');
 			body.part = 'sticker';
@@ -833,38 +837,26 @@ async function parseChatItem(item) {
 
 /**
  * @param { LiveChat.Runs | LiveChat.SimpleText | undefined } message
- */
-function getRawText(message) {
-	if (!message) return '';
-	if ('simpleText' in message) return message.simpleText;
-	const rslt = [];
-	for (const r of message.runs) {
-		if ('text' in r) {
-			rslt.push(r.text);
-		} else {
-			rslt.push(r.emoji.shortcuts?.[0] || r.emoji.emojiId || '');
-		}
-	}
-	return rslt.join('');
-}
-
-/**
- * @param { LiveChat.Runs | LiveChat.SimpleText | undefined } message
  * @param { { start?: number, end?: number, emoji?: number, filterMode?: number } } options
  */
 function getChatMessage(message, options = {}) {
 	if (!message) return [];
 	
 	const { start, end, filterMode } = options;
+	const filterOptions = {
+		mode: filterMode || g.storage.mutedWords.mode,
+		rules: g.list.mutedWords,
+		replacement: g.storage.mutedWords.replacement,
+	};
 	if ('simpleText' in message) {
-		const str = filterMessage(message.simpleText).value;
+		const str = filterMessage(message.simpleText, filterOptions).value;
 		return [ new Text(start || end ? str.slice(start, end) : str) ];
 	}
 	const rslt = [];
 	const runs = start || end ? message.runs.slice(start, end) : message.runs;
 	for (const r of runs) {
 		if ('text' in r) {
-			const filtered = filterMessage(r.text, filterMode);
+			const filtered = filterMessage(r.text, filterOptions);
 			if (filtered.result && filterMode === g.index.mutedWords.all) return [];
 			let node;
 			if (r.navigationEndpoint || r.bold || r.italics) {
@@ -963,105 +955,6 @@ function getAuthorType(renderer) {
 	return 'normal';
 }
 
-/**
- * @param {Element} before 
- * @param {Element} after 
- * @param {boolean} [reversed=false] 
- */
-function isCatchable(before, after, reversed = (g.storage.others.direction & 2) > 0) {
-	const sec = Number.parseFloat(g.storage.styles.animation_duration) || 4;
-	const [b, a] = [before, after].map(elm => elm.getBoundingClientRect());
-	if (b.top <= a.top && a.top < b.bottom) {
-		if (reversed ? b.left <= a.right : a.left <= b.right) {
-			return true;
-		} else if (b.width >= a.width) {
-			return false;
-		} else {
-			const [bSpeed, aSpeed] = [b, a].map(rect => rect.width / sec);
-			const speedDiff = aSpeed - bSpeed;
-			const posDiff = reversed ? b.left - a.right : a.left - b.right;
-			return posDiff < speedDiff * sec;
-		}
-	} else {
-		return false;
-	}
-}
-
-/**
- * @param {Element} before 
- * @param {Element} after 
- */
-function isOverlapping(before, after) {
-	const [b, a] = [before, after].map(elm => elm.getBoundingClientRect());
-	const [bDur, aDur] = [before, after].map(elm => {
-		const dur = getComputedStyle(elm).animationDuration;
-		const [_, num, unit] = dur.match(/([\d\.]+)(\D+)/) || [];
-		if (num && unit) switch (unit) {
-			case 'ms': return Number.parseFloat(num);
-			case 's': return Number.parseFloat(num) * 1000;
-		}
-		return Number.parseFloat(g.storage.styles.animation_duration) * 1000 || 4000;
-	});
-	const bSpeed = b.width / bDur, aSpeed = a.width / aDur;
-	const speedDiff = aSpeed - bSpeed;
-	const start = (a.left - b.right) / speedDiff;
-	const end = (a.right - b.left) / speedDiff;
-	return end > start ? Math.min(Math.round(end - start), bDur) : 0;
-}
-
-/**
- * @param {Element} parent 
- * @param {Element} child 
- */
-function isOverflow(parent, child) {
-	const p = parent.getBoundingClientRect();
-	const c = child.getBoundingClientRect();
-	return c.bottom > p.top + p.height;
-}
-
-/**
- * @param {string} str 
- * @param {number} [mode=0] 
- */
-function filterMessage(str, mode = 0) {
-	const list = g.list.mutedWords;
-	const replacement = g.storage.mutedWords.replacement;
-	let replaced = false;
-	switch (mode) {
-		case g.index.mutedWords.all: {
-			for (const rule of list) {
-				if (rule.test(str)) {
-					rule.lastIndex = 0;
-					return { value: '', result: true };
-				}
-			}
-			break;
-		}
-		case g.index.mutedWords.word: {
-			for (const rule of list) {
-				if (rule.test(str)) {
-					str = str.replace(rule, replacement);
-					replaced = true;
-				}
-			}
-			break;
-		}
-		case g.index.mutedWords.char: {
-			const char = replacement ? [...replacement][0] : '';
-			for (const rule of list) {
-				if (rule.test(str)) {
-					str = char ? str.replace(rule, m => {
-						const len = [...m].length;
-						return char.repeat(len);
-					}) : str.replace(rule, '');
-					replaced = true;
-				}
-			}
-			break;
-		}
-	}
-	return { value: str, result: replaced };
-}
 
 export class LiveChatLayer {
 	limit = 0;
@@ -1119,7 +1012,7 @@ export class LiveChatLayer {
 	}
 	resetAnimationDuration(pxPerSec = g.storage.others.px_per_sec) {
 		if (pxPerSec > 0) {
-			const durationBySpeed = this.element.getBoundingClientRect().width / pxPerSec;
+			const durationBySpeed = (this.element.getBoundingClientRect().width / pxPerSec) || 8;
 			g.storage.styles.animation_duration = durationBySpeed.toFixed(1) + 's';
 			if (g.panel?.form) {
 				const input = /** @type {HTMLInputElement?} */ (g.panel.form.elements.animation_duration);
@@ -1136,7 +1029,7 @@ export class LiveChatLayer {
 	resetFontSize(numberOfLines = g.storage.others.number_of_lines) {
 		if (numberOfLines) {
 			const rect = this.element.getBoundingClientRect();
-			const lh = Number.parseFloat(g.storage.styles.line_height) || 1.25;
+			const lh = Number.parseFloat(g.storage.styles.line_height) || 1.4;
 			const sizeByLines = Math.floor(rect.height / lh / numberOfLines);
 			this.element.style.setProperty('--yt-lcf-font-size', [
 				`${sizeByLines}px`,
@@ -1366,7 +1259,7 @@ export class LiveChatPanel {
 					const value = input?.value;
 					const styleMap = new Map(value ? value.split(/;\s*/).map(entry => {
 						const [prop, val] = entry.split(/:\s*/, 2);
-						return [prop, val];
+						return [prop.toLowerCase(), val];
 					}) : undefined);
 					if (e.key === 'Enter') {
 						const defaults = { left: 0, top: 0, width: 100, height: 100 };
@@ -1599,7 +1492,7 @@ export class LiveChatPanel {
 						const value = /** @type {HTMLInputElement} */ (elem).valueAsNumber;
 						if (value > 0) {
 							const speed = le.getBoundingClientRect().width / value;
-							/** @type {HTMLInputElement} */ (ctrls.px_per_sec).valueAsNumber = Math.round(speed);
+							if (speed) /** @type {HTMLInputElement} */ (ctrls.px_per_sec).valueAsNumber = Math.round(speed);
 						}
 						break;
 					}
@@ -1785,47 +1678,6 @@ export function updateMutedWordsList() {
 		: plainList.length > 0
 			? [ new RegExp(plainList.map(escapeRegExp).join('|'), 'g') ]
 			: [];
-}
-
-/**
- * Check if now in PiP-mode
- * @returns {boolean} if not PiP-mode now
- */
-export function isNotPip() {
-	return !self.documentPictureInPicture?.window;
-}
-
-/**
- * Convert color from long integer to array of integer.
- * @param {number} long integer of color `0xAARRGGBB`
- * @returns {number[]} array of integer `[RR, GG, BB]`
- */
-export function getColorRGB(long) {
-	const separated = /** @type {string[]} */ (long.toString(16).match(/[0-9a-f]{2}/g) || [])
-	return separated.map(hex => Number.parseInt(hex, 16)).slice(1);
-}
-
-/**
- * Convert CSS color value from short hex-format or rgb()-format to normal hex-format.
- * @param {string} css short hex-format or rgb()-format color value (e.g. `#abc`, `rgb(0, 128, 255)`)
- * @param {string} [inherit='#ffffff'] default value
- * @returns {string} normal hex-format color (e.g. `#123456`)
- */
-export function formatHexColor(css, inherit = '#ffffff') {
-	const color = css.trim();
-	if (color.startsWith('#')) {
-		if (color.length > 6) {
-			return color.slice(0, 7);
-		} else if (color.length > 3) {
-			return color[0] + color[1] + color[1] + color[2] + color[2] + color[3] + color[3];
-		}
-	} else if (color.startsWith('rgb')) {
-		const [_, r, g, b] = color.match(/(\d+),\s*(\d+),\s*(\d+)/) || [];
-		if (_) {
-			return '#' + [r, g, b].map(s => Number.parseInt(s).toString(16).padStart(2, '0')).join('');
-		}
-	}
-	return inherit;
 }
 
 function refreshPage() {

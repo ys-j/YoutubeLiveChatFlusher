@@ -1,9 +1,12 @@
+/// <reference path="../../ytlivechatrenderer.d.ts" />
+
 /**
  * @param {any} response 
  * @param {Map<number, LiveChat.LiveChatItemAction[]>} outMap 
+ * @param {AbortSignal} signal
  * @return {Promise<boolean>} if video has chat
  */
-export async function fetchChatActions(response, outMap) {
+export async function fetchChatActions(response, outMap, signal) {
 	const liveChatRenderer = response?.contents?.twoColumnWatchNextResults?.conversationBar?.liveChatRenderer;
 	/** @type {boolean} */
 	const isReplay = liveChatRenderer?.isReplay || false;
@@ -11,7 +14,7 @@ export async function fetchChatActions(response, outMap) {
 	const continuation = liveChatRenderer?.continuations?.[0]?.reloadContinuationData?.continuation;
 	if (continuation) {
 		outMap.clear();
-		const generator = getChatActionsAsyncIterable(continuation, isReplay);
+		const generator = getChatActionsAsyncIterable(signal, continuation, isReplay);
 		for await (const actions of generator) {
 			for (const container of actions) {
 				const action = container?.replayChatItemAction;
@@ -23,7 +26,7 @@ export async function fetchChatActions(response, outMap) {
 				}
 			}
 		}
-		return true;
+		return isReplay;
 	} else {
 		throw 'This video has no chat.';
 		// return false;
@@ -31,22 +34,48 @@ export async function fetchChatActions(response, outMap) {
 }
 
 /**
+ * @param {AbortSignal} signal 
  * @param {string} initialContinuation 
  * @param {boolean} [isReplay=false] 
  */
-async function* getChatActionsAsyncIterable(initialContinuation, isReplay = false) {
+async function* getChatActionsAsyncIterable(signal, initialContinuation, isReplay = false) {
 	const url = new URL('/youtubei/v1/live_chat/get_live_chat' + (isReplay ? '_replay' : ''), location.origin);
 	url.searchParams.set('prettyPrint', 'false');
 
 	/** @type {string?} */
 	let continuation = initialContinuation;
+	/** @type { { actions: LiveChat.ReplayChatItemAction[] } } */
 	let contents = { actions: [] };
-	while (continuation && contents.actions) {
-		contents = await getContentsAsync(url, continuation);
-		yield /** @type { LiveChat.ReplayChatItemAction[] } */ (contents.actions || []);
-		continuation = getContinuation(contents);
+	if (isReplay) {
+		while (!signal.aborted && continuation && contents.actions) {
+			contents = await getContentsAsync(url, continuation);
+			yield contents.actions || [];
+			continuation = getContinuation(contents, isReplay);
+		}
+	} else {
+		while (!signal.aborted && continuation) {
+			contents = await getContentsAsync(url, continuation);
+			if (contents.actions) {
+				yield [
+					{
+						replayChatItemAction: {
+							actions: contents.actions,
+							videoOffsetTimeMsec: ((document.querySelector('video')?.currentTime || 0) * 1000).toFixed(0),
+						}
+					}
+				];
+			}
+			continuation = getContinuation(contents, isReplay);
+			await sleep(200);
+		}
 	}
 }
+
+const defaultClient = {
+	clientName: 'WEB',
+	clientVersion: '2.20240731.40.00',
+	mainAppWebInfo: { graftUrl: location.href },
+};
 
 /**
  * @param {URL} url URL
@@ -54,34 +83,44 @@ async function* getChatActionsAsyncIterable(initialContinuation, isReplay = fals
  * @returns {Promise<any>} livechat contents object
  */
 async function getContentsAsync(url, continuation) {
-	const json = await fetch(url, {
+	const stored = sessionStorage.getItem('ytlcf-cfg');
+	const client = stored && JSON.parse(stored)?.data_?.['INNERTUBE_CONTEXT']?.client || defaultClient;
+	const response = await fetch(url, {
 		method: 'post',
 		headers: {
 			'Content-Type': 'application/json',
 		},
 		body: JSON.stringify({
-			context: {
-				client: {
-					clientName: 'WEB',
-					clientVersion: '2.20240731.40.00',
-					mainAppWebInfo: { graftUrl: location.href },
-				},
-			},
+			context: { client },
 			continuation,
 		}),
 	}).then(res => res.json());
-	return json?.continuationContents?.liveChatContinuation;
+	return response?.continuationContents?.liveChatContinuation;
 }
 
 /**
  * @param {any} contents livechat contents object
+ * @param {boolean} isReplay if is replay
  * @returns {string?} continuation token
  */
-function getContinuation(contents) {
-	for (const c of contents?.continuations || []) {
-		if ('liveChatReplayContinuationData' in c) {
-			return c.liveChatReplayContinuationData?.continuation;
-		}
+function getContinuation(contents, isReplay) {
+	const c = contents?.continuations?.[0];
+	if (isReplay) {
+		return c?.liveChatReplayContinuationData?.continuation;
+	} else {
+		return c?.invalidationContinuationData?.continuation || c?.timedContinuationData?.continuation;
 	}
-	return null;
+}
+
+/**
+ * @param {number} ms 
+ */
+function sleep(ms) {
+	/** @type {Promise<void>} */
+	const promise = new Promise(resolve => {
+		setTimeout(() => {
+			resolve();
+		}, ms);
+	});
+	return promise;
 }

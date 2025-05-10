@@ -914,7 +914,7 @@ declare namespace browser {
 		function requestUpdateCheck(): Promise<[status: RequestUpdateCheckStatus, details?: { version: string }]>
 		function connect(extensionId?: string, connectInfo?: { name?: string, includeTlsChannelId?: boolean }): Port
 		function connectNative(application: string): Port
-		function sendMessage(extensionId: string, message: any, options?: { includeTlsChannelId?: boolean }): Promise<any>
+		function sendMessage(extensionId?: string, message: any, options?: { includeTlsChannelId?: boolean }): Promise<any>
 		function sendMessage(message: any, options?: { includeTlsChannelId?: boolean }): Promise<any>
 		function sendNativeMessage(application: string, message: object): Promise<any>
 		function getPlatformInfo(): Promise<PlatformInfo>

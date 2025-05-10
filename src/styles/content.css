@@ -74,7 +74,7 @@
 	font-family: var(--yt-lcf-font-family);
 	font-weight: var(--yt-lcf-font-weight);
 	height: 100%;
-	line-height: var(--yt-lcf-line-height);
+	line-height: 1.25;
 	max-height: 100%;
 	max-width: 100%;
 	opacity: var(--yt-lcf-layer-opacity);
