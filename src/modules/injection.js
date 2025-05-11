@@ -1,7 +1,7 @@
 (function () {
 	const ev = new CustomEvent('ytlcf-message', {
 		detail: {
-			// ytInitialData: JSON.stringify(window['ytInitialData']),
+			ytInitialData: JSON.stringify(window['ytInitialData']),
 			ytcfg: JSON.stringify(window['ytcfg']),
 		},
 	});

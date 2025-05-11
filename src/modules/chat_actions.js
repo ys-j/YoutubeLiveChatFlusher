@@ -1,4 +1,7 @@
+/// <reference path="../../extends.d.ts" />
 /// <reference path="../../ytlivechatrenderer.d.ts" />
+
+const isNotPip = () => !self.documentPictureInPicture?.window;
 
 /**
  * @param {any} response 
@@ -26,7 +29,7 @@ export async function fetchChatActions(response, outMap, signal) {
 				}
 			}
 		}
-		return isReplay;
+		return true;
 	} else {
 		throw 'This video has no chat.';
 		// return false;
@@ -55,12 +58,13 @@ async function* getChatActionsAsyncIterable(signal, initialContinuation, isRepla
 	} else {
 		while (!signal.aborted && continuation) {
 			contents = await getContentsAsync(url, continuation);
+			const video = (isNotPip() ? self : self.documentPictureInPicture?.window)?.document.querySelector('video');
 			if (contents.actions) {
 				yield [
 					{
 						replayChatItemAction: {
 							actions: contents.actions,
-							videoOffsetTimeMsec: ((document.querySelector('video')?.currentTime || 0) * 1000).toFixed(0),
+							videoOffsetTimeMsec: ((video?.currentTime || 0) * 1000).toFixed(0),
 						}
 					}
 				];
@@ -82,10 +86,10 @@ const defaultClient = {
  * @param {string} continuation continuation token
  * @returns {Promise<any>} livechat contents object
  */
-async function getContentsAsync(url, continuation) {
+function getContentsAsync(url, continuation) {
 	const stored = sessionStorage.getItem('ytlcf-cfg');
 	const client = stored && JSON.parse(stored)?.data_?.['INNERTUBE_CONTEXT']?.client || defaultClient;
-	const response = await fetch(url, {
+	return fetch(url, {
 		method: 'post',
 		headers: {
 			'Content-Type': 'application/json',
@@ -94,8 +98,20 @@ async function getContentsAsync(url, continuation) {
 			context: { client },
 			continuation,
 		}),
-	}).then(res => res.json());
-	return response?.continuationContents?.liveChatContinuation;
+	})
+	.then(res => {
+		if (res.ok) return res.json();
+		else throw 'Request failed.';
+	})
+	.then(json => json?.continuationContents?.liveChatContinuation)
+	.catch(reason => {
+		console.error(reason);
+		const c = {
+			liveChatReplayContinuationData: { continuation },
+			invalidationContinuationData: { continuation },
+		};
+		return { continuations: [ c ] };
+	});
 }
 
 /**

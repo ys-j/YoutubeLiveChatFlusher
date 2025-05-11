@@ -13,9 +13,15 @@ document.body.dataset.browser = 'browser_specific_settings' in manifest ? 'firef
 // inject script
 self.addEventListener('ytlcf-message', e => {
 	if (!e.detail) return;
-	const { ytcfg } = e.detail;
-	// if (ytInitialData) sessionStorage.setItem('ytlcf-initial-data', ytInitialData);
+	const { ytInitialData, ytcfg } = e.detail;
+	if (ytInitialData) sessionStorage.setItem('ytlcf-initial-data', ytInitialData);
 	if (ytcfg) sessionStorage.setItem('ytlcf-cfg', ytcfg);
+	const target = document.querySelector('ytd-app');
+	const detail = {
+		pageType: ['watch', 'live'].includes(location.pathname?.substring(1)) ? 'watch' : 'browser',
+		response: JSON.parse(ytInitialData),
+	};
+	if (target) initialize({ target, detail });
 }, { passive: true });
 const script = document.createElement('script');
 script.src = browser.runtime.getURL('./modules/injection.js');
@@ -23,16 +29,11 @@ document.body.append(script);
 
 /** @type {Map<number, LiveChat.LiveChatItemAction[]>} */
 const actionMap = new Map();
-
-// root window
-const root = isNotPip() ? self : self.documentPictureInPicture?.window || self;
 	
 self.addEventListener('ytlcf-ready', e => {
 	e.stopImmediatePropagation();
 	console.log(manifest.name + ' is ready!');
 });
-
-self.addEventListener('yt-navigate-finish', initialize, { passive: true, once: true });
 	
 document.addEventListener('yt-action', e => {
 	const name = e.detail?.actionName;
@@ -53,14 +54,14 @@ document.addEventListener('yt-action', e => {
  */
 
 /**
- * @param {CustomEvent<NavigateFinishEventDetail>} e 
+ * @param { CustomEvent<NavigateFinishEventDetail> | { target: EventTarget, detail: NavigateFinishEventDetail } } e 
  */
 function initialize(e) {
 	const scriptsPaths = ['./modules/livechat.js', './modules/chat_actions.js', './modules/pip.js'];
 	const importings = scriptsPaths.map(path => import(browser.runtime.getURL(path)));
 	Promise.all(importings).then(async modules => {
 		/** @type {import('./modules/livechat.js')} */
-		const { g, runApp, skipRenderingOnce, doChatActions } = modules[0];
+		const { g, runApp, doChatActions } = modules[0];
 		/** @type {import('./modules/chat_actions.js')} */
 		const { fetchChatActions } = modules[1];
 		/** @type {import('./modules/pip.js')} */
@@ -80,6 +81,7 @@ function initialize(e) {
 			succeeded = false;
 		});
 		if (succeeded) {
+			self.addEventListener('yt-navigate-finish', onYtNavigateFinish, { passive: true });
 			onYtNavigateFinish(e);
 		} else {
 			self.addEventListener('yt-navigate-finish', initialize, { passive: true, once: true });
@@ -90,18 +92,16 @@ function initialize(e) {
 
 		/**
 		 * @this {HTMLVideoElement}
-		 * @param {Event} e 
 		 */
-		function onSeeking(e) {
+		function onSeeking() {
 			const shiftSec = !isLive && g.storage.others.time_shift || 0;
 			lastOffset = (this.currentTime - shiftSec) * 1000 | 0;
 		}
 
 		/**
 		 * @this {HTMLVideoElement}
-		 * @param {Event} e 
 		 */
-		function onTimeUpdate(e) {
+		function onTimeUpdate() {
 			const shiftSec = !isLive && g.storage.others.time_shift || 0;
 			const player = g.layer?.element.parentElement;
 			if (player) {
@@ -111,29 +111,13 @@ function initialize(e) {
 			lastOffset ||= Math.max(-shiftSec * 1000, 1) | 0;
 			const currentOffset = (this.currentTime - shiftSec) * 1000 | 0;
 			const allKeys = actionMap.keys();
-			const targetKeys = ('filter' in Object.getPrototypeOf(allKeys) ? allKeys : Array.from(allKeys))
-				.filter(time => Math.max(lastOffset, currentOffset - 1000) < time && time <= currentOffset);
+			const forFiltering = 'filter' in Object.getPrototypeOf(allKeys) ? allKeys : Array.from(allKeys);
+			const targetKeys = forFiltering.filter(time => Math.max(lastOffset, currentOffset - 1000) < time && time <= currentOffset);
 			for (const k of targetKeys) {
 				const ev = new CustomEvent('ytlcf-actions', { detail: actionMap.get(k) });
 				self.dispatchEvent(ev);
 			}
 			lastOffset = currentOffset;
-		}
-	
-		/**
-		 * @param {CustomEvent<{ actionName: string, args?: any[] }>} e 
-		 */
-		function onYtAction(e) {
-			switch (e.detail?.actionName) {
-				case 'yt-live-chat-actions': {
-					const ev = new CustomEvent('ytlcf-actions', { detail: e.detail?.args?.[0] });
-					self.dispatchEvent(ev);
-					break;
-				}
-				case 'yt-live-chat-reload-success':
-				case 'yt-live-chat-seek-success':
-					skipRenderingOnce();
-			}
 		}
 
 		/**
@@ -145,17 +129,14 @@ function initialize(e) {
 
 		// when page load started
 		self.addEventListener('yt-navigate-start', () => {
-			self.removeEventListener('ytlcf-actions', onYtlcfActions);
+			self?.removeEventListener('ytlcf-actions', onYtlcfActions);
 			controller?.abort();
 			actionMap.clear();
 			g.layer?.clear();
 		}, { passive: true });
-	
-		// when page load ended
-		self.addEventListener('yt-navigate-finish', onYtNavigateFinish, { passive: true });
 
 		/**
-		 * @param {CustomEvent<NavigateFinishEventDetail>} e 
+		 * @param { CustomEvent<NavigateFinishEventDetail> | { target: EventTarget, detail: NavigateFinishEventDetail } } e 
 		 */
 		function onYtNavigateFinish(e) {
 			self.addEventListener('ytlcf-actions', () => {
@@ -163,7 +144,7 @@ function initialize(e) {
 			}, { passive: true, once: true });
 			if (e.detail?.pageType !== 'watch') return;
 			
-			const video = g.app?.querySelector('#ytd-player video') || self.documentPictureInPicture?.window?.document.querySelector('#ytd-player video');
+			const video = (isNotPip() ? self : self.documentPictureInPicture?.window)?.document.querySelector('#ytd-player video');
 			const videoContainer = video?.parentElement;
 			if (!videoContainer) return;
 			const parent = videoContainer.parentElement;
