@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="680" viewBox="-460 -340 920 680">
+	<defs>
+		<style>
+			text {
+				font-family: 'Roboto Condensed';
+				text-anchor: middle;
+			}
+			.h1 {
+				font-size: 56pt;
+				stroke: black;
+			}
+			.h2 {
+				font-size: 28pt;
+			}
+			.red {
+				fill: red;
+			}
+		</style>
+		<symbol id="icon" viewBox="-36 -36 72 72">
+			<path d="M0,24Q8,24,24,23,31,22,31,19,32,12,32,0H0M0,24Q-8,24,-24,23,-31,22,-31,19,-32,12,-32,0H0M0,-24Q-8,-24,-24,-23,-31,-22,-31,-19,-32,-12,-32,0H0M0,-24Q8,-24,24,-23,31,-22,31,-19,32,-12,32,0H0Z" fill="red"/>
+			<g transform="translate(0,10)" fill="white">
+				<path d="M4,-10l12,12h6l-12,-12,12,-12h-6z" />
+				<circle cx="0" r="2.5" />
+				<circle cx="-10" r="2.5" />
+				<circle cx="-20" r="2.5" />
+			</g>
+		</symbol>
+	</defs>
+	<rect x="-460" y="-340" width="920" height="680" fill="white" />
+	<use href="#icon" x="-240" y="-320" width="480" height="480" />
+	<text class="h1" y="172">YouTube LiveChat Flusher</text>
+	<text class="h2" x="-24" y="224">Danmaku / Bullet Chat on YouTube <tspan class="red" dy="0">Live</tspan></text>
+	<circle class="red" cx="264" cy="212" r="8" />
+</svg>
