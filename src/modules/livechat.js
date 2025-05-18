@@ -577,14 +577,12 @@ export function doChatActions(actions) {
 		const st = g.storage.others.overlapping;
 		const o = st & 0b01 ? .8 : 1;
 		const dy = st & 0b10 ? .5 : 0;
-		// const d = st & 0b100 ? 'none': 'block';
 
 		y = Math.floor(Math.random() * (overline - 1));
 		const sibling = children.filter(c => c.dataset.line === `${y}`);
 		elem.style.top = `${(y + dy) * lhf}em`;
 		elem.style.opacity = `${Math.max(.5, Math.pow(o, sibling.length || 1))}`;
 		elem.style.zIndex = `-${sibling.length || 1}`;
-		// elem.style.display = d;
 		elem.dataset.line = `${y}`;
 		return resolve(elem.id);
 	}));

@@ -1,8 +1,6 @@
 /// <reference path="../../extends.d.ts" />
 /// <reference path="../../ytlivechatrenderer.d.ts" />
 
-const isNotPip = () => !self.documentPictureInPicture?.window;
-
 /**
  * @param {any} response 
  * @param {Map<number, LiveChat.LiveChatItemAction[]>} outMap 
@@ -58,16 +56,10 @@ async function* getChatActionsAsyncIterable(signal, initialContinuation, isRepla
 	} else {
 		while (!signal.aborted && continuation) {
 			contents = await getContentsAsync(url, continuation);
-			const video = (isNotPip() ? self : self.documentPictureInPicture?.window)?.document.querySelector('video');
 			if (contents.actions) {
-				yield [
-					{
-						replayChatItemAction: {
-							actions: contents.actions,
-							videoOffsetTimeMsec: ((video?.currentTime || 0) * 1000).toFixed(0),
-						}
-					}
-				];
+				// Fire actions directly.
+				const ev = new CustomEvent('ytlcf-actions', { detail: contents.actions });
+				self.dispatchEvent(ev);
 			}
 			continuation = getContinuation(contents, isReplay);
 			await sleep(200);
