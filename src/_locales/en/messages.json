@@ -29,8 +29,8 @@
 	"userDefinedCssTab": {
 		"message": "User CSS"
 	},
-	"aboutTab": {
-		"message": "Others/About"
+	"othersTab": {
+		"message": "Others"
 	},
 	"animationDuration": {
 		"message": "Animation Duration"
@@ -160,18 +160,6 @@
 	},
 	"resizeLayer": {
 		"message": "Resize layer"
-	},
-	"hotkey": {
-		"message": "Hotkeys"
-	},
-	"hotkey_layer": {
-		"message": "Layer"
-	},
-	"hotkey_panel": {
-		"message": "Config Panel"
-	},
-	"autostart": {
-		"message": "Auto Start"
 	},
 	"normal": {
 		"message": "Normal"
@@ -347,12 +335,6 @@
 	"targetLanguage": {
 		"message": "Target language"
 	},
-	"disabled": {
-		"message": "Disabled"
-	},
-	"enabled": {
-		"message": "Enabled"
-	},
 	"addableByBrowserLanguageSettings": {
 		"message": "You can add more options \nvia browser's language settings."
 	},
@@ -366,12 +348,15 @@
 		"message": "Translation URL (GET)"
 	},
 	"timeshift": {
-		"message": "Time-shift (beta)"
+		"message": "Time-shift"
 	},
 	"timeshift_note": {
 		"message": "(Only available in replay)"
 	},
-	"about": {
+	"otherConfig": {
+		"message": "Open Other Options"
+	},
+	"aboutAddon": {
 		"message": "About Extension"
 	},
 	"version": {
@@ -389,8 +374,65 @@
 	"init": {
 		"message": "Reset"
 	},
-	"page_refresh": {
-		"message": "This page will be refreshed to apply the configurations."
+	"commonSettings": {
+		"message": "Common Settings"
+	},
+	"loadingMode": {
+		"message": "Chat Loading Mode"
+	},
+	"livestream": {
+		"message": "Live"
+	},
+	"replay": {
+		"message": "Replay"
+	},
+	"mode_option_chatframe_dependent": {
+		"message": "Dependent on chat frame"
+	},
+	"mode_option_chatframe_independent": {
+		"message": "Independent of chat frame"
+	},
+	"description_chatframe_dependent_1": {
+		"message": "It only works when the chat frame is open."
+	},
+	"description_chatframe_dependent_2": {
+		"message": "Your blocked users list will be used."
+	},
+	"description_chatframe_independent_1": {
+		"message": "It works even when the chat frame is closed."
+	},
+	"description_chatframe_independent_2": {
+		"message": "All chats will flow, including one from users you have blocked."
+	},
+	"description_chatframe_independent_3": {
+		"message": "The time-shift function is available for replays; you can adjust the timing of chat flowing."
+	},
+	"description_chatframe_independent_4": {
+		"message": "The operation may be unstable, especially for long videos."
+	},
+	"autostart": {
+		"message": "Automatically open chat frame when watching replays"
+	},
+	"disabled": {
+		"message": "Disable"
+	},
+	"enabled": {
+		"message": "Enable"
+	},
+	"hotkey": {
+		"message": "Hotkeys (Keyboard Shortcuts)"
+	},
+	"hotkey_layer": {
+		"message": "Chat Layer"
+	},
+	"hotkey_panel": {
+		"message": "Config Panel"
+	},
+	"save": {
+		"message": "Save"
+	},
+	"warn_notSaved": {
+		"message": "If saved, all tabs opening YouTube will be refreshed automatically."
 	},
 	"pip_marker": {
 		"message": "Now playing in picture-in-picture mode"

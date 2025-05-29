@@ -30,7 +30,6 @@ export async function fetchChatActions(response, outMap, signal) {
 		return true;
 	} else {
 		throw 'This video has no chat.';
-		// return false;
 	}
 }
 
@@ -45,21 +44,32 @@ async function* getChatActionsAsyncIterable(signal, initialContinuation, isRepla
 
 	/** @type {string?} */
 	let continuation = initialContinuation;
-	/** @type { { actions: LiveChat.ReplayChatItemAction[] } } */
-	let contents = { actions: [] };
 	if (isReplay) {
+		/** @type { { actions: LiveChat.ReplayChatItemAction[] } } */
+		let contents = { actions: [] };
 		while (!signal.aborted && continuation && contents.actions) {
 			contents = await getContentsAsync(url, continuation);
 			yield contents.actions || [];
 			continuation = getContinuation(contents, isReplay);
 		}
 	} else {
+		/** @type { { actions: LiveChat.LiveChatItemAction[] } } */
+		let contents = { actions: [] };
+		let lastTimestamp = 0;
+		const getTimestamp = a => {
+			/** @type {LiveChat.RendererContent} */
+			const renderer = Object.values(a.addChatItemAction.item).at(0);
+			return Number.parseInt(renderer?.timestampUsec);
+		}
 		while (!signal.aborted && continuation) {
 			contents = await getContentsAsync(url, continuation);
 			if (contents.actions) {
 				// Fire actions directly.
-				const ev = new CustomEvent('ytlcf-actions', { detail: contents.actions });
+				const filtered = contents.actions.filter(a => !('addChatItemAction' in a) || getTimestamp(a) > lastTimestamp);
+				const ev = new CustomEvent('ytlcf-actions', { detail: filtered });
 				self.dispatchEvent(ev);
+				const lastIndex = filtered.findLastIndex(a => 'addChatItemAction' in a);
+				if (lastIndex > 0) lastTimestamp = getTimestamp(filtered[lastIndex]);
 			}
 			continuation = getContinuation(contents, isReplay);
 			await sleep(200);

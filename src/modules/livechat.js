@@ -2,85 +2,9 @@
 /// <reference path="../../extends.d.ts" />
 /// <reference path="../../ytlivechatrenderer.d.ts" />
 
-import { filterMessage, formatHexColor, getColorRGB, getText, isCatchable, isNotPip, isOverflow } from './utils.js';
+import { filterMessage, formatHexColor, getColorRGB, getText, isCatchable, isNotPip, isOverflow, Storage } from './utils.js';
 
-const manifest = browser.runtime.getManifest();
 const parser = new DOMParser();
-
-const defaultSettings = {
-	styles: {
-		animation_duration: '8s',
-		font_size: '32px',
-		line_height: '1.4',
-		font_family: 'sans-serif',
-		font_weight: '500',
-		stroke_color: '#000000',
-		stroke_offset: '1px',
-		stroke_blur: '0px',
-		layer_opacity: '1',
-		background_opacity: '0.5',
-		max_width: '100%',
-		sticker_size: '3em',
-		layer_css: '',
-	},
-	others: {
-		disabled: 0,
-		px_per_sec: 0,
-		number_of_lines: 0,
-		type_of_lines: 0,
-		wrap: 1,
-		limit: 0,
-		container_limit: 0,
-		simultaneous: 2,
-		emoji: 1,
-		overlapping: 0,
-		direction: 0,
-		translation: 0,
-		except_lang: 0,
-		autostart: 0,
-		time_shift: 0,
-	},
-	parts: {
-		normal: { photo: false, name: false, message: true, color: '' },
-		verified: { photo: true, name: true, message: true, color: '' },
-		member: { photo: false, name: false, message: true, color: '' },
-		moderator: { photo: true, name: true, message: true, color: '' },
-		owner: { photo: true, name: true, message: true, color: '' },
-		you: { photo: false, name: false, message: true, color: '' },
-		paid_message: { photo: true, name: true, amount: true, message: true, color: '' },
-		paid_sticker: { photo: true, name: true, amount: true, sticker: true },
-		membership: { photo: true, name: false, message: true, color: '' },
-		milestone: { photo: true, name: true, months: true, message: true, color: '' },
-	},
-	cssTexts: {
-		'.normal': '',
-		'.verified': '',
-		'.member': '',
-		'.moderator': '',
-		'.owner': '',
-		'.you': '',
-		'.paid_message': '',
-		'.paid_sticker': '',
-		'.membership': '',
-		'.milestone': '',
-		'': '',
-	},
-	hotkeys: {
-		layer: '',
-		panel: '',
-	},
-	mutedWords: {
-		mode: 0,
-		replacement: '',
-		regexp: false,
-		/** @type {string[]} */
-		plainList: [],
-	},
-	translation: {
-		url: 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=$sl&tl=$tl&dt=t&dt=bd&dj=1&q=$q',
-	},
-};
-const defaultSettingsJson = JSON.stringify(defaultSettings);
 
 export const g = {
 	app: /** @type {HTMLElement?} */ (null),
@@ -103,7 +27,7 @@ export const g = {
 	/** @type {LiveChatPanel?} */
 	panel: null,
 	skip: false,
-	storage: defaultSettings,
+	storage: Storage.DEFAULT,
 	list: {
 		/** @type {RegExp[]} */
 		mutedWords: [],
@@ -130,7 +54,7 @@ export async function runApp(player) {
 
 	// get storage data
 	const storageList = ['styles', 'others', 'parts', 'cssTexts', 'hotkeys', 'mutedWords', 'translation'];
-	const storage = await browser.storage.local.get(storageList);
+	const storage = await Storage.get(storageList);
 	if (storage)
 	for (const type of storageList) {
 		if (storage[type]) {
@@ -366,6 +290,7 @@ export function setupPanel() {
 	/** @type {HTMLInputElement} */ (ctrls.limit_number).valueAsNumber = g.storage.others.limit || 100;
 	/** @type {HTMLInputElement} */ (ctrls.container_limit_number).valueAsNumber = g.storage.others.container_limit || 20;
 	/** @type {HTMLInputElement} */ (ctrls.time_shift).valueAsNumber = g.storage.others.time_shift || 0;
+	/** @type {HTMLInputElement} */ (ctrls.time_shift).disabled = g.storage.others.mode_replay === 0;
 	
 	const lines = g.storage.others.number_of_lines;
 	if (lines) {
@@ -379,7 +304,7 @@ export function setupPanel() {
 			inputLn.setAttribute('value', `${lines}`);
 		} else {
 			le.style.setProperty('--yt-lcf-font-size', `${sizeByLines}px`);
-			inputLn.setAttribute('value', `${defaultSettings.others.number_of_lines}`);
+			inputLn.setAttribute('value', `${Storage.DEFAULT.others.number_of_lines}`);
 		}
 	}
 
@@ -421,13 +346,8 @@ export function setupPanel() {
 	// layer CSS
 	/** @type {HTMLInputElement} */ (ctrls.layer_css).value = g.storage.styles.layer_css;
 
-	// hotkeys
-	/** @type {HTMLInputElement} */ (ctrls.hotkey_layer).value = g.storage.hotkeys.layer;
-	/** @type {HTMLInputElement} */ (ctrls.hotkey_panel).value = g.storage.hotkeys.panel;
-
 	/** @type {HTMLInputElement} */ (ctrls.muted_words_replacement).value = g.storage.mutedWords.replacement;
 	/** @type {HTMLTextAreaElement} */ (ctrls.muted_words_list).value = g.storage.mutedWords.plainList.join('\n');
-	/** @type {HTMLInputElement} */ (ctrls.translation_url).value = g.storage.translation.url;
 
 }
 
@@ -448,7 +368,7 @@ export async function addSettingMenu() {
 				g.layer?.clear();
 				g.layer?.[checked ? 'hide' : 'show']();
 				g.storage.others.disabled = checked ? 1 : 0;
-				browser.storage.local.set(g.storage);
+				Storage.set(g.storage);
 			}
 		}, { passive: true });
 		popupmenu.addEventListener('click', () => {
@@ -1213,7 +1133,7 @@ export class LiveChatPanel {
 	
 				fontHelper.addEventListener('click', () => {
 					while (ol?.childElementCount) ol?.lastElementChild?.remove();
-					const families = g.storage.styles.font_family.split(/,\s*/).map(s => s.replace(/^"(.*)"$/, "$1"));
+					const families = g.storage.styles.font_family.split(/\s*,\s*/).filter(s => s.length > 0).map(s => s.replace(/^"(.*)"$/, "$1"));
 					const listitems = families.map(family => {
 						const li = document.createElement('li');
 						li.dataset.value = family;
@@ -1383,25 +1303,15 @@ export class LiveChatPanel {
 				}, { passive: true });
 			}
 		}
-
-		const version = this.form.querySelector('#manifest_version');
-		if (version && manifest.version) version.textContent = manifest.version;
 		
-		const exportBtn = this.form.querySelector('#ytlcf-config-export');
-		if (exportBtn) {
-			exportBtn.className = createButtonClassList('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-xs');
-			exportBtn.addEventListener('click', this.export, { passive: true });
+		const othersBtn = this.form.querySelector('#ytlcf-config-others');
+		if (othersBtn) {
+			othersBtn.className = createButtonClassList('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-xs');
+			othersBtn.addEventListener('click', () => {
+				browser.runtime.sendMessage({ fire: 'openOptions' });
+			}, { passive: true });
 		}
-		const importBtn = this.form.querySelector('#ytlcf-config-import');
-		if (importBtn) {
-			importBtn.className = createButtonClassList('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-xs');
-			importBtn.addEventListener('click', this.import, { passive: true });
-		}
-		const initBtn = this.form.querySelector('#ytlcf-config-init');
-		if (initBtn) {
-			initBtn.className = createButtonClassList('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-xs');
-			initBtn.addEventListener('click', this.init, { passive: true });
-		}
+
 		this.form.addEventListener('change', e => {
 			if (!this.form.reportValidity()) return;
 			const elem = /** @type {HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement} */ (e.target);
@@ -1570,12 +1480,6 @@ export class LiveChatPanel {
 				le.classList[0b01 & val ? 'add': 'remove']('direction-reversed-y');
 				le.classList[0b10 & val ? 'add': 'remove']('direction-reversed-x');
 			}
-		} else if (name.startsWith('hotkey_')) {
-			const match = name.match(/^hotkey_(.*)$/);
-			if (match) {
-				const [_, type] = match;
-				g.storage.hotkeys[type] = elem.value;
-			}
 		} else if (name.startsWith('muted_words_')) {
 			switch (name) {
 				case 'muted_words_replacement': {
@@ -1616,54 +1520,13 @@ export class LiveChatPanel {
 		} else if (name === 'time_shift') {
 			g.storage.others.time_shift = /** @type {HTMLInputElement} */ (ctrls.time_shift).valueAsNumber;
 		}
-		browser.storage.local.set(g.storage);
+		Storage.set(g.storage);
 	}
 
 	/** @type {(x: number, y: number) => void} */
 	move(x, y) {
 		this.element.style.left = `${x}px`;
 		this.element.style.top = `${y}px`;
-	}
-
-	export() {
-		const storageList = ['styles', 'others', 'parts', 'cssTexts', 'hotkeys', 'mutedWords', 'translation'];
-		return browser.storage.local.get(storageList).then(storage => {
-			const blob = new Blob([JSON.stringify(storage)], { type: 'application/json' });
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement('a');
-			a.download = `ytlcf-config-${Date.now()}.json`;
-			a.href = url;
-			a.click();
-		});
-	}
-
-	import() {
-		return new Promise((resolve, reject) => {
-			const input = document.createElement('input');
-			input.type = 'file';
-			input.accept = 'application/json';
-			input.addEventListener('canncel', () => {
-				console.log('Config file import is canceled.');
-				reject();
-			}, { passive: true });
-			input.addEventListener('change', e => {
-				const files = input.files;
-				if (files && files.length > 0) {
-					console.log('Config file selected: ' + files[0].name);
-					const reader = new FileReader();
-					reader.onload = e => {
-						const json = JSON.parse(/** @type {string} */ (e.target?.result));
-						browser.storage.local.set(json).then(resolve);
-					};
-					reader.readAsText(files[0]);
-				}
-			}, { passive: true });
-			input.click();
-		}).then(refreshPage);
-	}
-
-	init() {
-		return browser.storage.local.set(JSON.parse(defaultSettingsJson)).then(refreshPage);
 	}
 }
 
@@ -1676,9 +1539,4 @@ export function updateMutedWordsList() {
 		: plainList.length > 0
 			? [ new RegExp(plainList.map(escapeRegExp).join('|'), 'g') ]
 			: [];
-}
-
-function refreshPage() {
-	alert(browser.i18n.getMessage('page_refresh'));
-	location.reload();
 }

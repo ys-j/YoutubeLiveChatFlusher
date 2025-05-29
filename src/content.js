@@ -3,49 +3,69 @@
 /// <reference path="../extends.d.ts" />
 /// <reference path="../ytlivechatrenderer.d.ts" />
 
-// @ts-ignore
-var browser = browser || chrome;
-const manifest = browser.runtime.getManifest();
+
+self.browser ??= chrome;
 
 const isNotPip = () => !self.documentPictureInPicture?.window;
-document.body.dataset.browser = 'browser_specific_settings' in manifest ? 'firefox' : 'chrome';
-
-// inject script
-self.addEventListener('ytlcf-message', e => {
-	if (!e.detail) return;
-	const { ytInitialData, ytcfg } = e.detail;
-	if (ytInitialData) sessionStorage.setItem('ytlcf-initial-data', ytInitialData);
-	if (ytcfg) sessionStorage.setItem('ytlcf-cfg', ytcfg);
-	const target = document.querySelector('ytd-app');
-	const detail = {
-		pageType: ['watch', 'live'].includes(location.pathname?.substring(1)) ? 'watch' : 'browser',
-		response: JSON.parse(ytInitialData),
-	};
-	if (target) initialize({ target, detail });
-}, { passive: true });
-const script = document.createElement('script');
-script.src = browser.runtime.getURL('./modules/injection.js');
-document.body.append(script);
 
 /** @type {Map<number, LiveChat.LiveChatItemAction[]>} */
 const actionMap = new Map();
-	
-self.addEventListener('ytlcf-ready', e => {
-	e.stopImmediatePropagation();
-	console.log(manifest.name + ' is ready!');
-});
-	
-document.addEventListener('yt-action', e => {
-	const name = e.detail?.actionName;
-	switch (name) {
-		case 'ytd-watch-player-data-changed': {
-			const ev = new CustomEvent(name);
-			if (!isNotPip()) self.documentPictureInPicture?.window?.dispatchEvent(ev);
-			checkAutoStart();
-		}
-	}
-}, { passive: true });
 
+const isSelfChatFrame = ['/live_chat', '/live_chat_replay'].includes(location.pathname);
+if (isSelfChatFrame) {
+	const isLive = location.pathname === '/live_chat';
+	const modeName = isLive ? 'mode_livestream' : 'mode_replay';
+	browser.storage.local.get('others').then(storage => {
+		const mode = storage?.others?.[modeName];
+		if (mode === 0) {
+			document.addEventListener('yt-action', e => {
+				if (e.detail?.actionName === 'yt-live-chat-actions') {
+					const ev = new CustomEvent('ytlcf-actions', { detail: e.detail?.args?.[0] || [] });
+					top?.dispatchEvent(ev);
+				}
+			}, { passive: true });
+		}
+	});
+} else if (self === top) {
+	const manifest = browser.runtime.getManifest();
+	document.body.dataset.browser = 'browser_specific_settings' in manifest ? 'firefox' : 'chrome';
+
+	// inject script
+	self.addEventListener('ytlcf-message', e => {
+		if (!e.detail) return;
+		const { ytInitialData, ytcfg } = e.detail;
+		if (ytInitialData) sessionStorage.setItem('ytlcf-initial-data', ytInitialData);
+		if (ytcfg) sessionStorage.setItem('ytlcf-cfg', ytcfg);
+		const target = document.querySelector('ytd-app');
+		const detail = {
+			pageType: ['/watch', '/live'].includes(location.pathname) ? 'watch' : 'browser',
+			response: JSON.parse(ytInitialData),
+		};
+		if (target) initialize({ target, detail });
+	}, { passive: true });
+	
+	setTimeout(() => {
+		const script = document.createElement('script');
+		script.src = browser.runtime.getURL('./modules/injection.js');
+		document.body.append(script);
+	}, 1000);
+	
+	self.addEventListener('ytlcf-ready', e => {
+		e.stopImmediatePropagation();
+		console.log(manifest.name + ' is ready!');
+	});
+	
+	document.addEventListener('yt-action', e => {
+		const name = e.detail?.actionName;
+		switch (name) {
+			case 'ytd-watch-player-data-changed': {
+				const ev = new CustomEvent(name);
+				if (!isNotPip()) self.documentPictureInPicture?.window?.dispatchEvent(ev);
+				checkAutoStart();
+			}
+		}
+	}, { passive: true });
+}
 
 /**
  * @typedef NavigateFinishEventDetail
@@ -138,7 +158,7 @@ function initialize(e) {
 		/**
 		 * @param { CustomEvent<NavigateFinishEventDetail> | { target: EventTarget, detail: NavigateFinishEventDetail } } e 
 		 */
-		function onYtNavigateFinish(e) {
+		async function onYtNavigateFinish(e) {
 			self.addEventListener('ytlcf-actions', () => {
 				self.addEventListener('ytlcf-actions', onYtlcfActions, { passive: true });
 			}, { passive: true, once: true });
@@ -157,28 +177,34 @@ function initialize(e) {
 			const videoDetails = mainResponse?.playerResponse?.videoDetails;
 			isLive = videoDetails?.isLive || videoDetails?.isUpcoming;
 
-			let timer = 0;
-			timer = setInterval(() => {
-				if (actionMap.size > 0) {
-					clearInterval(timer);
-					video?.addEventListener('seeking', onSeeking, { passive: true });
-					video?.addEventListener('timeupdate', onTimeUpdate, { passive: true });
-				}
-			}, 250);
+			const storage = await browser.storage.local.get('others');
+			const modeName = isLive ? 'mode_livestream' : 'mode_replay';
+			const mode = storage?.others?.[modeName];
+			if (mode === 0) {
+			} else if (mode === 1) {
+				let timer = 0;
+				timer = setInterval(() => {
+					if (actionMap.size > 0) {
+						clearInterval(timer);
+						video?.addEventListener('seeking', onSeeking, { passive: true });
+						video?.addEventListener('timeupdate', onTimeUpdate, { passive: true });
+					}
+				}, 250);
 
-			// Fetching chat actions async
-			controller = new AbortController();
-			if (video) {
-				video.removeEventListener('seeking', onSeeking);
-				video.removeEventListener('timeupdate', onTimeUpdate);
+				// Fetching chat actions async
+				controller = new AbortController();
+				if (video) {
+					video.removeEventListener('seeking', onSeeking);
+					video.removeEventListener('timeupdate', onTimeUpdate);
+				}
+				fetchChatActions(response, actionMap, controller.signal).catch(reason => {
+					const videoId = videoDetails?.videoId;
+					const message = videoId ? reason?.replace('.', ': ' + videoId) : reason;
+					console.warn(message);
+				}).finally(() => {
+					clearInterval(timer);
+				});
 			}
-			fetchChatActions(response, actionMap, controller.signal).catch(reason => {
-				const videoId = videoDetails?.videoId;
-				const message = videoId ? reason?.replace('.', ': ' + videoId) : reason;
-				console.warn(message);
-			}).finally(() => {
-				clearInterval(timer);
-			});
 		}
 	
 		document.body.addEventListener('keydown', e => {

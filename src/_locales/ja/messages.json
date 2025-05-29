@@ -29,8 +29,8 @@
 	"userDefinedCssTab": {
 		"message": "ユーザーCSS"
 	},
-	"aboutTab": {
-		"message": "その他/About"
+	"othersTab": {
+		"message": "その他"
 	},
 	"animationDuration": {
 		"message": "アニメーション秒数"
@@ -160,18 +160,6 @@
 	},
 	"resizeLayer": {
 		"message": "レイヤサイズ変更"
-	},
-	"hotkey": {
-		"message": "ホットキー"
-	},
-	"hotkey_layer": {
-		"message": "レイヤ"
-	},
-	"hotkey_panel": {
-		"message": "設定パネル"
-	},
-	"autostart": {
-		"message": "自動スタート"
 	},
 	"normal": {
 		"message": "通常"
@@ -347,12 +335,6 @@
 	"targetLanguage": {
 		"message": "翻訳先"
 	},
-	"disabled": {
-		"message": "しない"
-	},
-	"enabled": {
-		"message": "する"
-	},
 	"addableByBrowserLanguageSettings": {
 		"message": "項目はブラウザの言語設定から追加可"
 	},
@@ -366,12 +348,15 @@
 		"message": "翻訳URL (GET)"
 	},
 	"timeshift": {
-		"message": "タイムシフト (beta)"
+		"message": "タイムシフト"
 	},
 	"timeshift_note": {
 		"message": "※ リプレイでのみ有効"
 	},
-	"about": {
+	"otherConfig": {
+		"message": "その他の設定"
+	},
+	"aboutAddon": {
 		"message": "拡張機能について"
 	},
 	"version": {
@@ -389,8 +374,65 @@
 	"init": {
 		"message": "リセット"
 	},
-	"page_refresh": {
-		"message": "設定反映のためページを更新します。"
+	"commonSettings": {
+		"message": "共通設定"
+	},
+	"loadingMode": {
+		"message": "チャットの読み込みモード"
+	},
+	"livestream": {
+		"message": "ライブ"
+	},
+	"replay": {
+		"message": "リプレイ"
+	},
+	"mode_option_chatframe_dependent": {
+		"message": "チャット欄に依存"
+	},
+	"mode_option_chatframe_independent": {
+		"message": "チャット欄に非依存"
+	},
+	"description_chatframe_dependent_1": {
+		"message": "チャット欄を開いた状態でのみ動作します。"
+	},
+	"description_chatframe_dependent_2": {
+		"message": "ブロック中のユーザーによるチャットは流れません。"
+	},
+	"description_chatframe_independent_1": {
+		"message": "チャット欄を閉じた状態でも動作します。"
+	},
+	"description_chatframe_independent_2": {
+		"message": "ブロック中のユーザーによるものを含めたすべてのチャットが流れます。"
+	},
+	"description_chatframe_independent_3": {
+		"message": "リプレイではタイムシフト機能が利用可能（コメントを流すタイミングを調整可能）です。"
+	},
+	"description_chatframe_independent_4": {
+		"message": "特に長時間の動画では動作が不安定な場合があります。"
+	},
+	"autostart": {
+		"message": "チャット欄の自動オープン（リプレイ再生時）"
+	},
+	"disabled": {
+		"message": "しない"
+	},
+	"enabled": {
+		"message": "する"
+	},
+	"hotkey": {
+		"message": "キーボードショートカット"
+	},
+	"hotkey_layer": {
+		"message": "チャットレイヤ"
+	},
+	"hotkey_panel": {
+		"message": "設定パネル"
+	},
+	"save": {
+		"message": "保存"
+	},
+	"warn_notSaved": {
+		"message": "保存するとYouTubeを開いているすべてのタブが再読み込みされます"
 	},
 	"pip_marker": {
 		"message": "この動画はピクチャーインピクチャーで再生されています"

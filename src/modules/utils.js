@@ -1,4 +1,7 @@
+/// <reference path="../../browser.d.ts" />
 /// <reference path="../../ytlivechatrenderer.d.ts" />
+
+self.browser ??= chrome;
 
 /**
  * @param { LiveChat.Runs | LiveChat.SimpleText | undefined } message
@@ -175,4 +178,144 @@ export function formatHexColor(css, inherit = '#ffffff') {
 		}
 	}
 	return inherit;
+}
+
+export const Storage = {
+	DEFAULT: {
+		styles: {
+			animation_duration: '8s',
+			font_size: '32px',
+			line_height: '1.4',
+			font_family: 'sans-serif',
+			font_weight: '500',
+			stroke_color: '#000000',
+			stroke_offset: '1px',
+			stroke_blur: '0px',
+			layer_opacity: '1',
+			background_opacity: '0.5',
+			max_width: '100%',
+			sticker_size: '3em',
+			layer_css: '',
+		},
+		others: {
+			disabled: 0,
+			px_per_sec: 0,
+			number_of_lines: 0,
+			type_of_lines: 0,
+			wrap: 1,
+			limit: 0,
+			container_limit: 0,
+			simultaneous: 2,
+			emoji: 1,
+			overlapping: 0,
+			direction: 0,
+			translation: 0,
+			except_lang: 0,
+			autostart: 0,
+			time_shift: 0,
+			mode_livestream: 1,
+			mode_replay: 1,
+		},
+		parts: {
+			normal: { photo: false, name: false, message: true, color: '' },
+			verified: { photo: true, name: true, message: true, color: '' },
+			member: { photo: false, name: false, message: true, color: '' },
+			moderator: { photo: true, name: true, message: true, color: '' },
+			owner: { photo: true, name: true, message: true, color: '' },
+			you: { photo: false, name: false, message: true, color: '' },
+			paid_message: { photo: true, name: true, amount: true, message: true, color: '' },
+			paid_sticker: { photo: true, name: true, amount: true, sticker: true },
+			membership: { photo: true, name: false, message: true, color: '' },
+			milestone: { photo: true, name: true, months: true, message: true, color: '' },
+		},
+		cssTexts: {
+			'.normal': '',
+			'.verified': '',
+			'.member': '',
+			'.moderator': '',
+			'.owner': '',
+			'.you': '',
+			'.paid_message': '',
+			'.paid_sticker': '',
+			'.membership': '',
+			'.milestone': '',
+			'': '',
+		},
+		hotkeys: {
+			layer: '',
+			panel: '',
+		},
+		mutedWords: {
+			mode: 0,
+			replacement: '',
+			regexp: false,
+			/** @type {string[]} */
+			plainList: [],
+		},
+		translation: {
+			url: 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=$sl&tl=$tl&dt=t&dt=bd&dj=1&q=$q',
+		},
+	},
+
+	/**
+	 * @param {string[]} [keys] 
+	 * @returns {Promise<Record<string, any>>}
+	 */
+	get(keys) {
+		return browser.storage.local.get(keys);
+	},
+
+	/**
+	 * @param {Record<string, any>} store 
+	 * @returns {Promise<void>}
+	 */
+	set(store = Object.create(null)) {
+		const assigned = structuredClone(Storage.DEFAULT);
+		for (const k of Object.keys(assigned)) {
+			Object.assign(assigned[k], store[k]);
+		}
+		return browser.storage.local.set(assigned);
+	},
+
+	export() {
+		return Storage.get().then(storage => {
+			const blob = new Blob([JSON.stringify(storage)], { type: 'application/json' });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.download = `ytlcf-config-${Date.now()}.json`;
+			a.href = url;
+			a.click();
+		});
+	},
+	import() {
+		return new Promise((resolve, reject) => {
+			const input = document.createElement('input');
+			input.type = 'file';
+			input.accept = 'application/json';
+			input.addEventListener('canncel', () => {
+				console.log('Config file import is canceled.');
+				reject();
+			}, { passive: true });
+			input.addEventListener('change', e => {
+				const files = input.files;
+				if (files && files.length > 0) {
+					console.log('Config file selected: ' + files[0].name);
+					const reader = new FileReader();
+					reader.onload = e => {
+						const json = JSON.parse(/** @type {string} */ (e.target?.result));
+						Storage.set(json).then(resolve);
+					};
+					reader.readAsText(files[0]);
+				}
+			}, { passive: true });
+			input.click();
+		}).then(refreshPage);
+	},
+	init() {
+		return Storage.set().then(refreshPage);
+	}
+};
+
+function refreshPage() {
+	return browser.runtime.sendMessage({ fire: 'reload' }).then(() => {});
 }

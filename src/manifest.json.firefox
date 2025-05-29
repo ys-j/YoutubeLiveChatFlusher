@@ -1,8 +1,12 @@
 {
 	"manifest_version": 3,
 	"name": "__MSG_manifestName__",
-	"version": "0.10.8",
+	"version": "0.11.0",
 	"author": "_y_s",
+	"action": {},
+	"background": {
+		"scripts": ["sw.js"]
+	},
 	"browser_specific_settings": {
 		"gecko": {
 			"id": "{5a898e4e-6b5c-4acf-9e29-4c791d3b5f2e}",
@@ -14,19 +18,24 @@
 	},
 	"content_scripts": [
 		{
+			"all_frames": true,
 			"css": ["styles/content.css"],
 			"js": ["content.js"],
-			"matches": ["*://www.youtube.com/*"],
-			"run_at": "document_end"
+			"matches": ["*://www.youtube.com/*"]
 		}
 	],
 	"default_locale": "en",
 	"description": "__MSG_manifestDescription__",
 	"homepage_url": "https://github.com/ys-j/YoutubeLiveChatFlusher",
+	"host_permissions": ["*://www.youtube.com/*"],
 	"icons": {
 		"48": "images/icon.svg",
 		"96": "images/icon.svg"
 	},
+	"options_ui": {
+		"page": "options/options.html"
+	},
+	"optional_permissions": ["tabs"],
 	"permissions": ["storage"],
 	"web_accessible_resources": [
 		{

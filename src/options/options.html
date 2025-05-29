@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<meta charset=utf-8>
+<title>browser_action</title>
+<link rel=stylesheet href=options.css>
+<form id=form name=form>
+	<section>
+		<h1 data-i18n=manifestName>YouTube LiveChat Flusher</h1>
+		<table>
+			<tr>
+				<th data-i18n=version>
+				<td data-manifest=version>
+			<tr>
+				<th>GitHub
+				<td><a href=https://github.com/ys-j/YoutubeLiveChatFlusher target=_blank>Home</a> / <a href=https://github.com/ys-j/YoutubeLiveChatFlusher/wiki target=_blank>Wiki</a>
+			<tr>
+				<th data-i18n=configFile>
+				<td>
+					<button id=btn-export type=button data-i18n=export></button>
+					<button id=btn-import type=button data-i18n=import></button>
+					<button id=btn-init type=button data-i18n=init></button>
+		</table>
+	</section>
+	<section>
+		<h2 data-i18n=commonSettings></h2>
+		<dl>
+			<dt data-i18n=loadingMode>
+			<dd>
+				<table>
+					<tr>
+						<th data-i18n=livestream>
+						<td>
+							<label>
+								<input type=radio name=mode_livestream value=0>
+								<span data-i18n=mode_option_chatframe_dependent></span>
+							</label>
+							<label>
+								<input type=radio name=mode_livestream value=1>
+								<span data-i18n=mode_option_chatframe_independent></span>
+							</label>
+					<tr>
+						<th data-i18n=replay>
+						<td>
+							<label>
+								<input type=radio name=mode_replay value=0>
+								<span data-i18n=mode_option_chatframe_dependent></span>
+							</label>
+							<label>
+								<input type=radio name=mode_replay value=1>
+								<span data-i18n=mode_option_chatframe_independent></span>
+							</label>
+				</table>
+				<dl class=note>
+					<dt data-i18n=mode_option_chatframe_dependent>
+					<dd>
+						<ul>
+							<li data-i18n=description_chatframe_dependent_1>
+							<li data-i18n=description_chatframe_dependent_2>
+						</ul>
+					<dt data-i18n=mode_option_chatframe_independent>
+					<dd>
+						<ul>
+							<li data-i18n=description_chatframe_independent_1>
+							<li data-i18n=description_chatframe_independent_2>
+							<li data-i18n=description_chatframe_independent_3>
+							<li data-i18n=description_chatframe_independent_4>
+						</ul>
+				</dl>
+			<dt data-i18n=autostart>
+			<dd>
+				<label>
+					<input type=radio name=autostart value=0>
+					<span data-i18n=disabled></span>
+				</label>
+				<label>
+					<input type=radio name=autostart value=1>
+					<span data-i18n=enabled></span>
+				</label>
+			<dt data-i18n=hotkey>
+			<dd>
+				<table>
+					<tr>
+						<th>
+							<label for=hotkey_layer data-i18n=hotkey_layer></label>
+						<td>
+							<input id=hotkey_layer name=hotkey_layer maxlength=1 size=3>
+					<tr>
+						<th>
+							<label for=hotkey_panel data-i18n=hotkey_panel></label>
+						<td>
+							<input id=hotkey_panel name=hotkey_panel maxlength=1 size=3>
+				</table>
+		</dl>
+	</section>
+	<section>
+		<h2 data-i18n=translation></h2>
+		<dl>
+			<dt data-i18n=translationUrl>
+			<dd><input type=url name=translation_url required>
+		</dl>
+	</section>
+	<section>
+		<button class=primary id=btn-save disabled data-i18n=save></button>
+		<div><small id=status hidden data-i18n=warn_notSaved></small></div>
+	</section>
+</form>
+<script src=options.js type=module></script>

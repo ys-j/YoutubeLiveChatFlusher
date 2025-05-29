@@ -1,6 +1,7 @@
 /** @type integer */
 type integer = number
 declare namespace browser {
+	const action = browserAction
 	namespace alarms {
 		type Alarm = {
 			name: string
@@ -68,7 +69,7 @@ declare namespace browser {
 		}): Promise<void>
 		function setPopup(details: { tabId?: integer, windowId?: integer, popup: string | null }): Promise<void>
 		function getPopup(details: { tabId?: integer, windowId?: integer }): Promise<string>
-		function openPopup(): Promise<void>
+		function openPopup(details?: { windowId?: integer }): Promise<void>
 		function setBadgeText(details: { text: string | null, tabId?: integer, windowId?: integer }): Promise<void>
 		function getBadgeText(details: { tabId?: integer, windowId?: integer }): Promise<string>
 		function setBadgeBackgroundColor(details: { color: string | ColorArray | null, tabId?: integer, windowId?: integer }): Promise<void>
@@ -883,7 +884,7 @@ declare namespace browser {
 			name: string
 			sender: T
 			onDisconnect: events.Event<[port: Port]>
-			onMessage: events.Event<[message: object]>
+			onMessage: events.Event<[message: Record|Array]>
 		}
 		type MessageSender = {
 			tab?: tabs.Tab
@@ -927,8 +928,16 @@ declare namespace browser {
 		const onUpdateAvailable: events.Event<[details: { version: string }]>
 		const onConnect: events.Event<[port: Required<Port<Required<MessageSender>>>]>
 		const onConnectExternal: events.Event<[port: Required<Port<Required<MessageSender>>>]>
-		const onMessage: events.Event<[message: object, sender: MessageSender, sendResponse: (message: object) => any], void | boolean | Promise<any>>
-		const onMessageExternal: events.Event<[message: object, sender: MessageSender, sendResponse: (message: object) => any], void | boolean | Promise<any>>
+		const onMessage: events.Event<[
+			message: Record|Array,
+			sender: MessageSender,
+			sendResponse: (message: Record|Array) => any,
+		], void | boolean | Promise<any>>
+		const onMessageExternal: events.Event<[
+			message: Record|Array,
+			sender: MessageSender,
+			sendResponse: (message: Record|Array) => any
+		], void | boolean | Promise<any>>
 		// const onRestartRequired: events.Event<[reason: OnRestartRequiredReason]>
 	}
 	namespace search {
