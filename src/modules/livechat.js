@@ -97,7 +97,7 @@ export async function runApp(player) {
 		const matches = text.match(/"(UC[\w-]{22})"/);
 		g.channel = matches?.[1] || '';
 		if (g.channel) {
-			const style = g.layer?.element.shadowRoot?.querySelector('#yourcss');
+			const style = g.layer?.root?.querySelector('#yourcss');
 			if (style) {
 				const you = `[data-author-id="${g.channel}"]`;
 				style.textContent = `\
@@ -323,8 +323,8 @@ export function setupPanel() {
 		le.style.setProperty(name, `rgba(${getColorRGB(rgb).join()},${alpha < 0 ? 'var(--yt-lcf-background-opacity)' : alpha})`);
 	}
 
-	const customCss = le.shadowRoot?.querySelector('#customcss');
-	const userDefinedCss = le.shadowRoot?.querySelector('#userdefinedcss');
+	const customCss = g.layer?.root?.querySelector('#customcss');
+	const userDefinedCss = g.layer?.root?.querySelector('#userdefinedcss');
 	for (const [selector, css] of Object.entries(g.storage.cssTexts)) {
 		if (selector) {
 			if (customCss) customCss.textContent += `:host>${selector}{${css}}`;
@@ -393,7 +393,7 @@ export async function addSettingMenu() {
 export function doChatActions(actions) {
 	if (!g.layer) return;
 	const le = g.layer.element;
-	const root = le.shadowRoot;
+	const root = g.layer.root;
 	if (!root || (isNotPip() && document.visibilityState === 'hidden') || le.hidden || le.parentElement?.classList.contains('paused-mode')) return;
 	const filtered = {
 		add: actions.filter(a => a && 'addChatItemAction' in a),
@@ -892,7 +892,7 @@ export class LiveChatLayer {
 			this.resetFontSize();
 		});
 		resizeObserver.observe(this.element);
-		this.root = this.element.shadowRoot || this.element.attachShadow({ mode: 'open' });
+		this.root = this.element.attachShadow({ mode: 'closed' });
 		const link = document.createElement('link');
 		link.rel = 'stylesheet';
 		link.href = browser.runtime.getURL('../styles/layer.css');
