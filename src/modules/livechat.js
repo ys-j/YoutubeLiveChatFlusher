@@ -39,8 +39,14 @@ export const g = {
 };
 
 /**
+ * @typedef {typeof g.index.simultaneous[keyof typeof g.index.simultaneous]} SimultaneousModeEnum
+ * @typedef {typeof g.index.emoji[keyof typeof g.index.emoji]} EmojiModeEnum
+ * @typedef {typeof g.index.mutedWords[keyof typeof g.index.mutedWords]} MutedWordModeEnum
+ */
+
+/**
  * Start app.
- * @param {HTMLElement} player 
+ * @param {HTMLElement} player YouTube player element
  */
 export async function runApp(player) {
 	g.app = player;
@@ -117,36 +123,134 @@ ${you}.text .message { display: var(--yt-lcf-you-display-message) }`
 	self.dispatchEvent(new CustomEvent('ytlcf-ready'));
 }
 
+/**
+ * Gets new chat layer.
+ * @returns {LiveChatLayer} chat layer
+ */
 export function getLayer() {
 	const layer = new LiveChatLayer();
-	const le = layer.element;
-	le.addEventListener('contextmenu', e => {
+	layer.root.addEventListener('contextmenu', e => {
 		const origin = /** @type {HTMLElement?} */ (e.composedPath().find(p => 'id' in p));
 		if (origin) {
 			e.preventDefault();
 			e.stopPropagation();
-			origin.classList.toggle('paused');
+			if (origin.classList.contains('paused')) {
+				displayContextMenu(/** @type {MouseEvent} */ (e), origin);
+			} else {
+				origin.classList.add('paused');
+			}
 		}
 	}, { passive: false });
-	le.addEventListener('click', e => {
-		const origin = /** @type {HTMLElement?} */ (e.composedPath()[0]);
-		if (origin?.tagName === 'A') {
+	layer.root.addEventListener('click', e => {
+		const origin = /** @type {HTMLElement | undefined} */ (e.composedPath().at(0));
+		const interactiveTags = ['A', 'BUTTON', 'INPUT', 'TEXTAREA'];
+		if (interactiveTags.includes(origin?.tagName || 'BODY')) {
 			e.stopPropagation();
 		} else {
 			/** @type {HTMLElement?} */ (e.target)?.parentElement?.click();
 		}
 	}, { passive: true });
-	le.addEventListener('wheel', e => {
-		const origin = /** @type {HTMLElement?} */ (e.composedPath().find(p => 'id' in p));
-		if (origin?.classList.contains('paused')) {
-			e.preventDefault();
-			e.stopPropagation();
-			origin.style.animationDelay = `${parseFloat(origin.style.animationDelay || '0') + Math.sign(e.deltaY) * .05}s`;
-		}
-	}, { passive: false });
 	return layer;
 }
 
+/**
+ * Displays the context menu for the given message element.
+ * @param {MouseEvent} event mouse event object
+ * @param {HTMLElement} target target message element
+ */
+async function displayContextMenu(event, target) {
+	let contextmenu = document.getElementById('yt-lcf-contextmenu');
+	if (!contextmenu) {
+		contextmenu = document.createElement('div');
+		contextmenu.id = 'yt-lcf-contextmenu';
+		contextmenu.classList.add('ytp-popup', 'ytp-contextmenu');
+		contextmenu.style.opacity = '0';
+		document.body.appendChild(contextmenu);
+		document.addEventListener('click', e => {
+			const path = e.composedPath();
+			if (contextmenu && !path.includes(contextmenu)) {
+				contextmenu.style.opacity = '0';
+			}
+		}, { passive: true });
+		contextmenu.addEventListener('transitionend', function(e) {
+			if (e.propertyName === 'opacity' && this.style.opacity === '0') {
+				this.style.display = 'none';
+			}
+		}, { passive: true });
+	}
+	while (contextmenu.firstChild) contextmenu.firstChild.remove();
+	const url = browser.runtime.getURL('../templates/panel_contextmenu.html');
+	const text = await fetch(url).then(res => res.text());
+	const doc = parser.parseFromString(text, 'text/html');
+	doc.querySelectorAll('[data-i18n]').forEach(e => {
+		const key = /** @type {HTMLElement} */ (e).dataset.i18n;
+		if (key) e.textContent = browser.i18n.getMessage(key);
+	});
+	contextmenu.append(...doc.body.childNodes);
+	contextmenu.style.display = '';
+	contextmenu.style.opacity = '1';
+	const rects = Array.from(contextmenu.children, c => c.getBoundingClientRect());
+	const width = Math.max(...rects.map(r => r.width));
+	const height = rects.reduce((a, c) => a + c.height, 0);
+	contextmenu.style.width = width ? width + 'px' : '';
+	contextmenu.style.height = height ? height + 'px' : '';
+	contextmenu.style.left = `${event.x}px`;
+	contextmenu.style.top = `${event.y}px`;
+	contextmenu.onclick = e => {
+		loop:
+		for (const el of e.composedPath()) {
+			switch (/** @type {HTMLElement} */ (el).dataset?.menu) {
+				case 'resume_animation':
+					target.classList.remove('paused');
+					break loop;
+				case 'move_message':
+					target.style.cursor = 'move';
+					target.addEventListener('mousedown', e => {
+						const [_, y] = (target.style.translate || '0 0').split(' ').map(v => Number.parseInt(v));
+						const computedStyle = getComputedStyle(target);
+						const speed = Number.parseInt(target.style.getPropertyValue('--yt-lcf-translate-x')) / Number.parseFloat(computedStyle.animationDuration);
+						const x = speed * Number.parseFloat(computedStyle.animationDelay);
+						const startX = e.x + x, startY = e.y - y;
+						/** @type {(e: MouseEvent) => void} */
+						const onmousemove = e => {
+							target.style.translate = [0, e.y - startY].map(i => i + 'px').join(' ');
+							target.style.animationDelay = ((startX - e.x) / speed).toFixed(3) + 's';
+						};
+						document.addEventListener('mousemove', onmousemove, { passive: true });
+						document.addEventListener('mouseup', () => {
+							target.style.cursor = '';
+							document.removeEventListener('mousemove', onmousemove);
+						}, { passive: true, once: true });
+					}, { once: true });
+					break loop;
+				case 'copy_user_id':
+					const clipboard = /** @type {HTMLTextAreaElement?} */ (document.getElementById('yt-lcf-clipboard'));
+					if (clipboard) {
+						clipboard.textContent = target.dataset.authorId || null;
+						clipboard.select();
+						document.execCommand('copy');
+					}
+					break loop;
+				case 'hide_user':
+					const authorId = target.dataset.authorId;
+					const textarea = /** @type {HTMLTextAreaElement | undefined} */ (g.panel?.form.elements.user_defined_css);
+					if (authorId && textarea) {
+						textarea.value += `\ndiv[data-author-id="${authorId}"] { display: none !important }`;
+						g.panel?.updateStorage(textarea);
+					}
+					target.remove();
+					break loop;
+				case contextmenu.id:
+					return;
+			}
+		}
+		contextmenu.style.opacity = '0';
+	};
+}
+
+/**
+ * Sets the panel up.
+ */
 export function setupPanel() {
 	const le = /** @type {LiveChatLayer} */ (g.layer).element;
 	le.after(/** @type {LiveChatPanel} */ (g.panel).element);
@@ -279,9 +383,10 @@ export function setupPanel() {
 		le.style.setProperty('--yt-lcf-' + prop.replace(/_/g, '-'), value);
 		/** @type {HTMLInputElement?} */
 		const input = form.querySelector(`input.styles[name="${prop}"]`);
-		if (input)
-		if (input.type === 'number') input.valueAsNumber = Number.parseFloat(value);
-		else input.value = value;
+		if (input) {
+			if (input.type === 'number') input.valueAsNumber = Number.parseFloat(value);
+			else input.value = value;
+		}
 	}
 	// number
 	/** @type {HTMLInputElement} */ (ctrls.px_per_sec).valueAsNumber = /** @type {HTMLInputElement} */ (ctrls.speed).checked
@@ -351,6 +456,9 @@ export function setupPanel() {
 
 }
 
+/**
+ * Adds setting menus to the video control.
+ */
 export async function addSettingMenu() {
 	/** @type {HTMLElement | null | undefined} */
 	const ytpPanelMenu = g.app?.querySelector('.ytp-settings-menu .ytp-panel-menu');
@@ -387,8 +495,8 @@ export async function addSettingMenu() {
 }
 
 /**
- * @param {LiveChat.LiveChatItemAction[]} actions 
- * @returns 
+ * Fires chat actions.
+ * @param {LiveChat.LiveChatItemAction[]} actions chat actions
  */
 export function doChatActions(actions) {
 	if (!g.layer) return;
@@ -554,12 +662,17 @@ export function doChatActions(actions) {
 	}));
 }
 
+/**
+ * Sets a flag to skip rendering the messages once.
+ */
 export function skipRenderingOnce() {
 	g.skip = true;
 }
 
 /**
- * @param {LiveChat.AnyRenderer} item
+ * Creates a chat item element from the message renderer.
+ * @param {LiveChat.AnyRenderer} item message renderer
+ * @returns {Promise<HTMLDivElement | null>} promise of chat item element or null
  */
 async function parseChatItem(item) {
 	const key = Object.keys(item)[0];
@@ -754,8 +867,14 @@ async function parseChatItem(item) {
 }
 
 /**
- * @param { LiveChat.Runs | LiveChat.SimpleText | undefined } message
- * @param { { start?: number, end?: number, emoji?: number, filterMode?: number } } options
+ * Gets nodes of chat message from the message item.
+ * @param {LiveChat.Runs | LiveChat.SimpleText} [message] message item
+ * @param {object} [options={}] message options
+ * @param {number} [options.start] start position of message
+ * @param {number} [options.end] end position of message
+ * @param {EmojiModeEnum} [options.emoji] emoji mode
+ * @param {MutedWordModeEnum} [options.filterMode] filter mode
+ * @returns {Array<HTMLSpanElement | Text>} nodes of chat message
  */
 function getChatMessage(message, options = {}) {
 	if (!message) return [];
@@ -853,7 +972,10 @@ function getChatMessage(message, options = {}) {
 	return rslt;
 }
 
-/** @param {HTMLElement} item */
+/**
+ * Updates the current style of the given item.
+ * @param {HTMLElement} item message element
+ */
 function updateCurrentItem(item) {
 	if (!g.layer) return;
 	const isLong = item.clientWidth >= g.layer.element.clientWidth * (parseInt(g.storage.styles.max_width) / 100 || 1);
@@ -862,11 +984,12 @@ function updateCurrentItem(item) {
 }
 
 /**
- * @param {LiveChat.RendererContent} renderer
- * @returns {'normal' | 'owner' | 'moderator' | 'member' | 'verified'}
+ * Gets the author type of the message.
+ * @param {LiveChat.RendererContent} renderer message renderer
+ * @returns {"normal" | "owner" | "moderator" | "member" | "verified"} author type
  */
 function getAuthorType(renderer) {
-	/** @type { ['owner', 'moderator', 'member', 'verified'] } */
+	/** @type { ["owner", "moderator", "member", "verified"] } */
 	const statuses = ['owner', 'moderator', 'member', 'verified'];
 	const classes = renderer.authorBadges?.map(b => b.liveChatAuthorBadgeRenderer.customThumbnail ? 'member' : b.liveChatAuthorBadgeRenderer.icon?.iconType.toLowerCase() || '') || [];
 	for (const s of statuses) if (classes.includes(s)) return s;
@@ -875,10 +998,28 @@ function getAuthorType(renderer) {
 
 
 export class LiveChatLayer {
+	/**
+	 * Maximum number of messages to display
+	 * @type {number}
+	 */
 	limit = 0;
+
+	/**
+	 * Container element of the layer
+	 * @type {HTMLDivElement}
+	 */
 	element;
+
+	/**
+	 * Shadow root containing all messages
+	 * @type {ShadowRoot}
+	 */
 	root;
-	/** @param {HTMLDivElement | undefined} div */
+
+	/** 
+	 * Creates new layer.
+	 * @param {HTMLDivElement | undefined} div container element
+	 */
 	constructor(div = undefined) {
 		this.element = div || document.createElement('div');
 		this.element.id = 'yt-lcf-layer';
@@ -910,6 +1051,11 @@ export class LiveChatLayer {
 		mutationObserver.observe(this.root, { childList: true });
 		this.clear();
 	}
+
+	/**
+	 * Removes all messages.
+	 * @returns {LiveChatLayer} layer
+	 */
 	clear() {
 		while (this.root.childElementCount > 4) {
 			// @ts-ignore
@@ -917,17 +1063,30 @@ export class LiveChatLayer {
 		}
 		return this;
 	}
+
+	/**
+	 * Hides the layer.
+	 */
 	hide() {
 		this.element.hidden = true;
 		this.element.ariaHidden = 'true';
 		this.element.style.display = 'none';
 		this.clear();
 	}
+
+	/**
+	 * Shows the layer.
+	 */
 	show() {
 		this.element.hidden = false;
 		this.element.ariaHidden = 'false';
 		this.element.style.display = 'block';
 	}
+
+	/**
+	 * Resets the animation duration.
+	 * @param {number} pxPerSec pixels to move per second
+	 */
 	resetAnimationDuration(pxPerSec = g.storage.others.px_per_sec) {
 		if (pxPerSec > 0) {
 			const durationBySpeed = (this.element.getBoundingClientRect().width / pxPerSec) || 8;
@@ -944,6 +1103,11 @@ export class LiveChatLayer {
 		}
 		this.element.style.setProperty('--yt-lcf-animation-duration', g.storage.styles.animation_duration);
 	}
+
+	/**
+	 * Resets the font size.
+	 * @param {number} numberOfLines number of lines
+	 */
 	resetFontSize(numberOfLines = g.storage.others.number_of_lines) {
 		if (numberOfLines) {
 			const rect = this.element.getBoundingClientRect();
@@ -958,12 +1122,21 @@ export class LiveChatLayer {
 			this.element.style.setProperty('--yt-lcf-font-size', g.storage.styles.font_size);
 		}
 	}
-	/** @param {string} [type] */
+
+	/**
+	 * Updates style of current items.
+	 * @param {string} [type] name of type to filter
+	 */
 	updateCurrentItemStyle(type = undefined) {
 		const items = Array.from(this.root.children).filter(type ? c => c.classList.contains(type) : c => c.tagName === 'DIV');
 		/** @type {HTMLElement[]} */ (items).forEach(updateCurrentItem);
 	}
-	/** @type {(x: number, y: number) => void} */
+
+	/**
+	 * Moves the layer to the given coordinates.
+	 * @param {number} x x-coordinate
+	 * @param {number} y y-coordinate
+	 */
 	move(x, y) {
 		this.element.style.left = `${x}px`;
 		this.element.style.top = `${y}px`;
@@ -971,12 +1144,21 @@ export class LiveChatLayer {
 }
 
 export class LiveChatPanel {
+	/**
+	 * Container element of the panel
+	 * @type {HTMLDivElement}
+	 */
 	element;
-	/** @type {HTMLFormElement} */
+
+	/**
+	 * Content element of the panel
+	 * @type {HTMLFormElement}
+	 */
 	form;
 
 	/**
-	 * @param {HTMLDivElement} [div]
+	 * Creates new config panel.
+	 * @param {HTMLDivElement} [div] container element
 	 */
 	constructor(div = undefined) {
 		this.element = div || document.createElement('div');
@@ -1015,6 +1197,10 @@ export class LiveChatPanel {
 		});
 	}
 
+	/**
+	 * Creates content of the panel.
+	 * @returns {Promise<HTMLFormElement>} promise of content of the panel
+	 */
 	async createForm() {
 		const url = browser.runtime.getURL('../templates/panel_form.html');
 		const doc = parser.parseFromString(await fetch(url).then(res => res.text()), 'text/html');
@@ -1165,6 +1351,34 @@ export class LiveChatPanel {
 				if (!le || !vc) return;
 				le.classList.add('resize-mode');
 				le.focus();
+
+				const c = { x: le.clientLeft || 0, y: le.clientTop || 0 };
+				/** @type {(val: number, min: number, max: number) => number} */
+				const clamp = (val, min, max) => Math.max(min, Math.min(val, max));
+				/** @type {(e: MouseEvent) => void} */
+				const onmousemove = e => {
+					if (!le || !isNotPip()) return;
+					if (!vc) return;
+					const x = clamp(le.offsetLeft + e.clientX - c.x, 0, vc.clientWidth - le.clientWidth);
+					const y = clamp(le.offsetTop + e.clientY - c.y, 0, vc.clientHeight - le.clientHeight);
+					g.layer?.move(x, y);
+					c.x = e.clientX, c.y = e.clientY;
+				};
+				/** @type {(e: MouseEvent) => void} */
+				const onmouseup = e => {
+					self.removeEventListener('mousemove', onmousemove);
+					self.removeEventListener('mouseup', onmouseup);
+					window.removeEventListener('mouseup', onmouseup);
+				};
+				/** @type {(e: MouseEvent) => void} */
+				const onmousedown = e => {
+					if (e.clientX > le.clientWidth - 64 && e.clientY > le.clientHeight - 64) return;
+					c.x = e.clientX, c.y = e.clientY;
+					self.addEventListener('mousemove', onmousemove, { passive: true });
+					self.addEventListener('mouseup', onmouseup, { passive: true });
+					window.addEventListener('mouseup', onmouseup, { passive: true });
+				};
+
 				/** @type { (e: MouseEvent) => void } */
 				const stopPropagation = e => e.stopPropagation();
 				/** @type {(e: KeyboardEvent) => void} */
@@ -1200,6 +1414,7 @@ export class LiveChatPanel {
 							input.value = newValue ? newValue + ';' : '';
 							g.panel?.updateStorage(input);
 						}
+						le.removeEventListener('mousedown', onmousedown);
 					} else {
 						le.style.left = styleMap.get('left') || '';
 						le.style.top = styleMap.get('top') || '';
@@ -1208,33 +1423,9 @@ export class LiveChatPanel {
 					}
 					le.blur();
 				}
-				self.addEventListener('keydown', onkeydown, { passive: true });
 
-				const c = { x: le.clientLeft || 0, y: le.clientTop || 0 };
-				/** @type {(val: number, min: number, max: number) => number} */
-				const clamp = (val, min, max) => Math.max(min, Math.min(val, max));
-				/** @type {(e: MouseEvent) => void} */
-				const onmousemove = e => {
-					if (!le || !isNotPip()) return;
-					if (!vc) return;
-					const x = clamp(le.offsetLeft + e.clientX - c.x, 0, vc.clientWidth - le.clientWidth);
-					const y = clamp(le.offsetTop + e.clientY - c.y, 0, vc.clientHeight - le.clientHeight);
-					g.layer?.move(x, y);
-					c.x = e.clientX, c.y = e.clientY;
-				};
-				/** @type {(e: MouseEvent) => void} */
-				const onmouseup = e => {
-					self.removeEventListener('mousemove', onmousemove);
-					self.removeEventListener('mouseup', onmouseup);
-					window.removeEventListener('mouseup', onmouseup);
-				};
-				le.addEventListener('mousedown', e => {
-					if (e.clientX > le.clientWidth - 64 && e.clientY > le.clientHeight - 64) return;
-					c.x = e.clientX, c.y = e.clientY;
-					self.addEventListener('mousemove', onmousemove, { passive: true });
-					self.addEventListener('mouseup', onmouseup, { passive: true });
-					window.addEventListener('mouseup', onmouseup, { passive: true });
-				}, { passive: true });
+				self.addEventListener('keydown', onkeydown, { passive: true });
+				le.addEventListener('mousedown', onmousedown, { passive: true });
 				document.addEventListener('click', stopPropagation, { capture: true });
 			}, { passive: true });
 		}
@@ -1334,18 +1525,29 @@ export class LiveChatPanel {
 		return this.form;
 	}
 
+	/**
+	 * Hides the panel.
+	 */
 	hide() {
 		this.element.querySelector('button')?.blur(); // avoid ARIA error
 		this.element.hidden = true;
 		this.element.ariaHidden = 'true';
 		this.element.style.display = 'none';
 	}
+
+	/**
+	 * Shows the panel.
+	 */
 	show() {
 		this.element.hidden = false;
 		this.element.ariaHidden = 'false';
 		this.element.style.display = 'block';
 	}
-	/** @param {HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement} elem */
+
+	/**
+	 * Updates settings of the element.
+	 * @param {HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement} elem form control element; `<input>` or `<select>` or `<textarea>`
+	 */
 	updateStorage(elem) {
 		const name = elem.name;
 		const le = g.layer?.element;
@@ -1455,13 +1657,13 @@ export class LiveChatPanel {
 				const selector = type && type !== 'user_defined' ? '.' + type : '';
 				g.storage.cssTexts[selector] = /** @type {HTMLInputElement?} */ (ctrls[type + '_css'])?.value || '';
 				if (selector) {
-					const style = le?.shadowRoot?.querySelector('#customcss');
+					const style = g.layer?.root.getElementById('customcss');
 					if (style) {
 						const rule = new RegExp(`:host>${selector.replace('.', '\\.')}{.*?}`);
 						style.textContent = (style.textContent || '').replace(rule, `:host>${selector}{${g.storage.cssTexts[selector]}}`);
 					}
 				} else {
-					const style = le?.shadowRoot?.querySelector('#userdefinedcss');
+					const style = g.layer?.root.getElementById('userdefinedcss');
 					if (style) style.textContent = g.storage.cssTexts[''];
 				}
 			}
@@ -1492,8 +1694,6 @@ export class LiveChatPanel {
 					updateMutedWordsList();
 				}
 			}
-		} else if (name === 'user_defined_css') {
-			g.storage.cssTexts[''] = elem.value;
 		}
 		if (['speed', 'px_per_sec'].includes(name)) {
 			const checked = /** @type {HTMLInputElement} */ (ctrls.speed).checked;
@@ -1523,13 +1723,20 @@ export class LiveChatPanel {
 		Storage.set(g.storage);
 	}
 
-	/** @type {(x: number, y: number) => void} */
+	/**
+	 * Moves the panel to the given corrdinates.
+	 * @param {number} x x-coordinate
+	 * @param {number} y y-coordinate
+	 */
 	move(x, y) {
 		this.element.style.left = `${x}px`;
 		this.element.style.top = `${y}px`;
 	}
 }
 
+/**
+ * Updates muted word list.
+ */
 export function updateMutedWordsList() {
 	/** @type { (str: string) => string } */
 	const escapeRegExp = str => str.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');

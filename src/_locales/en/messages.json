@@ -436,5 +436,17 @@
 	},
 	"pip_marker": {
 		"message": "Now playing in picture-in-picture mode"
+	},
+	"menu_resumeAnimation": {
+		"message": "Resume the animation"
+	},
+	"menu_moveMessage": {
+		"message": "Move this message"
+	},
+	"menu_copyAuthorId": {
+		"message": "Copy the user ID of this message"
+	},
+	"menu_hideAuthor": {
+		"message": "Hide all messages by this user"
 	}
 }

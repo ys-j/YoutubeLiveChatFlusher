@@ -416,3 +416,10 @@ yt-live-chat-item-list-renderer #item-scroller {
 	font-size: 2em;
 	color: var(--yt-spec-text-primary);
 }
+
+/*
+	Context menu
+*/
+#yt-lcf-contextmenu {
+	white-space: nowrap;
+}
