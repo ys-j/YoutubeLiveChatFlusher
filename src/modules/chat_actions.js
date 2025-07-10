@@ -2,9 +2,10 @@
 /// <reference path="../../ytlivechatrenderer.d.ts" />
 
 /**
- * @param {any} response 
- * @param {Map<number, LiveChat.LiveChatItemAction[]>} outMap 
- * @param {AbortSignal} signal
+ * Fetches the chat actions from the page response.
+ * @param {any} response response of the video watching page
+ * @param {Map<number, LiveChat.LiveChatItemAction[]>} outMap (mutating) container of chat actions
+ * @param {AbortSignal} signal signal for aborting fetching
  * @return {Promise<boolean>} if video has chat
  */
 export async function fetchChatActions(response, outMap, signal) {
@@ -34,9 +35,11 @@ export async function fetchChatActions(response, outMap, signal) {
 }
 
 /**
- * @param {AbortSignal} signal 
- * @param {string} initialContinuation 
- * @param {boolean} [isReplay=false] 
+ * Generates the chat actions from the response of InnerTube API.
+ * @param {AbortSignal} signal signal for aborting fetching
+ * @param {string} initialContinuation initial continuation token
+ * @param {boolean} [isReplay=false] if is replay
+ * @yields {LiveChat.ReplayChatItemAction[]} chat actions
  */
 async function* getChatActionsAsyncIterable(signal, initialContinuation, isReplay = false) {
 	const url = new URL('/youtubei/v1/live_chat/get_live_chat' + (isReplay ? '_replay' : ''), location.origin);
@@ -84,6 +87,7 @@ const defaultClient = {
 };
 
 /**
+ * Fetches the livechat contents object from the given URL and continuation token.
  * @param {URL} url URL
  * @param {string} continuation continuation token
  * @returns {Promise<any>} livechat contents object
@@ -117,6 +121,7 @@ function getContentsAsync(url, continuation) {
 }
 
 /**
+ * Gets the continuation token from the livechat contents object.
  * @param {any} contents livechat contents object
  * @param {boolean} isReplay if is replay
  * @returns {string?} continuation token
@@ -131,7 +136,8 @@ function getContinuation(contents, isReplay) {
 }
 
 /**
- * @param {number} ms 
+ * Waits for the given number of milliseconds.
+ * @param {number} ms milliseconds
  */
 function sleep(ms) {
 	/** @type {Promise<void>} */

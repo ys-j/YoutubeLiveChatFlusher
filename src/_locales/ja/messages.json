@@ -436,5 +436,17 @@
 	},
 	"pip_marker": {
 		"message": "この動画はピクチャーインピクチャーで再生されています"
+	},
+	"menu_resumeAnimation": {
+		"message": "アニメーションを再開"
+	},
+	"menu_moveMessage": {
+		"message": "メッセージを移動"
+	},
+	"menu_copyAuthorId": {
+		"message": "ユーザーIDをコピー"
+	},
+	"menu_hideAuthor": {
+		"message": "このユーザーを非表示"
 	}
 }
