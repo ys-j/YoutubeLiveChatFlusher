@@ -16,7 +16,7 @@ if (isSelfChatFrame) {
 	const isLive = location.pathname === '/live_chat';
 	const modeName = isLive ? 'mode_livestream' : 'mode_replay';
 	browser.storage.local.get('others').then(storage => {
-		const mode = storage?.others?.[modeName];
+		const mode = storage?.others?.[modeName] ?? 1;
 		if (mode === 0) {
 			document.addEventListener('yt-action', e => {
 				if (e.detail?.actionName === 'yt-live-chat-actions') {
@@ -179,9 +179,8 @@ function initialize(e) {
 
 			const storage = await browser.storage.local.get('others');
 			const modeName = isLive ? 'mode_livestream' : 'mode_replay';
-			const mode = storage?.others?.[modeName];
-			if (mode === 0) {
-			} else if (mode === 1) {
+			const mode = storage?.others?.[modeName] ?? 1;
+			if (mode === 1) {
 				let timer = 0;
 				timer = setInterval(() => {
 					if (actionMap.size > 0) {

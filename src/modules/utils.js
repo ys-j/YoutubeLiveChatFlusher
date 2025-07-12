@@ -4,7 +4,9 @@
 self.browser ??= chrome;
 
 /**
- * @param { LiveChat.Runs | LiveChat.SimpleText | undefined } message
+ * Gets string from a message object.
+ * @param { LiveChat.Runs | LiveChat.SimpleText | undefined } message message object: Runs or SimpleText
+ * @returns {string} message string
  */
 export function getText(message) {
 	if (!message) return '';
@@ -21,9 +23,11 @@ export function getText(message) {
 }
 
 /**
- * @param {Element} before 
- * @param {Element} after 
- * @param {boolean} [reversed=false] 
+ * Checks whether two flowing messages collide.
+ * @param {Element} before preceding message
+ * @param {Element} after following message
+ * @param {boolean} [reversed=false] if direction is reversed
+ * @returns whether the following message collides against the preceding message
  */
 export function isCatchable(before, after, reversed = false) {
 	const [b, a] = [before, after].map(elm => elm.getBoundingClientRect());
@@ -54,30 +58,10 @@ export function isCatchable(before, after, reversed = false) {
 }
 
 /**
- * @param {Element} before 
- * @param {Element} after 
- */
-export function isOverlapping(before, after) {
-	const [b, a] = [before, after].map(elm => elm.getBoundingClientRect());
-	const [bDur, aDur] = [before, after].map(elm => {
-		const dur = getComputedStyle(elm).animationDuration;
-		const [_, num, unit] = dur.match(/([\d\.]+)(\D+)/) || [];
-		if (num && unit) switch (unit) {
-			case 'ms': return Number.parseFloat(num);
-			case 's': return Number.parseFloat(num) * 1000;
-		}
-		return 4000;
-	});
-	const bSpeed = b.width / bDur, aSpeed = a.width / aDur;
-	const speedDiff = aSpeed - bSpeed;
-	const start = (a.left - b.right) / speedDiff;
-	const end = (a.right - b.left) / speedDiff;
-	return end > start ? Math.min(Math.round(end - start), bDur) : 0;
-}
-
-/**
- * @param {Element} parent 
- * @param {Element} child 
+ * Checks whether an element's position exceeds the size of its parent.
+ * @param {Element} parent parent element
+ * @param {Element} child child element
+ * @returns whether child element is overflowing the parent
  */
 export function isOverflow(parent, child) {
 	const p = parent.getBoundingClientRect();
@@ -86,14 +70,13 @@ export function isOverflow(parent, child) {
 }
 
 /**
- * @typedef FilterOptions
- * @prop {number} [mode]
- * @prop {RegExp[]} [rules]
- * @prop {string} [replacement]
- */
-/**
- * @param {string} str 
- * @param {FilterOptions} [options] 
+ * Gets message filtered according to the rules.
+ * @param {string} str original message
+ * @param {object} [options] filtering options
+ * @param {number} [options.mode] `0` for no filtering, `1` for all removal, `2` for word replacement, or `3` for character replacement
+ * @param {RegExp[]} [options.rules] filtering rules
+ * @param {string} [options.replacement] replacement string
+ * @returns {IteratorResult<string, string>} filtering result
  */
 export function filterMessage(str, options = {}) {
 	let done = false;
@@ -140,7 +123,7 @@ export function filterMessage(str, options = {}) {
 }
 
 /**
- * Check if now in PiP-mode
+ * Checks if now in PiP-mode
  * @returns {boolean} if not PiP-mode now
  */
 export function isNotPip() {
@@ -148,17 +131,18 @@ export function isNotPip() {
 }
 
 /**
- * Convert color from long integer to array of integer.
+ * Converts color from long integer to array of integer.
  * @param {number} long integer of color `0xAARRGGBB`
  * @returns {number[]} array of integer `[RR, GG, BB]`
  */
 export function getColorRGB(long) {
-	const separated = /** @type {string[]} */ (long.toString(16).match(/[0-9a-f]{2}/g) || [])
+	/** @type {string[]} */ 
+	const separated = long.toString(16).match(/[0-9a-f]{2}/g) || [];
 	return separated.map(hex => Number.parseInt(hex, 16)).slice(1);
 }
 
 /**
- * Convert CSS color value from short hex-format or rgb()-format to normal hex-format.
+ * Converts CSS color value from short hex-format or rgb()-format to normal hex-format.
  * @param {string} css short hex-format or rgb()-format color value (e.g. `#abc`, `rgb(0, 128, 255)`)
  * @param {string} [inherit='#ffffff'] default value
  * @returns {string} normal hex-format color (e.g. `#123456`)
@@ -169,10 +153,11 @@ export function formatHexColor(css, inherit = '#ffffff') {
 		if (color.length > 6) {
 			return color.slice(0, 7);
 		} else if (color.length > 3) {
-			return color[0] + color[1] + color[1] + color[2] + color[2] + color[3] + color[3];
+			const [_, r, g, b] = color;
+			return '#' + [r, g, b].map(s => s + s).join('');
 		}
 	} else if (color.startsWith('rgb')) {
-		const [_, r, g, b] = color.match(/(\d+),\s*(\d+),\s*(\d+)/) || [];
+		const [_, r, g, b] = color.match(/(\d+),?\s*(\d+),?\s*(\d+)/) || [];
 		if (_) {
 			return '#' + [r, g, b].map(s => Number.parseInt(s).toString(16).padStart(2, '0')).join('');
 		}
@@ -213,7 +198,7 @@ export const Storage = {
 			except_lang: 0,
 			autostart: 0,
 			time_shift: 0,
-			mode_livestream: 1,
+			mode_livestream: 0,
 			mode_replay: 1,
 		},
 		parts: {
@@ -316,6 +301,10 @@ export const Storage = {
 	}
 };
 
+/**
+ * Sends a signal to refresh all tabs running this extension.
+ * @returns {Promise<void>}
+ */
 function refreshPage() {
 	return browser.runtime.sendMessage({ fire: 'reload' }).then(() => {});
 }

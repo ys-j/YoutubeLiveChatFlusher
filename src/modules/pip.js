@@ -1,8 +1,10 @@
 /// <reference path="../../browser.d.ts" />
 /// <reference path="../../extends.d.ts" />
 
+/**
+ * Initializes the PiP-mode menu.
+ */
 export function initPipMenu() {
-	/** @type {HTMLElement?} */
 	const pipmenuTop = document.getElementById('yt-lcf-pp');
 	if ('documentPictureInPicture' in window) {
 		const pipmenu = pipmenuTop || self.documentPictureInPicture?.window?.document.getElementById('yt-lcf-pp');
@@ -24,12 +26,13 @@ export function initPipMenu() {
 }
 
 /**
- * @param {Element} element 
+ * Creates and opens document picture-in-picture window of the video player container.
+ * @param {Element} element element of video player container
+ * @returns {Promise<Window>} document picture-in-picture window
  */
 export async function openPip(element) {
 	const parent = element.parentElement;
 	if (!parent) throw new Error('No parent element.');
-	/** @type {Window?} */ // @ts-ignore
 	const pipWindow = await top?.documentPictureInPicture?.requestWindow({
 		width: parent.clientWidth,
 		height: parent.clientHeight,
@@ -131,9 +134,10 @@ export async function openPip(element) {
 }
 
 /**
- * @param {Window} win 
+ * Updates size of progress bar in picture-in-picture window.
+ * @param {Window} win picture-in-picture window
  */
-function updatePregressBarSize(win) {
+function updateProgressBarSize(win) {
 	/** @type {HTMLElement?} */
 	const bottomElem = win.document.querySelector('.ytp-chrome-bottom');
 	if (bottomElem) {
@@ -173,7 +177,7 @@ function onResizeVideo(e) {
 	this.style.height = `${Math.min(wh, (w / aspect)|0)}px`;
 	this.style.width = `${w}px`;
 	this.style.left = `${Math.max(ww - w, 0) * .5}px`;
-	updatePregressBarSize(e.detail);
+	updateProgressBarSize(e.detail);
 }
 
 const shortcutKeys = ['f', 'i', 't'];

@@ -894,7 +894,7 @@ function getChatMessage(message, options = {}) {
 	for (const r of runs) {
 		if ('text' in r) {
 			const filtered = filterMessage(r.text, filterOptions);
-			if (filtered.result && filterMode === g.index.mutedWords.all) return [];
+			if (filtered.done && filterMode === g.index.mutedWords.all) return [];
 			let node;
 			if (r.navigationEndpoint || r.bold || r.italics) {
 				if (r.navigationEndpoint) {
