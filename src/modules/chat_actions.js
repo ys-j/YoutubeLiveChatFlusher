@@ -82,9 +82,28 @@ async function* getChatActionsAsyncIterable(signal, initialContinuation, isRepla
 
 const defaultClient = {
 	clientName: 'WEB',
-	clientVersion: '2.20240731.40.00',
+	clientVersion: '2.20250730.01.00',
 	mainAppWebInfo: { graftUrl: location.href },
 };
+
+/**
+ * Fetches the value of Authorization header.
+ * @param {Record<string, string>} data stored data
+ * @returns {Promise<string>} authorization value
+ */
+async function getAuthoricationAsync(data) {
+	const datasyncId = data['DATASYNC_ID'].split('||')[0];
+	const timestamp = Math.floor(Date.now() / 1e3);
+	const cookies = new Map(document.cookie.split(/;\s*/).map(kv => {
+		const pos = kv.indexOf('=');
+		return pos >= 0 ? [ kv.substring(0, pos), kv.substring(pos + 1) ] : [ '', '' ];
+	}));
+	const sApisId = cookies.get('SAPISID');
+	const bytes = new TextEncoder().encode([datasyncId, timestamp, sApisId, location.origin].join(' '));
+	const digested = new Uint8Array(await crypto.subtle.digest('SHA-1', bytes));
+	const hash = Array.from(digested, b => b.toString(16).padStart(2, '0')).join('');
+	return ['SAPISIDHASH', 'SAPISID1PHASH', 'SAPISID3PHASH'].map(k => `${k} ${timestamp}_${hash}_u`).join(' ');
+}
 
 /**
  * Fetches the livechat contents object from the given URL and continuation token.
@@ -92,32 +111,33 @@ const defaultClient = {
  * @param {string} continuation continuation token
  * @returns {Promise<any>} livechat contents object
  */
-function getContentsAsync(url, continuation) {
+async function getContentsAsync(url, continuation) {
 	const stored = sessionStorage.getItem('ytlcf-cfg');
-	const client = stored && JSON.parse(stored)?.data_?.['INNERTUBE_CONTEXT']?.client || defaultClient;
-	return fetch(url, {
-		method: 'post',
-		headers: {
-			'Content-Type': 'application/json',
-		},
-		body: JSON.stringify({
-			context: { client },
-			continuation,
-		}),
-	})
-	.then(res => {
-		if (res.ok) return res.json();
-		else throw 'Request failed.';
-	})
-	.then(json => json?.continuationContents?.liveChatContinuation)
-	.catch(reason => {
+	const data = stored ? JSON.parse(stored)?.data_ : null;
+	const client = data?.['INNERTUBE_CONTEXT']?.client || defaultClient;
+	const headers = new Headers();
+	headers.append('Content-Type', 'application/json');
+	if (data) headers.append('Authorization', await getAuthoricationAsync(data));
+	try {
+		const res = await fetch(url, {
+			method: 'post',
+			headers,
+			body: JSON.stringify({
+				context: { client },
+				continuation,
+			}),
+		});
+		const json = res.ok ? await res.json() : null;
+		if (!json) throw 'Request failed.';
+		return json.continuationContents?.liveChatContinuation;
+	} catch (reason) {
 		console.error(reason);
 		const c = {
 			liveChatReplayContinuationData: { continuation },
 			invalidationContinuationData: { continuation },
 		};
 		return { continuations: [ c ] };
-	});
+	}
 }
 
 /**
