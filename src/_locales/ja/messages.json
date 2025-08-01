@@ -344,6 +344,9 @@
 	"exception": {
 		"message": "除外"
 	},
+	"translationBlacklist": {
+		"message": "翻訳NGリスト"
+	},
 	"translationUrl": {
 		"message": "翻訳URL (GET)"
 	},

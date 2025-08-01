@@ -708,11 +708,22 @@ async function parseChatItem(item) {
 	const index = g.storage.others.translation;
 	const nl = navigator.languages;
 	const tl = ['', ...nl][Math.abs(index)];
-	const el = nl.filter((_, i) => g.storage.others.except_lang & 1 << i);
 	if (tl && msg.orig) {
+		const el = nl.filter((_, i) => g.storage.others.except_lang & 1 << i);
 		msg.trans = await Promise.all(msg.orig.map(async node => {
 			const text = node.textContent;
 			if (text) {
+				if (g.storage.translation.regexp) {
+					for (const rule of g.storage.translation.plainList) {
+						const isMatches = new RegExp(rule).test(text);
+						if (isMatches) return node;
+					}
+				} else {
+					for (const rule of g.storage.translation.plainList) {
+						const isMatches = text.includes(rule);
+						if (isMatches) return node;
+					}
+				}
 				const detection = await browser.i18n.detectLanguage(text);
 				const sl = detection.languages[0]?.language;
 				if (!el.includes(sl)) {

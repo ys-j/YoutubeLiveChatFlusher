@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "__MSG_manifestName__",
-	"version": "0.11.4",
+	"version": "0.11.5",
 	"author": "_y_s",
 	"action": {
 		"default_state": "disabled"

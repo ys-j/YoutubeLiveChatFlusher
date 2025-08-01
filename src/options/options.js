@@ -16,6 +16,15 @@ for (const el of i18nElems) {
 		if (msg) el.textContent = msg;
 	}
 }
+/** @type {NodeListOf<HTMLInputElement | HTMLTextAreaElement>} */
+const i18nPlaceholders = document.querySelectorAll('[data-i18n-placeholder]');
+for (const el of i18nPlaceholders) {
+	const key = el.dataset.i18nPlaceholder;
+	if (key) {
+		const msg = browser.i18n.getMessage(key);
+		if (msg) el.placeholder = msg;
+	}
+}
 
 /** @type {NodeListOf<HTMLElement>} */
 const manifestElems = document.querySelectorAll('[data-manifest]');
@@ -52,7 +61,16 @@ if (form) {
 		Object.assign(config[k], storage[k]);
 	}
 	/** @type {Record<string, HTMLInputElement | HTMLSelectElement | RadioNodeList>} */ //@ts-ignore
-	const { mode_livestream, mode_replay, hotkey_layer, hotkey_panel, autostart, translation_url } = controls;
+	const {
+		mode_livestream,
+		mode_replay,
+		hotkey_layer,
+		hotkey_panel,
+		autostart,
+		translation_blacklist_regexp,
+		translation_blacklist,
+		translation_url
+	} = controls;
 
 	// mode
 	mode_livestream.value = config.others.mode_livestream.toString();
@@ -66,6 +84,9 @@ if (form) {
 	hotkey_panel.value = config.hotkeys.panel;
 
 	// translation
+	/** @type {HTMLInputElement} */
+	(translation_blacklist_regexp).checked = config.translation.regexp;
+	translation_blacklist.value = config.translation.plainList.join('\n');
 	translation_url.value = config.translation.url;
 
 	const status = document.getElementById('status');
@@ -83,6 +104,8 @@ if (form) {
 		store.others.autostart = Number.parseInt(autostart.value);
 		store.hotkeys.layer = hotkey_layer.value;
 		store.hotkeys.panel = hotkey_panel.value;
+		store.translation.regexp = /** @type {HTMLInputElement} */ (translation_blacklist_regexp).checked;
+		store.translation.plainList = translation_blacklist.value.split(/\n+/).filter(s => s.length > 0);
 		store.translation.url = translation_url.value;
 		await Storage.set(store);
 		if (status) status.hidden = true;

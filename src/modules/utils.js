@@ -239,6 +239,9 @@ export const Storage = {
 		},
 		translation: {
 			url: 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=$sl&tl=$tl&dt=t&dt=bd&dj=1&q=$q',
+			regexp: false,
+			/** @type {string[]} */
+			plainList: [],
 		},
 	},
 

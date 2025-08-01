@@ -133,20 +133,19 @@ input[type="radio"] {
 input:checked + span {
 	color: var(--text-color);
 }
-input:is(:not([type]), [type="text"], [type="url"]) {
+input:is(:not([type]), [type="text"], [type="url"]),
+textarea {
 	background-color: transparent;
 	border: 1px solid currentColor;
 	border-radius: 4px;
 	color: inherit;
 	padding: 4px;
+	width: 100%;
 	&:invalid {
 		outline: 1px solid red;
 	}
 	&[name^="hotkey"] {
 		text-align: center;
-	}
-	&[type="url"] {
-		width: 100%;
 	}
 }
 

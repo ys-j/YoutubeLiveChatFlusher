@@ -94,6 +94,14 @@
 	<section>
 		<h2 data-i18n=translation></h2>
 		<dl>
+			<dt data-i18n=translationBlacklist>
+			<dd>
+				<label>
+					<input type=checkbox name=translation_blacklist_regexp>
+					<span data-i18n=regexp></span>
+				</label>
+				<br>
+				<textarea name=translation_blacklist rows=20 data-i18n-placeholder=placeholder_mutedWordsList></textarea>
 			<dt data-i18n=translationUrl>
 			<dd><input type=url name=translation_url required>
 		</dl>
