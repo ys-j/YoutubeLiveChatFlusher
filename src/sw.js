@@ -17,8 +17,13 @@ const events = {
 		return browser.action[isHostMatch ? 'enable' : 'disable'](tabId);
 	},
 	async reload() {
-		const ytTabs = await browser.tabs.query({ url: manifest.host_permissions });
-		for (const tab of ytTabs) browser.tabs.reload(tab.id, { bypassCache: true });
+		const ytTabs = await browser.tabs.query({
+			discarded: false,
+			url: manifest.host_permissions,
+		});
+		for (const tab of ytTabs) {
+			browser.tabs.reload(tab.id, { bypassCache: true });
+		}
 	},
 	async openOptions() {
 		return browser.runtime.openOptionsPage();
