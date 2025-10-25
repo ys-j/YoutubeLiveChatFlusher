@@ -4,7 +4,7 @@
 /**
  * Fetches the chat actions from the page response.
  * @param {any} response response of the video watching page
- * @param {Map<number, LiveChat.LiveChatItemAction[]>} outMap (mutating) container of chat actions
+ * @param {Map<number, Set<string>>} outMap (mutating) container of chat actions stringified as JSON
  * @param {AbortSignal} signal signal for aborting fetching
  * @return {Promise<boolean>} if video has chat
  */
@@ -16,15 +16,19 @@ export async function fetchChatActions(response, outMap, signal) {
 	const continuation = liveChatRenderer?.continuations?.[0]?.reloadContinuationData?.continuation;
 	if (continuation) {
 		outMap.clear();
-		const generator = getChatActionsAsyncIterable(signal, continuation, isReplay);
+		const generator = isReplay
+			? getReplayChatActionsAsyncIterable(signal, continuation)
+			: getLiveChatActionsAsyncIterable(signal, continuation);
 		for await (const actions of generator) {
 			for (const container of actions) {
 				const action = container?.replayChatItemAction;
 				const key = Number.parseInt(action.videoOffsetTimeMsec);
 				if (outMap.has(key)) {
-					outMap.get(key)?.push(...action.actions);
+					for (const a of action.actions) {
+						outMap.get(key)?.add(JSON.stringify(a));
+					}
 				} else {
-					outMap.set(key, action.actions);
+					outMap.set(key, new Set(action.actions.map(a => JSON.stringify(a))));
 				}
 			}
 		}
@@ -35,54 +39,91 @@ export async function fetchChatActions(response, outMap, signal) {
 }
 
 /**
- * Generates the chat actions from the response of InnerTube API.
+ * Generates the replay chat actions from the response of InnerTube API.
  * @param {AbortSignal} signal signal for aborting fetching
  * @param {string} initialContinuation initial continuation token
- * @param {boolean} [isReplay=false] if is replay
- * @yields {LiveChat.ReplayChatItemAction[]} chat actions
+ * @returns {AsyncGenerator<LiveChat.ReplayChatItemAction[]>} chat actions generator
  */
-async function* getChatActionsAsyncIterable(signal, initialContinuation, isReplay = false) {
-	const url = new URL('/youtubei/v1/live_chat/get_live_chat' + (isReplay ? '_replay' : ''), location.origin);
+async function* getReplayChatActionsAsyncIterable(signal, initialContinuation) {
+	const url = new URL('/youtubei/v1/live_chat/get_live_chat_replay', location.origin);
 	url.searchParams.set('prettyPrint', 'false');
 
-	/** @type {string?} */
-	let continuation = initialContinuation;
-	if (isReplay) {
-		/** @type { { actions: LiveChat.ReplayChatItemAction[] } } */
-		let contents = { actions: [] };
-		while (!signal.aborted && continuation && contents.actions) {
-			contents = await getContentsAsync(url, continuation);
-			yield contents.actions || [];
-			continuation = getContinuation(contents, isReplay);
+	/** @type {Map<string, string>} */
+	const continuations = new Map();
+	/** @type { { continuation: string } } */
+	let body = { continuation: initialContinuation };
+	/** @type { { actions: LiveChat.ReplayChatItemAction[] } } */
+	let contents = { actions: [] };
+	
+	/** @type { { offset: number } | undefined } */
+	let seekInfo;
+	signal.addEventListener('ytlcf-seek', e => {
+		// @ts-ignore
+		seekInfo = /** @type { { offset: number } } */ (e.detail);
+	}, { passive: true });
+
+	let prev = body.continuation;
+	while (!signal.aborted && prev) {
+		while (continuations.has(prev)) {
+			if (isRecursiveMap(continuations)) return;
+			prev = continuations.get(prev) || '';
+			body = { continuation: prev };
 		}
-	} else {
-		/** @type { { actions: LiveChat.LiveChatItemAction[] } } */
-		let contents = { actions: [] };
-		let lastTimestamp = 0;
-		const getTimestamp = a => {
-			/** @type {LiveChat.RendererContent} */
-			const renderer = Object.values(a.addChatItemAction.item).at(0);
-			return Number.parseInt(renderer?.timestampUsec);
-		}
-		while (!signal.aborted && continuation) {
-			contents = await getContentsAsync(url, continuation);
-			if (contents.actions) {
-				// Fire actions directly.
-				const filtered = contents.actions.filter(a => !('addChatItemAction' in a) || getTimestamp(a) > lastTimestamp);
-				const ev = new CustomEvent('ytlcf-actions', { detail: filtered });
-				self.dispatchEvent(ev);
-				const lastIndex = filtered.findLastIndex(a => 'addChatItemAction' in a);
-				if (lastIndex > 0) lastTimestamp = getTimestamp(filtered[lastIndex]);
+		contents = await getContentsAsync(url, body);
+		if (contents.actions) yield contents.actions;
+		if (seekInfo) {
+			body = getContinuation(contents, true, seekInfo.offset);
+			seekInfo = undefined;
+		} else {
+			body = getContinuation(contents, true);
+			if (prev !== initialContinuation) {
+				continuations.set(prev, body.continuation);
 			}
-			continuation = getContinuation(contents, isReplay);
-			await sleep(200);
 		}
+		prev = body.continuation;
+		await sleep(250);
+	}
+}
+
+/**
+ * Generates the live chat actions from the response of InnerTube API.
+ * @param {AbortSignal} signal signal for aborting fetching
+ * @param {string} initialContinuation initial continuation token
+ * @returns {AsyncGenerator<never>} empty generator
+ */
+async function* getLiveChatActionsAsyncIterable(signal, initialContinuation) {
+	const url = new URL('/youtubei/v1/live_chat/get_live_chat', location.origin);
+	url.searchParams.set('prettyPrint', 'false');
+
+	/** @type { { continuation: string } } */
+	let body = { continuation: initialContinuation };
+	/** @type { { actions: LiveChat.LiveChatItemAction[] } } */
+	let contents = { actions: [] };
+	let lastTimestamp = 0;
+	/** @type { (a: any) => number } */
+	const getTimestamp = a => {
+		/** @type {LiveChat.RendererContent} */
+		const renderer = Object.values(a.addChatItemAction.item).at(0);
+		return Number.parseInt(renderer?.timestampUsec);
+	}
+	while (!signal.aborted && body.continuation) {
+		contents = await getContentsAsync(url, body);
+		if (contents.actions) {
+			// Fire actions directly.
+			const filtered = contents.actions.filter(a => !('addChatItemAction' in a) || getTimestamp(a) > lastTimestamp);
+			const ev = new CustomEvent('ytlcf-actions', { detail: filtered });
+			self.dispatchEvent(ev);
+			const lastIndex = filtered.findLastIndex(a => 'addChatItemAction' in a);
+			if (lastIndex > 0) lastTimestamp = getTimestamp(filtered[lastIndex]);
+		}
+		body = getContinuation(contents, false);
+		await sleep(250);
 	}
 }
 
 const defaultClient = {
 	clientName: 'WEB',
-	clientVersion: '2.20250730.01.00',
+	clientVersion: '2.20251022.01.00',
 	mainAppWebInfo: { graftUrl: location.href },
 };
 
@@ -108,23 +149,23 @@ async function getAuthoricationAsync(data) {
 /**
  * Fetches the livechat contents object from the given URL and continuation token.
  * @param {URL} url URL
- * @param {string} continuation continuation token
+ * @param { { continuation: string } } body continuation token container
  * @returns {Promise<any>} livechat contents object
  */
-async function getContentsAsync(url, continuation) {
+async function getContentsAsync(url, body) {
 	const stored = sessionStorage.getItem('ytlcf-cfg');
 	const data = stored ? JSON.parse(stored)?.data_ : null;
 	const client = data?.['INNERTUBE_CONTEXT']?.client || defaultClient;
 	const headers = new Headers();
-	headers.append('Content-Type', 'application/json');
-	if (data) headers.append('Authorization', await getAuthoricationAsync(data));
+	headers.set('Content-Type', 'application/json');
+	if (data) headers.set('Authorization', await getAuthoricationAsync(data));
 	try {
 		const res = await fetch(url, {
 			method: 'post',
 			headers,
 			body: JSON.stringify({
 				context: { client },
-				continuation,
+				...body,
 			}),
 		});
 		const json = res.ok ? await res.json() : null;
@@ -133,8 +174,8 @@ async function getContentsAsync(url, continuation) {
 	} catch (reason) {
 		console.error(reason);
 		const c = {
-			liveChatReplayContinuationData: { continuation },
-			invalidationContinuationData: { continuation },
+			liveChatReplayContinuationData: body,
+			invalidationContinuationData: body,
 		};
 		return { continuations: [ c ] };
 	}
@@ -144,14 +185,21 @@ async function getContentsAsync(url, continuation) {
  * Gets the continuation token from the livechat contents object.
  * @param {any} contents livechat contents object
  * @param {boolean} isReplay if is replay
- * @returns {string?} continuation token
+ * @param {number} [offset] player offset (milliseconds)
+ * @returns { { continuation: string, currentPlayerState?: { playerOffsetMs: string } } } continuation token
  */
-function getContinuation(contents, isReplay) {
-	const c = contents?.continuations?.[0];
-	if (isReplay) {
-		return c?.liveChatReplayContinuationData?.continuation;
+function getContinuation(contents, isReplay, offset) {
+	const c = contents?.continuations?.at(offset ? -1 : 0);
+	if ('playerSeekContinuationData' in c) {
+		return {
+			continuation: c?.playerSeekContinuationData?.continuation,
+			currentPlayerState: { playerOffsetMs: (offset || 0).toString() },
+		};
 	} else {
-		return c?.invalidationContinuationData?.continuation || c?.timedContinuationData?.continuation;
+		const continuation = isReplay
+			? c?.liveChatReplayContinuationData?.continuation
+			: c?.invalidationContinuationData?.continuation || c?.timedContinuationData?.continuation;
+		return { continuation };
 	}
 }
 
@@ -168,3 +216,15 @@ function sleep(ms) {
 	});
 	return promise;
 }
+
+/**
+ * Determines whether the map is recursive.
+ * @param {Map<any, any>} map map object
+ * @returns {boolean} if the map is recursive
+ */
+function isRecursiveMap(map) {
+	const keys = Array.from(map.keys());
+	const values = Array.from(map.values());
+	values.unshift(values.pop());
+	return keys.toString() === values.toString();
+};

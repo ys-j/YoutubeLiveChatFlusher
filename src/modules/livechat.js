@@ -65,6 +65,7 @@ export async function runApp(player) {
 	for (const type of storageList) {
 		if (storage[type]) {
 			for (const [key, value] of Object.entries(storage[type])) {
+				// @ts-ignore
 				g.storage[type][key] = value;
 			}
 		}
@@ -95,7 +96,7 @@ export async function runApp(player) {
 	if (g.storage.others.disabled) g.layer.hide();
 	videoContainer.after(g.layer.element);
 
-	/** @type {Promise[]} */
+	/** @type {Promise<any>[]} */
 	const promises = [];
 
 	// fetching your channel ID and set styles for you
@@ -131,7 +132,7 @@ export function getLayer() {
 	const layer = new LiveChatLayer();
 	layer.root.addEventListener('contextmenu', e => {
 		const origin = /** @type {HTMLElement?} */ (e.composedPath().find(p => 'id' in p));
-		if (origin) {
+		if (origin && g.storage.others.message_pause) {
 			e.preventDefault();
 			e.stopPropagation();
 			if (origin.classList.contains('paused')) {
@@ -163,7 +164,7 @@ async function displayContextMenu(event, target) {
 	if (!contextmenu) {
 		contextmenu = document.createElement('div');
 		contextmenu.id = 'yt-lcf-contextmenu';
-		contextmenu.classList.add('ytp-popup', 'ytp-contextmenu');
+		contextmenu.classList.add('ytp-popup', 'ytp-contextmenu', 'ytp-delhi-modern-contextmenu');
 		contextmenu.style.opacity = '0';
 		document.body.appendChild(contextmenu);
 		document.addEventListener('click', e => {
@@ -304,6 +305,7 @@ export function setupPanel() {
 		if (match) {
 			const [_, type] = match;
 			if (type in g.storage.parts) {
+				// @ts-ignore
 				cb.checked = g.storage.parts[type][cb.value];
 				switch (cb.value) {
 					case 'color': {
@@ -676,7 +678,7 @@ export function skipRenderingOnce() {
  */
 async function parseChatItem(item) {
 	const key = Object.keys(item)[0];
-	/** @type {LiveChat.RendererContent} */
+	/** @type {LiveChat.RendererContent} */ // @ts-ignore
 	const renderer = item[key];
 	const elem = document.createElement('div');
 	elem.id = renderer.id || '';
@@ -1164,7 +1166,7 @@ export class LiveChatPanel {
 	/**
 	 * Content element of the panel
 	 * @type {HTMLFormElement}
-	 */
+	 */ // @ts-ignore
 	form;
 
 	/**
@@ -1413,6 +1415,7 @@ export class LiveChatPanel {
 							height: (le.clientHeight / vc.clientHeight) * 100,
 						}
 						Object.entries(percents).forEach(([prop, val]) => {
+							// @ts-ignore
 							if (val === defaults[prop]) {
 								styleMap.delete(prop);
 							} else if (val) {
@@ -1630,6 +1633,7 @@ export class LiveChatPanel {
 				const [_, type] = match;
 				if (type in g.storage.parts && le) {
 					if (elem.value !== 'color') {
+						// @ts-ignore
 						g.storage.parts[type][elem.value] = /** @type {HTMLInputElement} */ (elem).checked;
 						le.style.setProperty('--yt-lcf-' + name.replace(/_/g, '-') + '-' + elem.value, /** @type {HTMLInputElement} */ (elem).checked ? 'inherit' : 'none');
 					} else {

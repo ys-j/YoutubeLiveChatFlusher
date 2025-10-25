@@ -8,7 +8,7 @@ self.browser ??= chrome;
 
 const isNotPip = () => !self.documentPictureInPicture?.window;
 
-/** @type {Map<number, LiveChat.LiveChatItemAction[]>} */
+/** @type {Map<number, Set<string>>} */
 const actionMap = new Map();
 
 const isSelfChatFrame = ['/live_chat', '/live_chat_replay'].includes(location.pathname);
@@ -52,8 +52,10 @@ if (isSelfChatFrame) {
 	
 	self.addEventListener('ytlcf-ready', e => {
 		e.stopImmediatePropagation();
-		console.log(manifest.name + ' is ready!');
-	});
+		console.info(manifest.name + ' is ready!');
+		const settingsButton = document.querySelector('.ytp-settings-button');
+		settingsButton?.classList.add(e.type);
+	}, { passive: true });
 	
 	document.addEventListener('yt-action', e => {
 		const name = e.detail?.actionName;
@@ -86,7 +88,7 @@ function initialize(e) {
 		const { fetchChatActions } = modules[1];
 		/** @type {import('./modules/pip.js')} */
 		const { initPipMenu } = modules[2];
-	
+
 		let isLive = false;
 		let succeeded = true;
 		/** @type {AbortController} */
@@ -107,7 +109,7 @@ function initialize(e) {
 			self.addEventListener('yt-navigate-finish', initialize, { passive: true, once: true });
 			return;
 		}
-	
+
 		let lastOffset = 0;
 
 		/**
@@ -115,7 +117,10 @@ function initialize(e) {
 		 */
 		function onSeeking() {
 			const shiftSec = !isLive && g.storage.others.time_shift || 0;
-			lastOffset = (this.currentTime - shiftSec) * 1000 | 0;
+			const currentOffset = (this.currentTime - shiftSec) * 1000 | 0;
+			const ev = new CustomEvent('ytlcf-seek', { detail: { offset: currentOffset } });
+			controller.signal.dispatchEvent(ev);
+			lastOffset = currentOffset;
 		}
 
 		/**
@@ -134,7 +139,7 @@ function initialize(e) {
 			const forFiltering = 'filter' in Object.getPrototypeOf(allKeys) ? allKeys : Array.from(allKeys);
 			const targetKeys = forFiltering.filter(time => Math.max(lastOffset, currentOffset - 1000) < time && time <= currentOffset);
 			for (const k of targetKeys) {
-				const ev = new CustomEvent('ytlcf-actions', { detail: actionMap.get(k) });
+				const ev = new CustomEvent('ytlcf-actions', { detail: Array.from(actionMap.get(k) || [], s => JSON.parse(s)) });
 				self.dispatchEvent(ev);
 			}
 			lastOffset = currentOffset;
@@ -164,6 +169,7 @@ function initialize(e) {
 			}, { passive: true, once: true });
 			if (e.detail?.pageType !== 'watch') return;
 			
+			/** @type {HTMLVideoElement | null | undefined} */
 			const video = (isNotPip() ? self : self.documentPictureInPicture?.window)?.document.querySelector('#ytd-player video');
 			const videoContainer = video?.parentElement;
 			if (!videoContainer) return;
@@ -175,7 +181,7 @@ function initialize(e) {
 			const response = (mainResponse && 'contents' in mainResponse) ? mainResponse : mainResponse?.response;
 			if (!response) return;
 			const videoDetails = mainResponse?.playerResponse?.videoDetails;
-			isLive = videoDetails?.isLive || videoDetails?.isUpcoming;
+			isLive = videoDetails?.isLive || videoDetails?.isUpcoming || false;
 
 			const storage = await browser.storage.local.get('others');
 			const modeName = isLive ? 'mode_livestream' : 'mode_replay';
@@ -185,18 +191,17 @@ function initialize(e) {
 				timer = setInterval(() => {
 					if (actionMap.size > 0) {
 						clearInterval(timer);
-						video?.addEventListener('seeking', onSeeking, { passive: true });
-						video?.addEventListener('timeupdate', onTimeUpdate, { passive: true });
+						video.addEventListener('seeking', onSeeking, { passive: true });
+						video.addEventListener('timeupdate', onTimeUpdate, { passive: true });
 					}
 				}, 250);
+				video.removeEventListener('seeking', onSeeking);
+				video.removeEventListener('timeupdate', onTimeUpdate);
 
 				// Fetching chat actions async
 				controller = new AbortController();
-				if (video) {
-					video.removeEventListener('seeking', onSeeking);
-					video.removeEventListener('timeupdate', onTimeUpdate);
-				}
-				fetchChatActions(response, actionMap, controller.signal).catch(reason => {
+				fetchChatActions(response, actionMap, controller.signal)
+				.catch(reason => {
 					const videoId = videoDetails?.videoId;
 					const message = videoId ? reason?.replace('.', ': ' + videoId) : reason;
 					console.warn(message);

@@ -416,6 +416,9 @@
 	"autostart": {
 		"message": "チャット欄の自動オープン（リプレイ再生時）"
 	},
+	"message_pause": {
+		"message": "右クリックでメッセージを一時停止"
+	},
 	"disabled": {
 		"message": "しない"
 	},

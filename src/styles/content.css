@@ -1,3 +1,9 @@
+:root {
+	--yt-lcf-checkbox-unchecked-mask-image: url('data:image/svg+xml,utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 11 11"><path d="M1.5,0.5h8q1,0,1,1v8q0,1,-1,1h-8q-1,0,-1,-1v-8q0,-1,1,-1z" fill="none" stroke="currentColor"/></svg>');
+	--yt-lcf-checkbox-checked-mask-image: url('data:image/svg+xml,utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 11 11"><path d="M1.5,0.5h8q1,0,1,1v8q0,1,-1,1h-8q-1,0,-1,-1v-8q0,-1,1,-1z" fill="none" stroke="currentColor"/><path d="M2.5,6l2,2,4,-5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>');
+	--yt-lcf-red-dot-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="-4 -4 8 8"><circle r="3" fill="rgba(225,0,45,0.9)"/></svg>');
+}
+
 .html5-video-player {
 	font-family: inherit !important;
 }
@@ -218,13 +224,11 @@
 			background-color: currentColor;
 			height: 1.25em;
 			margin: 0 .25em;
-			-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 11'%3E%3Cpath d='M1.5,0.5h8q1,0,1,1v8q0,1,-1,1h-8q-1,0,-1,-1v-8q0,-1,1,-1z' fill='none' stroke='currentColor' /%3E%3C/svg%3E") no-repeat center/1.25em;
-			mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 11'%3E%3Cpath d='M1.5,0.5h8q1,0,1,1v8q0,1,-1,1h-8q-1,0,-1,-1v-8q0,-1,1,-1z' fill='none' stroke='currentColor' /%3E%3C/svg%3E") no-repeat center/1.25em;
+			mask: var(--yt-lcf-checkbox-unchecked-mask-image) no-repeat center/1.25em;
 			vertical-align: -.25em;
 			width: 1.25em;
 			&:checked {
-				-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 11'%3E%3Cpath d='M1.5,0.5h8q1,0,1,1v8q0,1,-1,1h-8q-1,0,-1,-1v-8q0,-1,1,-1z' fill='none' stroke='currentColor' /%3E%3Cpath d='M2.5,6l2,2,4,-5' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' /%3E%3C/svg%3E");
-				mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 11'%3E%3Cpath d='M1.5,0.5h8q1,0,1,1v8q0,1,-1,1h-8q-1,0,-1,-1v-8q0,-1,1,-1z' fill='none' stroke='currentColor' /%3E%3Cpath d='M2.5,6l2,2,4,-5' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' /%3E%3C/svg%3E");
+				mask-image: var(--yt-lcf-checkbox-checked-mask-image);
 			}
 		}
 		&[type="number"] {
@@ -397,13 +401,13 @@
 }
 
 /*
-	Chat frame
+	Settings button
 */
-yt-live-chat-item-list-renderer #item-scroller {
-	scrollbar-width: none;
-	&:hover {
-		scrollbar-width: auto;
-	}
+.ytp-settings-menu:has(#yt-lcf-cb[aria-checked="true"]) ~ .ytp-chrome-bottom .ytp-settings-button {
+	background: var(--yt-lcf-red-dot-image) no-repeat 20% 20%/8px;
+}
+#yt-lcf-cb[aria-checked="true"] > .ytp-menuitem-icon {
+	background: var(--yt-lcf-red-dot-image) no-repeat 10% 25%/8px;
 }
 
 /*
@@ -415,6 +419,9 @@ yt-live-chat-item-list-renderer #item-scroller {
 	left: 12px;
 	font-size: 2em;
 	color: var(--yt-spec-text-primary);
+}
+:fullscreen #yt-lcf-pp {
+	display: none;
 }
 
 /*

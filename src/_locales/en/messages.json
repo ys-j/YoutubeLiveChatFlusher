@@ -416,6 +416,9 @@
 	"autostart": {
 		"message": "Automatically open chat frame when watching replays"
 	},
+	"message_pause": {
+		"message": "Animation pausing by right-clicking a message"
+	},
 	"disabled": {
 		"message": "Disable"
 	},

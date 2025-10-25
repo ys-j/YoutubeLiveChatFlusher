@@ -58,15 +58,18 @@ if (form) {
 	const config = structuredClone(Storage.DEFAULT);
 	const storage = await Storage.get(['others', 'hotkeys', 'translation']);
 	for (const k of Object.keys(config)) {
+		// @ts-ignore
 		Object.assign(config[k], storage[k]);
 	}
-	/** @type {Record<string, HTMLInputElement | HTMLSelectElement | RadioNodeList>} */ //@ts-ignore
+	/** @type {Record<string, HTMLInputElement | HTMLSelectElement | RadioNodeList>} */
+	// @ts-ignore
 	const {
 		mode_livestream,
 		mode_replay,
 		hotkey_layer,
 		hotkey_panel,
 		autostart,
+		message_pause,
 		translation_blacklist_regexp,
 		translation_blacklist,
 		translation_url
@@ -78,6 +81,9 @@ if (form) {
 
 	// autostart
 	autostart.value = config.others.autostart.toString();
+
+	// message pause
+	message_pause.value = config.others.message_pause.toString();
 	
 	// hotkeys
 	hotkey_layer.value = config.hotkeys.layer;
@@ -98,10 +104,10 @@ if (form) {
 	form.addEventListener('submit', async e => {
 		e.preventDefault();
 		const store = await Storage.get();
-		console.log(store);
 		store.others.mode_livestream = Number.parseInt(mode_livestream.value);
 		store.others.mode_replay = Number.parseInt(mode_replay.value);
 		store.others.autostart = Number.parseInt(autostart.value);
+		store.others.message_pause = Number.parseInt(message_pause.value);
 		store.hotkeys.layer = hotkey_layer.value;
 		store.hotkeys.panel = hotkey_panel.value;
 		store.translation.regexp = /** @type {HTMLInputElement} */ (translation_blacklist_regexp).checked;

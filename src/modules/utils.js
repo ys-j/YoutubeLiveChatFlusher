@@ -165,7 +165,41 @@ export function formatHexColor(css, inherit = '#ffffff') {
 	return inherit;
 }
 
+/**
+ * @typedef { 'styles' | 'others' | 'parts' | 'cssTexts' | 'hotkeys' | 'mutedWords' | 'translation' } StorageSchemaKey
+ */
+
+/**
+ * @typedef PartStyle
+ * @prop {boolean} photo
+ * @prop {boolean} name
+ * @prop {boolean} [message]
+ * @prop {boolean} [amount]
+ * @prop {boolean} [sticker]
+ * @prop {boolean} [months]
+ * @prop {string?} [color]
+ */
+
+/**
+ * @typedef StorageSchema
+ * @prop {Record<string, string>} styles
+ * @prop {Record<string, number>} others
+ * @prop {Record<string, PartStyle>} parts
+ * @prop {Record<string, string>} cssTexts
+ * @prop {Record<string, string>} hotkeys
+ * @prop {object} mutedWords
+ * @prop {number} mutedWords.mode
+ * @prop {string} mutedWords.replacement
+ * @prop {boolean} mutedWords.regexp
+ * @prop {string[]} mutedWords.plainList
+ * @prop {object} translation
+ * @prop {string} translation.url
+ * @prop {boolean} translation.regexp
+ * @prop {string[]} translation.plainList
+ */
+
 export const Storage = {
+	/** @type {StorageSchema} */
 	DEFAULT: {
 		styles: {
 			animation_duration: '8s',
@@ -196,10 +230,11 @@ export const Storage = {
 			direction: 0,
 			translation: 0,
 			except_lang: 0,
-			autostart: 0,
 			time_shift: 0,
 			mode_livestream: 0,
 			mode_replay: 1,
+			autostart: 0,
+			message_pause: 1,
 		},
 		parts: {
 			normal: { photo: false, name: false, message: true, color: '' },
@@ -234,7 +269,6 @@ export const Storage = {
 			mode: 0,
 			replacement: '',
 			regexp: false,
-			/** @type {string[]} */
 			plainList: [],
 		},
 		translation: {
@@ -260,6 +294,7 @@ export const Storage = {
 	set(store = Object.create(null)) {
 		const assigned = structuredClone(Storage.DEFAULT);
 		for (const k of Object.keys(assigned)) {
+			// @ts-ignore
 			Object.assign(assigned[k], store[k]);
 		}
 		return browser.storage.local.set(assigned);
