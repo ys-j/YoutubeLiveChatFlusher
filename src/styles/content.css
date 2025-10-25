@@ -1,6 +1,6 @@
 :root {
-	--yt-lcf-checkbox-unchecked-mask-image: url('data:image/svg+xml,utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 11 11"><path d="M1.5,0.5h8q1,0,1,1v8q0,1,-1,1h-8q-1,0,-1,-1v-8q0,-1,1,-1z" fill="none" stroke="currentColor"/></svg>');
-	--yt-lcf-checkbox-checked-mask-image: url('data:image/svg+xml,utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 11 11"><path d="M1.5,0.5h8q1,0,1,1v8q0,1,-1,1h-8q-1,0,-1,-1v-8q0,-1,1,-1z" fill="none" stroke="currentColor"/><path d="M2.5,6l2,2,4,-5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>');
+	--yt-lcf-checkbox-unchecked-mask-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 11 11"%3E%3Cpath d="M1.5,0.5h8q1,0,1,1v8q0,1,-1,1h-8q-1,0,-1,-1v-8q0,-1,1,-1z" fill="none" stroke="currentColor"/%3E%3C/svg%3E');
+	--yt-lcf-checkbox-checked-mask-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 11 11"%3E%3Cpath d="M1.5,0.5h8q1,0,1,1v8q0,1,-1,1h-8q-1,0,-1,-1v-8q0,-1,1,-1z" fill="none" stroke="currentColor"/%3E%3Cpath d="M2.5,6l2,2,4,-5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/%3E%3C/svg%3E');
 	--yt-lcf-red-dot-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="-4 -4 8 8"><circle r="3" fill="rgba(225,0,45,0.9)"/></svg>');
 }
 
