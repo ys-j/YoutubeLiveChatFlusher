@@ -63,17 +63,26 @@ async function* getReplayChatActionsAsyncIterable(signal, initialContinuation) {
 	}, { passive: true });
 
 	let prev = body.continuation;
+	let prevOffset = 0;
 	while (!signal.aborted && prev) {
-		while (continuations.has(prev)) {
+		let i = 0;
+		while (continuations.has(prev) && ++i < continuations.size) {
 			if (isRecursiveMap(continuations)) return;
 			prev = continuations.get(prev) || '';
 			body = { continuation: prev };
 		}
 		contents = await getContentsAsync(url, body);
-		if (contents.actions) yield contents.actions;
+		let sleepMs = 250;
+		if (contents.actions) {
+			yield contents.actions;
+			const offset = Number.parseInt(contents.actions.at(-1)?.replayChatItemAction.videoOffsetTimeMsec || '0');
+			if (prevOffset) sleepMs = Math.max(500, offset - prevOffset) - 250;
+			prevOffset = offset;
+		}
 		if (seekInfo) {
 			body = getContinuation(contents, true, seekInfo.offset);
 			seekInfo = undefined;
+			prevOffset = 0;
 		} else {
 			body = getContinuation(contents, true);
 			if (prev !== initialContinuation) {
@@ -81,7 +90,7 @@ async function* getReplayChatActionsAsyncIterable(signal, initialContinuation) {
 			}
 		}
 		prev = body.continuation;
-		await sleep(250);
+		await sleep(sleepMs);
 	}
 }
 
