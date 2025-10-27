@@ -354,7 +354,7 @@
 		"message": "タイムシフト"
 	},
 	"timeshift_note": {
-		"message": "※ リプレイでのみ有効"
+		"message": "※ アーカイブでのみ有効"
 	},
 	"otherConfig": {
 		"message": "その他の設定"
@@ -387,7 +387,7 @@
 		"message": "ライブ"
 	},
 	"replay": {
-		"message": "リプレイ"
+		"message": "アーカイブ"
 	},
 	"mode_option_chatframe_dependent": {
 		"message": "チャット欄に依存"
@@ -398,23 +398,17 @@
 	"description_chatframe_dependent_1": {
 		"message": "チャット欄を開いた状態でのみ動作します。"
 	},
-	"description_chatframe_dependent_2": {
-		"message": "ブロック中のユーザーによるチャットは流れません。"
-	},
 	"description_chatframe_independent_1": {
 		"message": "チャット欄を閉じた状態でも動作します。"
 	},
 	"description_chatframe_independent_2": {
-		"message": "ブロック中のユーザーによるものを含めたすべてのチャットが流れます。"
+		"message": "アーカイブではタイムシフト機能が利用可能（コメントを流すタイミングを調整可能）です。"
 	},
 	"description_chatframe_independent_3": {
-		"message": "リプレイではタイムシフト機能が利用可能（コメントを流すタイミングを調整可能）です。"
-	},
-	"description_chatframe_independent_4": {
 		"message": "特に長時間の動画では動作が不安定な場合があります。"
 	},
 	"autostart": {
-		"message": "チャット欄の自動オープン（リプレイ再生時）"
+		"message": "チャット欄の自動オープン（アーカイブ再生時）"
 	},
 	"message_pause": {
 		"message": "右クリックでメッセージを一時停止"

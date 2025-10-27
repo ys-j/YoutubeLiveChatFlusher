@@ -398,19 +398,13 @@
 	"description_chatframe_dependent_1": {
 		"message": "It only works when the chat frame is open."
 	},
-	"description_chatframe_dependent_2": {
-		"message": "Your blocked users list will be used."
-	},
 	"description_chatframe_independent_1": {
 		"message": "It works even when the chat frame is closed."
 	},
 	"description_chatframe_independent_2": {
-		"message": "All chats will flow, including one from users you have blocked."
-	},
-	"description_chatframe_independent_3": {
 		"message": "The time-shift function is available for replays; you can adjust the timing of chat flowing."
 	},
-	"description_chatframe_independent_4": {
+	"description_chatframe_independent_3": {
 		"message": "The operation may be unstable, especially for long videos."
 	},
 	"autostart": {
