@@ -57,9 +57,11 @@ async function* getReplayChatActionsAsyncIterable(signal, initialContinuation) {
 	
 	/** @type { { offset: number } | undefined } */
 	let seekInfo;
+	let controller = new AbortController();
 	signal.addEventListener('ytlcf-seek', e => {
 		// @ts-ignore
 		seekInfo = /** @type { { offset: number } } */ (e.detail);
+		controller.abort();
 	}, { passive: true });
 
 	let prev = body.continuation;
@@ -67,30 +69,35 @@ async function* getReplayChatActionsAsyncIterable(signal, initialContinuation) {
 	while (!signal.aborted && prev) {
 		let i = 0;
 		while (continuations.has(prev) && ++i < continuations.size) {
-			if (isRecursiveMap(continuations)) return;
+			if (isRecursiveMap(continuations)) return [];
 			prev = continuations.get(prev) || '';
 			body = { continuation: prev };
 		}
 		contents = await getContentsAsync(url, body);
 		let sleepMs = 250;
-		if (contents.actions) {
-			yield contents.actions;
-			const offset = Number.parseInt(contents.actions.at(-1)?.replayChatItemAction.videoOffsetTimeMsec || '0');
-			if (prevOffset) sleepMs = Math.max(500, offset - prevOffset) - 250;
-			prevOffset = offset;
-		}
+		if (contents.actions) yield contents.actions;
 		if (seekInfo) {
 			body = getContinuation(contents, true, seekInfo.offset);
+			prevOffset = seekInfo.offset;
 			seekInfo = undefined;
-			prevOffset = 0;
+			controller.abort();
 		} else {
 			body = getContinuation(contents, true);
-			if (prev !== initialContinuation) {
-				continuations.set(prev, body.continuation);
+			if (prev !== initialContinuation) continuations.set(prev, body.continuation);
+			const offset = Number.parseInt(contents.actions?.at(-1)?.replayChatItemAction.videoOffsetTimeMsec || '-1');
+			if (offset >= prevOffset) {
+				const playbackRate = JSON.parse(sessionStorage.getItem('yt-player-playback-rate') || '{"data":"1"}').data || '1';
+				const offsetDiff = (offset - prevOffset) / Number.parseFloat(playbackRate) - 250 | 0;
+				sleepMs = Math.max(250, offsetDiff);
+				prevOffset = offset;
+			} else {
+				sleepMs = Infinity;
+				continuations.clear();
 			}
 		}
 		prev = body.continuation;
-		await sleep(sleepMs);
+		controller = new AbortController();
+		await sleep(sleepMs, { signal: controller.signal });
 	}
 }
 
@@ -215,15 +222,21 @@ function getContinuation(contents, isReplay, offset) {
 /**
  * Waits for the given number of milliseconds.
  * @param {number} ms milliseconds
+ * @param {object} [options] options
+ * @param {AbortSignal} [options.signal] signal for aborting sleep
+ * @returns {Promise<void>} void promise
  */
-function sleep(ms) {
+function sleep(ms, options = {}) {
 	/** @type {Promise<void>} */
-	const promise = new Promise(resolve => {
-		setTimeout(() => {
-			resolve();
-		}, ms);
+	return new Promise(resolve => {
+		const timer = Number.isFinite(ms) ? setTimeout(() => resolve(), ms) : 0;
+		if (options.signal) {
+			options.signal.onabort = () => {
+				clearTimeout(timer);
+				resolve();
+			};
+		}
 	});
-	return promise;
 }
 
 /**
@@ -235,5 +248,8 @@ function isRecursiveMap(map) {
 	const keys = Array.from(map.keys());
 	const values = Array.from(map.values());
 	values.unshift(values.pop());
-	return keys.toString() === values.toString();
+	for (let i = 0; i < keys.length; i++) {
+		if (keys[i] !== values[i]) return false;
+	}
+	return true;
 };

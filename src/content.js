@@ -208,6 +208,7 @@ function initialize(e) {
 				}).finally(() => {
 					clearInterval(timer);
 				});
+				if (!isLive) setTimeout(() => onSeeking.call(video), 250);
 			}
 		}
 	
