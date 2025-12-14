@@ -51,7 +51,7 @@ export const g = {
 export async function runApp(player) {
 	g.app = player;
 
-	const videoContainer = g.app?.querySelector('#ytd-player video')?.parentElement;
+	const videoContainer = g.app?.querySelector('#movie_player video')?.parentElement;
 	if (!videoContainer) return Promise.reject('No video container element.');
 
 	document.getElementById('ytlcf-panel')?.remove();

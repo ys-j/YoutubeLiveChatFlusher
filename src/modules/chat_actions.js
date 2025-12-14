@@ -9,11 +9,12 @@
  * @return {Promise<boolean>} if video has chat
  */
 export async function fetchChatActions(response, outMap, signal) {
-	const liveChatRenderer = response?.contents?.twoColumnWatchNextResults?.conversationBar?.liveChatRenderer;
+	const liveChatRenderer = response?.contents?.twoColumnWatchNextResults?.conversationBar?.liveChatRenderer
+		?? response?.contents?.singleColumnWatchNextResults?.results?.results;
 	/** @type {boolean} */
-	const isReplay = liveChatRenderer?.isReplay || false;
+	const isReplay = liveChatRenderer?.isReplay || response?.playerOverlays?.playerOverlayRenderer?.liveIndicatorText || false;
 	/** @type {string?} */
-	const continuation = liveChatRenderer?.continuations?.[0]?.reloadContinuationData?.continuation;
+	const continuation = liveChatRenderer?.continuations?.at(0)?.reloadContinuationData?.continuation;
 	if (continuation) {
 		outMap.clear();
 		const generator = isReplay
@@ -86,7 +87,7 @@ async function* getReplayChatActionsAsyncIterable(signal, initialContinuation) {
 			if (prev !== initialContinuation) continuations.set(prev, body.continuation);
 			const offset = Number.parseInt(contents.actions?.at(-1)?.replayChatItemAction.videoOffsetTimeMsec || '-1');
 			if (offset >= prevOffset) {
-				const playbackRate = JSON.parse(sessionStorage.getItem('yt-player-playback-rate') || '{"data":"1"}').data || '1';
+				const playbackRate = JSON.parse(sessionStorage.getItem('yt-player-playback-rate') || `{"data":"1"}`).data || '1';
 				const offsetDiff = (offset - prevOffset) / Number.parseFloat(playbackRate) - 250 | 0;
 				sleepMs = Math.max(250, offsetDiff);
 				prevOffset = offset;
@@ -170,7 +171,7 @@ async function getAuthoricationAsync(data) {
  */
 async function getContentsAsync(url, body) {
 	const stored = sessionStorage.getItem('ytlcf-cfg');
-	const data = stored ? JSON.parse(stored)?.data_ : null;
+	const data = stored ? JSON.parse(stored) : null;
 	const client = data?.['INNERTUBE_CONTEXT']?.client || defaultClient;
 	const headers = new Headers();
 	headers.set('Content-Type', 'application/json');

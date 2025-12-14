@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "__MSG_manifestName__",
-	"version": "0.12.2",
+	"version": "0.12.3",
 	"author": "_y_s",
 	"action": {
 		"default_state": "disabled"
@@ -11,10 +11,14 @@
 	},
 	"content_scripts": [
 		{
-			"all_frames": true,
 			"css": ["styles/content.css"],
 			"js": ["content.js"],
 			"matches": ["*://www.youtube.com/*"]
+		},
+		{
+			"all_frames": true,
+			"js": ["chatframe.js"],
+			"matches": ["*://www.youtube.com/live_chat*"]
 		}
 	],
 	"default_locale": "en",
