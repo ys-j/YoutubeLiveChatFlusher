@@ -102,6 +102,7 @@
 #yt-lcf-layer.resize-mode {
 	background: rgba(255, 255, 255, .1);
 	border: thick dashed var(--accent-color, currentColor);
+	display: block !important;
 	pointer-events: auto;
 	resize: both;
 	z-index: 1024;
