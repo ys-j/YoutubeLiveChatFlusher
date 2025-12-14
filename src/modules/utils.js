@@ -283,59 +283,58 @@ export const Storage = {
 	 * @param {string[]} [keys] 
 	 * @returns {Promise<Record<string, any>>}
 	 */
-	get(keys) {
-		return browser.storage.local.get(keys);
+	async get(keys) {
+		const store = await browser.storage.local.get(keys);
+		return store;
 	},
 
 	/**
 	 * @param {Record<string, any>} store 
 	 * @returns {Promise<void>}
 	 */
-	set(store = Object.create(null)) {
+	async set(store = Object.create(null)) {
 		const assigned = structuredClone(Storage.DEFAULT);
 		for (const k of Object.keys(assigned)) {
 			// @ts-ignore
 			Object.assign(assigned[k], store[k]);
 		}
-		return browser.storage.local.set(assigned);
+		await browser.storage.local.set(assigned);
 	},
 
-	export() {
-		return Storage.get().then(storage => {
-			const blob = new Blob([JSON.stringify(storage)], { type: 'application/json' });
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement('a');
-			a.download = `ytlcf-config-${Date.now()}.json`;
-			a.href = url;
-			a.click();
-		});
+	async export() {
+		const store = Storage.get()
+		const blob = new Blob([ JSON.stringify(store) ], { type: 'application/json' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.download = `ytlcf-config-${Date.now()}.json`;
+		a.href = url;
+		a.click();
 	},
-	import() {
-		return new Promise((resolve, reject) => {
-			const input = document.createElement('input');
-			input.type = 'file';
-			input.accept = 'application/json';
-			input.addEventListener('canncel', () => {
-				console.log('Config file import is canceled.');
-				reject();
-			}, { passive: true });
-			input.addEventListener('change', e => {
-				const files = input.files;
-				if (files && files.length > 0) {
-					console.log('Config file selected: ' + files[0].name);
-					const reader = new FileReader();
-					reader.onload = e => {
-						const json = JSON.parse(/** @type {string} */ (e.target?.result));
-						Storage.set(json).then(resolve);
-					};
-					reader.readAsText(files[0]);
-				}
-			}, { passive: true });
-			input.click();
-		}).then(refreshPage);
+
+	async import() {
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.accept = 'application/json';
+		input.addEventListener('cancel', () => {
+			console.log('Config file import is canceled.');
+		}, { passive: true });
+		input.addEventListener('change', e => {
+			const files = input.files;
+			if (files && files.length > 0) {
+				console.log('Config file selected: ' + files[0].name);
+				const reader = new FileReader();
+				reader.onload = async e => {
+					const json = JSON.parse(/** @type {string} */ (e.target?.result));
+					await Storage.set(json).then(refreshPage);
+				};
+				reader.readAsText(files[0]);
+			}
+		}, { passive: true });
+		input.click();
 	},
-	init() {
-		return Storage.set().then(refreshPage);
+
+	async init() {
+		await Storage.set().then(refreshPage);
 	}
 };
 
@@ -343,6 +342,6 @@ export const Storage = {
  * Sends a signal to refresh all tabs running this extension.
  * @returns {Promise<void>}
  */
-function refreshPage() {
-	return browser.runtime.sendMessage({ fire: 'reload' }).then(() => {});
+async function refreshPage() {
+	await browser.runtime.sendMessage({ fire: 'reload' });
 }

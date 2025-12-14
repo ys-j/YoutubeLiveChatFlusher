@@ -89,17 +89,7 @@ async function initialize(e) {
 	});
 	if (succeeded) {
 		self.addEventListener('yt-navigate-finish', onYtNavigateFinish, { passive: true });
-		const hostDomains = location.host.split('.');
-		switch (hostDomains.at(0)) {
-			case 'm':
-				console.log(e);
-				const searchs = new URLSearchParams(location.search);
-				const desktopUrl = '//' + hostDomains.with(0, 'www').join('.') + location.pathname + `?v=${searchs.get('v')}&app=desktop`;
-				// const desktopRes = await fetch(desktopUrl).then(res => res.text());
-				// console.log(desktopRes);
-			case 'www':
-				onYtNavigateFinish(e);
-		}
+		onYtNavigateFinish(e);
 	} else {
 		self.addEventListener('yt-navigate-finish', initialize, { passive: true, once: true });
 		return;

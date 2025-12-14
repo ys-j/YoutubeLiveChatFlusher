@@ -31,6 +31,7 @@
 	"default_locale": "en",
 	"description": "__MSG_manifestDescription__",
 	"homepage_url": "https://github.com/ys-j/YoutubeLiveChatFlusher",
+	"host_permissions": ["*://www.youtube.com/*"],
 	"icons": {
 		"48": "images/icon.svg",
 		"96": "images/icon.svg"
