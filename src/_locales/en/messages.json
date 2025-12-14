@@ -398,6 +398,9 @@
 	"description_chatframe_dependent_1": {
 		"message": "It only works when the chat frame is open."
 	},
+	"description_chatframe_dependent_2": {
+		"message": "Voting results will also be displayed during the livestream."
+	},
 	"description_chatframe_independent_1": {
 		"message": "It works even when the chat frame is closed."
 	},

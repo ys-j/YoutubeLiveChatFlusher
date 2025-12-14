@@ -398,6 +398,9 @@
 	"description_chatframe_dependent_1": {
 		"message": "チャット欄を開いた状態でのみ動作します。"
 	},
+	"description_chatframe_dependent_2": {
+		"message": "ライブ配信では投票結果も表示されます。"
+	},
 	"description_chatframe_independent_1": {
 		"message": "チャット欄を閉じた状態でも動作します。"
 	},
