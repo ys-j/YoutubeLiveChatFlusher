@@ -12,7 +12,7 @@ export async function fetchChatActions(response, outMap, signal) {
 	const liveChatRenderer = response?.contents?.twoColumnWatchNextResults?.conversationBar?.liveChatRenderer
 		?? response?.contents?.singleColumnWatchNextResults?.results?.results;
 	/** @type {boolean} */
-	const isReplay = liveChatRenderer?.isReplay || response?.playerOverlays?.playerOverlayRenderer?.liveIndicatorText || false;
+	const isReplay = liveChatRenderer?.isReplay ?? (response?.playerOverlays?.playerOverlayRenderer?.liveIndicatorText ? false : true);
 	/** @type {string?} */
 	const continuation = liveChatRenderer?.continuations?.at(0)?.reloadContinuationData?.continuation;
 	if (continuation) {
