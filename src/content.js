@@ -1,7 +1,7 @@
 /// <reference lib="esnext" />
-/// <reference path="../browser.d.ts" />
-/// <reference path="../extends.d.ts" />
-/// <reference path="../ytlivechatrenderer.d.ts" />
+/// <reference path="../types/browser.d.ts" />
+/// <reference path="../types/extends.d.ts" />
+/// <reference path="../types/ytlivechatrenderer.d.ts" />
 
 
 self.browser ??= chrome;

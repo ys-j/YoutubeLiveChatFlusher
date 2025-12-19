@@ -1,6 +1,6 @@
-/// <reference path="../../browser.d.ts" />
-/// <reference path="../../extends.d.ts" />
-/// <reference path="../../ytlivechatrenderer.d.ts" />
+/// <reference path="../../types/browser.d.ts" />
+/// <reference path="../../types/extends.d.ts" />
+/// <reference path="../../types/ytlivechatrenderer.d.ts" />
 
 import { filterMessage, formatHexColor, getColorRGB, getText, isCatchable, isNotPip, isOverflow, Storage } from './utils.js';
 
@@ -360,10 +360,8 @@ export function setupPanel() {
 					cb.checked = g.storage.others[cb.name] & 1 << val ? true : false;
 					break;
 				}
-				case 'prefix_lang': {
-					cb.checked = g.storage.others.translation < 0;
-					cb.disabled = /** @type {HTMLSelectElement} */ (ctrls.translation).selectedIndex === 0;
-					le.classList[cb.checked ? 'add' : 'remove'](cb.name);
+				case 'muted_words_regexp': {
+					cb.checked = g.storage.mutedWords.regexp;
 					break;
 				}
 				case 'except_lang': {
@@ -373,8 +371,15 @@ export function setupPanel() {
 					cb.disabled = abs === 0 || abs === val + 1;
 					break;
 				}
-				case 'muted_words_regexp': {
-					cb.checked = g.storage.mutedWords.regexp;
+				case 'prefix_lang': {
+					cb.checked = g.storage.others.translation < 0;
+					cb.disabled = /** @type {HTMLSelectElement} */ (ctrls.translation).selectedIndex === 0;
+					le.classList[cb.checked ? 'add' : 'remove'](cb.name);
+					break;
+				}
+				case 'suffix_original': {
+					cb.checked = g.storage.others.suffix_original > 0;
+					le.classList[cb.checked ? 'add' : 'remove'](cb.name);
 					break;
 				}
 			}
@@ -671,6 +676,127 @@ export function skipRenderingOnce() {
 	g.skip = true;
 }
 
+
+class ChatMessageContainer {
+	/** @type {Array<HTMLSpanElement | Text>} */ original = [];
+	/** @type {Node[]} */ translated = [];
+	/** @type {boolean} */ hasTranslated = false;
+
+	/**
+	 * @param {LiveChat.RendererContent["message"]} message 
+	 */
+	constructor(message) {
+		this.original = getChatMessage(message);
+		this.suffix = document.createElement('small');
+		this.suffix.classList.add('original');
+	}
+
+	/**
+	 * @param {"eager" | "lazy"} mode translation mode
+	 * @param {string} target target language
+	 * @param {string[]} exceptions excepted languages
+	 * @param {boolean} suffix whether suffixes original message
+	 */
+	async translate(mode, target, exceptions, suffix = false) {
+		/**
+		 * @param {string} text original text
+		 * @returns {Promise<[ string, boolean ]>} source language and reliable
+		 */
+		const requiresTranslation = text => new Promise((resolve, reject) => {
+			if (!text) reject();
+			browser.i18n.detectLanguage(text).then(detection => {
+				const source = detection.languages.at(0)?.language;
+				if (!source || exceptions.includes(source)) reject();
+				if (g.storage.translation.regexp) {
+					for (const rule of g.storage.translation.plainList) {
+						const isMatches = new RegExp(rule).test(text);
+						if (isMatches) reject();
+					}
+				} else {
+					for (const rule of g.storage.translation.plainList) {
+						const isMatches = text.includes(rule);
+						if (isMatches) reject();
+					}
+				}
+				resolve([ source || '', detection.isReliable ]);
+			}).catch(() => reject());
+		});
+		/**
+		 * @param {HTMLSpanElement | Text} node `<span>` element or text node
+		 * @param {string} srclang source launguage
+		 * @param {boolean} isReliable if language detection is reliable
+		 * @returns {Promise<Node>} translated node
+		 */
+		const createTranlatedNode = async (node, srclang, isReliable) => {
+			const text = node.textContent;
+			const span = document.createElement('span');
+			if (isReliable) span.dataset.srclang = srclang;
+			const url = g.storage.translation.url.replace('$sl', isReliable ? srclang : 'auto').replace('$tl', target).replace('$q', encodeURIComponent(text));
+			/** @type { { sentences: { trans: string }[], src: string }? } */
+			const json = await fetch(url).then(res => res.json());
+			if (json && !exceptions.includes(json.src)) {
+				span.dataset.srclang ??= json.src;
+				span.textContent = json.sentences.map(s => s.trans).join('') || '';
+			} else {
+				delete span.dataset.srclang;
+				span.textContent = text;
+			}
+			return span;
+		}
+		const detectedResult = await Promise.allSettled(this.original.map(node => {
+			const text = node.textContent;
+			return requiresTranslation(text);
+		}));
+		this.hasTranslated = detectedResult.some(p => p.status === 'fulfilled');
+		if (mode === 'eager') {
+			this.translated = await Promise.all(detectedResult.map(async (p, i) => {
+				const node = this.original[i];
+				if (p.status === 'fulfilled') {
+					const [source, isReliable] = p.value;
+					const translated = await createTranlatedNode(node, source, isReliable);
+					return translated;
+				} else {
+					return node;
+				}
+			}));
+			if (suffix && !this.equals()) this.suffix.append(...this.original);
+		} else {
+			this.translated = this.original.map(node => node.cloneNode(true));
+			Promise.all(detectedResult.map(async (p, i) => {
+				const node = this.original[i];
+				if (p.status === 'fulfilled') {
+					const [source, isReliable] = p.value;
+					const translated = await createTranlatedNode(node, source, isReliable);
+					const child = this.translated[i];
+					child?.parentNode?.replaceChild(translated, child);
+					return translated;
+				} else {
+					return node;
+				}
+			})).then(spans => {
+				this.translated = spans;
+				if (suffix && !this.equals()) {
+					const texts = this.original.map(node => node instanceof Element && node.classList.contains('emoji') ? new Text() : node.cloneNode());
+					this.suffix.append(...texts);
+				}
+			});
+		}
+	}
+
+	equals() {
+		return this.original.map(n => n.textContent).join('') === this.translated.map(n => n.textContent).join('');
+	}
+
+	*[Symbol.iterator]() {
+		if (this.hasTranslated) {
+			for (const node of this.translated) yield node;
+			yield this.suffix;
+		} else {
+			for (const node of this.original) yield node;
+		}
+	}
+}
+
 /**
  * Creates a chat item element from the message renderer.
  * @param {LiveChat.AnyRenderer} item message renderer
@@ -701,51 +827,14 @@ async function parseChatItem(item) {
 		span.textContent = name;
 		authorElems.append(a, span);
 	}
-	/** @type { { orig: Node[]?, trans: Node[]?, src: string } } */
-	const msg = {
-		orig: renderer.message ? getChatMessage(renderer.message) : null,
-		trans: null,
-		src: '',
-	};
 	const index = g.storage.others.translation;
 	const nl = navigator.languages;
 	const tl = ['', ...nl][Math.abs(index)];
-	if (tl && msg.orig) {
+	const msg = new ChatMessageContainer(renderer.message);
+	if (tl) {
+		const lazy = g.storage.others.translation_timing ?? 0;
 		const el = nl.filter((_, i) => g.storage.others.except_lang & 1 << i);
-		msg.trans = await Promise.all(msg.orig.map(async node => {
-			const text = node.textContent;
-			if (text) {
-				if (g.storage.translation.regexp) {
-					for (const rule of g.storage.translation.plainList) {
-						const isMatches = new RegExp(rule).test(text);
-						if (isMatches) return node;
-					}
-				} else {
-					for (const rule of g.storage.translation.plainList) {
-						const isMatches = text.includes(rule);
-						if (isMatches) return node;
-					}
-				}
-				const detection = await browser.i18n.detectLanguage(text);
-				const sl = detection.languages[0]?.language;
-				if (!el.includes(sl)) {
-					const url = g.storage.translation.url.replace('$sl', detection.isReliable ? sl : 'auto').replace('$tl', tl).replace('$q', encodeURIComponent(text));
-					/** @type { { sentences: { trans: string }[], src: string }? } */
-					const json = await fetch(url).then(res => res.json());
-					if (json && !el.includes(json.src)) {
-						msg.src = json.src || '';
-						node.textContent = json.sentences.map(s => s.trans).join('') || '';
-					}
-				}
-			}
-			return node;
-		}));
-		if (msg.src && msg.trans !== msg.orig) {
-			const wrapper = document.createElement('span');
-			wrapper.dataset.srclang = msg.src;
-			wrapper.append(...msg.trans);
-			msg.trans = [ wrapper ];
-		}
+		await msg.translate(lazy ? 'lazy' : 'eager', tl, el, !!g.storage.others.suffix_original);
 	}
 	switch (key) {
 		case 'liveChatTextMessageRenderer': {
@@ -759,7 +848,7 @@ async function parseChatItem(item) {
 			const body = document.createElement('span');
 			body.part = 'message';
 			body.className = 'body';
-			body.append(...(msg.trans || msg.orig || []));
+			body.append(...msg);
 			elem.append(header, body);
 			elem.dataset.text = getText(renderer.message);
 			return elem;
@@ -782,7 +871,7 @@ async function parseChatItem(item) {
 			body.part = 'message';
 			body.className = 'body';
 			body.style.backgroundColor = `rgba(${getColorRGB(0xff0a8043).join()},var(--yt-lcf-background-opacity))`;
-			body.append(...(msg.trans || msg.orig || []));
+			body.append(...msg);
 			elem.append(header, body);
 			return elem;
 		}
@@ -803,7 +892,7 @@ async function parseChatItem(item) {
 			body.part = 'message';
 			body.className = 'body';
 			body.style.backgroundColor = `rgba(${getColorRGB(bodyBackgroundColor).join()},var(--yt-lcf-background-opacity))`;
-			body.append(...(msg.trans || msg.orig || []));
+			body.append(...msg);
 			elem.append(header, body);
 			return elem;
 		}
@@ -862,7 +951,7 @@ async function parseChatItem(item) {
 					const div = document.createElement('div');
 					div.part = 'message';
 					div.className = 'body';
-					elem.append(...(msg.trans || msg.orig || []));
+					elem.append(...msg);
 					break;
 				}
 				case 'YOUTUBE_ROUND': break;
@@ -1686,12 +1775,16 @@ export class LiveChatPanel {
 			const checked = this.form[name].checked;
 			const val = g.storage.others.translation;
 			g.storage.others.translation = Math.abs(val) * (checked ? -1 : 1);
-			le?.classList[checked ? 'add' : 'remove']('prefix_lang');
+			le?.classList[checked ? 'add' : 'remove'](name);
 			g.layer?.updateCurrentItemStyle();
-		} else if (name === 'except_lang' || name === 'overlapping' || name === 'direction') {
+		} else if (name === 'suffix_original') {
+			const checked = this.form[name].checked;
+			g.storage.others[name] = Number(checked);
+			le?.classList[checked ? 'add' : 'remove'](name);
+		} else if (['overlapping', 'direction', 'except_lang', 'suffix_original'].includes(name)) {
 			/** @type {NodeListOf<HTMLInputElement>} */
 			const list = this.form[name];
-			const val = Array.from(list).map((l) => Number(l.checked)).reduce((a, c, i) => a + (c << i), 0);
+			const val = Array.from(list).map(l => Number(l.checked)).reduce((a, c, i) => a + (c << i), 0);
 			g.storage.others[name] = val;
 			if (name === 'direction' && le) {
 				le.classList[0b01 & val ? 'add': 'remove']('direction-reversed-y');
@@ -1710,30 +1803,46 @@ export class LiveChatPanel {
 				}
 			}
 		}
-		if (['speed', 'px_per_sec'].includes(name)) {
-			const checked = /** @type {HTMLInputElement} */ (ctrls.speed).checked;
-			/** @type {HTMLInputElement} */ (ctrls.animation_duration).disabled = checked;
-			/** @type {HTMLInputElement} */ (ctrls.px_per_sec).disabled = !checked;
-			g.storage.others.px_per_sec = checked ? /** @type {HTMLInputElement} */ (ctrls.px_per_sec).valueAsNumber : 0;
-			if (g.layer) g.layer.resetAnimationDuration();
-		} else if (['lines', 'number_of_lines', 'type_of_lines'].includes(name)) {
-			const checked = /** @type {HTMLInputElement} */ (ctrls.lines).checked;
-			/** @type {HTMLInputElement} */ (ctrls.font_size).disabled = checked;
-			/** @type {HTMLInputElement} */ (ctrls.number_of_lines).disabled = !checked;
-			/** @type {HTMLInputElement} */ (ctrls.type_of_lines).disabled = !checked;
-			g.storage.others.number_of_lines = checked ? /** @type {HTMLInputElement} */ (ctrls.number_of_lines).valueAsNumber : 0;
-			if (g.layer) g.layer.resetFontSize();
-		} else if (['unlimited', 'limit_number'].includes(name)) {
-			const checked = /** @type {HTMLInputElement} */ (ctrls.unlimited).checked;
-			/** @type {HTMLInputElement} */ (ctrls.limit_number).disabled = checked;
-			g.storage.others.limit = checked ? 0 : /** @type {HTMLInputElement} */ (ctrls.limit_number).valueAsNumber;
-			if (g.layer) g.layer.limit = g.storage.others.limit;
-		} else if (['container_unlimited', 'container_limit_number'].includes(name)) {
-			const checked = /** @type {HTMLInputElement} */ (ctrls.container_unlimited).checked;
-			/** @type {HTMLInputElement} */ (ctrls.container_limit_number).disabled = checked;
-			g.storage.others.container_limit = checked ? 0 : /** @type {HTMLInputElement} */ (ctrls.container_limit_number).valueAsNumber;
-		} else if (name === 'time_shift') {
-			g.storage.others.time_shift = /** @type {HTMLInputElement} */ (ctrls.time_shift).valueAsNumber;
+		switch (name) {
+			case 'speed':
+			case 'px_per_sec': {
+				const checked = /** @type {HTMLInputElement} */ (ctrls.speed).checked;
+				/** @type {HTMLInputElement} */ (ctrls.animation_duration).disabled = checked;
+				/** @type {HTMLInputElement} */ (ctrls.px_per_sec).disabled = !checked;
+				g.storage.others.px_per_sec = checked ? /** @type {HTMLInputElement} */ (ctrls.px_per_sec).valueAsNumber : 0;
+				if (g.layer) g.layer.resetAnimationDuration();
+				break;
+			}
+			case 'lines':
+			case 'number_of_lines':
+			case 'type_of_lines': {
+				const checked = /** @type {HTMLInputElement} */ (ctrls.lines).checked;
+				/** @type {HTMLInputElement} */ (ctrls.font_size).disabled = checked;
+				/** @type {HTMLInputElement} */ (ctrls.number_of_lines).disabled = !checked;
+				/** @type {HTMLInputElement} */ (ctrls.type_of_lines).disabled = !checked;
+				g.storage.others.number_of_lines = checked ? /** @type {HTMLInputElement} */ (ctrls.number_of_lines).valueAsNumber : 0;
+				if (g.layer) g.layer.resetFontSize();
+				break;
+			}
+			case 'unlimited':
+			case 'limit_number': {
+				const checked = /** @type {HTMLInputElement} */ (ctrls.unlimited).checked;
+				/** @type {HTMLInputElement} */ (ctrls.limit_number).disabled = checked;
+				g.storage.others.limit = checked ? 0 : /** @type {HTMLInputElement} */ (ctrls.limit_number).valueAsNumber;
+				if (g.layer) g.layer.limit = g.storage.others.limit;
+				break;
+			}
+			case 'container_unlimited':
+			case 'container_limit_number': {
+				const checked = /** @type {HTMLInputElement} */ (ctrls.container_unlimited).checked;
+				/** @type {HTMLInputElement} */ (ctrls.container_limit_number).disabled = checked;
+				g.storage.others.container_limit = checked ? 0 : /** @type {HTMLInputElement} */ (ctrls.container_limit_number).valueAsNumber;
+				break;
+			}
+			case 'time_shift': {
+				g.storage.others.time_shift = /** @type {HTMLInputElement} */ (ctrls.time_shift).valueAsNumber;
+				break;
+			}
 		}
 		Storage.set(g.storage);
 	}
@@ -1756,9 +1865,11 @@ export function updateMutedWordsList() {
 	/** @type { (str: string) => string } */
 	const escapeRegExp = str => str.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
 	const { regexp, plainList } = g.storage.mutedWords;
-	g.list.mutedWords = regexp
-		? plainList.map(s => new RegExp(s, 'g'))
-		: plainList.length > 0
-			? [ new RegExp(plainList.map(escapeRegExp).join('|'), 'g') ]
-			: [];
+	if (regexp) {
+		g.list.mutedWords = plainList.map(s => new RegExp(s, 'g'));
+	} else if (plainList.length > 0) {
+		g.list.mutedWords = [ new RegExp(plainList.map(escapeRegExp).join('|'), 'g') ];
+	} else {
+		g.list.mutedWords = [];
+	}
 }

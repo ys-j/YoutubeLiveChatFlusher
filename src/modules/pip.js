@@ -1,5 +1,5 @@
-/// <reference path="../../browser.d.ts" />
-/// <reference path="../../extends.d.ts" />
+/// <reference path="../../types/browser.d.ts" />
+/// <reference path="../../types/extends.d.ts" />
 
 /**
  * Initializes the PiP-mode menu.

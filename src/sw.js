@@ -1,9 +1,10 @@
-/// <reference path="../browser.d.ts" />
+/// <reference path="../types/browser.d.ts" />
 
 self.browser ??= chrome;
 
 const manifest = browser.runtime.getManifest();
 
+/** @type {Record<string, Function>} */
 const events = {
 	/**
 	 * @param {number} tabId 

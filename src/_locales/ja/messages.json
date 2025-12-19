@@ -335,14 +335,26 @@
 	"targetLanguage": {
 		"message": "翻訳先"
 	},
-	"addableByBrowserLanguageSettings": {
-		"message": "項目はブラウザの言語設定から追加可"
-	},
 	"prefixOriginalLanguage": {
 		"message": "元の言語を文頭につける"
 	},
 	"exception": {
 		"message": "除外"
+	},
+	"addableByBrowserLanguageSettings": {
+		"message": "項目はブラウザの言語設定から追加可"
+	},
+	"traslationTiming": {
+		"message": "タイミング"
+	},
+	"translation_eagerMode": {
+		"message": "翻訳してから流す"
+	},
+	"translation_lazyMode": {
+		"message": "流しながら翻訳する"
+	},
+	"suffixOriginalMessage": {
+		"message": "翻訳前のメッセージを併記する"
 	},
 	"translationBlacklist": {
 		"message": "翻訳NGリスト"

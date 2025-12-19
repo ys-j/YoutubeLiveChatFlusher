@@ -1,5 +1,5 @@
-/// <reference path="../../extends.d.ts" />
-/// <reference path="../../ytlivechatrenderer.d.ts" />
+/// <reference path="../../types/extends.d.ts" />
+/// <reference path="../../types/ytlivechatrenderer.d.ts" />
 
 /**
  * Fetches the chat actions from the page response.

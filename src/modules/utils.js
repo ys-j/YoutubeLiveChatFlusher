@@ -1,5 +1,5 @@
-/// <reference path="../../browser.d.ts" />
-/// <reference path="../../ytlivechatrenderer.d.ts" />
+/// <reference path="../../types/browser.d.ts" />
+/// <reference path="../../types/ytlivechatrenderer.d.ts" />
 
 self.browser ??= chrome;
 
@@ -166,10 +166,6 @@ export function formatHexColor(css, inherit = '#ffffff') {
 }
 
 /**
- * @typedef { 'styles' | 'others' | 'parts' | 'cssTexts' | 'hotkeys' | 'mutedWords' | 'translation' } StorageSchemaKey
- */
-
-/**
  * @typedef PartStyle
  * @prop {boolean} photo
  * @prop {boolean} name
@@ -230,6 +226,8 @@ export const Storage = {
 			direction: 0,
 			translation: 0,
 			except_lang: 0,
+			translation_timing: 0,
+			suffix_original: 0,
 			time_shift: 0,
 			mode_livestream: 0,
 			mode_replay: 1,

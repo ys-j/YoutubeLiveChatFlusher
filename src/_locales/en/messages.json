@@ -335,14 +335,26 @@
 	"targetLanguage": {
 		"message": "Target language"
 	},
-	"addableByBrowserLanguageSettings": {
-		"message": "You can add more options \nvia browser's language settings."
-	},
 	"prefixOriginalLanguage": {
 		"message": "Prefix original language"
 	},
 	"exception": {
 		"message": "except"
+	},
+	"addableByBrowserLanguageSettings": {
+		"message": "You can add more options \nvia browser's language settings."
+	},
+	"traslationTiming": {
+		"message": ""
+	},
+	"translation_eagerMode": {
+		"message": "Translates before starting animation"
+	},
+	"translation_lazyMode": {
+		"message": "Translates after starting animation"
+	},
+	"suffixOriginalMessage": {
+		"message": "Suffix original message"
 	},
 	"translationBlacklist": {
 		"message": "Translation Exclusion List"

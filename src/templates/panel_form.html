@@ -571,14 +571,26 @@
 				</select>
 				▼
 				<br>
+				<span id=language_exception_marker data-i18n=exception></span>
+				<br>
+				<span data-i18n=addableByBrowserLanguageSettings></span>
+				<br>
+				<span data-i18n=traslationTiming></span>
+				<select name=translation_timing>
+					<option value=0 data-i18n=translation_eagerMode></option>
+					<option value=1 data-i18n=translation_lazyMode></option>
+				</select>
+				▼
+				<br>
 				<label>
 					<input type=checkbox name=prefix_lang>
 					<span data-i18n=prefixOriginalLanguage></span>
 				</label>
 				<br>
-				<span id=language_exception_marker data-i18n=exception></span>
-				<br>
-				<span data-i18n=addableByBrowserLanguageSettings></span>
+				<label>
+					<input type=checkbox name=suffix_original>
+					<span data-i18n=suffixOriginalMessage></span>
+				</label>
 			</div>
 			<div></div>
 		</div>
@@ -628,7 +640,7 @@
 		<div>
 			<div data-i18n=Channel_ID></div>
 			<div>
-				<textarea name=channel_id rows=3 required data-18n-placeholder=placeholder_channelId data-lang=text/plain></textarea>
+				<textarea name=channel_id rows=3 required data-i18n-placeholder=placeholder_channelId data-lang=text/plain></textarea>
 			</div>
 		</div>
 		<div>
@@ -670,7 +682,7 @@
 			<div></div>
 		</div>
 	</form>
-	<textarea id=ytlcf-textarea-user_css_helper form=ytlcf-form-user_css_helper readonly rows=9 data-18n-placeholder=placeholder_userStyleTextArea data-lang=text/css></textarea>
+	<textarea id=ytlcf-textarea-user_css_helper form=ytlcf-form-user_css_helper readonly rows=9 data-i18n-placeholder=placeholder_userStyleTextArea data-lang=text/css></textarea>
 	<div class="top-level-buttons ytd-menu-renderer" style=margin-top:12px>
 		<button form=ytlcf-form-user_css_helper class data-i18n=add>add</button>
 		<button type=button class data-i18n=cancel>cancel</button>
