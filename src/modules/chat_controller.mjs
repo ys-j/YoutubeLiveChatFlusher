@@ -636,10 +636,9 @@ export class LiveChatController extends EventTarget {
 	}
 
 	listen() {
-		console.log('Listen started!');
 		this.addEventListener('ytlcf-action', () => {
-			this.addEventListener('ytlcf-action', this.#onAction);
-		}, { once: true });
+			this.addEventListener('ytlcf-action', this.#onAction, { passive: true });
+		}, { once: true, passive: true });
 	}
 
 	unlisten() {

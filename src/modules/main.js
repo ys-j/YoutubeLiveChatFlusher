@@ -2,8 +2,8 @@ import { store } from './store.mjs';
 import { isNotPip } from './utils.mjs';
 
 import { LiveChatController } from './chat_controller.mjs';
-import { ReplayActionBuffer, getReplayChatActionsAsyncIterable, getLiveChatActionsAsyncIterable } from './chat_actions.js';
-import { initPipMenu } from './pip.js';
+import { ReplayActionBuffer, getReplayChatActionsAsyncIterable, getLiveChatActionsAsyncIterable } from './chat_actions.mjs';
+import { initPipMenu } from './pip.mjs';
 
 const state = {
 	isLive: false,
@@ -108,9 +108,6 @@ function onTimeUpdate() {
  * @param { CustomEvent<NavigateFinishEventDetail> | { target: EventTarget, detail: NavigateFinishEventDetail } } e 
  */
 async function onYtNavigateFinish(e) {
-	self.addEventListener('ytlcf-start', () => {
-		state.controller?.listen();
-	}, { passive: true, once: true });
 	if (e.detail?.pageType !== 'watch') return;
 	
 	/** @type {HTMLVideoElement | null | undefined} */
@@ -130,43 +127,54 @@ async function onYtNavigateFinish(e) {
 
 	const modeName = state.isLive ? 'mode_livestream' : 'mode_replay';
 	const modeValue = store.others?.[modeName] ?? 1;
-	if (modeValue === 0) return;
 
-	let timer = 0;
-	timer = setInterval(() => {
-		if (state.action.size > 0) {
+	switch (modeValue) {
+		case 0:
+			document.addEventListener('ytlcf-start', () => {
+				state.controller?.listen();
+			}, { passive: true });
+			document.addEventListener('ytlcf-pass', e => {
+				const ev = new CustomEvent('ytlcf-action', { detail: e.detail });
+				state.controller?.dispatchEvent(ev);
+			}, { passive: true });
+			break;
+		case 1:
+			const timer = setInterval(() => {
+				if (state.action.size > 0) {
+					clearInterval(timer);
+					video.addEventListener('seeking', onSeeking, { passive: true });
+					video.addEventListener('timeupdate', onTimeUpdate, { passive: true });
+				}
+			}, 250);
+			video.removeEventListener('seeking', onSeeking);
+			video.removeEventListener('timeupdate', onTimeUpdate);
+
+			// Fetching chat actions async
+			const liveChatRenderer = response?.contents?.twoColumnWatchNextResults?.conversationBar?.liveChatRenderer
+				?? response?.contents?.singleColumnWatchNextResults?.results?.results;
+			/** @type {string?} */
+			const initialContinuation = liveChatRenderer?.continuations?.at(0)?.reloadContinuationData?.continuation;
+			if (!initialContinuation) {
+				const message = `This video has no chat: ${videoDetails?.videoId || 'failed to get video id'}`;
+				console.warn(message);
+				clearInterval(timer);
+				return;
+			}
+			state.controller?.listen();
+			if (state.isLive) {
+				const generator = getLiveChatActionsAsyncIterable(state.abortController.signal, initialContinuation);
+				for await (const actions of generator) {
+					const ev = new CustomEvent('ytlcf-action', { detail: actions });
+					state.controller?.dispatchEvent(ev);
+				}
+			} else {
+				setTimeout(() => onSeeking.call(video), 250);
+				const generator = getReplayChatActionsAsyncIterable(state.abortController.signal, initialContinuation);
+				for await (const actions of generator) {
+					state.action.pushActions(actions);
+				}
+			}
 			clearInterval(timer);
-			video.addEventListener('seeking', onSeeking, { passive: true });
-			video.addEventListener('timeupdate', onTimeUpdate, { passive: true });
-		}
-	}, 250);
-	video.removeEventListener('seeking', onSeeking);
-	video.removeEventListener('timeupdate', onTimeUpdate);
-
-	// Fetching chat actions async
-	const liveChatRenderer = response?.contents?.twoColumnWatchNextResults?.conversationBar?.liveChatRenderer
-		?? response?.contents?.singleColumnWatchNextResults?.results?.results;
-	/** @type {string?} */
-	const initialContinuation = liveChatRenderer?.continuations?.at(0)?.reloadContinuationData?.continuation;
-	if (!initialContinuation) {
-		const message = `This video has no chat: ${videoDetails?.videoId || 'failed to get video id'}`;
-		console.warn(message);
-		clearInterval(timer);
-		return;
+			break;
 	}
-	state.controller?.listen();
-	if (state.isLive) {
-		const generator = getLiveChatActionsAsyncIterable(state.abortController.signal, initialContinuation);
-		for await (const actions of generator) {
-			const ev = new CustomEvent('ytlcf-action', { detail: actions });
-			state.controller?.dispatchEvent(ev);
-		}
-	} else {
-		setTimeout(() => onSeeking.call(video), 250);
-		const generator = getReplayChatActionsAsyncIterable(state.abortController.signal, initialContinuation);
-		for await (const actions of generator) {
-			state.action.pushActions(actions);
-		}
-	}
-	clearInterval(timer);
 }

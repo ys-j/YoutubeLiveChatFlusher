@@ -185,43 +185,6 @@ export class ConfigStore {
 		await browser.storage.local.clear();
 		this.data = structuredClone(DEFAULT_CONFIG);
 	}
-	
-	/**
-	 * @param {HTMLAnchorElement} [a] `<a>` element for download
-	 */
-	async export(a = document.createElement('a')) {
-		const blob = new Blob([ JSON.stringify(this.data) ], { type: 'application/json' });
-		const url = URL.createObjectURL(blob);
-		a.download = `ytlcf-config-${Date.now()}.json`;
-		a.href = url;
-		a.click();
-	}
-
-	/**
-	 * @param {HTMLInputElement} input `<input>` element for file picker
-	 */
-	async import(input = document.createElement('input')) {
-		input.type = 'file';
-		input.accept = 'application/json';
-		input.addEventListener('cancel', () => {
-			console.log('Config file import is canceled.');
-		}, { passive: true });
-		input.addEventListener('change', e => {
-			const files = input.files;
-			if (files && files.length > 0) {
-				console.log('Config file selected: ' + files[0].name);
-				const reader = new FileReader();
-				reader.onload = async e => {
-					/** @type {Partial<UnwrapReadonly<typeof this.data>>} */
-					const json = JSON.parse(/** @type {string} */ (e.target?.result));
-					await this.load(json);
-					await browser.storage.local.set(this.data);
-				};
-				reader.readAsText(files[0]);
-			}
-		}, { passive: true });
-		input.click();
-	}
 }
 
 export const store = new ConfigStore();

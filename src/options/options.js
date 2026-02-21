@@ -2,8 +2,8 @@
 
 import { store as s } from '../modules/store.mjs';
 
-// @ts-ignore
 self.browser ??= chrome;
+
 const manifest = browser.runtime.getManifest();
 document.documentElement.dataset.browser = 'browser_specific_settings' in manifest ? 'firefox' : 'chrome';
 
@@ -71,6 +71,7 @@ importBtn?.addEventListener('click', async () => {
 const initBtn = document.getElementById('btn-init');
 initBtn?.addEventListener('click', async () => {
 	await s.reset();
+	browser.runtime.sendMessage({ fire: 'reload' });
 	location.reload();
 }, { passive: true });
 
@@ -142,6 +143,7 @@ form.addEventListener('submit', async e => {
 		},
 	};
 	await s.load(config);
+	await browser.storage.local.set(s.data);
 	if (status) status.hidden = true;
-	browser.runtime.sendMessage({ fire: 'reload' });
-}, { passive: false });
+	await browser.runtime.sendMessage({ fire: 'reload' });
+});

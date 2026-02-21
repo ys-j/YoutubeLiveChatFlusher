@@ -1,4 +1,3 @@
-/// <reference lib="esnext" />
 /// <reference path="../types/browser.d.ts" />
 /// <reference path="../types/extends.d.ts" />
 
