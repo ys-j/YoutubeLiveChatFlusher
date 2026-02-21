@@ -100,6 +100,12 @@ export class LiveChatController extends EventTarget {
 				/** @type {HTMLElement?} */ (e.target)?.parentElement?.click();
 			}
 		}, { passive: true });
+		root.addEventListener('animationend', e => {
+			const elem = /** @type {HTMLElement} */ (e.target);
+			if (elem.parentNode === root) {
+				elem.remove();
+			}
+		}, { passive: true });
 
 		this.panel = new LiveChatPanel(this);
 		this.contextmenu = new LiveChatContextMenu();
@@ -483,7 +489,9 @@ export class LiveChatController extends EventTarget {
 			const notext = filtered.add.slice(1).filter(a => !a.addChatItemAction?.item.liveChatTextMessageRenderer);
 			filtered.add.splice(1, Infinity, ...notext);
 		}
-		const adding = filtered.add.map(action => new Promise(async (resolve, reject) => {
+
+		/** @param {LiveChat.LiveChatItemAction} action */
+		const addingMapFn = action => new Promise(async (resolve, reject) => {
 			// @ts-ignore
 			const elem = await parseChatItem(action.addChatItemAction.item);
 			if (!elem) return resolve(elem);
@@ -499,9 +507,9 @@ export class LiveChatController extends EventTarget {
 						/** @type {HTMLElement | null | undefined} */
 						const _name = earlier?.querySelector('.name');
 						/** @type {HTMLSpanElement?} */
-						const thumbnail = elem.querySelector('.photo');
-						if (earlier && _name && thumbnail) {
-							const parent = thumbnail.parentElement;
+						const _photo = elem.querySelector('.photo');
+						if (earlier && _name && _photo) {
+							const parent = _photo.parentElement;
 							if (parent) _name.insertAdjacentElement('beforebegin', parent);
 							if (!_name.textContent)  _name.textContent = '';
 							this.updateCurrentItem(earlier);
@@ -517,9 +525,6 @@ export class LiveChatController extends EventTarget {
 				console.log(`Message duplication #${elem.id}: %c${elem.dataset.text || elem.lastElementChild?.textContent}`, color ? 'color:' + color : '');
 				return resolve(elem.id);
 			}
-			elem.addEventListener('animationend', () => {
-				elem.remove();
-			}, { passive: true });
 			const children = Array.from(/** @type {HTMLCollectionOf<HTMLElement>} */ (root.children)).filter(child => child.tagName === 'DIV');
 			root.appendChild(elem);
 			const ch = le.clientHeight, cw = le.clientWidth;
@@ -568,10 +573,12 @@ export class LiveChatController extends EventTarget {
 			elem.style.zIndex = `-${sibling.length || 1}`;
 			elem.dataset.line = `${y}`;
 			return resolve(elem.id);
-		}));
+		});
+		filtered.add.forEach(addingMapFn);
 		
 		// Delete
-		const deleting = filtered.delete.map(action => new Promise((resolve, reject) => {
+		/** @param {LiveChat.LiveChatItemAction} action */
+		const deletingMapFn = action => new Promise((resolve, reject) => {
 			// @ts-ignore
 			const id = action.markChatItemAsDeletedAction.targetItemId;
 			const target = root.getElementById(id);
@@ -581,10 +588,12 @@ export class LiveChatController extends EventTarget {
 			} else {
 				reject('Failed to delete message: #' + id);
 			}
-		}));
+		});
+		filtered.delete.forEach(deletingMapFn);
 		
 		// Delete by author
-		const deletingAuthor = filtered.delete_author.map(action => new Promise((resolve, reject) => {
+		/** @param {LiveChat.LiveChatItemAction} action */
+		const deletingAuthorMapFn = action => new Promise((resolve, reject) => {
 			// @ts-ignore
 			const id = action.markChatItemsByAuthorAsDeletedAction.externalChannelId;
 			const targets = root.querySelectorAll(`[data-author-id="${id}"]`);
@@ -594,10 +603,12 @@ export class LiveChatController extends EventTarget {
 			} else {
 				reject('Failed to delate message: (Author ID) ' + id);
 			}
-		}));
+		});
+		filtered.delete_author.forEach(deletingAuthorMapFn);
 		
 		// Replace
-		const replacing = filtered.replace.map(action => new Promise(async (resolve, reject) => {
+		/** @param {LiveChat.LiveChatItemAction} action */
+		const replacingMapFn = action => new Promise(async (resolve, reject) => {
 			// @ts-ignore
 			const id = action.replaceChatItemAction.targetItemId;
 			const target = root.getElementById(id);
@@ -614,7 +625,8 @@ export class LiveChatController extends EventTarget {
 			} else {
 				reject('Failed to replace message: #' + id);
 			}
-		}));
+		});
+		filtered.replace.forEach(replacingMapFn);
 	}
 
 	/**
