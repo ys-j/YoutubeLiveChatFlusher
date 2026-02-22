@@ -27,15 +27,15 @@ export class LiveChatContextMenu {
 	/**
 	 * Displays the context menu for the given message element.
 	 * @param {MouseEvent} event mouse event object
-	 * @param {HTMLElement} target target message element
+	 * @param {Element} target target message element
 	 * @param {LiveChatPanel} panel 
 	 */
 	async show(event, target, panel) {
 		while (this.#element.firstChild) this.#element.firstChild.remove();
 		const doc = await loadTemplateDocument('../templates/panel_contextmenu.html');
-		doc.querySelectorAll('[data-i18n]').forEach(e => {
-			const key = /** @type {HTMLElement} */ (e).dataset.i18n;
-			if (key) e.textContent = browser.i18n.getMessage(key);
+		doc.querySelectorAll('[data-i18n]').forEach(el => {
+			const key = el.getAttribute('data-i18n');
+			if (key) el.textContent = browser.i18n.getMessage(key);
 		});
 		this.#element.append(...doc.body.childNodes);
 		this.#element.style.display = '';
@@ -58,7 +58,7 @@ export class LiveChatContextMenu {
 
 	/**
 	 * @param {EventTarget[]} composedPath
-	 * @param {HTMLElement} target  
+	 * @param {Element} target  
 	 * @param {LiveChatPanel} panel 
 	 */
 	#onClickMenu(composedPath, target, panel) {
@@ -69,7 +69,7 @@ export class LiveChatContextMenu {
 			hide_user: this.#hideUser,
 		};
 		for (const el of composedPath) {
-			const name = /** @type {HTMLElement} */ (el).dataset?.menu;
+			const name = /** @type {Element} */ (el).getAttribute('data-menu');
 			if (name && name in menus) {
 				// @ts-ignore
 				menus[name](target, panel);
@@ -111,21 +111,21 @@ export class LiveChatContextMenu {
 	}
 
 	/**
-	 * @param {HTMLElement} target  
+	 * @param {Element} target  
 	 */
 	#copyUserId(target) {
-		const authorId = target.dataset.authorId;
+		const authorId = target.getAttribute('data-author-id');
 		if (authorId) {
 			navigator.clipboard.writeText(authorId);
 		}
 	}
 
 	/**
-	 * @param {HTMLElement} target  
+	 * @param {Element} target  
 	 * @param {LiveChatPanel} panel 
 	 */
 	#hideUser(target, panel) {
-		const authorId = target.dataset.authorId;
+		const authorId = target.getAttribute('data-author-id');
 		const textarea = /** @type {HTMLTextAreaElement | undefined} */ (panel.form?.elements.user_defined_css);
 		if (authorId && textarea) {
 			textarea.value += `\ndiv[data-author-id="${authorId}"] { display: none !important }`;

@@ -1,4 +1,5 @@
 import { store as s } from './store.mjs';
+
 import { LiveChatController } from './chat_controller.mjs';
 
 export class LiveChatLayer {
@@ -34,7 +35,7 @@ export class LiveChatLayer {
 		this.#controller = controller;
 		this.element = div || document.createElement('div');
 		this.element.id = 'yt-lcf-layer';
-		this.element.dataset.layer = '1';
+		this.element.setAttribute('data-layer', '1');
 		this.element.setAttribute('role', 'marquee');
 		this.element.setAttribute('aria-live', 'off');
 		this.element.tabIndex = -1;

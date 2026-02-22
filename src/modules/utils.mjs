@@ -41,53 +41,6 @@ export function getText(message) {
 }
 
 /**
- * Checks whether two flowing messages collide.
- * @param {Element} before preceding message
- * @param {Element} after following message
- * @param {boolean} [reversed=false] if direction is reversed
- * @returns whether the following message collides against the preceding message
- */
-export function isCatchable(before, after, reversed = false) {
-	const [b, a] = [before, after].map(elm => elm.getBoundingClientRect());
-	if (b.top <= a.top && a.top < b.bottom) {
-		if (reversed ? b.left <= a.right : a.left <= b.right) {
-			return true;
-		} else {
-			const [bDur, aDur] = [before, after].map(elm => {
-				const dur = getComputedStyle(elm).animationDuration;
-				const [_, num, unit] = dur.match(/([\d\.]+)(\D+)/) || [];
-				if (num && unit) switch (unit) {
-					case 'ms': return Number.parseFloat(num);
-					case 's': return Number.parseFloat(num) * 1000;
-				}
-				return 4000;
-			});
-			if (bDur <= aDur && b.width >= a.width) {
-				return false;
-			} else {
-				const speedDiff = a.width / aDur - b.width / bDur;
-				const posDiff = reversed ? b.left - a.right : a.left - b.right;
-				return posDiff < speedDiff * Math.min(bDur, aDur);
-			}
-		}
-	} else {
-		return false;
-	}
-}
-
-/**
- * Checks whether an element's position exceeds the size of its parent.
- * @param {Element} parent parent element
- * @param {Element} child child element
- * @returns whether child element is overflowing the parent
- */
-export function isOverflow(parent, child) {
-	const p = parent.getBoundingClientRect();
-	const c = child.getBoundingClientRect();
-	return c.bottom > p.top + p.height;
-}
-
-/**
  * Gets message filtered according to the rules.
  * @param {string} str original message
  * @param {object} [options] filtering options

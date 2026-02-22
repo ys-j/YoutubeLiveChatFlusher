@@ -1,7 +1,8 @@
 import { store as s } from './store.mjs';
 import { isNotPip, loadTemplateDocument } from './utils.mjs';
 
-import { LiveChatController, EmojiModeEnum, MutedWordModeEnum, WrapStyleDefinitions, updateMutedWordsList } from './chat_controller.mjs';
+import { LiveChatController, WrapStyleDefinitions } from './chat_controller.mjs';
+import { EmojiModeEnum, MutedWordModeEnum, updateMutedWordsList } from './chat_message.mjs';
 
 export class LiveChatPanel {
 	/**
@@ -31,7 +32,7 @@ export class LiveChatPanel {
 		this.element = div || document.createElement('div');
 		this.element.id = 'yt-lcf-panel';
 		this.element.className = 'ytp-sfn';
-		this.element.dataset.layer = '4';
+		this.element.setAttribute('data-layer', '4');
 		this.hide();
 		
 		const c = { x: 10, y: 10 };
@@ -116,7 +117,7 @@ export class LiveChatPanel {
 					const button = document.createElement('button');
 					button.type = 'button';
 					button.className = createButtonClassList('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-xs');
-					button.dataset.function = fn;
+					button.setAttribute('data-function', fn);
 					const label = browser.i18n.getMessage(fn);
 					button.title = label;
 					button.textContent = label;
@@ -138,7 +139,7 @@ export class LiveChatPanel {
 					const family = select?.value;
 					if (family) {
 						const li = document.createElement('li');
-						li.dataset.value = family;
+						li.setAttribute('data-value', family);
 						const div = document.createElement('div');
 						div.style.display = 'flex';
 						div.style.alignItems = 'center';
@@ -156,7 +157,7 @@ export class LiveChatPanel {
 					if (t && t.tagName === 'BUTTON') {
 						const li = t.closest('li');
 						if (li)
-						switch (t.dataset.function) {
+						switch (t.getAttribute('data-function')) {
 							case 'up': li.previousElementSibling?.before(li); break;
 							case 'down': li.nextElementSibling?.after(li); break;
 							case 'delete': li.remove();
@@ -172,7 +173,7 @@ export class LiveChatPanel {
 	
 				if (form && ol) form.addEventListener('submit', () => {
 					const families = Array.from(ol.children).map(li => {
-						const val = /** @type {HTMLLIElement} */ (li).dataset.value;
+						const val = li.getAttribute('data-value');
 						return val ? val.includes(' ') ? `"${val}"` : val : undefined;
 					});
 					const font_family = /** @type {HTMLInputElement | undefined} */ (this.form?.elements.font_family);
@@ -187,7 +188,7 @@ export class LiveChatPanel {
 					const families = s.styles.font_family.split(/\s*,\s*/).filter(s => s.length > 0).map(s => s.replace(/^"(.*)"$/, "$1"));
 					const listitems = families.map(family => {
 						const li = document.createElement('li');
-						li.dataset.value = family;
+						li.setAttribute('data-value', family);
 						const div = document.createElement('div');
 						div.style.display = 'flex';
 						const span = document.createElement('span');
@@ -444,7 +445,7 @@ export class LiveChatPanel {
 				}
 				switch (name) {
 					case 'emoji': {
-						le.dataset.emoji = Object.keys(EmojiModeEnum)[val].toLowerCase();
+						le.setAttribute('data-emoji', Object.keys(EmojiModeEnum)[val].toLowerCase());
 						layer.updateCurrentItemStyle();
 						break;
 					}
@@ -466,7 +467,7 @@ export class LiveChatPanel {
 			}
 		} else if (elem.classList.contains('styles') && name) {
 			// @ts-ignore
-			s.styles[name] = elem.value + (elem.dataset.unit || '');
+			s.styles[name] = elem.value + (elem.getAttribute('data-unit') || '');
 			if (le) {
 				switch (name) {
 					case 'animation_duration': {
@@ -484,7 +485,7 @@ export class LiveChatPanel {
 			}
 		} else if (name.startsWith('stroke_')) {
 			// @ts-ignore
-			s.styles[name] = elem.value + (elem.dataset.unit || '');
+			s.styles[name] = elem.value + (elem.getAttribute('data-unit') || '');
 			// @ts-ignore
 			le.style.setProperty(name.replace('stroke_', '--yt-lcf-stroke-'), s.styles[name]);
 		} else if (name.endsWith('_display')) {
