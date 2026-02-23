@@ -134,6 +134,15 @@
 	"emojiExpression_3": {
 		"message": "Replace with shortcuts"
 	},
+	"density": {
+		"message": "Density"
+	},
+	"density_dense": {
+		"message": "Dense"
+	},
+	"density_random": {
+		"message": "Random"
+	},
 	"overlapping": {
 		"message": "Overlapping"
 	},
@@ -247,6 +256,12 @@
 	},
 	"placeholder_customCSS": {
 		"message": "Custom CSS"
+	},
+	"common": {
+		"message": "Common"
+	},
+	"show_username": {
+		"message": "Show usernames instead of handles"
 	},
 	"mutedWordsMode": {
 		"message": "Mode"

@@ -995,7 +995,7 @@ declare namespace browser {
 			get(defaultValues: Record<string, any>): Promise<Record<string, any>>
 			getBytesInUse(keys?: string | string[] | null): Promise<integer>
 			set(keys: object): Promise<void>
-			remove(keys?: string | string[] | null): Promise<Record<string, any>>
+			remove(keys: string | string[]): Promise<void>
 			clear(): Promise<void>
 		}
 		type StorageChange = {
