@@ -1,5 +1,6 @@
 /// <reference lib="esnext" />
 
+import { fetchInnerTube } from './innertube.mjs';
 import { store as s } from './store.mjs';
 import { filterMessage, getColorRGB, getText } from './utils.mjs';
 
@@ -31,6 +32,74 @@ export const MutedWordModeEnum = Object.freeze({
 /** @type {RegExp[]} */
 const mutedWordsList = [];
 
+export class LiveChatLayoutCache {
+	/** @type {Map<string, ChatLayoutInfo>} */
+	#map;
+	/**
+	 * @param {ShadowRoot} root 
+	 */
+	constructor(root) {
+		this.dom = root;
+		this.#map = new Map();
+	}
+
+	get size() {
+		return this.#map.size;
+	}
+
+	/**
+	 * @param {string} id 
+	 * @returns {ChatLayoutInfo | undefined}
+	 */
+	get(id) {
+		return this.#map.get(id);
+	}
+
+	/**
+	 * @param {string} id 
+	 * @param {ChatLayoutInfo} layout 
+	 * @returns {Map<string, ChatLayoutInfo>}
+	 */
+	set(id, layout) {
+		return this.#map.set(id, layout);
+	}
+
+	/**
+	 * @param {string} id 
+	 */
+	delete(id) {
+		return this.#map.delete(id);
+	}
+
+	clear() {
+		this.#map.clear();
+	}
+
+	/**
+	 * @param {number} overline 
+	 * @returns {ChatLayoutInfo[][]}
+	 */
+	groupByLine(overline) {
+		/** @type {ChatLayoutInfo[][]} */
+		const grouped = Array.from({ length: overline }, () => []);
+		for (const v of this.#map.values()) {
+			grouped[v.line]?.push(v);
+		}
+		return grouped;
+	}
+
+	/**
+	 * @param {ChatLayoutInfo} target 
+	 * @param {boolean} [reversed=false] 
+	 * @returns {boolean} if this message collides against any preceding layout
+	 */
+	anyCollides(target, reversed = false) {
+		/** @param {ChatLayoutInfo} b */
+		const judge = b => b.line <= target.line && target.isCollidable(b, reversed);
+		return this.#map.values().some(judge);
+	}
+}
+
 /**
  * Gets the author type of the message.
  * @param {LiveChat.RendererContent} renderer message renderer
@@ -46,28 +115,10 @@ function getAuthorType(renderer) {
 	return AuthorType.NORMAL;
 }
 
+/** @type {Map<string, string>} */
+const authorNameCache = new Map();
+
 export class LiveChatItemLayout {
-	/** @type {Map<string, ChatLayoutInfo>} */
-	static container = new Map();
-
-	/**
-	 * @param {number} overline 
-	 * @returns { { index: number, siblings: ChatLayoutInfo[] } }
-	 */
-	static getEmptiestLine(overline) {
-		/** @type {ChatLayoutInfo[][]} */
-		const layouts = Array.from({ length: overline }, () => []);
-		for (const v of this.container.values()) {
-			console.log(v.line);
-			layouts[v.line]?.push(v);
-		}
-		const index = layouts.reduce((pi, cv, ci, arr) => cv.length < arr[pi].length ? ci : pi, 0);
-		return {
-			index,
-			siblings: layouts[index],
-		};
-	}
-
 	/** @type {string} */ #key;
 	/** @type {LiveChat.RendererContent} */ #renderer;
 	/** @type {DocumentFragment} */ #authorFragment;
@@ -85,26 +136,8 @@ export class LiveChatItemLayout {
 
 		this.element = document.createElement('div');
 		this.id = this.element.id = this.#renderer.id || '';
-		this.element.setAttribute('data-author-id', this.#renderer.authorExternalChannelId);
-		const authorName = getText(this.#renderer.authorName);
-		this.element.setAttribute('data-author-name', authorName)
 		
 		this.#authorFragment = document.createDocumentFragment();
-		if (authorName) {
-			const a = document.createElement('a');
-			a.href = '/channel/' + this.#renderer.authorExternalChannelId;
-			a.target = '_blank';
-			a.title = authorName;
-			const img = new Image();
-			img.part = img.className = 'photo';
-			img.src = this.#renderer.authorPhoto.thumbnails[0].url;
-			img.loading = 'lazy';
-			a.appendChild(img);
-			const span = document.createElement('span');
-			span.part = span.className = 'name';
-			span.textContent = authorName;
-			this.#authorFragment.append(a, span);
-		}
 		this.message = new ChatMessageContainer(this.#renderer.message);
 	}
 
@@ -113,20 +146,26 @@ export class LiveChatItemLayout {
 	 * @returns {Promise<HTMLElement?>} promise of chat item element or null
 	 */
 	async render() {
+		const messageType = this.messageType;
+		/** @type {Promise<any>[]} */
+		const promises = [ this.getAuthorName(messageType) ];
+
 		const langIndex = s.others.translation;
 		const langSuffix = s.others.suffix_original;
 		const nl = navigator.languages;
 		const tl = ['', ...nl][Math.abs(langIndex)];
 		if (tl) {
 			const lazy = s.others.translation_timing ?? 0;
-			await this.message.translate(lazy ? 'lazy' : 'eager', tl, !!langSuffix);
+			const translating = this.message.translate(lazy ? 'lazy' : 'eager', tl, !!langSuffix);
+			promises.push(translating);
 		}
+		await Promise.all(promises);
+
 		switch (this.#key) {
 			case 'liveChatTextMessageRenderer': {
-				const authorType = getAuthorType(this.#renderer);
-				const allHidden = !Object.values(s.parts[authorType]).includes(true);
+				const allHidden = !Object.values(s.parts[messageType ?? 'normal']).includes(true);
 				if (allHidden) return null;
-				this.element.className = 'text ' + authorType;
+				this.element.className = 'text ' + (messageType ?? 'normal');
 				const header = document.createElement('span');
 				header.className = 'header';
 				header.appendChild(this.#authorFragment);
@@ -143,9 +182,8 @@ export class LiveChatItemLayout {
 					headerPrimaryText: primary,
 					headerSubtext: sub,
 				} = /** @type {LiveChat.MembershipItemRenderer["liveChatMembershipItemRenderer"]} */ (this.#renderer);
-				const messageType = primary ? 'milestone' : 'membership';
-				this.element.className = messageType;
-				const allHidden = !Object.values(s.parts[messageType]).includes(true);
+				this.element.className = messageType ?? 'membership';
+				const allHidden = !Object.values(s.parts[messageType ?? 'membership']).includes(true);
 				if (allHidden) return null;
 				const header = document.createElement('div');
 				header.className = 'header';
@@ -258,17 +296,82 @@ export class LiveChatItemLayout {
 		return null;
 	}
 
+	get messageType() {
+		switch (this.#key) {
+			case 'liveChatTextMessageRenderer':
+				return getAuthorType(this.#renderer);
+			case 'liveChatMembershipItemRenderer':
+				return 'headerPrimaryText' in this.#renderer ? 'milestone': 'membership';
+			case 'liveChatPaidMessageRenderer':
+				return 'paid_message';
+			case 'liveChatPaidStickerRenderer':
+				return 'paid_sticker';
+			case 'liveChatSponsorshipsGiftPurchaseAnnouncementRenderer':
+				return 'membership';
+			default:
+				return null;
+		}
+	}
+
+	/**
+	 * Fetches author name, and then renders the name and thumbnail.
+	 * @param {keyof typeof s.parts | null} messageType 
+	 * @returns {Promise<string?>}
+	 */
+	async getAuthorName(messageType) {
+		const authorId = this.#renderer.authorExternalChannelId;
+		this.element.setAttribute('data-author-id', authorId);
+
+		/** @type {string | undefined} */
+		let authorName;
+		if (s.others.show_username && authorId) {
+			if (authorNameCache.has(authorId)) {
+				authorName = authorNameCache.get(authorId);
+			} else if (messageType && s.parts[messageType].name) {
+				const url = new URL('/youtubei/v1/browse', location.origin);
+				try {
+					const json = await fetchInnerTube(url, { browseId: authorId });
+					authorName = json?.header?.pageHeaderRenderer?.pageTitle;
+					if (authorName) authorNameCache.set(authorId, authorName);
+				} catch (reason) {
+					console.error(reason);
+				}
+			}
+		}
+		authorName ||= getText(this.#renderer.authorName);
+		if (!authorName) return null;
+		this.element.setAttribute('data-author-name', authorName);
+
+		const a = document.createElement('a');
+		a.href = `/channel/${authorId}`;
+		a.target = '_blank';
+		a.title = authorName;
+		
+		const img = new Image();
+		img.part = img.className = 'photo';
+		img.src = this.#renderer.authorPhoto.thumbnails[0].url;
+		img.loading = 'lazy';
+		a.appendChild(img);
+		
+		const span = document.createElement('span');
+		span.part = span.className = 'name';
+		span.textContent = authorName;
+		
+		this.#authorFragment.append(a, span);
+		return authorName;
+	}
+
 	/**
 	 * Appends this element to the shadow root.
-	 * @param {ShadowRoot} parent parent shadow root
-	 * @param {"dense"} [mode] layout mode
+	 * @param {LiveChatLayoutCache} cache layout cache object
+	 * @param {"dense" | "random"} [mode="dense"] layout mode
 	 * @returns {string} renderer id
 	 */
-	appendTo(parent, mode = 'dense') {
+	appendTo(cache, mode = 'dense') {
 		this.element.style.visibility = 'hidden';
-		parent.appendChild(this.element);
+		cache.dom.appendChild(this.element);
 
-		const hh = parent.host.clientHeight, hw = parent.host.clientWidth;
+		const hh = cache.dom.host.clientHeight, hw = cache.dom.host.clientWidth;
 		const ch = this.element.clientHeight, cw = this.element.clientWidth;
 		if (cw >= hw * (parseInt(s.styles.max_width) / 100 || 1)) {
 			this.element.classList.add('wrap');
@@ -290,62 +393,101 @@ export class LiveChatItemLayout {
 
 		const fs = Number.parseInt(s.styles.font_size) || 36;
 		const lhf = Number.parseFloat(s.styles.line_height) || 1.4;
+
+		let y = 0;
+		/** @type {ChatLayoutInfo} */
+		let layout;
 		
 		const dir = s.others.direction & 1 ? 'bottom' : 'top';
 		if (ch >= hh) {
 			this.element.style[dir] = '0px';
 			this.element.setAttribute('data-line', '0');
-			return this.#beginAnimation();
+			this.element.style.visibility = '';
+			layout = new ChatLayoutInfo(this.element, y);
+			cache.set(this.id, layout);
+			return this.id;
 		}
 		const overline = Math.floor(hh / fs * lhf);
 		const reversed = (s.others.direction & 2) > 0;
-		
 		const parentRect = {
-			top: parent.host.clientTop,
+			top: cache.dom.host.clientTop,
 			height: hh,
 		};
-		if (LiveChatItemLayout.container.size === 0) {
-			this.element.style[dir] = '0px';
-			this.element.setAttribute('data-line', '0');
-			return this.#beginAnimation();
-		}
-		let y = 0;
-		do {
-			this.element.style[dir] = `${y * lhf}em`;
-			this.element.setAttribute('data-line', `${y}`);
-			const layout = new ChatLayoutInfo(this.element);
-			const isCatchable = LiveChatItemLayout.container.values().some(b => b.line <= y && layout.isCollidable(b, reversed));
-			const isOverflow = layout.isOverflow(parentRect);
-			if (!isCatchable && !isOverflow) {
-				return this.#beginAnimation(layout);
+		
+		switch (mode) {
+			case 'dense': {
+				if (cache.size === 0) {
+					this.element.style[dir] = '0px';
+					this.element.setAttribute('data-line', '0');
+					layout = new ChatLayoutInfo(this.element, y);
+					this.element.style.visibility = '';
+					cache.set(this.id, layout);
+					return this.id;
+				}
+				do {
+					this.element.style[dir] = `${y * lhf}em`;
+					this.element.setAttribute('data-line', `${y}`);
+					layout = new ChatLayoutInfo(this.element, y);
+					const overflow = layout.isOverflow(parentRect);
+					if (overflow) continue;
+					const collidable = cache.anyCollides(layout, reversed);
+					if (collidable) continue;
+					this.element.style.visibility = '';
+					cache.set(this.id, layout);
+					return this.id;
+				} while (++y <= overline);
+
+				this.element.classList.add('overlap');
+				const st = s.others.overlapping;
+				const o = st & 0b01 ? .8 : 1;
+				const dy = st & 0b10 ? .5 : 0;
+
+				const grouped = cache.groupByLine(overline);
+				y = grouped.reduce((pi, cv, ci, arr) => cv.length < arr[pi].length ? ci : pi, 0);
+				this.element.setAttribute('data-line', `${y}`);
+				layout = new ChatLayoutInfo(this.element, y);
+				const len = grouped[y].filter(layout => layout.isCollidable(layout)).length || 1;
+				this.element.style.top = `${(y + dy) * lhf}em`;
+				this.element.style.opacity = `${Math.max(.5, Math.pow(o, len))}`;
+				this.element.style.zIndex = `-${len}`;
+				this.element.style.visibility = '';
+				cache.set(this.id, layout);
+				return this.id;
 			}
-		} while (++y <= overline);
-
-		this.element.classList.add('overlap');
-		const st = s.others.overlapping;
-		const o = st & 0b01 ? .8 : 1;
-		const dy = st & 0b10 ? .5 : 0;
-
-		const targetLine = LiveChatItemLayout.getEmptiestLine(overline);
-		y = targetLine.index;
-		const layout = new ChatLayoutInfo(this.element);
-		const len = targetLine.siblings.filter(x => layout.isCollidable(x)).length || 1;
-		this.element.style.top = `${(y + dy) * lhf}em`;
-		this.element.style.opacity = `${Math.max(.5, Math.pow(o, len))}`;
-		this.element.style.zIndex = `-${len}`;
-		this.element.setAttribute('data-line', `${y}`);
-		return this.#beginAnimation(layout);
-	}
-
-	/**
-	 * @param {ChatLayoutInfo} [layout] layout info
-	 * @returns {string} renderer id
-	 */
-	#beginAnimation(layout) {
-		layout ??= new ChatLayoutInfo(this.element);
-		this.element.style.visibility = '';
-		LiveChatItemLayout.container.set(this.id, layout);
-		return this.id;
+			
+			case 'random': {
+				if (cache.size === 0) {
+					y = Math.floor(overline * Math.random());
+					this.element.style[dir] = `${y * lhf}em`;
+					this.element.setAttribute('data-line', `${y}`);
+					layout = new ChatLayoutInfo(this.element, y);
+					this.element.style.visibility = '';
+					cache.set(this.id, layout);
+					return this.id;
+				}
+				const calculatedLine = new Set(Array(overline).keys());
+				do {
+					y = Math.floor(overline * Math.random());
+					this.element.style[dir] = `${y * lhf}em`;
+					this.element.setAttribute('data-line', `${y}`);
+					layout = new ChatLayoutInfo(this.element, y);
+					const overflow = layout.isOverflow(parentRect);
+					if (overflow) {
+						for (let i = y; i < overline; i++) calculatedLine.delete(i);
+						continue;
+					}
+					const collidable = cache.anyCollides(layout, reversed);
+					if (collidable) {
+						calculatedLine.delete(y);
+						continue;
+					}
+					break;
+				} while (calculatedLine.size > 0);
+				this.element.style.visibility = '';
+				cache.set(this.id, layout);
+				return this.id;
+			}
+		}
 	}
 }
 
@@ -354,10 +496,11 @@ class ChatLayoutInfo {
 	/** @type {DOMRect} */ #rect;
 	/**
 	 * @param {HTMLElement} elem 
+	 * @param {number} [line] 
 	 */
-	constructor(elem) {
+	constructor(elem, line = undefined) {
 		this.#rect = elem.getBoundingClientRect();
-		this.line = Number.parseInt(elem.getAttribute('data-line') || '0');
+		this.line = line ?? Number.parseInt(elem.getAttribute('data-line') || '0');
 
 		const computedStyle = getComputedStyle(elem);
 		const [_durMatch, durNum, durUnit] = computedStyle.animationDuration.match(/^([\d\.]+)(\D+)/) || [];
@@ -393,7 +536,7 @@ class ChatLayoutInfo {
 	/**
 	 * Checks whether two flowing messages collide.
 	 * @param {ChatLayoutInfo} before other preceding layout
-	 * @param {boolean} [reversed] if direction is reversed
+	 * @param {boolean} [reversed=false] if direction is reversed
 	 * @returns {boolean} whether this message collides against the preceding message
 	 */
 	isCollidable(before, reversed = false) {
@@ -568,8 +711,12 @@ class ChatMessageContainer {
 	async translate(mode, target, suffix = false) {
 		const detectionResults = await this.detectAsync();
 		this.hasTranslated = detectionResults.some(p => p.status === 'fulfilled');
-		const fn = mode === 'eager' ? this.#translateEager : this.#translateLazy;
-		fn(detectionResults, target, suffix);
+		switch (mode) {
+			case 'eager':
+				return this.#translateEager(detectionResults, target, suffix);
+			case 'lazy':
+				return this.#translateLazy(detectionResults, target, suffix);
+		}
 	}
 
 	/**

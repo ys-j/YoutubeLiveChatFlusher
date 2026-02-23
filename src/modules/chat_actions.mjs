@@ -2,6 +2,8 @@
 /// <reference path="../../types/extends.d.ts" />
 /// <reference path="../../types/ytlivechatrenderer.d.ts" />
 
+import { fetchInnerTube } from './innertube.mjs';
+
 export class ReplayActionBuffer {
 	/** @type {Map<number, Set<string>>} */
 	#map = new Map();
@@ -140,31 +142,6 @@ export async function* getLiveChatActionsAsyncIterable(signal, initialContinuati
 	}
 }
 
-const defaultClient = {
-	clientName: 'WEB',
-	clientVersion: '2.20251022.01.00',
-	mainAppWebInfo: { graftUrl: location.href },
-};
-
-/**
- * Fetches the value of Authorization header.
- * @param {Record<string, string>} data stored data
- * @returns {Promise<string>} authorization value
- */
-async function getAuthoricationAsync(data) {
-	const datasyncId = data['DATASYNC_ID'].split('||')[0];
-	const timestamp = Math.floor(Date.now() / 1e3);
-	const cookies = new Map(document.cookie.split(/;\s*/).map(kv => {
-		const pos = kv.indexOf('=');
-		return pos >= 0 ? [ kv.substring(0, pos), kv.substring(pos + 1) ] : [ '', '' ];
-	}));
-	const sApisId = cookies.get('SAPISID');
-	const bytes = new TextEncoder().encode([datasyncId, timestamp, sApisId, location.origin].join(' '));
-	const digested = new Uint8Array(await crypto.subtle.digest('SHA-1', bytes));
-	const hash = Array.from(digested, b => b.toString(16).padStart(2, '0')).join('');
-	return ['SAPISIDHASH', 'SAPISID1PHASH', 'SAPISID3PHASH'].map(k => `${k} ${timestamp}_${hash}_u`).join(' ');
-}
-
 /**
  * Fetches the livechat contents object from the given URL and continuation token.
  * @param {URL} url URL
@@ -172,23 +149,8 @@ async function getAuthoricationAsync(data) {
  * @returns {Promise<any>} livechat contents object
  */
 async function getContentsAsync(url, body) {
-	const stored = sessionStorage.getItem('ytlcf-cfg');
-	const data = stored ? JSON.parse(stored) : null;
-	const client = data?.['INNERTUBE_CONTEXT']?.client || defaultClient;
-	const headers = new Headers();
-	headers.set('Content-Type', 'application/json');
-	if (data) headers.set('Authorization', await getAuthoricationAsync(data));
 	try {
-		const res = await fetch(url, {
-			method: 'post',
-			headers,
-			body: JSON.stringify({
-				context: { client },
-				...body,
-			}),
-		});
-		const json = res.ok ? await res.json() : null;
-		if (!json) throw 'Request failed.';
+		const json = await fetchInnerTube(url, body);
 		return json.continuationContents?.liveChatContinuation;
 	} catch (reason) {
 		console.error(reason);

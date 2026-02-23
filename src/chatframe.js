@@ -21,7 +21,7 @@ function onAction(e) {
 	if (e.detail?.actionName === 'yt-live-chat-actions') {
 		const actions = e.detail?.args?.at(0);
 		if (!actions) return;
-		const ev = new CustomEvent('ytlcf-pass', { detail: actions });
+		const ev = new CustomEvent('ytlcf-action', { detail: actions });
 		top?.document.dispatchEvent(ev);
 	}
 }

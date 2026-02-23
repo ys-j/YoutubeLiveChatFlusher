@@ -134,6 +134,15 @@
 	"emojiExpression_3": {
 		"message": "ショートカットに置換する"
 	},
+	"density": {
+		"message": "表示密度"
+	},
+	"density_dense": {
+		"message": "詰める"
+	},
+	"density_random": {
+		"message": "ランダム"
+	},
 	"overlapping": {
 		"message": "オーバーラップ"
 	},
@@ -247,6 +256,12 @@
 	},
 	"placeholder_customCSS": {
 		"message": "カスタムCSS"
+	},
+	"common": {
+		"message": "共通"
+	},
+	"show_username": {
+		"message": "ハンドル名でなくユーザー名を表示"
 	},
 	"mutedWordsMode": {
 		"message": "モード"

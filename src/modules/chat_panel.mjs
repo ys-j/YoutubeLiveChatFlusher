@@ -509,6 +509,8 @@ export class LiveChatPanel {
 							le.style.removeProperty('--yt-lcf-' + type.replace(/_/g, '-') + '-color');
 						}
 					}
+					// @ts-ignore
+					s.parts[type] = s.parts[type];
 					layer.updateCurrentItemStyle(type);
 				}
 			}
@@ -618,6 +620,10 @@ export class LiveChatPanel {
 				/** @type {HTMLInputElement} */ (ctrls.container_limit_number).disabled = checked;
 				s.others.container_limit = checked ? 0 : /** @type {HTMLInputElement} */ (ctrls.container_limit_number).valueAsNumber;
 				break;
+			}
+			case 'show_username': {
+				const checked = /** @type {HTMLInputElement} */ (ctrls.show_username).checked;
+				s.others.show_username = checked ? 1 : 0;
 			}
 			case 'time_shift': {
 				s.others.time_shift = /** @type {HTMLInputElement} */ (ctrls.time_shift).valueAsNumber;

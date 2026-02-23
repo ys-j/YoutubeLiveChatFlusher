@@ -7,7 +7,7 @@ import { LiveChatLayer } from './chat_layer.mjs'
 import { LiveChatPanel } from './chat_panel.mjs';
 import { LiveChatContextMenu } from './chat_contextmenu.mjs';
 
-import { LiveChatItemLayout, EmojiModeEnum, updateMutedWordsList } from './chat_message.mjs';
+import { LiveChatLayoutCache, LiveChatItemLayout, EmojiModeEnum, updateMutedWordsList } from './chat_message.mjs';
 
 /** @enum {number} */
 export const SimultaneousModeEnum = Object.freeze({
@@ -30,29 +30,19 @@ export const WrapStyleDefinitions = Object.freeze([
 	{ hyphens: 'auto', wordBreak: 'keep-all', whiteSpace: 'pre-line' },
 ]);
 
-export class LiveChatController extends EventTarget {
-	/** @type {HTMLElement} */
-	player;
-	/** @type {LiveChatLayer} */
-	layer;
-	/** @type {LiveChatPanel} */
-	panel;
-	/** @type {LiveChatContextMenu} */
-	contextmenu;
-
-	/** @type  */
-	#layoutCache = [];
+export class LiveChatController {
 	#skip = false;
 
 	/**
 	 * @param {HTMLElement} player YouTube player element
 	 */
 	constructor(player) {
-		super();
 		this.player = player;
 
 		this.layer = new LiveChatLayer(this);
 		const root = this.layer.root;
+		this.layoutCache = new LiveChatLayoutCache(root);
+
 		root.addEventListener('contextmenu', e => {
 			const origin = /** @type {HTMLElement} */ (e.target).closest('[id]');
 			if (origin && s.others.message_pause) {
@@ -77,13 +67,14 @@ export class LiveChatController extends EventTarget {
 		root.addEventListener('animationend', e => {
 			const elem = /** @type {HTMLElement} */ (e.target);
 			if (elem.parentNode === root) {
-				LiveChatItemLayout.container.delete(elem.id);
+				this.layoutCache.delete(elem.id);
 				elem.remove();
 			}
 		}, { passive: true });
 
 		this.panel = new LiveChatPanel(this);
 		this.contextmenu = new LiveChatContextMenu();
+		this.abortController = new AbortController();
 	}
 
 	async start() {
@@ -316,6 +307,10 @@ export class LiveChatController extends EventTarget {
 						cb.checked = s.others[cb.name] & 1 << val ? true : false;
 						break;
 					}
+					case 'show_username': {
+						cb.checked = s.others.show_username > 0;
+						break;
+					}
 					case 'muted_words_regexp': {
 						cb.checked = s.mutedWords.regexp;
 						break;
@@ -400,6 +395,10 @@ export class LiveChatController extends EventTarget {
 			le.style.setProperty(name, `rgba(${getColorRGB(rgb).join()},${alpha < 0 ? 'var(--yt-lcf-background-opacity)' : alpha})`);
 		}
 
+		for (const [k, v] of Object.entries(s.parts)) {
+			le.classList[v.name ? 'add' : 'remove'](`has-${k}-name`);
+		}
+
 		const root = this.layer.root;
 		const customCss = root.querySelector('#customcss');
 		const userDefinedCss = root.querySelector('#userdefinedcss');
@@ -430,10 +429,9 @@ export class LiveChatController extends EventTarget {
 
 	/**
 	 * Fires chat actions.
-	 * @type {EventListener}
 	 * @param {CustomEvent<LiveChat.LiveChatItemAction[]>} event 
 	 */
-	#onAction(event) {
+	async #onAction(event) {
 		const le = this.layer.element;
 		const root = this.layer.root;
 		if ((isNotPip() && document.visibilityState === 'hidden') || le.hidden || le.parentElement?.classList.contains('paused-mode')) return;
@@ -451,26 +449,28 @@ export class LiveChatController extends EventTarget {
 		}
 		
 		// Add
-		const fs = Number.parseInt(s.styles.font_size) || 36;
-		const lhf = Number.parseFloat(s.styles.line_height) || 1.4;
-		const lh = fs * lhf;
 		const sv = s.others.simultaneous;
 		const last = sv === SimultaneousModeEnum.LAST_MERGE ? /** @type {HTMLElement?} */ (root.lastElementChild) : null;
 		const bodies = last ? [ `<!-- ${last.className} -->` + (last.getAttribute('data-text') || '') ] : [];
-		const ids = last ? [last.id] : [];
+		const ids = last ? [ last.id ] : [];
 		if (sv === SimultaneousModeEnum.FIRST) {
 			// @ts-ignore
 			const notext = filtered.add.slice(1).filter(a => !a.addChatItemAction?.item.liveChatTextMessageRenderer);
 			filtered.add.splice(1, Infinity, ...notext);
 		}
 
-		/** @param {LiveChat.LiveChatItemAction} action */
-		const addingMapFn = action => new Promise(async (resolve, reject) => {
+		for (const action of filtered.add) {
 			const item = action.addChatItemAction?.item;
-			if (!item) return reject('Failed to add message.');
+			if (!item) {
+				console.warn('Failed to add message.');
+				continue;
+			}
 			const layout = new LiveChatItemLayout(item);
 			const elem = await layout.render();
-			if (!elem) return reject();
+			if (!elem) {
+				console.warn('Failed to render a chat item element.')
+				continue;
+			}
 			const text = elem.getAttribute('data-text');
 			if (sv === SimultaneousModeEnum.MERGE || sv === SimultaneousModeEnum.LAST_MERGE) {
 				const body = text ? `<!-- ${elem.className} -->${text}` : '';
@@ -491,54 +491,46 @@ export class LiveChatController extends EventTarget {
 							if (!_name.textContent)  _name.textContent = '';
 							this.updateCurrentItem(earlier);
 						}
-						return resolve(elem.id);
+						continue;
 					}
 				}
 			}
-			const duplication = root.getElementById(elem.id);
-			if (duplication) {
+			if (root.getElementById(elem.id)) {
 				const type = elem.className.match(/text (.+)/)?.at(1) || 'normal';
 				const color = getComputedStyle(le).getPropertyValue(`--yt-lcf-${type}-color`);
 				console.log(`Message duplication #${elem.id}: %c${text || elem.lastElementChild?.textContent}`, color ? 'color:' + color : '');
-				return resolve(elem.id);
+			} else {
+				/** @type { ["dense", "random"] } */
+				const mode = ['dense', 'random'];
+				layout.appendTo(this.layoutCache, mode[s.others.density]);
 			}
-			return resolve(layout.appendTo(root));
-		});
-		filtered.add.forEach(addingMapFn);
+		}
 		
 		// Delete
-		/** @param {LiveChat.LiveChatItemAction} action */
-		const deletingMapFn = action => new Promise((resolve, reject) => {
+		for (const action of filtered.delete) {
 			// @ts-ignore
 			const id = action.markChatItemAsDeletedAction.targetItemId;
-			const target = root.getElementById(id);
-			if (target) {
-				target.remove();
-				resolve(id);
+			if (this.layoutCache.delete(id)) {
+				const target = root.getElementById(id);
+				target?.remove();
 			} else {
-				reject('Failed to delete message: #' + id);
+				console.warn('Failed to delete message: #' + id);
 			}
-		});
-		filtered.delete.forEach(deletingMapFn);
+		}
 		
 		// Delete by author
-		/** @param {LiveChat.LiveChatItemAction} action */
-		const deletingAuthorMapFn = action => new Promise((resolve, reject) => {
+		for (const action of filtered.delete_author) {
 			// @ts-ignore
 			const id = action.markChatItemsByAuthorAsDeletedAction.externalChannelId;
 			const targets = root.querySelectorAll(`[data-author-id="${id}"]`);
-			if (targets.length > 0) {
-				targets.forEach(elem => elem.remove());
-				resolve(id);
-			} else {
-				reject('Failed to delate message: (Author ID) ' + id);
+			for (const target of targets) {
+				this.layoutCache.delete(target.id);
+				target.remove();
 			}
-		});
-		filtered.delete_author.forEach(deletingAuthorMapFn);
+		}
 		
 		// Replace
-		/** @param {LiveChat.LiveChatItemAction} action */
-		const replacingMapFn = action => new Promise(async (resolve, reject) => {
+		for (const action of filtered.replace) {
 			// @ts-ignore
 			const id = action.replaceChatItemAction.targetItemId;
 			const target = root.getElementById(id);
@@ -548,15 +540,11 @@ export class LiveChatController extends EventTarget {
 				const elem = await layout.render();
 				if (elem) {
 					target.replaceWith(elem);
-					resolve(id);
-				} else {
-					reject('Failed to replace message: #' + id);
 				}
 			} else {
-				reject('Failed to replace message: #' + id);
+				console.warn('Failed to replace message: #' + id);
 			}
-		});
-		filtered.replace.forEach(replacingMapFn);
+		}
 	}
 
 	/**
@@ -578,13 +566,17 @@ export class LiveChatController extends EventTarget {
 	}
 
 	listen() {
-		this.addEventListener('ytlcf-action', () => {
-			this.addEventListener('ytlcf-action', this.#onAction, { passive: true });
+		this.unlisten();
+		document.addEventListener('ytlcf-action', () => {
+			document.addEventListener('ytlcf-action', e => {
+				this.#onAction(e);
+			}, { passive: true, signal: this.abortController.signal });
 		}, { once: true, passive: true });
 	}
 
 	unlisten() {
-		this.removeEventListener('ytlcf-action', this.#onAction);
+		this.abortController.abort();
+		this.abortController = new AbortController();
 	}
 
 	close() {

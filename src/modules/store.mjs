@@ -56,8 +56,10 @@ export const DEFAULT_CONFIG = Object.freeze({
 		container_limit: 0,
 		simultaneous: 2,
 		emoji: 1,
+		density: 0,
 		overlapping: 0,
 		direction: 0,
+		show_username: 0,
 		translation: 0,
 		except_lang: 0,
 		translation_timing: 0,
@@ -165,7 +167,10 @@ export class ConfigStore {
 		const stored = json ?? await browser.storage.local.get();
 		Object.assign(this.data.styles, stored.styles);
 		Object.assign(this.data.others, stored.others);
-		Object.assign(this.data.parts, stored.parts);
+		for (const k of Object.keys(stored.parts ?? {})) {
+			// @ts-ignore
+			Object.assign(this.data.parts[k], stored.parts[k] || {});
+		}
 		Object.assign(this.data.cssTexts, stored.cssTexts);
 		Object.assign(this.data.hotkeys, stored.hotkeys);
 		Object.assign(this.data.mutedWords, stored.mutedWords);
@@ -188,12 +193,3 @@ export class ConfigStore {
 }
 
 export const store = new ConfigStore();
-
-
-/**
- * Sends a signal to refresh all tabs running this extension.
- * @returns {Promise<void>}
- */
-async function refreshPage() {
-	await browser.runtime.sendMessage({ fire: 'reload' });
-}

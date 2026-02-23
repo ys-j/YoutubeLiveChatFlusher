@@ -21,6 +21,12 @@ const state = {
 	},
 };
 
+/** @enum {number} */
+const FetchingModeEnum = Object.freeze({
+	DEPENDENT: 0,
+	INDEPENDENT: 1,
+});
+
 /**
  * @typedef NavigateFinishEventDetail
  * @prop {string} pageType
@@ -74,6 +80,78 @@ export async function initialize(e) {
 	}, { passive: true });
 }
 
+/**
+ * @param { CustomEvent<NavigateFinishEventDetail> | { target: EventTarget, detail: NavigateFinishEventDetail } } e 
+ */
+async function onYtNavigateFinish(e) {
+	if (e.detail?.pageType !== 'watch') return;
+	const toggle = state.controller?.player.querySelector('#yt-lcf-cb');
+	toggle?.setAttribute('aria-disabled', 'true');
+	
+	/** @type {HTMLVideoElement | null | undefined} */
+	const video = (isNotPip() ? self : self.documentPictureInPicture?.window)?.document.querySelector('#movie_player video');
+	const videoContainer = video?.parentElement;
+	if (!videoContainer) return;
+	const parent = videoContainer.parentElement;
+	if (state.controller?.layer && parent?.contains(state.controller.layer.element)) {
+		videoContainer.after(state.controller.layer.element);
+	}
+	const mainResponse = e.detail?.response;
+	const response = (mainResponse && 'contents' in mainResponse) ? mainResponse : mainResponse?.response;
+	if (!response) return;
+	const videoDetails = mainResponse?.playerResponse?.videoDetails
+		|| mainResponse.contents?.twoColumnWatchNextResults?.results?.results?.contents?.at(0)?.videoPrimaryInfoRenderer?.viewCount?.videoViewCountRenderer;
+	state.isLive = videoDetails?.isLive || videoDetails?.isUpcoming || false;
+
+	const modeName = state.isLive ? 'mode_livestream' : 'mode_replay';
+	const modeValue = store.others?.[modeName] ?? FetchingModeEnum.INDEPENDENT;
+
+	switch (modeValue) {
+		case FetchingModeEnum.DEPENDENT:
+			document.addEventListener('ytlcf-start', () => {
+				state.controller?.listen();
+				toggle?.removeAttribute('aria-disabled');
+			}, { passive: true });
+			break;
+		case FetchingModeEnum.INDEPENDENT:
+			const timer = setInterval(() => {
+				if (state.action.size > 0) {
+					clearInterval(timer);
+					video.addEventListener('seeking', onSeeking, { passive: true });
+					video.addEventListener('timeupdate', onTimeUpdate, { passive: true });
+				}
+			}, 250);
+			video.removeEventListener('seeking', onSeeking);
+			video.removeEventListener('timeupdate', onTimeUpdate);
+
+			// Fetching chat actions async
+			const liveChatRenderer = response?.contents?.twoColumnWatchNextResults?.conversationBar?.liveChatRenderer
+				?? response?.contents?.singleColumnWatchNextResults?.results?.results;
+			/** @type {string?} */
+			const initialContinuation = liveChatRenderer?.continuations?.at(0)?.reloadContinuationData?.continuation;
+			if (initialContinuation) {
+				state.controller?.listen();
+				toggle?.removeAttribute('aria-disabled');
+				if (state.isLive) {
+					const generator = getLiveChatActionsAsyncIterable(state.abortController.signal, initialContinuation);
+					for await (const actions of generator) {
+						const ev = new CustomEvent('ytlcf-action', { detail: actions });
+						document.dispatchEvent(ev);
+					}
+				} else {
+					setTimeout(() => onSeeking.call(video), 250);
+					const generator = getReplayChatActionsAsyncIterable(state.abortController.signal, initialContinuation);
+					for await (const actions of generator) {
+						state.action.pushActions(actions);
+					}
+				}
+			} else {
+				const message = `This video has no chat: ${videoDetails?.videoId || '[failed to get video id]'}`;
+				console.warn(message);
+			}
+			clearInterval(timer);
+	}
+}
 
 /**
  * @this {HTMLVideoElement}
@@ -100,81 +178,6 @@ function onTimeUpdate() {
 	const pendingActions = state.action.getPendingActions(currentOffset);
 	if (pendingActions.length > 0) {
 		const ev = new CustomEvent('ytlcf-action', { detail: pendingActions });
-		state.controller?.dispatchEvent(ev);
-	}
-}
-
-/**
- * @param { CustomEvent<NavigateFinishEventDetail> | { target: EventTarget, detail: NavigateFinishEventDetail } } e 
- */
-async function onYtNavigateFinish(e) {
-	if (e.detail?.pageType !== 'watch') return;
-	
-	/** @type {HTMLVideoElement | null | undefined} */
-	const video = (isNotPip() ? self : self.documentPictureInPicture?.window)?.document.querySelector('#movie_player video');
-	const videoContainer = video?.parentElement;
-	if (!videoContainer) return;
-	const parent = videoContainer.parentElement;
-	if (state.controller?.layer && parent?.contains(state.controller.layer.element)) {
-		videoContainer.after(state.controller.layer.element);
-	}
-	const mainResponse = e.detail?.response;
-	const response = (mainResponse && 'contents' in mainResponse) ? mainResponse : mainResponse?.response;
-	if (!response) return;
-	const videoDetails = mainResponse?.playerResponse?.videoDetails
-		|| mainResponse.contents?.twoColumnWatchNextResults?.results?.results?.contents?.at(0)?.videoPrimaryInfoRenderer?.viewCount?.videoViewCountRenderer;
-	state.isLive = videoDetails?.isLive || videoDetails?.isUpcoming || false;
-
-	const modeName = state.isLive ? 'mode_livestream' : 'mode_replay';
-	const modeValue = store.others?.[modeName] ?? 1;
-
-	switch (modeValue) {
-		case 0:
-			document.addEventListener('ytlcf-start', () => {
-				state.controller?.listen();
-			}, { passive: true });
-			document.addEventListener('ytlcf-pass', e => {
-				const ev = new CustomEvent('ytlcf-action', { detail: e.detail });
-				state.controller?.dispatchEvent(ev);
-			}, { passive: true });
-			break;
-		case 1:
-			const timer = setInterval(() => {
-				if (state.action.size > 0) {
-					clearInterval(timer);
-					video.addEventListener('seeking', onSeeking, { passive: true });
-					video.addEventListener('timeupdate', onTimeUpdate, { passive: true });
-				}
-			}, 250);
-			video.removeEventListener('seeking', onSeeking);
-			video.removeEventListener('timeupdate', onTimeUpdate);
-
-			// Fetching chat actions async
-			const liveChatRenderer = response?.contents?.twoColumnWatchNextResults?.conversationBar?.liveChatRenderer
-				?? response?.contents?.singleColumnWatchNextResults?.results?.results;
-			/** @type {string?} */
-			const initialContinuation = liveChatRenderer?.continuations?.at(0)?.reloadContinuationData?.continuation;
-			if (!initialContinuation) {
-				const message = `This video has no chat: ${videoDetails?.videoId || 'failed to get video id'}`;
-				console.warn(message);
-				clearInterval(timer);
-				return;
-			}
-			state.controller?.listen();
-			if (state.isLive) {
-				const generator = getLiveChatActionsAsyncIterable(state.abortController.signal, initialContinuation);
-				for await (const actions of generator) {
-					const ev = new CustomEvent('ytlcf-action', { detail: actions });
-					state.controller?.dispatchEvent(ev);
-				}
-			} else {
-				setTimeout(() => onSeeking.call(video), 250);
-				const generator = getReplayChatActionsAsyncIterable(state.abortController.signal, initialContinuation);
-				for await (const actions of generator) {
-					state.action.pushActions(actions);
-				}
-			}
-			clearInterval(timer);
-			break;
+		document.dispatchEvent(ev);
 	}
 }

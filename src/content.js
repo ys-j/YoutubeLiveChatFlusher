@@ -20,7 +20,8 @@ self.addEventListener('ytlcf-message', e => {
 		response: JSON.parse(ytInitialData),
 	};
 	if (target) {
-		import('./modules/main.js').then(module => {
+		const url = browser.runtime.getURL('./modules/main.js');
+		import(url).then(module => {
 			module.initialize({ target, detail });
 		});
 	}
@@ -35,8 +36,6 @@ setTimeout(() => {
 self.addEventListener('ytlcf-ready', e => {
 	e.stopImmediatePropagation();
 	console.info(manifest.name + ' is ready!');
-	const settingsButton = document.querySelector('.ytp-settings-button');
-	settingsButton?.classList.add(e.type);
 }, { passive: true });
 
 document.addEventListener('yt-action', e => {
@@ -52,17 +51,15 @@ document.addEventListener('yt-action', e => {
 
 async function checkAutoStart() {
 	const store = await browser.storage.local.get('others');
-	const autostart = store?.others?.autostart;
-	if (autostart) {
-		const buttonContainer = document.getElementById('show-hide-button');
-		if (buttonContainer && !buttonContainer.hidden) {
-			const button = buttonContainer.querySelector('button');
-			const isClose = button?.closest('#close-button');
-			if (!isClose) {
-				button?.click();
-				return true;
-			}
-		}
-	}
-	return false;
+	const enabled = store?.others?.autostart;
+	if (!enabled) return false;
+
+	const container = document.getElementById('show-hide-button');
+	if (!container || container.hidden) return false;
+
+	const button = container.querySelector('button');
+	if (button?.closest('#close-button')) return false;
+	
+	button?.click();
+	return true;
 }

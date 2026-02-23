@@ -137,7 +137,9 @@ export class LiveChatLayer {
 	 */
 	updateCurrentItemStyle(type = undefined) {
 		const items = Array.from(this.root.children).filter(type ? c => c.classList.contains(type) : c => c.tagName === 'DIV');
-		/** @type {HTMLElement[]} */ (items).forEach(this.#controller.updateCurrentItem);
+		for (const item of items) {
+			this.#controller.updateCurrentItem(/** @type {HTMLElement} */ (item));
+		}
 	}
 
 	/**
