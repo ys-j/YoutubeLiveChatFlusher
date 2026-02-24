@@ -220,6 +220,7 @@ export class LiveChatController {
 	 */
 	#applySettingsToControls(form) {
 		const le = this.layer.element;
+		const rect = le.getBoundingClientRect();
 		const ctrls = form.elements;
 		const selects = form.querySelectorAll('select');
 		for (const select of selects) {
@@ -349,28 +350,30 @@ export class LiveChatController {
 		// number
 		/** @type {HTMLInputElement} */ (ctrls.px_per_sec).valueAsNumber = /** @type {HTMLInputElement} */ (ctrls.speed).checked
 			? s.others.px_per_sec
-			: Math.round(le.getBoundingClientRect().width / /** @type {HTMLInputElement} */ (ctrls.animation_duration).valueAsNumber);
+			: Math.round(rect.width / /** @type {HTMLInputElement} */ (ctrls.animation_duration).valueAsNumber);
 		/** @type {HTMLInputElement} */ (ctrls.limit_number).valueAsNumber = s.others.limit || 100;
 		/** @type {HTMLInputElement} */ (ctrls.container_limit_number).valueAsNumber = s.others.container_limit || 20;
-		/** @type {HTMLInputElement} */ (ctrls.time_shift).valueAsNumber = s.others.time_shift || 0;
-		/** @type {HTMLInputElement} */ (ctrls.time_shift).disabled = s.others.mode_replay === 0;
 		
 		const lines = s.others.number_of_lines;
-		if (lines) {
-			const sizeByLines = Math.floor(le.getBoundingClientRect().height * .8 / lines);
-			
-			const inputFs = /** @type {HTMLInputElement} */ (ctrls.font_size);
-			const inputLn = /** @type {HTMLInputElement} */ (ctrls.number_of_lines);
+		const inputFontSize = /** @type {HTMLInputElement} */ (ctrls.font_size);
+		const inputLineNum = /** @type {HTMLInputElement} */ (ctrls.number_of_lines);
+		if (lines > 0) {
+			const sizeByLines = Math.floor(rect.height / lines / Number.parseFloat(s.styles.line_height));
 			if (s.others.type_of_lines > 0) {
 				le.style.setProperty('--yt-lcf-font-size', `max(${s.styles.font_size}, ${sizeByLines}px)`);
-				inputFs.setAttribute('value', `${sizeByLines}`);
-				inputLn.setAttribute('value', `${lines}`);
+				inputFontSize.valueAsNumber = sizeByLines;
 			} else {
 				le.style.setProperty('--yt-lcf-font-size', `${sizeByLines}px`);
-				inputLn.setAttribute('value', `${DEFAULT_CONFIG.others.number_of_lines}`);
 			}
+			inputLineNum.valueAsNumber = lines;
+		} else {
+			const linesBySize = Math.floor(rect.height / Number.parseFloat(s.styles.font_size) / Number.parseFloat(s.styles.line_height));
+			le.style.setProperty('--yt-lcf-font-size', s.styles.font_size);
+			inputLineNum.valueAsNumber = linesBySize;
 		}
 
+		/** @type {HTMLInputElement} */ (ctrls.time_shift).valueAsNumber = s.others.time_shift || 0;
+		/** @type {HTMLInputElement} */ (ctrls.time_shift).disabled = s.others.mode_replay === 0;
 	}
 
 	/**

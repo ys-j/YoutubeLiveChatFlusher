@@ -624,6 +624,7 @@ export class LiveChatPanel {
 			case 'show_username': {
 				const checked = /** @type {HTMLInputElement} */ (ctrls.show_username).checked;
 				s.others.show_username = checked ? 1 : 0;
+				break;
 			}
 			case 'time_shift': {
 				s.others.time_shift = /** @type {HTMLInputElement} */ (ctrls.time_shift).valueAsNumber;

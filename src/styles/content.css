@@ -134,6 +134,7 @@
 */
 #yt-lcf-panel {
 	background: transparent;
+	color-scheme: dark;
 	max-height: calc(100% - 20px);
 	max-width: calc(100% - 20px);
 	user-select: none;
@@ -295,15 +296,26 @@
 		}
 	}
 	select {
-		appearance: none;
 		background-color: transparent;
 		border: 0;
 		border-bottom: 1px solid currentColor;
-		filter: invert(1);
+		color: currentColor;
 		font: inherit;
 		padding: 2px;
 		&:enabled {
 			cursor: pointer;
+		}
+	}
+	[data-browser="chrome"] & select::picker(select) {
+		color: initial;
+		color-scheme: only light;
+	}
+	[data-browser="firefox"] & option {
+		:root[dark] & {
+			color: currentColor;
+		}
+		:root:not([dark]) & {
+			color: initial;
 		}
 	}
 	input[type="text"], input[type="url"], textarea {
