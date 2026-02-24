@@ -79,6 +79,12 @@ export async function initialize(e) {
 			}
 		}
 	}, { passive: true });
+
+	/** @type {HTMLVideoElement?} */
+	const video = document.querySelector('#movie_player video');
+	video?.addEventListener('ratechange', function () {
+		sessionStorage.setItem('yt-player-playback-rate', `{"data":"${this.playbackRate}"}`);
+	}, { passive: true });
 }
 
 /**
