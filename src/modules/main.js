@@ -46,6 +46,7 @@ export async function initialize(e) {
 	await state.controller.start().then(() => {
 		self.dispatchEvent(new CustomEvent('ytlcf-ready'));
 		initPipMenu();
+		state.succeeded = true;
 	}).catch(reason => {
 		console.warn(reason);
 		state.succeeded = false;
