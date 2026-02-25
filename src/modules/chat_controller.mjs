@@ -86,7 +86,7 @@ export class LiveChatController {
 		document.getElementById('ytlcf-panel')?.remove();
 
 		// get storage data
-		s.load();
+		await s.load();
 
 		const form = await this.panel.createForm();
 		// bind i18n labels
@@ -556,7 +556,7 @@ export class LiveChatController {
 	 */
 	updateCurrentItem(item) {
 		const lw = this.layer.element.clientWidth;
-		const isLong = item.clientWidth >= lw * (parseInt(s.styles.max_width) / 100 || 1);
+		const isLong = item.clientWidth >= lw * (Number.parseInt(s.styles.max_width) / 100 || 1);
 		item.classList[isLong ? 'add' : 'remove']('wrap');
 		item.style.setProperty('--yt-lcf-translate-x', `-${lw + item.clientWidth}px`);
 	}
