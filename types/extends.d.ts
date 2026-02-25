@@ -19,9 +19,12 @@ type DocumentPictureInPictureOptions = {
 /*
  * Interface Definitions
  */
-interface DocumentPictureInPicture {
+interface DocumentPictureInPictureEvent extends Event {
+	window: Window;
+}
+interface DocumentPictureInPicture extends EventTarget {
 	window?: Window;
-	requestWindow: (options?: DocumentPictureInPictureOptions) => Promise<Window>;
+	requestWindow(options?: DocumentPictureInPictureOptions): Promise<Window>;
 }
 
 interface Window {

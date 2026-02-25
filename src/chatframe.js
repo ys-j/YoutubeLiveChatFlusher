@@ -6,8 +6,10 @@ self.browser ??= chrome;
 const isLive = location.pathname === '/live_chat';
 const modeName = isLive ? 'mode_livestream' : 'mode_replay';
 
-browser.storage.local.get('others').then(storage => {
-	const mode = storage?.others?.[modeName] ?? 1;
+const url = browser.runtime.getURL('./modules/store.mjs');
+import(url).then((/** @type {typeof import('./modules/store.mjs')} */ module) => {
+	const s = module.store;
+	const mode = s.others?.[modeName] ?? 1;
 	if (mode !== 0) return;
 	const ev = new CustomEvent('ytlcf-start');
 	top?.document.dispatchEvent(ev);

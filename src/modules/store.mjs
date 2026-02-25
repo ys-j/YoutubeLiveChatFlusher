@@ -130,9 +130,7 @@ function ConfigHandler(name) {
 	this.set = function (target, prop, val, recv) {
 		if (prop in target) {
 			target[prop] = val;
-			browser.storage.local.set({
-				[name]: target
-			});
+			browser.storage.local.set({ [name]: target });
 			return true;
 		}
 		return false;
@@ -162,9 +160,9 @@ export class ConfigStore {
 	 * @template {typeof this.data} T
 	 * @param { { -readonly [P in keyof T]?: Partial<T[P]> } } [json] 
 	 */
-	async load(json) {
+	async load(json = undefined) {
 		/** @type {Partial<UnwrapReadonly<typeof this.data>>} */
-		const stored = json ?? await browser.storage.local.get();
+		const stored = json ?? await browser.storage.local.get(null);
 		Object.assign(this.data.styles, stored.styles);
 		Object.assign(this.data.others, stored.others);
 		for (const k of Object.keys(stored.parts ?? {})) {

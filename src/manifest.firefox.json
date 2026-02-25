@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "__MSG_manifestName__",
-	"version": "0.13.2",
+	"version": "0.13.4",
 	"author": "_y_s",
 	"action": {},
 	"background": {
