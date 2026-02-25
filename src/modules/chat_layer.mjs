@@ -104,10 +104,10 @@ export class LiveChatLayer {
 	resetAnimationDuration(inputElem, pxPerSec = s.others.px_per_sec) {
 		if (pxPerSec > 0) {
 			const durationBySpeed = (this.element.getBoundingClientRect().width / pxPerSec) || 8;
-			s.styles.animation_duration = durationBySpeed.toFixed(1) + 's';
+			s.data.styles.animation_duration = durationBySpeed.toFixed(1) + 's';
 			if (inputElem) inputElem.value = durationBySpeed.toFixed(1);
 		} else {
-			if (inputElem) s.styles.animation_duration = inputElem.value + 's';
+			if (inputElem) s.data.styles.animation_duration = inputElem.value + 's';
 		}
 		this.element.style.setProperty('--yt-lcf-animation-duration', s.styles.animation_duration);
 	}
