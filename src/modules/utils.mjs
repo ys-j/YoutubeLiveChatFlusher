@@ -10,6 +10,8 @@ export function isNotPip() {
 	return !self.documentPictureInPicture?.window;
 }
 
+const domParser = new DOMParser();
+
 /**
  * Loads template html as DOM.
  * @param {string} path file path of templete html
@@ -18,7 +20,9 @@ export function isNotPip() {
 export async function loadTemplateDocument(path) {
 	const url = browser.runtime.getURL(path);
 	const text = await fetch(url).then(res => res.text());
-	return Document.parseHTMLUnsafe(text);
+	// Firefox 149+ will crash with Document.parseHTMLUnsafe().
+	// return Document.parseHTMLUnsafe(text);
+	return domParser.parseFromString(text, 'text/html');
 }
 
 /**

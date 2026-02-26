@@ -30,7 +30,7 @@ export function initPipMenu() {
  * @param {Element} element element of video player container
  * @returns {Promise<Window>} document picture-in-picture window
  */
-export async function openPip(element) {
+async function openPip(element) {
 	const parent = element.parentElement;
 	if (!parent) throw new Error('No parent element.');
 	const pipWindow = await top?.documentPictureInPicture?.requestWindow({
@@ -56,9 +56,13 @@ export async function openPip(element) {
 	pipLink.type = 'text/css';
 	pipLink.href = browser.runtime.getURL('../styles/content.css');
 	const pipStyle = document.createElement('style');
-	pipStyle.textContent = `:root,body,body>*{height:100%;overflow:hidden}.ytp-miniplayer-button,.ytp-size-button,.ytp-fullscreen-button{display:none!important}#yt-lcf-pp{display:none!important}`;
-	
-	pipWindow.document.head.append(pipMetaCharset, pipTitle, ...Array.from(element.ownerDocument.styleSheets, sheet => {
+	pipStyle.textContent = `\
+	:root,body,body>*{height:100%;overflow:hidden}\
+	.ytp-miniplayer-button,.ytp-size-button,.ytp-fullscreen-button{display:none!important}\
+	#yt-lcf-pp{display:none!important}\
+	`;
+
+	const linkOrStyles = Array.from(element.ownerDocument.styleSheets, sheet => {
 		if (sheet.href) {
 			const link = document.createElement('link');
 			link.rel = 'stylesheet';
@@ -71,7 +75,8 @@ export async function openPip(element) {
 			style.textContent = Array.from(sheet.cssRules, rule => rule.cssText).join('');
 			return style;
 		}
-	}), pipLink, pipStyle);
+	});
+	pipWindow.document.head.append(pipMetaCharset, pipTitle, ...linkOrStyles, pipLink, pipStyle);
 
 	const pipMarker = document.createElement('span');
 	pipMarker.id = 'yt-lcf-pip-marker';
