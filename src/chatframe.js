@@ -7,10 +7,11 @@ const isLive = location.pathname === '/live_chat';
 const modeName = isLive ? 'mode_livestream' : 'mode_replay';
 
 const url = browser.runtime.getURL('./modules/store.mjs');
-import(url).then((/** @type {typeof import('./modules/store.mjs')} */ module) => {
-	const s = module.store;
-	const mode = s.others?.[modeName] ?? 1;
-	if (mode !== 0) return;
+import(url)
+.then((/** @type {typeof import('./modules/store.mjs')} */ module) => module.store.load())
+.then(s => {
+	const mode = s.others[modeName] ?? 1;
+	if (mode) return;
 	const ev = new CustomEvent('ytlcf-start');
 	top?.document.dispatchEvent(ev);
 	document.addEventListener('yt-action', onAction, { passive: true });
