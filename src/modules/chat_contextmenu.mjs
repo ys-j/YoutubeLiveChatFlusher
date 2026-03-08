@@ -102,7 +102,7 @@ export class LiveChatContextMenu {
 			document.addEventListener('mouseup', () => {
 				target.style.cursor = '';
 				document.removeEventListener('mousemove', onmousemove);
-			}, { passive: true, once: true });
+			}, { once: true, passive: true });
 		}, { once: true });
 	}
 

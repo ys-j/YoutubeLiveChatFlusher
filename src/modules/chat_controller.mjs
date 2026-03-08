@@ -339,7 +339,7 @@ export class LiveChatController {
 		const inputFontSize = /** @type {HTMLInputElement} */ (ctrls.font_size);
 		const inputLineNum = /** @type {HTMLInputElement} */ (ctrls.number_of_lines);
 		if (lines > 0) {
-			const sizeByLines = Math.floor(rect.height / lines / Number.parseFloat(s.styles.line_height));
+			const sizeByLines = (rect.height / lines / Number.parseFloat(s.styles.line_height)) | 0;
 			if (s.others.type_of_lines > 0) {
 				le.style.setProperty('--yt-lcf-font-size', `max(${s.styles.font_size}, ${sizeByLines}px)`);
 				inputFontSize.valueAsNumber = sizeByLines;
@@ -347,10 +347,12 @@ export class LiveChatController {
 				le.style.setProperty('--yt-lcf-font-size', `${sizeByLines}px`);
 			}
 			inputLineNum.valueAsNumber = lines;
+			this.layoutCache.resize(lines);
 		} else {
-			const linesBySize = Math.floor(rect.height / Number.parseFloat(s.styles.font_size) / Number.parseFloat(s.styles.line_height));
+			const linesBySize = (rect.height / Number.parseFloat(s.styles.font_size) / Number.parseFloat(s.styles.line_height)) | 0;
 			le.style.setProperty('--yt-lcf-font-size', s.styles.font_size);
 			inputLineNum.valueAsNumber = linesBySize;
+			this.layoutCache.resize(linesBySize);
 		}
 
 		/** @type {HTMLInputElement} */ (ctrls.time_shift).valueAsNumber = s.others.time_shift || 0;
@@ -494,7 +496,7 @@ export class LiveChatController {
 		for (const action of filtered.delete) {
 			// @ts-expect-error
 			const id = action.markChatItemAsDeletedAction.targetItemId;
-			if (this.layoutCache.delete(id)) {
+			if (this.layoutCache.delete(id).some(v => v)) {
 				const target = root.getElementById(id);
 				target?.remove();
 			} else {

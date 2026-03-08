@@ -55,7 +55,7 @@ export async function initialize(e) {
 		self.addEventListener('yt-navigate-finish', onYtNavigateFinish, { passive: true });
 		onYtNavigateFinish(e);
 	} else {
-		self.addEventListener('yt-navigate-finish', initialize, { passive: true, once: true });
+		self.addEventListener('yt-navigate-finish', initialize, { once: true, passive: true });
 		return;
 	}
 

@@ -120,12 +120,13 @@ export class LiveChatLayer {
 		if (numberOfLines) {
 			const rect = this.element.getBoundingClientRect();
 			const lh = Number.parseFloat(s.styles.line_height) || 1.4;
-			const sizeByLines = Math.floor(rect.height / lh / numberOfLines);
+			const sizeByLines = (rect.height / lh / numberOfLines) | 0;
 			this.element.style.setProperty('--yt-lcf-font-size', [
 				`${sizeByLines}px`,
 				`max(${s.styles.font_size}, ${sizeByLines}px)`,
 				`min(${s.styles.font_size}, ${sizeByLines}px)`,
 			][s.others.type_of_lines]);
+			this.#controller.layoutCache.resize(numberOfLines);
 		} else {
 			this.element.style.setProperty('--yt-lcf-font-size', s.styles.font_size);
 		}
