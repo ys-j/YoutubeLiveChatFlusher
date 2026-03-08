@@ -180,6 +180,7 @@ export class ConfigStore {
 		Object.assign(this.data.mutedWords, stored.mutedWords);
 		Object.assign(this.data.translation, stored.translation);
 		this.isLoaded = true;
+		return this;
 	}
 
 	get styles() { return this.proxies.styles; }
