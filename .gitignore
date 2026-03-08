@@ -1,3 +1,4 @@
 .vscode
 dist
-*.bat
+biome.json
+build.bat

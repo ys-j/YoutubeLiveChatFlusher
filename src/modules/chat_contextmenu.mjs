@@ -33,10 +33,6 @@ export class LiveChatContextMenu {
 	async show(event, target, panel) {
 		while (this.#element.firstChild) this.#element.firstChild.remove();
 		const doc = await loadTemplateDocument('../templates/panel_contextmenu.html');
-		doc.querySelectorAll('[data-i18n]').forEach(el => {
-			const key = el.getAttribute('data-i18n');
-			if (key) el.textContent = browser.i18n.getMessage(key);
-		});
 		this.#element.append(...doc.body.childNodes);
 		this.#element.style.display = '';
 		this.#element.style.opacity = '1';
@@ -71,7 +67,7 @@ export class LiveChatContextMenu {
 		for (const el of composedPath) {
 			const name = /** @type {Element} */ (el).getAttribute('data-menu');
 			if (name && name in menus) {
-				// @ts-ignore
+				// @ts-expect-error
 				menus[name](target, panel);
 				this.hide();
 				return;
@@ -92,9 +88,9 @@ export class LiveChatContextMenu {
 	#moveMessage(target) {
 		target.style.cursor = 'move';
 		target.addEventListener('mousedown', e => {
-			const [_, y] = (target.style.translate || '0 0').split(' ').map(v => Number.parseInt(v));
+			const [_, y] = (target.style.translate || '0 0').split(' ').map(v => Number.parseInt(v, 10));
 			const computedStyle = getComputedStyle(target);
-			const speed = Number.parseInt(target.style.getPropertyValue('--yt-lcf-translate-x')) / Number.parseFloat(computedStyle.animationDuration);
+			const speed = Number.parseInt(target.style.getPropertyValue('--yt-lcf-translate-x'), 10) / Number.parseFloat(computedStyle.animationDuration);
 			const x = speed * Number.parseFloat(computedStyle.animationDelay);
 			const startX = e.x + x, startY = e.y - y;
 			/** @type {(e: MouseEvent) => void} */

@@ -15,14 +15,27 @@ const domParser = new DOMParser();
 /**
  * Loads template html as DOM.
  * @param {string} path file path of templete html
+ * @param {string[]} [i18nAttrs] attributes that require i18n
  * @returns {Promise<Document>} document object
  */
-export async function loadTemplateDocument(path) {
+export async function loadTemplateDocument(path, i18nAttrs = []) {
 	const url = browser.runtime.getURL(path);
 	const text = await fetch(url).then(res => res.text());
 	// Firefox 149+ will crash with Document.parseHTMLUnsafe().
-	// return Document.parseHTMLUnsafe(text);
-	return domParser.parseFromString(text, 'text/html');
+	const doc = domParser.parseFromString(text, 'text/html');
+	for (const el of doc.querySelectorAll('[data-i18n]')) {
+		const key = el.getAttribute('data-i18n');
+		if (key) el.textContent = browser.i18n.getMessage(key);
+	}
+	for (const attr of i18nAttrs) {
+		/** @type {NodeListOf<HTMLElement>} */
+		const elems = doc.querySelectorAll(`[data-i18n-${attr}]`);
+		for (const el of elems) {
+			const key = el.getAttribute(`data-i18n-${attr}`);
+			if (key) el.setAttribute(attr, browser.i18n.getMessage(key));
+		}
+	}
+	return doc;
 }
 
 /**
@@ -103,7 +116,7 @@ export function filterMessage(str, options = {}) {
  * @returns {number[]} array of integer `[RR, GG, BB]`
  */
 export function getColorRGB(long) {
-	/** @type {string[]} */ 
+	/** @type {string[]} */
 	const separated = long.toString(16).match(/[0-9a-f]{2}/g) || [];
 	return separated.map(hex => Number.parseInt(hex, 16)).slice(1);
 }
@@ -126,7 +139,9 @@ export function formatHexColor(css, inherit = '#ffffff') {
 	} else if (color.startsWith('rgb')) {
 		const [_, r, g, b] = color.match(/(\d+),?\s*(\d+),?\s*(\d+)/) || [];
 		if (_) {
-			return '#' + [r, g, b].map(s => Number.parseInt(s).toString(16).padStart(2, '0')).join('');
+			/** @type {(s: string) => string} */
+			const dec2hex = s => Number.parseInt(s, 10).toString(16).padStart(2, '0');
+			return '#' + [r, g, b].map(dec2hex).join('');
 		}
 	}
 	return inherit;

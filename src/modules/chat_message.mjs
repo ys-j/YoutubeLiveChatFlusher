@@ -131,7 +131,7 @@ export class LiveChatItemLayout {
 	 */
 	constructor(item) {
 		this.#key = Object.keys(item)[0];
-		// @ts-ignore
+		// @ts-expect-error
 		this.#renderer = item[this.#key];
 
 		this.element = document.createElement('div');
@@ -257,7 +257,7 @@ export class LiveChatItemLayout {
 					header, // @ts-ignore
 				} = /** @type {LiveChat.SponsorshipsGiftPurchaseAnnouncementRenderer["liveChatSponsorshipsGiftPurchaseAnnouncementRenderer"]} */ (this.#renderer);
 				const headerRenderer = header.liveChatSponsorshipsHeaderRenderer;
-				const count = headerRenderer.primaryText?.runs?.filter(r => !Number.isNaN(parseInt(r.text)))[0]?.text;
+				const count = headerRenderer.primaryText?.runs?.filter(r => !Number.isNaN(Number.parseInt(r.text, 10)))[0]?.text;
 				if (!count) break;
 				const div = document.createElement('div');
 				div.className = 'header';
@@ -373,7 +373,7 @@ export class LiveChatItemLayout {
 
 		const hh = cache.dom.host.clientHeight, hw = cache.dom.host.clientWidth;
 		const ch = this.element.clientHeight, cw = this.element.clientWidth;
-		if (cw >= hw * (parseInt(s.styles.max_width) / 100 || 1)) {
+		if (cw >= hw * (Number.parseInt(s.styles.max_width, 10) / 100 || 1)) {
 			this.element.classList.add('wrap');
 		}
 		
@@ -391,7 +391,7 @@ export class LiveChatItemLayout {
 			}
 		}
 
-		const fs = Number.parseInt(s.styles.font_size) || 36;
+		const fs = Number.parseInt(s.styles.font_size, 10) || 36;
 		const lhf = Number.parseFloat(s.styles.line_height) || 1.4;
 
 		let y = 0;
@@ -448,7 +448,7 @@ export class LiveChatItemLayout {
 				layout = new ChatLayoutInfo(this.element, y);
 				const len = grouped[y].filter(layout => layout.isCollidable(layout)).length || 1;
 				this.element.style.top = `${(y + dy) * lhf}em`;
-				this.element.style.opacity = `${Math.max(.5, Math.pow(o, len))}`;
+				this.element.style.opacity = `${Math.max(.5, o ** len)}`;
 				this.element.style.zIndex = `-${len}`;
 				this.element.style.visibility = '';
 				cache.set(this.id, layout);
@@ -500,14 +500,14 @@ class ChatLayoutInfo {
 	 */
 	constructor(elem, line = undefined) {
 		this.#rect = elem.getBoundingClientRect();
-		this.line = line ?? Number.parseInt(elem.getAttribute('data-line') || '0');
+		this.line = line ?? Number.parseInt(elem.getAttribute('data-line') || '0', 10);
 
 		const computedStyle = getComputedStyle(elem);
-		const [_durMatch, durNum, durUnit] = computedStyle.animationDuration.match(/^([\d\.]+)(\D+)/) || [];
+		const [_durMatch, durNum, durUnit] = computedStyle.animationDuration.match(/^([\d.]+)(\D+)/) || [];
 		const durFactor = durNum && durUnit && { 's': 1000, 'ms': 1 }[durUnit] || 0;
 		this.duration = durFactor ? Number.parseFloat(durNum) * durFactor : Number.parseFloat(s.styles.animation_duration) * 1000;
 
-		const [_translateMatch, translateX] = elem.style.getPropertyValue('--yt-lcf-translate-x').match(/^-?([\d\.]+)px/) || [];
+		const [_translateMatch, translateX] = elem.style.getPropertyValue('--yt-lcf-translate-x').match(/^-?([\d.]+)px/) || [];
 		this.speed = Number.parseFloat(translateX) / this.duration;
 		this.createdOn = Date.now();
 	}

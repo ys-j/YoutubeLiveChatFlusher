@@ -71,7 +71,7 @@ export class LiveChatLayer {
 	 */
 	clear() {
 		while (this.root.childElementCount > 4) {
-			// @ts-ignore
+			// @ts-expect-error
 			this.root.removeChild(this.root.lastChild);
 		}
 		return this;

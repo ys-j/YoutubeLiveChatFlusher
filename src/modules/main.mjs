@@ -37,7 +37,7 @@ const FetchingModeEnum = Object.freeze({
  */
 
 /**
- * @param { CustomEvent<NavigateFinishEventDetail> | { target: EventTarget, detail: NavigateFinishEventDetail } } e 
+ * @param { CustomEvent<NavigateFinishEventDetail> | { target: EventTarget, detail: NavigateFinishEventDetail } } e
  */
 export async function initialize(e) {
 	// run app
@@ -88,13 +88,13 @@ export async function initialize(e) {
 }
 
 /**
- * @param { CustomEvent<NavigateFinishEventDetail> | { target: EventTarget, detail: NavigateFinishEventDetail } } e 
+ * @param { CustomEvent<NavigateFinishEventDetail> | { target: EventTarget, detail: NavigateFinishEventDetail } } e
  */
 async function onYtNavigateFinish(e) {
 	if (e.detail?.pageType !== 'watch') return;
 	const toggle = state.controller?.player.querySelector('#yt-lcf-cb');
 	toggle?.setAttribute('aria-disabled', 'true');
-	
+
 	/** @type {HTMLVideoElement | null | undefined} */
 	const video = (isNotPip() ? self : self.documentPictureInPicture?.window)?.document.querySelector('#movie_player video');
 	const videoContainer = video?.parentElement;
@@ -120,7 +120,7 @@ async function onYtNavigateFinish(e) {
 				toggle?.removeAttribute('aria-disabled');
 			}, { passive: true });
 			break;
-		case FetchingModeEnum.INDEPENDENT:
+		case FetchingModeEnum.INDEPENDENT: {
 			const timer = setInterval(() => {
 				if (state.action.size > 0) {
 					clearInterval(timer);
@@ -157,6 +157,8 @@ async function onYtNavigateFinish(e) {
 				console.warn(message);
 			}
 			clearInterval(timer);
+			break;
+		}
 	}
 }
 
