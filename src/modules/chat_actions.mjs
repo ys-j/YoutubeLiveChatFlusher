@@ -16,11 +16,11 @@ export class ReplayActionBuffer {
 	pushActions(rawActions) {
 		for (const container of rawActions) {
 			const rawAction = container.replayChatItemAction;
-			const time = Number.parseInt(rawAction.videoOffsetTimeMsec);
+			const time = Number.parseInt(rawAction.videoOffsetTimeMsec, 10);
 			const actions = rawAction.actions;
 			const set = this.#map.get(time);
 			if (set) {
-				actions.forEach(a => set.add(JSON.stringify(a)));
+				for (const a of actions) set.add(JSON.stringify(a));
 			} else {
 				this.#map.set(time, new Set(actions.map(a => JSON.stringify(a))));
 			}
@@ -78,7 +78,6 @@ export async function* getReplayChatActionsAsyncIterable(signal, initialContinua
 	let seekInfo;
 	let controller = new AbortController();
 	signal.addEventListener('ytlcf-seek', e => {
-		// @ts-ignore
 		seekInfo = /** @type { { offset: number } } */ (e.detail);
 		controller.abort();
 	}, { passive: true });
@@ -103,7 +102,7 @@ export async function* getReplayChatActionsAsyncIterable(signal, initialContinua
 		} else {
 			body = getContinuation(contents, true);
 			if (prev !== initialContinuation) continuations.set(prev, body.continuation);
-			const offset = Number.parseInt(contents.actions?.at(-1)?.replayChatItemAction.videoOffsetTimeMsec || '-1');
+			const offset = Number.parseInt(contents.actions?.at(-1)?.replayChatItemAction.videoOffsetTimeMsec || '-1', 10);
 			if (offset >= prevOffset) {
 				const playbackRate = JSON.parse(sessionStorage.getItem('yt-player-playback-rate') || `{"data":"1"}`).data || '1';
 				const offsetDiff = (offset - prevOffset) / Number.parseFloat(playbackRate) - 250 | 0;
@@ -217,4 +216,4 @@ function isRecursiveMap(map) {
 		if (keys[i] !== values[i]) return false;
 	}
 	return true;
-};
+}

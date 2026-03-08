@@ -43,7 +43,7 @@ async function openPip(element) {
 	pipWindow?.addEventListener('keydown', enableKeyboardShortcutOnChildWindow, true);
 
 	top?.addEventListener('yt-navigate-finish', onYtNavigateFinishDispatchPip, { passive: true });
-	
+
 	for (const attr of document.documentElement.attributes) {
 		pipWindow.document.documentElement.attributes.setNamedItem(attr.cloneNode());
 	}
@@ -87,7 +87,7 @@ async function openPip(element) {
 
 	const video = pipWindow.document.querySelector('video');
 	video?.addEventListener('ytlcf-resize', onResizeVideo, { passive: true });
-	video?.addEventListener('loadeddata', e => {
+	video?.addEventListener('loadeddata', () => {
 		video.dispatchEvent(new CustomEvent('ytlcf-resize', { detail: pipWindow }));
 	}, { passive: true });
 
@@ -117,7 +117,7 @@ async function openPip(element) {
 				/** @type {HTMLElement?} */
 				const b = parent.querySelector('.ytp-chrome-bottom');
 				if (b) {
-					const left = Number.parseInt(b.style.left);
+					const left = Number.parseInt(b.style.left, 10);
 					b.style.width = `${v.clientWidth - left * 2}px`;
 				}
 				v.removeEventListener('ytlcf-resize', onResizeVideo);
@@ -130,10 +130,7 @@ async function openPip(element) {
 	}, { passive: true });
 	return pipWindow;
 
-	/**
-	 * @param {CustomEvent} e 
-	 */
-	function onYtNavigateFinishDispatchPip(e) {
+	function onYtNavigateFinishDispatchPip() {
 		pipWindow?.dispatchEvent(new CustomEvent('ytlcf-pip-update'));
 	}
 }
@@ -146,7 +143,7 @@ function updateProgressBarSize(win) {
 	/** @type {HTMLElement?} */
 	const bottomElem = win.document.querySelector('.ytp-chrome-bottom');
 	if (bottomElem) {
-		const left = Number.parseInt(bottomElem.style.left);
+		const left = Number.parseInt(bottomElem.style.left, 10);
 		const bottomWidth = win.innerWidth - left * 2;
 		bottomElem.style.width = `${bottomWidth}px`;
 
@@ -155,7 +152,7 @@ function updateProgressBarSize(win) {
 		if (progressBar) {
 			/** @type {HTMLElement?} */
 			const hoverContainer = bottomElem.querySelector('.ytp-chapter-hover-container');
-			const containerWidth = Number.parseInt(hoverContainer?.style.width || '0');
+			const containerWidth = Number.parseInt(hoverContainer?.style.width || '0', 10);
 			if (containerWidth > 0) {
 				progressBar.style.transformOrigin = '0 0 0';
 				progressBar.style.transform = `scaleX(${bottomWidth / containerWidth})`;
@@ -171,7 +168,7 @@ function updateProgressBarSize(win) {
 
 /**
  * @this {HTMLVideoElement}
- * @param {CustomEvent<Window>} e 
+ * @param {CustomEvent<Window>} e
  */
 function onResizeVideo(e) {
 	const { innerWidth: ww, innerHeight: wh } = e.detail;
@@ -187,8 +184,8 @@ function onResizeVideo(e) {
 
 const shortcutKeys = ['f', 'i', 't'];
 
-/** 
- * @param {KeyboardEvent} e 
+/**
+ * @param {KeyboardEvent} e
  */
 function disableKeyboardShortcutOnParentWindow(e) {
 	if (shortcutKeys.includes(e.key)) {
@@ -197,7 +194,7 @@ function disableKeyboardShortcutOnParentWindow(e) {
 }
 
 /**
- * @param {KeyboardEvent} e 
+ * @param {KeyboardEvent} e
  */
 function enableKeyboardShortcutOnChildWindow(e) {
 	if (!shortcutKeys.includes(e.key)) {

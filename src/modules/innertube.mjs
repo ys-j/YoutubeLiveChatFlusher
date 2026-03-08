@@ -1,3 +1,5 @@
+/** biome-ignore-all lint/complexity/useLiteralKeys: To recognize innertube config data */
+
 const defaultClient = {
 	clientName: 'WEB',
 	clientVersion: '2.20251022.01.00',
@@ -11,7 +13,7 @@ const defaultClient = {
  * @param {object} [options] request options
  * @param {boolean} [options.auth] if required logged in
  * @param {boolean} [options.key] if required API key
- * @returns {Promise<Record<string, any>>}
+ * @returns {Promise<Record<string, any>>} JSON object
  */
 export async function fetchInnerTube(url, body, options = {}) {
 	const stored = sessionStorage.getItem('ytlcf-cfg');
@@ -45,7 +47,7 @@ export async function fetchInnerTube(url, body, options = {}) {
  */
 export async function getAuthorication(data) {
 	const datasyncId = data['DATASYNC_ID'].split('||')[0];
-	const timestamp = Math.floor(Date.now() / 1e3);
+	const timestamp = (Date.now() / 1e3) | 0;
 	const cookies = new Map(document.cookie.split(/;\s*/).map(kv => {
 		const pos = kv.indexOf('=');
 		return pos >= 0 ? [ kv.substring(0, pos), kv.substring(pos + 1) ] : [ '', '' ];

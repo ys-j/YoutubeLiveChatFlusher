@@ -9,7 +9,7 @@ export class LiveChatPanel {
 	 * @type {LiveChatController}
 	 */
 	#controller;
-	
+
 	/**
 	 * Container element of the panel
 	 * @type {HTMLDivElement}
@@ -45,7 +45,8 @@ export class LiveChatPanel {
 			const x = clamp(this.element.offsetLeft + e.clientX - c.x, 10, le.clientWidth - this.element.clientWidth - 10);
 			const y = clamp(this.element.offsetTop + e.clientY - c.y, 10, le.clientHeight - this.element.clientHeight - 10);
 			this.move(x, y);
-			c.x = e.clientX, c.y = e.clientY;
+			c.x = e.clientX;
+			c.y = e.clientY;
 		};
 		const onmouseup = () => {
 			self.removeEventListener('mousemove', onmousemove);
@@ -55,7 +56,8 @@ export class LiveChatPanel {
 		this.element.addEventListener('mousedown', e => {
 			const tagName = /** @type {HTMLElement} */ (e.target)?.tagName;
 			if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tagName)) return;
-			c.x = e.clientX, c.y = e.clientY;
+			c.x = e.clientX;
+			c.y = e.clientY;
 			self.addEventListener('mousemove', onmousemove, { passive: true });
 			self.addEventListener('mouseup', onmouseup, { passive: true });
 			window.addEventListener('mouseup', onmouseup, { passive: true });
@@ -70,27 +72,27 @@ export class LiveChatPanel {
 	 * @returns {Promise<HTMLFormElement>} promise of content of the panel
 	 */
 	async createForm() {
-		const doc = await loadTemplateDocument('../templates/panel_form.html');
+		const doc = await loadTemplateDocument('../templates/panel_form.html', ['title', 'placeholder']);
 		this.form = doc.forms[0];
 
 		const buttons = this.form.querySelectorAll('button[role="tab"]');
 		const tabs = this.form.querySelectorAll('[role="tabpanel"]');
 		
-		buttons.forEach(btn => {
+		for (const btn of buttons) {
 			btn.addEventListener('click', () => {
-				buttons.forEach(btn => {
+				for (const btn of buttons) {
 					btn.setAttribute('aria-selected', 'false');
-				});
+				}
 				btn.setAttribute('aria-selected', 'true');
-				tabs.forEach(tab => {
+				for (const tab of tabs) {
 					/** @type {HTMLElement} */ (tab).hidden = true;
-				});
+				}
 				const id = btn.getAttribute('aria-controls');
 				/** @type {?HTMLElement | undefined} */
 				const f = this.form?.querySelector(`#${id}`);
 				if (f) f.hidden = false;
 			}, { passive: true });
-		});
+		}
 
 		const isDarkMode = document.documentElement.hasAttribute('dark');
 		/** @param {string[]} c */
@@ -125,7 +127,7 @@ export class LiveChatPanel {
 				});
 	
 				const select = dialog.querySelector('select');
-				// @ts-ignore
+				// @ts-expect-error
 				window.queryLocalFonts().then(fonts => {
 					if (select) {
 						const families = new Set(fonts.map(f => f.family));
@@ -227,10 +229,11 @@ export class LiveChatPanel {
 					const x = clamp(le.offsetLeft + e.clientX - c.x, 0, vc.clientWidth - le.clientWidth);
 					const y = clamp(le.offsetTop + e.clientY - c.y, 0, vc.clientHeight - le.clientHeight);
 					this.#controller.layer.move(x, y);
-					c.x = e.clientX, c.y = e.clientY;
+					c.x = e.clientX;
+					c.y = e.clientY;
 				};
 				/** @type {(e: MouseEvent) => void} */
-				const onmouseup = e => {
+				const onmouseup = () => {
 					self.removeEventListener('mousemove', onmousemove);
 					self.removeEventListener('mouseup', onmouseup);
 					window.removeEventListener('mouseup', onmouseup);
@@ -238,7 +241,8 @@ export class LiveChatPanel {
 				/** @type {(e: MouseEvent) => void} */
 				const onmousedown = e => {
 					if (e.clientX > le.clientWidth - 64 && e.clientY > le.clientHeight - 64) return;
-					c.x = e.clientX, c.y = e.clientY;
+					c.x = e.clientX;
+					c.y = e.clientY;
 					self.addEventListener('mousemove', onmousemove, { passive: true });
 					self.addEventListener('mouseup', onmouseup, { passive: true });
 					window.addEventListener('mouseup', onmouseup, { passive: true });
@@ -266,14 +270,13 @@ export class LiveChatPanel {
 							width: (le.clientWidth / vc.clientWidth) * 100,
 							height: (le.clientHeight / vc.clientHeight) * 100,
 						}
-						Object.entries(percents).forEach(([prop, val]) => {
-							// @ts-ignore
+						for (const [prop, val] of Object.entries(percents)) {
 							if (val === defaults[prop]) {
 								styleMap.delete(prop);
 							} else if (val) {
 								styleMap.set(prop, val.toFixed(1) + '%');
 							}
-						});
+						}
 						styleMap.delete('');
 						if (input) {
 							const newValue = Array.from(styleMap.entries(), entry => entry.join(': ')).join('; ');
@@ -424,23 +427,26 @@ export class LiveChatPanel {
 		if (!ctrls) return;
 		if (elem.tagName === 'SELECT') {
 			if (name in s.others) {
-				const val = Number.parseInt(elem.value);
+				const val = Number.parseInt(elem.value, 10);
 				if (name === 'translation') {
 					const prefix = /** @type {HTMLInputElement} */ (ctrls.prefix_lang);
 					prefix.disabled = val === 0;
 					s.others[name] = val * (prefix.checked ? -1 : 1);
-					// @ts-ignore
 					const cb = /** @type {NodeListOf<HTMLInputElement>} */ (ctrls.except_lang);
 					if (val) {
 						const i = Math.abs(val) - 1;
 						cb[i].checked = true;
-						cb.forEach((e, _i) => e.disabled = _i === i);
+						for (let j = 0; j < cb.length; j++) {
+							cb[j].disabled = i === j;
+						}
 						s.others.except_lang |= 1 << i;
 					} else {
-						cb.forEach(e => e.disabled = true);
+						for (const e of cb) {
+							e.disabled = true;
+						}
 					}
 				} else {
-					// @ts-ignore
+					// @ts-expect-error
 					s.others[name] = val;
 				}
 				switch (name) {
@@ -460,13 +466,13 @@ export class LiveChatPanel {
 					}
 				}
 			} else if (name === 'muted_words_mode') {
-				const mode = Number.parseInt(elem.value);
+				const mode = Number.parseInt(elem.value, 10);
 				s.mutedWords.mode = mode;
 				const replacement = /** @type {HTMLInputElement} */ (ctrls.muted_words_replacement);
 				replacement.title = mode === MutedWordModeEnum.CHAR ? browser.i18n.getMessage('tooltip_mutedWordsReplacement') : '';
 			}
 		} else if (elem.classList.contains('styles') && name) {
-			// @ts-ignore
+			// @ts-expect-error
 			s.styles[name] = elem.value + (elem.getAttribute('data-unit') || '');
 			if (le) {
 				switch (name) {
@@ -480,13 +486,13 @@ export class LiveChatPanel {
 					}
 					case 'max_width': layer.updateCurrentItemStyle();
 				}
-				// @ts-ignore
+				// @ts-expect-error
 				le.style.setProperty('--yt-lcf-' + name.replace(/_/g, '-'), s.styles[name]);
 			}
 		} else if (name.startsWith('stroke_')) {
-			// @ts-ignore
+			// @ts-expect-error
 			s.styles[name] = elem.value + (elem.getAttribute('data-unit') || '');
-			// @ts-ignore
+			// @ts-expect-error
 			le.style.setProperty(name.replace('stroke_', '--yt-lcf-stroke-'), s.styles[name]);
 		} else if (name.endsWith('_display')) {
 			const match = name.match(/^(.+)_display$/);
@@ -494,23 +500,23 @@ export class LiveChatPanel {
 				const [_, type] = match;
 				if (type in s.parts && le) {
 					if (elem.value !== 'color') {
-						// @ts-ignore
+						// @ts-expect-error
 						s.parts[type][elem.value] = /** @type {HTMLInputElement} */ (elem).checked;
 						le.style.setProperty('--yt-lcf-' + name.replace(/_/g, '-') + '-' + elem.value, /** @type {HTMLInputElement} */ (elem).checked ? 'inherit' : 'none');
 					} else {
 						if (/** @type {HTMLInputElement} */ (elem).checked) {
-							// @ts-ignore
+							// @ts-expect-error
 							s.parts[type].color = /** @type {HTMLInputElement?} */ (ctrls[type + '_color'])?.value;
-							// @ts-ignore
+							// @ts-expect-error
 							le.style.setProperty('--yt-lcf-' + type.replace(/_/g, '-') + '-color', s.parts[type].color || 'inherit');
 						} else {
-							// @ts-ignore
+							// @ts-expect-error
 							s.parts[type].color = null;
 							le.style.removeProperty('--yt-lcf-' + type.replace(/_/g, '-') + '-color');
 						}
 					}
-					// @ts-ignore
-					s.parts[type] = s.parts[type];
+					// @ts-expect-error
+					s.parts[type] = s.data.parts[type];
 					layer.updateCurrentItemStyle(type);
 				}
 			}
@@ -519,12 +525,12 @@ export class LiveChatPanel {
 			if (match) {
 				const [_, type] = match;
 				if (/** @type {HTMLInputElement?} */ (elem.previousElementSibling?.firstElementChild)?.checked) {
-					// @ts-ignore
+					// @ts-expect-error
 					s.parts[type].color = /** @type {HTMLInputElement?} */ (ctrls[type + '_color'])?.value;
-					// @ts-ignore
+					// @ts-expect-error
 					le.style.setProperty('--yt-lcf-' + type.replace('_', '-') + '-color', s.parts[type].color || 'inherit');
 				} else {
-					// @ts-ignore
+					// @ts-expect-error
 					s.parts[type].color = null;
 					le.style.removeProperty('--yt-lcf-' + type.replace('_', '-') + '-color');
 				}
@@ -532,19 +538,19 @@ export class LiveChatPanel {
 		} else if (name === 'layer_css') {
 			const newCss = /** @type {HTMLInputElement?} */ (ctrls[name])?.value || '';
 			s.styles.layer_css = newCss;
-			le.style.cssText = le.style.cssText.replace(/\-\-yt\-lcf\-layer\-css: below;.*$/, '--yt-lcf-layer-css: below; ' + newCss);
+			le.style.cssText = le.style.cssText.replace(/--yt-lcf-layer-css: below;.*$/, '--yt-lcf-layer-css: below; ' + newCss);
 		} else if (name.endsWith('_css')) {
 			const match = name.match(/^(.*)_css$/);
 			if (match) {
 				const [_, type] = match;
 				const selector = type && type !== 'user_defined' ? '.' + type : '';
-				// @ts-ignore
+				// @ts-expect-error
 				s.cssTexts[selector] = /** @type {HTMLInputElement?} */ (ctrls[type + '_css'])?.value || '';
 				if (selector) {
 					const style = layer.root.getElementById('customcss');
 					if (style) {
 						const rule = new RegExp(`:host>${selector.replace('.', '\\.')}{.*?}`);
-						// @ts-ignore
+						// @ts-expect-error
 						style.textContent = (style.textContent || '').replace(rule, `:host>${selector}{${s.cssTexts[selector]}}`);
 					}
 				} else {
@@ -566,7 +572,7 @@ export class LiveChatPanel {
 			/** @type {NodeListOf<HTMLInputElement>} */
 			const list = this.form?.[name];
 			const val = Array.from(list).map(l => Number(l.checked)).reduce((a, c, i) => a + (c << i), 0);
-			// @ts-ignore
+			// @ts-expect-error
 			s.others[name] = val;
 			if (name === 'direction') {
 				le.classList[0b01 & val ? 'add': 'remove']('direction-reversed-y');

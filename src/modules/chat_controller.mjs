@@ -1,6 +1,6 @@
 /// <reference path="../../types/ytlivechatrenderer.d.ts" />
 
-import { DEFAULT_CONFIG, store as s } from './store.mjs';
+import { store as s } from './store.mjs';
 import { isNotPip, loadTemplateDocument, formatHexColor, getColorRGB } from './utils.mjs';
 
 import { LiveChatLayer } from './chat_layer.mjs'
@@ -87,26 +87,8 @@ export class LiveChatController {
 
 		// get storage data
 		await s.load();
-
-		const form = await this.panel.createForm();
-		// bind i18n labels
-		const i18nElems = form.querySelectorAll('[data-i18n]');
-		i18nElems.forEach(elem => {
-			const key = elem.getAttribute('data-i18n');
-			if (key) elem.textContent = browser.i18n.getMessage(key);
-		});
-		/** @type {NodeListOf<HTMLElement>} */
-		const i18nTitleElems = form.querySelectorAll('[data-i18n-title]');
-		i18nTitleElems.forEach(elem => {
-			const key = elem.getAttribute('data-i18n-title');
-			if (key) elem.title = browser.i18n.getMessage(key);
-		});
-		/** @type {NodeListOf<HTMLInputElement | HTMLTextAreaElement>} */
-		const i18nPlaceholderElems = form.querySelectorAll('[data-i18n-placeholder]');
-		i18nPlaceholderElems.forEach(elem => {
-			const key = elem.getAttribute('data-i18n-placeholder');
-			if (key) elem.placeholder = browser.i18n.getMessage(key);
-		});
+		// create form
+		await this.panel.createForm();
 
 		document.getElementById('ytlcf-layer')?.remove();
 		if (s.others.disabled) this.layer.hide();
@@ -170,10 +152,6 @@ export class LiveChatController {
 			if (!this.panel) return;
 			this.panel[this.panel.element.hidden ? 'show' : 'hide']();
 		}, { passive: true });
-		doc.querySelectorAll('[data-i18n]').forEach(el => {
-			const key = el.getAttribute('data-i18n');
-			if (key) el.textContent = browser.i18n.getMessage(key);
-		});
 		ytpPanelMenu.querySelector('#' + checkbox.id)?.remove();
 		ytpPanelMenu.querySelector('#' + popupmenu.id)?.remove();
 		ytpPanelMenu.querySelector('#' + pipmenu.id)?.remove();
@@ -225,10 +203,10 @@ export class LiveChatController {
 		const selects = form.querySelectorAll('select');
 		for (const select of selects) {
 			if (select.name in s.others) {
-				/** @type {number} */ // @ts-ignore
-				const val = s.others[select.name];
+				const name = /** @type {keyof typeof s.others} */ (select.name);
+				const val = s.others[name];
 				select.selectedIndex = Math.abs(val);
-				switch (select.name) {
+				switch (name) {
 					case 'emoji': {
 						le.setAttribute('data-emoji', Object.keys(EmojiModeEnum)[val].toLowerCase());
 						break;
@@ -250,13 +228,15 @@ export class LiveChatController {
 		for (const cb of checkboxes) {
 			const match = cb.name.match(/^(.+)_display$/);
 			if (match) {
-				const [_, type] = match;
-				if (type in s.parts) {
-					// @ts-ignore
+				const [_, _type] = match;
+				if (_type in s.parts) {
+					const type = /** @type {keyof typeof s.parts} */ (_type);
 					const part = s.parts[type];
+					// @ts-expect-error
 					cb.checked = part[cb.value];
 					switch (cb.value) {
 						case 'color': {
+							// @ts-expect-error
 							const saved = part.color;
 							if (saved) le.style.setProperty(`--yt-lcf-${type.replace(/_/g, '-')}-color`, saved);
 							else le.style.removeProperty(`--yt-lcf-${type.replace(/_/g, '-')}-color`);
@@ -264,6 +244,7 @@ export class LiveChatController {
 							if (picker) picker.value = saved || formatHexColor(getComputedStyle(le).getPropertyValue('--yt-lcf-' + picker.name.replace(/_/g, '-')));
 							break;
 						}
+						// biome-ignore lint/suspicious/noFallthroughSwitchClause: To use default case
 						case 'name': {
 							const div = /** @type {HTMLDivElement} */ (cb.closest('div'));
 							if (cb.checked) div.classList.add('outlined');
@@ -304,8 +285,8 @@ export class LiveChatController {
 					}
 					case 'overlapping':
 					case 'direction': {
-						const val = Number.parseInt(cb.value);
-						cb.checked = s.others[cb.name] & 1 << val ? true : false;
+						const val = Number.parseInt(cb.value, 10);
+						cb.checked = !!(s.others[cb.name] & 1 << val);
 						break;
 					}
 					case 'show_username': {
@@ -317,8 +298,8 @@ export class LiveChatController {
 						break;
 					}
 					case 'except_lang': {
-						const val = Number.parseInt(cb.value);
-						cb.checked = s.others.except_lang & 1 << val ? true : false;
+						const val = Number.parseInt(cb.value, 10);
+						cb.checked = !!(s.others.except_lang & 1 << val);
 						const abs = Math.abs(s.others.translation);
 						cb.disabled = abs === 0 || abs === val + 1;
 						break;
@@ -358,7 +339,7 @@ export class LiveChatController {
 		const inputFontSize = /** @type {HTMLInputElement} */ (ctrls.font_size);
 		const inputLineNum = /** @type {HTMLInputElement} */ (ctrls.number_of_lines);
 		if (lines > 0) {
-			const sizeByLines = Math.floor(rect.height / lines / Number.parseFloat(s.styles.line_height));
+			const sizeByLines = (rect.height / lines / Number.parseFloat(s.styles.line_height)) | 0;
 			if (s.others.type_of_lines > 0) {
 				le.style.setProperty('--yt-lcf-font-size', `max(${s.styles.font_size}, ${sizeByLines}px)`);
 				inputFontSize.valueAsNumber = sizeByLines;
@@ -366,10 +347,12 @@ export class LiveChatController {
 				le.style.setProperty('--yt-lcf-font-size', `${sizeByLines}px`);
 			}
 			inputLineNum.valueAsNumber = lines;
+			this.layoutCache.resize(lines);
 		} else {
-			const linesBySize = Math.floor(rect.height / Number.parseFloat(s.styles.font_size) / Number.parseFloat(s.styles.line_height));
+			const linesBySize = (rect.height / Number.parseFloat(s.styles.font_size) / Number.parseFloat(s.styles.line_height)) | 0;
 			le.style.setProperty('--yt-lcf-font-size', s.styles.font_size);
 			inputLineNum.valueAsNumber = linesBySize;
+			this.layoutCache.resize(linesBySize);
 		}
 
 		/** @type {HTMLInputElement} */ (ctrls.time_shift).valueAsNumber = s.others.time_shift || 0;
@@ -457,7 +440,7 @@ export class LiveChatController {
 		const bodies = last ? [ `<!-- ${last.className} -->` + (last.getAttribute('data-text') || '') ] : [];
 		const ids = last ? [ last.id ] : [];
 		if (sv === SimultaneousModeEnum.FIRST) {
-			// @ts-ignore
+			// @ts-expect-error
 			const notext = filtered.add.slice(1).filter(a => !a.addChatItemAction?.item.liveChatTextMessageRenderer);
 			filtered.add.splice(1, Infinity, ...notext);
 		}
@@ -511,9 +494,9 @@ export class LiveChatController {
 		
 		// Delete
 		for (const action of filtered.delete) {
-			// @ts-ignore
+			// @ts-expect-error
 			const id = action.markChatItemAsDeletedAction.targetItemId;
-			if (this.layoutCache.delete(id)) {
+			if (this.layoutCache.delete(id).some(v => v)) {
 				const target = root.getElementById(id);
 				target?.remove();
 			} else {
@@ -523,7 +506,7 @@ export class LiveChatController {
 		
 		// Delete by author
 		for (const action of filtered.delete_author) {
-			// @ts-ignore
+			// @ts-expect-error
 			const id = action.markChatItemsByAuthorAsDeletedAction.externalChannelId;
 			const targets = root.querySelectorAll(`[data-author-id="${id}"]`);
 			for (const target of targets) {
@@ -534,7 +517,7 @@ export class LiveChatController {
 		
 		// Replace
 		for (const action of filtered.replace) {
-			// @ts-ignore
+			// @ts-expect-error
 			const id = action.replaceChatItemAction.targetItemId;
 			const target = root.getElementById(id);
 			const item = action.replaceChatItemAction?.replacementItem;
@@ -556,7 +539,7 @@ export class LiveChatController {
 	 */
 	updateCurrentItem(item) {
 		const lw = this.layer.element.clientWidth;
-		const isLong = item.clientWidth >= lw * (Number.parseInt(s.styles.max_width) / 100 || 1);
+		const isLong = item.clientWidth >= lw * (Number.parseInt(s.styles.max_width, 10) / 100 || 1);
 		item.classList[isLong ? 'add' : 'remove']('wrap');
 		item.style.setProperty('--yt-lcf-translate-x', `-${lw + item.clientWidth}px`);
 	}

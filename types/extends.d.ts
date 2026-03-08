@@ -19,6 +19,11 @@ type DocumentPictureInPictureOptions = {
 /*
  * Interface Definitions
  */
+interface ObjectConstructor {
+	keys<T extends Record>(o: T): Array<keyof T>;
+	entries<T extends Record>(o: T): Array<[keyof T, T[keyof T]]>;
+}
+
 interface DocumentPictureInPictureEvent extends Event {
 	window: Window;
 }
@@ -43,6 +48,9 @@ interface MouseEvent {
 }
 
 interface GlobalEventHandlersEventMap {
+	[K: string]: CustomEvent;
+}
+interface AbortSignalEventMap {
 	[K: string]: CustomEvent;
 }
 

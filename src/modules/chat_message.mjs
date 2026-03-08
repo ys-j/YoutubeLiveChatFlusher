@@ -33,59 +33,62 @@ export const MutedWordModeEnum = Object.freeze({
 const mutedWordsList = [];
 
 export class LiveChatLayoutCache {
-	/** @type {Map<string, ChatLayoutInfo>} */
-	#map;
 	/**
-	 * @param {ShadowRoot} root 
+	 * @param {ShadowRoot} root shadow root
+	 * @param {number} [numOfLanes] number of lanes
 	 */
-	constructor(root) {
+	constructor(root, numOfLanes = 20) {
 		this.dom = root;
-		this.#map = new Map();
+		/** @type {Map<string, ChatLayoutInfo>[]} */
+		this.maps = Array.from({ length: numOfLanes }, () => new Map());
 	}
 
 	get size() {
-		return this.#map.size;
+		return this.maps.reduce((a, c) => a.union(c), new Set()).size;
 	}
 
 	/**
-	 * @param {string} id 
-	 * @returns {ChatLayoutInfo | undefined}
+	 * @param {number} numOfLanes 
+	 */
+	resize(numOfLanes) {
+		const len = this.maps.length;
+		this.maps.length = numOfLanes;
+		for (let i = len; i < numOfLanes; i++) {
+			this.maps[i] = new Map();
+		}
+	}
+
+	/**
+	 * @param {string} id renderer id
+	 * @returns {ChatLayoutInfo[] | undefined} list of layout info or undefined
 	 */
 	get(id) {
-		return this.#map.get(id);
+		const rslt = this.maps.map(m => m.get(id)).filter(v => v !== undefined);
+		return rslt.length ? rslt : undefined;
 	}
 
 	/**
-	 * @param {string} id 
-	 * @param {ChatLayoutInfo} layout 
-	 * @returns {Map<string, ChatLayoutInfo>}
+	 * @param {string} id renderer id
+	 * @param {ChatLayoutInfo} layout layout info 
 	 */
 	set(id, layout) {
-		return this.#map.set(id, layout);
+		for (let i = layout.lineStart; i < layout.lineEnd; i++) {
+			this.maps[i].set(id, layout);
+		}
 	}
 
 	/**
-	 * @param {string} id 
+	 * @param {string} id renderer id
+	 * @returns {boolean[]} if succeeded
 	 */
 	delete(id) {
-		return this.#map.delete(id);
+		return this.maps.map(m => m.delete(id));
 	}
 
 	clear() {
-		this.#map.clear();
-	}
-
-	/**
-	 * @param {number} overline 
-	 * @returns {ChatLayoutInfo[][]}
-	 */
-	groupByLine(overline) {
-		/** @type {ChatLayoutInfo[][]} */
-		const grouped = Array.from({ length: overline }, () => []);
-		for (const v of this.#map.values()) {
-			grouped[v.line]?.push(v);
+		for (const m of this.maps) {
+			m.clear();
 		}
-		return grouped;
 	}
 
 	/**
@@ -94,9 +97,13 @@ export class LiveChatLayoutCache {
 	 * @returns {boolean} if this message collides against any preceding layout
 	 */
 	anyCollides(target, reversed = false) {
-		/** @param {ChatLayoutInfo} b */
-		const judge = b => b.line <= target.line && target.isCollidable(b, reversed);
-		return this.#map.values().some(judge);
+		for (let i = target.lineStart; i < target.lineEnd; i++) {
+			for (const preceding of this.maps[i].values()) {
+				const collides = target.isCollidable(preceding, reversed);
+				if (collides) return true;
+			}
+		}
+		return false;
 	}
 }
 
@@ -131,7 +138,7 @@ export class LiveChatItemLayout {
 	 */
 	constructor(item) {
 		this.#key = Object.keys(item)[0];
-		// @ts-ignore
+		// @ts-expect-error
 		this.#renderer = item[this.#key];
 
 		this.element = document.createElement('div');
@@ -257,7 +264,7 @@ export class LiveChatItemLayout {
 					header, // @ts-ignore
 				} = /** @type {LiveChat.SponsorshipsGiftPurchaseAnnouncementRenderer["liveChatSponsorshipsGiftPurchaseAnnouncementRenderer"]} */ (this.#renderer);
 				const headerRenderer = header.liveChatSponsorshipsHeaderRenderer;
-				const count = headerRenderer.primaryText?.runs?.filter(r => !Number.isNaN(parseInt(r.text)))[0]?.text;
+				const count = headerRenderer.primaryText?.runs?.filter(r => !Number.isNaN(Number.parseInt(r.text, 10)))[0]?.text;
 				if (!count) break;
 				const div = document.createElement('div');
 				div.className = 'header';
@@ -373,7 +380,7 @@ export class LiveChatItemLayout {
 
 		const hh = cache.dom.host.clientHeight, hw = cache.dom.host.clientWidth;
 		const ch = this.element.clientHeight, cw = this.element.clientWidth;
-		if (cw >= hw * (parseInt(s.styles.max_width) / 100 || 1)) {
+		if (cw >= hw * (Number.parseInt(s.styles.max_width, 10) / 100 || 1)) {
 			this.element.classList.add('wrap');
 		}
 		
@@ -391,7 +398,6 @@ export class LiveChatItemLayout {
 			}
 		}
 
-		const fs = Number.parseInt(s.styles.font_size) || 36;
 		const lhf = Number.parseFloat(s.styles.line_height) || 1.4;
 
 		let y = 0;
@@ -407,13 +413,10 @@ export class LiveChatItemLayout {
 			cache.set(this.id, layout);
 			return this.id;
 		}
-		const overline = Math.floor(hh / fs * lhf);
+		const overline = cache.maps.length;
 		const reversed = (s.others.direction & 2) > 0;
-		const parentRect = {
-			top: cache.dom.host.clientTop,
-			height: hh,
-		};
-		
+		const parentRect = cache.dom.host.getBoundingClientRect();
+
 		switch (mode) {
 			case 'dense': {
 				if (cache.size === 0) {
@@ -442,13 +445,12 @@ export class LiveChatItemLayout {
 				const o = st & 0b01 ? .8 : 1;
 				const dy = st & 0b10 ? .5 : 0;
 
-				const grouped = cache.groupByLine(overline);
-				y = grouped.reduce((pi, cv, ci, arr) => cv.length < arr[pi].length ? ci : pi, 0);
+				y = cache.maps.reduce((pi, cv, ci, arr) => cv.size < arr[pi].size ? ci : pi, 0);
 				this.element.setAttribute('data-line', `${y}`);
 				layout = new ChatLayoutInfo(this.element, y);
-				const len = grouped[y].filter(layout => layout.isCollidable(layout)).length || 1;
+				const len = [...cache.maps[y].values().filter(layout => layout.isCollidable(layout))].length || 1;
 				this.element.style.top = `${(y + dy) * lhf}em`;
-				this.element.style.opacity = `${Math.max(.5, Math.pow(o, len))}`;
+				this.element.style.opacity = `${Math.max(.5, o ** len)}`;
 				this.element.style.zIndex = `-${len}`;
 				this.element.style.visibility = '';
 				cache.set(this.id, layout);
@@ -457,7 +459,7 @@ export class LiveChatItemLayout {
 			
 			case 'random': {
 				if (cache.size === 0) {
-					y = Math.floor(overline * Math.random());
+					y = (overline * Math.random()) | 0;
 					this.element.style[dir] = `${y * lhf}em`;
 					this.element.setAttribute('data-line', `${y}`);
 					layout = new ChatLayoutInfo(this.element, y);
@@ -467,13 +469,15 @@ export class LiveChatItemLayout {
 				}
 				const calculatedLine = new Set(Array(overline).keys());
 				do {
-					y = Math.floor(overline * Math.random());
+					y = (overline * Math.random()) | 0;
 					this.element.style[dir] = `${y * lhf}em`;
 					this.element.setAttribute('data-line', `${y}`);
 					layout = new ChatLayoutInfo(this.element, y);
 					const overflow = layout.isOverflow(parentRect);
 					if (overflow) {
-						for (let i = y; i < overline; i++) calculatedLine.delete(i);
+						for (let i = y; i < overline; i++) {
+							calculatedLine.delete(i);
+						}
 						continue;
 					}
 					const collidable = cache.anyCollides(layout, reversed);
@@ -494,22 +498,36 @@ export class LiveChatItemLayout {
 
 class ChatLayoutInfo {
 	/** @type {DOMRect} */ #rect;
+	/** @type {number} */ #line;
+	/** @type {number} */ #range;
+
 	/**
 	 * @param {HTMLElement} elem 
 	 * @param {number} [line] 
 	 */
 	constructor(elem, line = undefined) {
 		this.#rect = elem.getBoundingClientRect();
-		this.line = line ?? Number.parseInt(elem.getAttribute('data-line') || '0');
+
+		this.#line = line ?? Number.parseInt(elem.getAttribute('data-line') || '0', 10);
 
 		const computedStyle = getComputedStyle(elem);
-		const [_durMatch, durNum, durUnit] = computedStyle.animationDuration.match(/^([\d\.]+)(\D+)/) || [];
+		const lh = Number.parseFloat(computedStyle.lineHeight); // px
+		this.#range = Math.ceil(this.height / lh);
+
+		const [_durMatch, durNum, durUnit] = computedStyle.animationDuration.match(/^([\d.]+)(\D+)/) || [];
 		const durFactor = durNum && durUnit && { 's': 1000, 'ms': 1 }[durUnit] || 0;
 		this.duration = durFactor ? Number.parseFloat(durNum) * durFactor : Number.parseFloat(s.styles.animation_duration) * 1000;
 
-		const [_translateMatch, translateX] = elem.style.getPropertyValue('--yt-lcf-translate-x').match(/^-?([\d\.]+)px/) || [];
+		const [_translateMatch, translateX] = elem.style.getPropertyValue('--yt-lcf-translate-x').match(/^-?([\d.]+)px/) || [];
 		this.speed = Number.parseFloat(translateX) / this.duration;
 		this.createdOn = Date.now();
+	}
+
+	get lineStart() {
+		return this.#line;
+	}
+	get lineEnd() {
+		return this.#line + this.#range;
 	}
 
 	get width() {

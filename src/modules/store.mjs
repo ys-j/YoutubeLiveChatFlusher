@@ -115,22 +115,27 @@ export const DEFAULT_CONFIG = Object.freeze({
 	},
 });
 
-/**
- * @class
- * @param {string} name storage name
- */
-function ConfigHandler(name) {
+class ConfigHandler {
+	/** @type {string} */ #name;
+
+	/**
+	 * @param {string} name storage name
+	 */
+	constructor(name) {
+		this.#name = name;
+	}
+
 	/**
 	 * @param {Record<string, any>} target 
 	 * @param {string} prop 
 	 * @param {any} val 
-	 * @param {any} recv 
+	 * @param {any} _recv 
 	 * @returns {boolean}
 	 */
-	this.set = function (target, prop, val, recv) {
+	set(target, prop, val, _recv) {
 		if (prop in target) {
 			target[prop] = val;
-			browser.storage.local.set({ [name]: target });
+			browser.storage.local.set({ [this.#name]: target });
 			return true;
 		}
 		return false;
@@ -148,7 +153,8 @@ export class ConfigStore {
 		/** @type {UnwrapReadonly<typeof DEFAULT_CONFIG>} */
 		this.data = structuredClone(DEFAULT_CONFIG);
 
-		/** @type {UnwrapReadonly<typeof this.data>} */ // @ts-ignore
+		/** @type {UnwrapReadonly<typeof this.data>} */
+		// @ts-expect-error
 		this.proxies = Object.fromEntries(Object.entries(this.data).map(([k, v]) => {
 			const handler = new ConfigHandler(k);
 			const proxy = new Proxy(v, handler);
@@ -166,7 +172,7 @@ export class ConfigStore {
 		Object.assign(this.data.styles, stored.styles);
 		Object.assign(this.data.others, stored.others);
 		for (const k of Object.keys(stored.parts ?? {})) {
-			// @ts-ignore
+			// @ts-expect-error
 			Object.assign(this.data.parts[k], stored.parts[k] || {});
 		}
 		Object.assign(this.data.cssTexts, stored.cssTexts);
