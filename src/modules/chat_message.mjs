@@ -29,6 +29,11 @@ export const MutedWordModeEnum = Object.freeze({
 	CHAR: 3,
 });
 
+const RENDERING_SKIP_KEYS = [
+	'liveChatPlaceholderItemRenderer',
+	'liveChatSponsorshipsGiftRedemptionAnnouncementRenderer',
+];
+
 /** @type {RegExp[]} */
 const mutedWordsList = [];
 
@@ -153,6 +158,8 @@ export class LiveChatItemLayout {
 	 * @returns {Promise<HTMLElement?>} promise of chat item element or null
 	 */
 	async render() {
+		if (RENDERING_SKIP_KEYS.includes(this.#key)) return null;
+
 		const messageType = this.messageType;
 		/** @type {Promise<any>[]} */
 		const promises = [ this.getAuthorName(messageType) ];
@@ -261,7 +268,7 @@ export class LiveChatItemLayout {
 				if (allHidden) return null;
 				this.element.className = 'membership gift';
 				const {
-					header, // @ts-ignore
+					header, // @ts-expect-error
 				} = /** @type {LiveChat.SponsorshipsGiftPurchaseAnnouncementRenderer["liveChatSponsorshipsGiftPurchaseAnnouncementRenderer"]} */ (this.#renderer);
 				const headerRenderer = header.liveChatSponsorshipsHeaderRenderer;
 				const count = headerRenderer.primaryText?.runs?.filter(r => !Number.isNaN(Number.parseInt(r.text, 10)))[0]?.text;
@@ -278,7 +285,7 @@ export class LiveChatItemLayout {
 			}
 			case 'liveChatViewerEngagementMessageRenderer': {
 				const {
-					icon, // @ts-ignore
+					icon, // @ts-expect-error
 				} = /** @type {LiveChat.ViewerEngagementMessageRenderer["liveChatViewerEngagementMessageRenderer"]} */ (this.#renderer);
 				switch (icon.iconType) {
 					case 'POLL': {
@@ -290,15 +297,13 @@ export class LiveChatItemLayout {
 						break;
 					}
 					case 'YOUTUBE_ROUND': break;
-					default: console.log(this.#renderer);
+					default: console.debug(this.#renderer);
 				}
 				break;
 			}
-			case 'liveChatPlaceholderItemRenderer':
-			case 'liveChatSponsorshipsGiftRedemptionAnnouncementRenderer':
-				break;
 			// liveChatModeChangeMessageRenderer
-			default: console.log({ [this.#key]: this.#renderer });
+			default:
+				console.debug({ [this.#key]: this.#renderer });
 		}
 		return null;
 	}
@@ -419,14 +424,6 @@ export class LiveChatItemLayout {
 
 		switch (mode) {
 			case 'dense': {
-				if (cache.size === 0) {
-					this.element.style[dir] = '0px';
-					this.element.setAttribute('data-line', '0');
-					layout = new ChatLayoutInfo(this.element, y);
-					this.element.style.visibility = '';
-					cache.set(this.id, layout);
-					return this.id;
-				}
 				do {
 					this.element.style[dir] = `${y * lhf}em`;
 					this.element.setAttribute('data-line', `${y}`);
@@ -458,15 +455,6 @@ export class LiveChatItemLayout {
 			}
 			
 			case 'random': {
-				if (cache.size === 0) {
-					y = (overline * Math.random()) | 0;
-					this.element.style[dir] = `${y * lhf}em`;
-					this.element.setAttribute('data-line', `${y}`);
-					layout = new ChatLayoutInfo(this.element, y);
-					this.element.style.visibility = '';
-					cache.set(this.id, layout);
-					return this.id;
-				}
 				const calculatedLine = new Set(Array(overline).keys());
 				do {
 					y = (overline * Math.random()) | 0;
