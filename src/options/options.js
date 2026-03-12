@@ -49,12 +49,12 @@ importBtn?.addEventListener('click', async () => {
 	input.type = 'file';
 	input.accept = 'application/json';
 	input.addEventListener('cancel', () => {
-		console.log('Config file import is canceled.');
+		console.debug('Config file import is canceled.');
 	}, { passive: true });
 	input.addEventListener('change', () => {
 		const files = input.files;
 		if (files && files.length > 0) {
-			console.log('Config file selected: ' + files[0].name);
+			console.debug('Config file selected: ' + files[0].name);
 			const reader = new FileReader();
 			reader.onload = async e => {
 				const json = JSON.parse(/** @type {string} */ (e.target?.result));

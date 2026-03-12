@@ -445,18 +445,21 @@ export class LiveChatController {
 			filtered.add.splice(1, Infinity, ...notext);
 		}
 
-		for (const action of filtered.add) {
+		const renderings = filtered.add.map(async action => {
 			const item = action.addChatItemAction?.item;
 			if (!item) {
 				console.warn('Failed to add message.');
-				continue;
+				return null;
 			}
 			const layout = new LiveChatItemLayout(item);
 			const elem = await layout.render();
-			if (!elem) {
-				console.warn('Failed to render a chat item element.')
-				continue;
-			}
+			return { layout, elem };
+		});
+
+		for await (const result of renderings) {
+			if (!result) continue;
+			const { layout, elem } = result;
+			if (!elem) continue;
 			const text = elem.getAttribute('data-text');
 			if (sv === SimultaneousModeEnum.MERGE || sv === SimultaneousModeEnum.LAST_MERGE) {
 				const body = text ? `<!-- ${elem.className} -->${text}` : '';
@@ -484,7 +487,7 @@ export class LiveChatController {
 			if (root.getElementById(elem.id)) {
 				const type = elem.className.match(/text (.+)/)?.at(1) || 'normal';
 				const color = getComputedStyle(le).getPropertyValue(`--yt-lcf-${type}-color`);
-				console.log(`Message duplication #${elem.id}: %c${text || elem.lastElementChild?.textContent}`, color ? 'color:' + color : '');
+				console.debug(`Message duplication #${elem.id}: %c${text || elem.lastElementChild?.textContent}`, color ? 'color:' + color : '');
 			} else {
 				/** @type { ["dense", "random"] } */
 				const mode = ['dense', 'random'];
