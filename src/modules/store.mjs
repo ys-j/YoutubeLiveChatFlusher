@@ -1,35 +1,5 @@
 /// <reference path="../../types/browser.d.ts" />
 
-/**
- * @typedef PartStyle
- * @prop {boolean} photo
- * @prop {boolean} name
- * @prop {boolean} [message]
- * @prop {boolean} [amount]
- * @prop {boolean} [sticker]
- * @prop {boolean} [months]
- * @prop {string?} [color]
- */
-
-/**
- * @typedef StorageSchema
- * @prop {Record<string, string>} styles
- * @prop {Record<string, number>} others
- * @prop {Record<string, PartStyle>} parts
- * @prop {Record<string, string>} cssTexts
- * @prop {Record<string, string>} hotkeys
- * @prop {object} mutedWords
- * @prop {number} mutedWords.mode
- * @prop {string} mutedWords.replacement
- * @prop {boolean} mutedWords.regexp
- * @prop {string[]} mutedWords.plainList
- * @prop {object} translation
- * @prop {string} translation.translator
- * @prop {string} translation.url
- * @prop {boolean} translation.regexp
- * @prop {string[]} translation.plainList
- */
-
 export const DEFAULT_CONFIG = Object.freeze({
 	styles: {
 		animation_duration: '8s',
@@ -147,7 +117,7 @@ class ConfigHandler {
  * @typedef { { -readonly [P in keyof T]: T[P] } } UnwrapReadonly
  */
 
-export class ConfigStore {
+class ConfigStore {
 	constructor() {
 		this.isLoaded = false;
 		/** @type {UnwrapReadonly<typeof DEFAULT_CONFIG>} */

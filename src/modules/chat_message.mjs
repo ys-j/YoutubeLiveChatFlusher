@@ -2,7 +2,7 @@
 
 import { fetchInnerTube } from './innertube.mjs';
 import { store as s } from './store.mjs';
-import { filterMessage, getColorRGB, getText } from './utils.mjs';
+import { filterMessage, getColorRGB, getText, loadTemplateDocument } from './utils.mjs';
 
 /** @enum {string} */
 const AuthorType = Object.freeze({
@@ -91,9 +91,7 @@ export class LiveChatLayoutCache {
 	}
 
 	clear() {
-		for (const m of this.maps) {
-			m.clear();
-		}
+		for (const m of this.maps) m.clear();
 	}
 
 	/**
@@ -109,6 +107,136 @@ export class LiveChatLayoutCache {
 			}
 		}
 		return false;
+	}
+}
+
+/**
+ * @typedef AuthorInfo
+ * @prop {string} id
+ * @prop {string} name
+ * @prop {string} thumbnail
+ */
+
+/**
+ * @typedef TextItemFactoryOptions
+ * @prop {"text"} type
+ * @prop {typeof AuthorType[keyof typeof AuthorType]} subtype
+ * @prop {AuthorInfo} author
+ * @prop {ChatMessageContainer} body
+ * @prop {string} text
+ */
+
+/**
+ * @typedef MembershipItemFactoryOptions
+ * @prop {"membership"} type
+ * @prop {"membership" | "milestone"} subtype
+ * @prop {AuthorInfo} author
+ * @prop {Node[]} months
+ * @prop {ChatMessageContainer} body
+ * @prop { { header: number, body: number } } background
+ */
+
+/**
+ * @typedef PaidMessageItemFactoryOptions
+ * @prop {"paid_message"} type
+ * @prop {AuthorInfo} author
+ * @prop {string} amount
+ * @prop {ChatMessageContainer} body
+ * @prop { { header: number, body: number } } background
+ */
+
+/**
+ * @typedef PaidStickerItemFactoryOptions
+ * @prop {"paid_sticker"} type
+ * @prop {AuthorInfo} author
+ * @prop {string} amount
+ * @prop {string} sticker
+ * @prop { { header: number, body: number } } background
+ */
+
+/**
+ * @typedef GiftItemFactoryOptions
+ * @prop {"gift"} type
+ * @prop {AuthorInfo} author
+ * @prop {string} gifts
+ * @prop { { header: number } } background
+ */
+
+/**
+ * @typedef PollItemFactoryOptions
+ * @prop {"poll"} type
+ * @prop {ChatMessageContainer} body
+ */
+
+export class LiveChatItemFactory {
+	/** @type {Map<string, HTMLElement>} */
+	#templates = new Map();
+
+	async load() {
+		const doc = await loadTemplateDocument('../templates/template_chat_message.html');
+		const elems = doc.getElementsByTagName('template');
+		for (const t of elems) {
+			const el = t.content.firstElementChild;
+			if (el) this.#templates.set(t.id, /** @type {HTMLElement} */ (el));
+		}
+	}
+
+	/**
+	 * Creates new chat message element.
+	 * @param {TextItemFactoryOptions | MembershipItemFactoryOptions | PaidMessageItemFactoryOptions | PaidStickerItemFactoryOptions | GiftItemFactoryOptions | PollItemFactoryOptions} options
+	 */
+	new(options) {
+		const type = options.type;
+		const el = this.#templates.get(type)?.cloneNode(true);
+		if (!el) return null;
+
+		const header = /** @type {HTMLElement?} */ (el.querySelector('.header'));
+		const body = /** @type {HTMLElement?} */ (el.querySelector('.body'));
+		if ('author' in options) {
+			if ('subtype' in options) el.classList.add(options.subtype);
+			el.dataset.authorId = options.author.id;
+			el.dataset.authorName = options.author.name;
+
+			const a = header?.querySelector('a');
+			if (a) {
+				a.href = `/channel/${options.author.id}`;
+				a.title = options.author.name;
+				const photo = a?.querySelector('img');
+				if (photo) photo.src = options.author.thumbnail;
+			}
+			const name = header?.querySelector('.name');
+			if (name) name.textContent = options.author.name;
+
+			if ('months' in options) {
+				const months = header?.querySelector('.months');
+				months?.append(...options.months);
+			} else if ('amount' in options) {
+				const amount = header?.querySelector('.amount');
+				if (amount) amount.textContent = options.amount;
+			} else if ('gifts' in options) {
+				const gifts = header?.querySelector('.gifts');
+				if (gifts) gifts.textContent = `\u{1f381}\ufe0e ${options.gifts}`;
+			}
+		}
+		if ('body' in options) {
+			body?.append(...options.body);
+		} else if ('sticker' in options) {
+			const sticker = /** @type {HTMLImageElement?} */ (el.querySelector('.sticker'));
+			if (sticker) sticker.src = options.sticker;
+		}
+		if ('background' in options) {
+			if ('header' in options.background && header) {
+				const rgb = getColorRGB(options.background.header);
+				header.style.backgroundColor = `rgba(${rgb.join()},var(--yt-lcf-background-opacity))`;
+			}
+			if ('body' in options.background && body) {
+				const rgb = getColorRGB(options.background.body);
+				body.style.backgroundColor = `rgba(${rgb.join()},var(--yt-lcf-background-opacity))`;
+			} 
+		} else if ('text' in options) {
+			el.dataset.text = options.text;
+		}
+		return el;
 	}
 }
 
@@ -130,359 +258,277 @@ function getAuthorType(renderer) {
 /** @type {Map<string, string>} */
 const authorNameCache = new Map();
 
-export class LiveChatItemLayout {
-	/** @type {string} */ #key;
-	/** @type {LiveChat.RendererContent} */ #renderer;
-	/** @type {DocumentFragment} */ #authorFragment;
-	/** @type {HTMLElement} */ element;
-	/** @type {string} */ id;
-	/** @type {ChatMessageContainer} */ message;
+/**
+ * Fetches author info: id, name and thumbnail.
+ * @param {LiveChat.RendererContent} renderer renderer content
+ * @param {keyof typeof s.parts} type message type
+ * @returns author info
+ */
+async function fetchAuthorInfo(renderer, type) {
+	const id = renderer.authorExternalChannelId;
 
-	/**
-	 * @param {LiveChat.AnyRenderer} item message renderer
-	 */
-	constructor(item) {
-		this.#key = Object.keys(item)[0];
-		// @ts-expect-error
-		this.#renderer = item[this.#key];
-
-		this.element = document.createElement('div');
-		this.id = this.element.id = this.#renderer.id || '';
-		
-		this.#authorFragment = document.createDocumentFragment();
-		this.message = new ChatMessageContainer(this.#renderer.message);
+	/** @type {string} */
+	let name;
+	if (s.others.show_username && id) {
+		const cachedName = authorNameCache.get(id);
+		if (cachedName) {
+			name = cachedName;
+		} else if (type && s.parts[type].name) {
+			const url = new URL('/youtubei/v1/browse', location.origin);
+			try {
+				const json = await fetchInnerTube(url, { browseId: id });
+				const pageTitle = json?.header?.pageHeaderRenderer?.pageTitle;
+				if (pageTitle) {
+					authorNameCache.set(id, pageTitle);
+					name = pageTitle;
+				}
+			} catch (reason) {
+				console.error(reason);
+			}
+		}
 	}
+	name ||= getText(renderer.authorName);
 
-	/**
-	 * Renders a chat item element from the message renderer.
-	 * @returns {Promise<HTMLElement?>} promise of chat item element or null
-	 */
-	async render() {
-		if (RENDERING_SKIP_KEYS.includes(this.#key)) return null;
+	const thumbnail = renderer.authorPhoto.thumbnails[0].url;
+	return { id, name, thumbnail };
+}
 
-		const messageType = this.messageType;
-		/** @type {Promise<any>[]} */
-		const promises = [ this.getAuthorName(messageType) ];
+/**
+ * Renders chat item renderer.
+ * @param {LiveChat.AnyRenderer} item message renderer
+ * @param {LiveChatItemFactory} factory chat item factory
+ */
+export async function renderChatItem(item, factory) {
+	const key = Object.keys(item)[0];
+	if (RENDERING_SKIP_KEYS.includes(key)) throw null;
 
-		const langIndex = s.others.translation;
+	/** @type {LiveChat.RendererContent} */
+	const renderer = item[key];
+	const body = new ChatMessageContainer(renderer.message);
+
+	const langIndex = s.others.translation;
+	if (langIndex) {
 		const langSuffix = s.others.suffix_original;
-		const nl = navigator.languages;
-		const tl = ['', ...nl][Math.abs(langIndex)];
-		if (tl) {
-			const lazy = s.others.translation_timing ?? 0;
-			const translating = this.message.translate(lazy ? 'lazy' : 'eager', tl, !!langSuffix);
-			promises.push(translating);
-		}
-		await Promise.all(promises);
-
-		switch (this.#key) {
-			case 'liveChatTextMessageRenderer': {
-				const allHidden = !Object.values(s.parts[messageType ?? 'normal']).includes(true);
-				if (allHidden) return null;
-				this.element.className = 'text ' + (messageType ?? 'normal');
-				const header = document.createElement('span');
-				header.className = 'header';
-				header.appendChild(this.#authorFragment);
-				const body = document.createElement('span');
-				body.part = 'message';
-				body.className = 'body';
-				body.append(...this.message);
-				this.element.append(header, body);
-				this.element.setAttribute('data-text', getText(this.#renderer.message));
-				return this.element;
-			}
-			case 'liveChatMembershipItemRenderer': {
-				const {
-					headerPrimaryText: primary,
-					headerSubtext: sub,
-				} = /** @type {LiveChat.MembershipItemRenderer["liveChatMembershipItemRenderer"]} */ (this.#renderer);
-				this.element.className = messageType ?? 'membership';
-				const allHidden = !Object.values(s.parts[messageType ?? 'membership']).includes(true);
-				if (allHidden) return null;
-				const header = document.createElement('div');
-				header.className = 'header';
-				header.style.backgroundColor = `rgba(${getColorRGB(0xff0f9d58).join()},var(--yt-lcf-background-opacity))`;
-				const months = document.createElement('span');
-				months.part = months.className = 'months';
-				months.append(...getChatMessage(primary || sub, { start: primary ? 1 : 0, filterMode: 0 }));
-				header.append(this.#authorFragment, months);
-				const body = document.createElement('div');
-				body.part = 'message';
-				body.className = 'body';
-				body.style.backgroundColor = `rgba(${getColorRGB(0xff0a8043).join()},var(--yt-lcf-background-opacity))`;
-				body.append(...this.message);
-				this.element.append(header, body);
-				return this.element;
-			}
-			case 'liveChatPaidMessageRenderer': {
-				const allHidden = !Object.values(s.parts.paid_message).includes(true);
-				if (allHidden) return null;
-				const {
-					headerBackgroundColor,
-					purchaseAmountText,
-					bodyBackgroundColor,
-				} = /** @type {LiveChat.PaidMessageRenderer["liveChatPaidMessageRenderer"]} */ (this.#renderer);
-				this.element.className = 'superchat';
-				const header = document.createElement('div');
-				header.className = 'header';
-				header.style.backgroundColor = `rgba(${getColorRGB(headerBackgroundColor).join()},var(--yt-lcf-background-opacity))`;
-				const amount = document.createElement('span');
-				amount.part = amount.className = 'amount';
-				amount.append(getText(purchaseAmountText));
-				header.append(this.#authorFragment, amount);
-				const body = document.createElement('div');
-				body.part = 'message';
-				body.className = 'body';
-				body.style.backgroundColor = `rgba(${getColorRGB(bodyBackgroundColor).join()},var(--yt-lcf-background-opacity))`;
-				body.append(...this.message);
-				this.element.append(header, body);
-				return this.element;
-			}
-			case 'liveChatPaidStickerRenderer': {
-				const allHidden = !Object.values(s.parts.paid_sticker).includes(true);
-				if (allHidden) return null;
-				const { backgroundColor, purchaseAmountText, moneyChipBackgroundColor, sticker }
-					= /** @type {LiveChat.PaidStickerRenderer["liveChatPaidStickerRenderer"]} */ (this.#renderer);
-				this.element.className = 'supersticker';
-				const header = document.createElement('div');
-				header.className = 'header';
-				header.style.backgroundColor = `rgba(${getColorRGB(backgroundColor).join()},var(--yt-lcf-background-opacity))`;
-				const amount = document.createElement('span');
-				amount.part = amount.className = 'amount';
-				amount.append(getText(purchaseAmountText));
-				header.append(this.#authorFragment, amount);
-				const body = document.createElement('figure');
-				body.part = 'sticker';
-				body.className = 'body';
-				body.style.backgroundColor = `rgba(${getColorRGB(moneyChipBackgroundColor).join()},var(--yt-lcf-background-opacity)`;
-				const image = new Image();
-				image.className = 'sticker';
-				image.src = (sticker.thumbnails.find(t => 2 * 36 <= (t.width || 36)) || sticker.thumbnails[0]).url;
-				image.loading = 'lazy';
-				body.appendChild(image);
-				this.element.append(header, body);
-				return this.element;
-			}
-			case 'liveChatSponsorshipsGiftPurchaseAnnouncementRenderer': {
-				const allHidden = !Object.values(s.parts.membership).includes(true);
-				if (allHidden) return null;
-				this.element.className = 'membership gift';
-				const {
-					header, // @ts-expect-error
-				} = /** @type {LiveChat.SponsorshipsGiftPurchaseAnnouncementRenderer["liveChatSponsorshipsGiftPurchaseAnnouncementRenderer"]} */ (this.#renderer);
-				const headerRenderer = header.liveChatSponsorshipsHeaderRenderer;
-				const count = headerRenderer.primaryText?.runs?.filter(r => !Number.isNaN(Number.parseInt(r.text, 10)))[0]?.text;
-				if (!count) break;
-				const div = document.createElement('div');
-				div.className = 'header';
-				div.style.backgroundColor = `rgba(${getColorRGB(0xff0f9d58).join()},var(--yt-lcf-background-opacity))`;
-				const gifts = document.createElement('span');
-				gifts.part = gifts.className = 'gifts';
-				gifts.textContent = `\u{1f381}\ufe0e ${count}`;
-				div.append(this.#authorFragment, gifts);
-				this.element.appendChild(div);
-				return this.element;
-			}
-			case 'liveChatViewerEngagementMessageRenderer': {
-				const {
-					icon, // @ts-expect-error
-				} = /** @type {LiveChat.ViewerEngagementMessageRenderer["liveChatViewerEngagementMessageRenderer"]} */ (this.#renderer);
-				switch (icon.iconType) {
-					case 'POLL': {
-						this.element.className = 'engagement-poll';
-						const div = document.createElement('div');
-						div.part = 'message';
-						div.className = 'body';
-						this.element.append(...this.message);
-						break;
-					}
-					case 'YOUTUBE_ROUND': break;
-					default: console.debug(this.#renderer);
-				}
-				break;
-			}
-			// liveChatModeChangeMessageRenderer
-			default:
-				console.debug({ [this.#key]: this.#renderer });
-		}
-		return null;
+		const tl = navigator.languages[Math.abs(langIndex) - 1];
+		const lazy = s.others.translation_timing ?? 0;
+		await body.translate(lazy ? 'lazy' : 'eager', tl, !!langSuffix);
 	}
 
-	get messageType() {
-		switch (this.#key) {
-			case 'liveChatTextMessageRenderer':
-				return getAuthorType(this.#renderer);
-			case 'liveChatMembershipItemRenderer':
-				return 'headerPrimaryText' in this.#renderer ? 'milestone': 'membership';
-			case 'liveChatPaidMessageRenderer':
-				return 'paid_message';
-			case 'liveChatPaidStickerRenderer':
-				return 'paid_sticker';
-			case 'liveChatSponsorshipsGiftPurchaseAnnouncementRenderer':
-				return 'membership';
-			default:
-				return null;
+	/** @type {(type: keyof typeof s.parts) => boolean} */
+	const allHidden = type => !Object.values(s.parts[type]).includes(true);
+
+	/** @type {HTMLElement?} */
+	let element = null;
+	switch (key) {
+		case 'liveChatTextMessageRenderer': {
+			const subtype = getAuthorType(renderer);
+			if (allHidden(subtype)) break;
+			element = factory.new({
+				type: 'text',
+				subtype,
+				author: await fetchAuthorInfo(renderer, subtype),
+				body,
+				text: getText(renderer.message),
+			});
+			break;
 		}
-	}
-
-	/**
-	 * Fetches author name, and then renders the name and thumbnail.
-	 * @param {keyof typeof s.parts | null} messageType 
-	 * @returns {Promise<string?>}
-	 */
-	async getAuthorName(messageType) {
-		const authorId = this.#renderer.authorExternalChannelId;
-		this.element.setAttribute('data-author-id', authorId);
-
-		/** @type {string | undefined} */
-		let authorName;
-		if (s.others.show_username && authorId) {
-			if (authorNameCache.has(authorId)) {
-				authorName = authorNameCache.get(authorId);
-			} else if (messageType && s.parts[messageType].name) {
-				const url = new URL('/youtubei/v1/browse', location.origin);
-				try {
-					const json = await fetchInnerTube(url, { browseId: authorId });
-					authorName = json?.header?.pageHeaderRenderer?.pageTitle;
-					if (authorName) authorNameCache.set(authorId, authorName);
-				} catch (reason) {
-					console.error(reason);
-				}
-			}
+		case 'liveChatMembershipItemRenderer': {
+			const subtype = 'headerPrimaryText' in renderer ? 'milestone': 'membership';
+			if (allHidden(subtype)) break;
+			const {
+				headerPrimaryText: primary,
+				headerSubtext: sub,
+			} = /** @type {LiveChat.MembershipItemRenderer["liveChatMembershipItemRenderer"]} */ (renderer);
+			element = factory.new({
+				type: 'membership',
+				subtype,
+				author: await fetchAuthorInfo(renderer, subtype),
+				months: getChatMessage(primary || sub, { start: primary ? 1 : 0, filterMode: 0 }),
+				body,
+				background: { header: 0xff0f9d58, body: 0xff0a8043 },
+			});
+			break;
 		}
-		authorName ||= getText(this.#renderer.authorName);
-		if (!authorName) return null;
-		this.element.setAttribute('data-author-name', authorName);
-
-		const a = document.createElement('a');
-		a.href = `/channel/${authorId}`;
-		a.target = '_blank';
-		a.title = authorName;
-		
-		const img = new Image();
-		img.part = img.className = 'photo';
-		img.src = this.#renderer.authorPhoto.thumbnails[0].url;
-		img.loading = 'lazy';
-		a.appendChild(img);
-		
-		const span = document.createElement('span');
-		span.part = span.className = 'name';
-		span.textContent = authorName;
-		
-		this.#authorFragment.append(a, span);
-		return authorName;
-	}
-
-	/**
-	 * Appends this element to the shadow root.
-	 * @param {LiveChatLayoutCache} cache layout cache object
-	 * @param {"dense" | "random"} [mode="dense"] layout mode
-	 * @returns {string} renderer id
-	 */
-	appendTo(cache, mode = 'dense') {
-		this.element.style.visibility = 'hidden';
-		cache.dom.appendChild(this.element);
-
-		const hh = cache.dom.host.clientHeight, hw = cache.dom.host.clientWidth;
-		const ch = this.element.clientHeight, cw = this.element.clientWidth;
-		if (cw >= hw * (Number.parseInt(s.styles.max_width, 10) / 100 || 1)) {
-			this.element.classList.add('wrap');
+		case 'liveChatPaidMessageRenderer': {
+			const type = 'paid_message';
+			if (allHidden(type)) break;
+			const {
+				headerBackgroundColor,
+				purchaseAmountText,
+				bodyBackgroundColor,
+			} = /** @type {LiveChat.PaidMessageRenderer["liveChatPaidMessageRenderer"]} */ (renderer);
+			element = factory.new({
+				type,
+				author: await fetchAuthorInfo(renderer, type),
+				amount: getText(purchaseAmountText),
+				body,
+				background: { header: headerBackgroundColor, body: bodyBackgroundColor },
+			});
+			break;
 		}
-		
-		this.element.style.setProperty('--yt-lcf-translate-x', `-${hw + cw}px`);
-
-		const body = /** @type {HTMLElement?} */ (this.element.lastElementChild);
-		if (body) {
-			const content = body.textContent;
-			if (content) {
-				browser.i18n.detectLanguage(content).then(result => {
-					if (result.isReliable) {
-						body.lang = result.languages[0].language;
-					}
-				});
-			}
+		case 'liveChatPaidStickerRenderer': {
+			const type = 'paid_sticker';
+			if (allHidden(type)) break;
+			const {
+				backgroundColor,
+				purchaseAmountText,
+				moneyChipBackgroundColor,
+				sticker,
+			} = /** @type {LiveChat.PaidStickerRenderer["liveChatPaidStickerRenderer"]} */ (renderer);
+			element = factory.new({
+				type,
+				author: await fetchAuthorInfo(renderer, type),
+				amount: getText(purchaseAmountText),
+				sticker: (sticker.thumbnails.find(t => 2 * 36 <= (t.width || 36)) || sticker.thumbnails[0]).url,
+				background: { header: backgroundColor, body: moneyChipBackgroundColor },
+			});
+			break;
 		}
-
-		const lhf = Number.parseFloat(s.styles.line_height) || 1.4;
-
-		let y = 0;
-		/** @type {ChatLayoutInfo} */
-		let layout;
-		
-		const dir = s.others.direction & 1 ? 'bottom' : 'top';
-		if (ch >= hh) {
-			this.element.style[dir] = '0px';
-			this.element.setAttribute('data-line', '0');
-			this.element.style.visibility = '';
-			layout = new ChatLayoutInfo(this.element, y);
-			cache.set(this.id, layout);
-			return this.id;
+		case 'liveChatSponsorshipsGiftPurchaseAnnouncementRenderer': {
+			const subtype = 'membership';
+			if (allHidden(subtype)) break;
+			// @ts-expect-error
+			const headerRenderer = /** @type {LiveChat.SponsorshipsHeaderRenderer} */(renderer.header).liveChatSponsorshipsHeaderRenderer;
+			const count = headerRenderer.primaryText?.runs?.filter(r => !Number.isNaN(Number.parseInt(r.text, 10)))[0]?.text;
+			if (!count) break;
+			element = factory.new({
+				type: 'gift',
+				author: await fetchAuthorInfo(renderer, subtype),
+				gifts: count,
+				background: { header: 0xff0f9d58 },
+			});
+			break;
 		}
-		const overline = cache.maps.length;
-		const reversed = (s.others.direction & 2) > 0;
-		const parentRect = cache.dom.host.getBoundingClientRect();
-
-		switch (mode) {
-			case 'dense': {
-				do {
-					this.element.style[dir] = `${y * lhf}em`;
-					this.element.setAttribute('data-line', `${y}`);
-					layout = new ChatLayoutInfo(this.element, y);
-					const overflow = layout.isOverflow(parentRect);
-					if (overflow) continue;
-					const collidable = cache.anyCollides(layout, reversed);
-					if (collidable) continue;
-					this.element.style.visibility = '';
-					cache.set(this.id, layout);
-					return this.id;
-				} while (++y <= overline);
-
-				this.element.classList.add('overlap');
-				const st = s.others.overlapping;
-				const o = st & 0b01 ? .8 : 1;
-				const dy = st & 0b10 ? .5 : 0;
-
-				y = cache.maps.reduce((pi, cv, ci, arr) => cv.size < arr[pi].size ? ci : pi, 0);
-				this.element.setAttribute('data-line', `${y}`);
-				layout = new ChatLayoutInfo(this.element, y);
-				const len = [...cache.maps[y].values().filter(layout => layout.isCollidable(layout))].length || 1;
-				this.element.style.top = `${(y + dy) * lhf}em`;
-				this.element.style.opacity = `${Math.max(.5, o ** len)}`;
-				this.element.style.zIndex = `-${len}`;
-				this.element.style.visibility = '';
-				cache.set(this.id, layout);
-				return this.id;
-			}
-			
-			case 'random': {
-				const calculatedLine = new Set(Array(overline).keys());
-				do {
-					y = (overline * Math.random()) | 0;
-					this.element.style[dir] = `${y * lhf}em`;
-					this.element.setAttribute('data-line', `${y}`);
-					layout = new ChatLayoutInfo(this.element, y);
-					const overflow = layout.isOverflow(parentRect);
-					if (overflow) {
-						for (let i = y; i < overline; i++) {
-							calculatedLine.delete(i);
-						}
-						continue;
-					}
-					const collidable = cache.anyCollides(layout, reversed);
-					if (collidable) {
-						calculatedLine.delete(y);
-						continue;
-					}
+		case 'liveChatViewerEngagementMessageRenderer': {
+			// @ts-expect-error
+			switch (renderer.icon.iconType) {
+				case 'POLL':
+					element = factory.new({ type: 'poll', body });
 					break;
-				} while (calculatedLine.size > 0);
-				this.element.style.visibility = '';
-				cache.set(this.id, layout);
-				return this.id;
+				case 'YOUTUBE_ROUND':
+					break;
+				default:
+					console.debug(renderer);
 			}
 		}
+	}
+	if (element) {
+		element.id = renderer.id;
+		return element;
+	} else {
+		throw 'Failed to render a chat item element.';
 	}
 }
 
+/**
+ * 
+ * @param {HTMLElement} el rendered element
+ * @param {LiveChatLayoutCache} cache layout cache container
+ * @param {"dense" | "random"} [mode] layout mode
+ * @return renderer/element id
+ */
+export function layoutChatItem(el, cache, mode = 'dense') {
+	el.style.visibility = 'hidden';
+	cache.dom.appendChild(el);
+
+	const hh = cache.dom.host.clientHeight, hw = cache.dom.host.clientWidth;
+	const ch = el.clientHeight, cw = el.clientWidth;
+	if (cw >= hw * (Number.parseInt(s.styles.max_width, 10) / 100 || 1)) {
+		el.classList.add('wrap');
+	}
+	
+	el.style.setProperty('--yt-lcf-translate-x', `-${hw + cw}px`);
+
+	const body = /** @type {HTMLElement?} */ (el.lastElementChild);
+	if (body) {
+		const content = body.textContent;
+		if (content) {
+			browser.i18n.detectLanguage(content).then(result => {
+				if (result.isReliable) {
+					body.lang = result.languages[0].language;
+				}
+			});
+		}
+	}
+
+	const lhf = Number.parseFloat(s.styles.line_height) || 1.4;
+
+	let y = 0;
+	/** @type {ChatLayoutInfo} */
+	let layout;
+	
+	const dir = s.others.direction & 1 ? 'bottom' : 'top';
+	if (ch >= hh) {
+		el.style[dir] = '0px';
+		el.setAttribute('data-line', '0');
+		el.style.visibility = '';
+		layout = new ChatLayoutInfo(el, y);
+		cache.set(el.id, layout);
+		return el.id;
+	}
+	const overline = cache.maps.length;
+	const reversed = (s.others.direction & 2) > 0;
+	const parentRect = cache.dom.host.getBoundingClientRect();
+
+	switch (mode) {
+		case 'dense': {
+			do {
+				el.style[dir] = `${y * lhf}em`;
+				el.setAttribute('data-line', `${y}`);
+				layout = new ChatLayoutInfo(el, y);
+				const overflow = layout.isOverflow(parentRect);
+				if (overflow) continue;
+				const collidable = cache.anyCollides(layout, reversed);
+				if (collidable) continue;
+				el.style.visibility = '';
+				cache.set(el.id, layout);
+				return el.id;
+			} while (++y <= overline);
+
+			el.classList.add('overlap');
+			const st = s.others.overlapping;
+			const o = st & 0b01 ? .8 : 1;
+			const dy = st & 0b10 ? .5 : 0;
+
+			y = cache.maps.reduce((pi, cv, ci, arr) => cv.size < arr[pi].size ? ci : pi, 0);
+			el.setAttribute('data-line', `${y}`);
+			layout = new ChatLayoutInfo(el, y);
+			const len = [...cache.maps[y].values().filter(layout => layout.isCollidable(layout))].length || 1;
+			el.style.top = `${(y + dy) * lhf}em`;
+			el.style.opacity = `${Math.max(.5, o ** len)}`;
+			el.style.zIndex = `-${len}`;
+			el.style.visibility = '';
+			cache.set(el.id, layout);
+			return el.id;
+		}
+		
+		case 'random': {
+			const calculatedLine = new Set(Array(overline).keys());
+			do {
+				y = (overline * Math.random()) | 0;
+				el.style[dir] = `${y * lhf}em`;
+				el.setAttribute('data-line', `${y}`);
+				layout = new ChatLayoutInfo(el, y);
+				const overflow = layout.isOverflow(parentRect);
+				if (overflow) {
+					for (let i = y; i < overline; i++) {
+						calculatedLine.delete(i);
+					}
+					continue;
+				}
+				const collidable = cache.anyCollides(layout, reversed);
+				if (collidable) {
+					calculatedLine.delete(y);
+					continue;
+				}
+				break;
+			} while (calculatedLine.size > 0);
+			el.style.visibility = '';
+			cache.set(el.id, layout);
+			return el.id;
+		}
+	}
+}
 
 class ChatLayoutInfo {
 	/** @type {DOMRect} */ #rect;
@@ -687,7 +733,7 @@ class TranslationController {
 
 const translationCtl = new TranslationController(s);
 
-class ChatMessageContainer {
+export class ChatMessageContainer {
 	/** @type {Array<HTMLSpanElement | Text>} */ original;
 	/** @type {HTMLElement} */ suffix;
 	/** @type {Node[]} */ translated = [];
