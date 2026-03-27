@@ -371,12 +371,6 @@
 	"suffixOriginalMessage": {
 		"message": "翻訳前のメッセージを併記する"
 	},
-	"translationBlacklist": {
-		"message": "翻訳NGリスト"
-	},
-	"translationUrl": {
-		"message": "翻訳URL (GET)"
-	},
 	"timeshift": {
 		"message": "タイムシフト"
 	},
@@ -458,11 +452,29 @@
 	"hotkey_panel": {
 		"message": "設定パネル"
 	},
+	"translationBlacklist": {
+		"message": "翻訳NGリスト"
+	},
+	"translator": {
+		"message": "翻訳モデル"
+	},
+	"translator_internal": {
+		"message": "ブラウザビルトイン（ローカル翻訳）"
+	},
+	"translator_external": {
+		"message": "外部サービス（URL指定）"
+	},
+	"translator_fallbackNote": {
+		"message": "ローカル翻訳ができない場合は常に外部サービスへフォールバックされます。"
+	},
+	"translationUrl": {
+		"message": "翻訳URL (GET)"
+	},
 	"save": {
 		"message": "保存"
 	},
 	"warn_notSaved": {
-		"message": "保存するとYouTubeを開いているすべてのタブが再読み込みされます"
+		"message": "保存すると拡張機能が再起動します。YouTubeを開いているタブは手動で更新が必要です。"
 	},
 	"pip_marker": {
 		"message": "この動画はピクチャーインピクチャーで再生されています"

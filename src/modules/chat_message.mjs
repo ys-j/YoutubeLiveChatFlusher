@@ -300,7 +300,7 @@ async function fetchAuthorInfo(renderer, type) {
  */
 export async function renderChatItem(item, factory) {
 	const key = Object.keys(item)[0];
-	if (RENDERING_SKIP_KEYS.includes(key)) throw null;
+	if (RENDERING_SKIP_KEYS.includes(key)) throw 'Skipped rendering.';
 
 	/** @type {LiveChat.RendererContent} */
 	const renderer = item[key];
@@ -627,8 +627,6 @@ class ChatLayoutInfo {
 /**
  * @typedef TranslationControllerOptions
  * @prop {object} translation
- * @prop {string} translation.translator
- * @prop {string} translation.url
  * @prop {boolean} translation.regexp
  * @prop {string[]} translation.plainList
  * @prop {object} others
@@ -640,9 +638,6 @@ class TranslationController {
 	 * @param {TranslationControllerOptions} options
 	 */
 	constructor(options) {
-		this.mode = options.translation.translator;
-		this.templateUrl = options.translation.url;
-
 		this.exceptedLanguages = navigator.languages.filter((_, i) => options.others.except_lang & 1 << i);
 
 		const re = options.translation.regexp;
@@ -672,27 +667,18 @@ class TranslationController {
 	async check(text) {
 		if (!text) throw 'Empty text was passed.';
 		const detection = await browser.i18n.detectLanguage(text);
-		const source = detection.languages.at(0)?.language;
+		const source = detection.languages.at(0);
 		if (!source) throw 'Failed to detect the source language.';
-		if (this.exceptedLanguages.includes(source)) {
-			throw `Source language (${source}) is set as exceptions: ` + this.exceptedLanguages.join();
+		if (this.exceptedLanguages.includes(source.language)) {
+			throw `Source language (${source.language}) is set as exceptions: ` + this.exceptedLanguages.join();
 		}
 		if (this.exceptionRules.match(text)) {
 			throw 'Text contains an exception word.';
 		}
-		return { source, isReliable: detection.isReliable };
-	}
-
-	/**
-	 * 
-	 * @param {Record<string, string>} replacer 
-	 */
-	getReadyUrl(replacer) {
-		let url = this.templateUrl;
-		for (const [k, v] of Object.entries(replacer)) {
-			url = url.replace(k, v);
-		}
-		return url;
+		return {
+			source: source.language,
+			isReliable: detection.isReliable || source.percentage > 50,
+		};
 	}
 
 	/**
@@ -706,25 +692,16 @@ class TranslationController {
 		if (!text) return node;
 
 		const span = document.createElement('span');
-		const { source, isReliable } = detection;
-		if (isReliable) {
-			span.setAttribute('data-srclang', source);
-		}
-		
-		const url = this.getReadyUrl({
-			$sl: isReliable ? source : 'auto',
-			$tl: target,
-			$q: encodeURIComponent(text),
-		});
-		/** @type { { sentences: { trans: string }[], src: string }? } */
-		const json = await fetch(url).then(res => res.json());
-		if (json && !this.exceptedLanguages.includes(json.src)) {
-			if (!span.hasAttribute('data-srclang')) {
-				span.setAttribute('data-srclang', json.src);
-			}
-			span.textContent = json.sentences.map(s => s.trans).join('') || '';
+
+		/** @type {Record<string, string>} */
+		const translation = { text, target };
+		if (detection.isReliable) translation.source = detection.source;
+		/** @type { { sentence: string, src: string } } */
+		const res = await browser.runtime.sendMessage({ translation });
+		if (!this.exceptedLanguages.includes(res.src)) {
+			span.setAttribute('data-srclang', res.src);
+			span.textContent = res.sentence;
 		} else {
-			span.removeAttribute('data-srclang');
 			span.textContent = text;
 		}
 		return span;

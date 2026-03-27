@@ -90,6 +90,7 @@ const {
 	message_pause,
 	translation_blacklist_regexp,
 	translation_blacklist,
+	translation_translator,
 	translation_url
 } = form.elements;
 
@@ -112,6 +113,7 @@ s.load().then(() => {
 	/** @type {HTMLInputElement} */
 	(translation_blacklist_regexp).checked = s.translation.regexp;
 	translation_blacklist.value = s.translation.plainList.join('\n');
+	translation_translator.value = s.translation.translator;
 	translation_url.value = s.translation.url;
 });
 
@@ -140,6 +142,7 @@ form.addEventListener('submit', async e => {
 		translation: {
 			regexp: /** @type {HTMLInputElement} */ (translation_blacklist_regexp).checked,
 			plainList: translation_blacklist.value.split(/\n+/).filter(s => s.length > 0),
+			translator: translation_translator.value,
 			url: translation_url.value,
 		},
 	};
