@@ -30,6 +30,7 @@ interface DocumentPictureInPictureEvent extends Event {
 interface DocumentPictureInPicture extends EventTarget {
 	window?: Window;
 	requestWindow(options?: DocumentPictureInPictureOptions): Promise<Window>;
+	addEventListener(type: "enter", callback: (evt: DocumentPictureInPictureEvent) => void | null, options?: AddEventListenerOptions | boolean)
 }
 
 interface Window {

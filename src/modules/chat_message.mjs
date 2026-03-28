@@ -2,7 +2,7 @@
 
 import { fetchInnerTube } from './innertube.mjs';
 import { store as s } from './store.mjs';
-import { filterMessage, getColorRGB, getText } from './utils.mjs';
+import { filterMessage, getColorRGB, getText, loadTemplateDocument } from './utils.mjs';
 
 /** @enum {string} */
 const AuthorType = Object.freeze({
@@ -91,9 +91,7 @@ export class LiveChatLayoutCache {
 	}
 
 	clear() {
-		for (const m of this.maps) {
-			m.clear();
-		}
+		for (const m of this.maps) m.clear();
 	}
 
 	/**
@@ -109,6 +107,136 @@ export class LiveChatLayoutCache {
 			}
 		}
 		return false;
+	}
+}
+
+/**
+ * @typedef AuthorInfo
+ * @prop {string} id
+ * @prop {string} name
+ * @prop {string} thumbnail
+ */
+
+/**
+ * @typedef TextItemFactoryOptions
+ * @prop {"text"} type
+ * @prop {typeof AuthorType[keyof typeof AuthorType]} subtype
+ * @prop {AuthorInfo} author
+ * @prop {ChatMessageContainer} body
+ * @prop {string} text
+ */
+
+/**
+ * @typedef MembershipItemFactoryOptions
+ * @prop {"membership"} type
+ * @prop {"membership" | "milestone"} subtype
+ * @prop {AuthorInfo} author
+ * @prop {Node} months
+ * @prop {ChatMessageContainer} body
+ * @prop { { header: number, body: number } } background
+ */
+
+/**
+ * @typedef PaidMessageItemFactoryOptions
+ * @prop {"paid_message"} type
+ * @prop {AuthorInfo} author
+ * @prop {string} amount
+ * @prop {ChatMessageContainer} body
+ * @prop { { header: number, body: number } } background
+ */
+
+/**
+ * @typedef PaidStickerItemFactoryOptions
+ * @prop {"paid_sticker"} type
+ * @prop {AuthorInfo} author
+ * @prop {string} amount
+ * @prop {string} sticker
+ * @prop { { header: number, body: number } } background
+ */
+
+/**
+ * @typedef GiftItemFactoryOptions
+ * @prop {"gift"} type
+ * @prop {AuthorInfo} author
+ * @prop {string} gifts
+ * @prop { { header: number } } background
+ */
+
+/**
+ * @typedef PollItemFactoryOptions
+ * @prop {"poll"} type
+ * @prop {ChatMessageContainer} body
+ */
+
+export class LiveChatItemFactory {
+	/** @type {Map<string, HTMLElement>} */
+	#templates = new Map();
+
+	async load() {
+		const doc = await loadTemplateDocument('../templates/template_chat_message.html');
+		const elems = doc.getElementsByTagName('template');
+		for (const t of elems) {
+			const el = t.content.firstElementChild;
+			if (el) this.#templates.set(t.id, /** @type {HTMLElement} */ (el));
+		}
+	}
+
+	/**
+	 * Creates new chat message element.
+	 * @param {TextItemFactoryOptions | MembershipItemFactoryOptions | PaidMessageItemFactoryOptions | PaidStickerItemFactoryOptions | GiftItemFactoryOptions | PollItemFactoryOptions} options
+	 */
+	async new(options) {
+		const type = options.type;
+		const el = this.#templates.get(type)?.cloneNode(true);
+		if (!el) return null;
+
+		const header = /** @type {HTMLElement?} */ (el.querySelector('.header'));
+		const body = /** @type {HTMLElement?} */ (el.querySelector('.body'));
+		if ('author' in options) {
+			if ('subtype' in options) el.classList.add(options.subtype);
+			el.dataset.authorId = options.author.id;
+			el.dataset.authorName = options.author.name;
+
+			const a = header?.querySelector('a');
+			if (a) {
+				a.href = `/channel/${options.author.id}`;
+				a.title = options.author.name;
+				const photo = a?.querySelector('img');
+				if (photo) photo.src = options.author.thumbnail;
+			}
+			const name = header?.querySelector('.name');
+			if (name) name.textContent = options.author.name;
+
+			if ('months' in options) {
+				const months = header?.querySelector('.months');
+				months?.append(options.months);
+			} else if ('amount' in options) {
+				const amount = header?.querySelector('.amount');
+				if (amount) amount.textContent = options.amount;
+			} else if ('gifts' in options) {
+				const gifts = header?.querySelector('.gifts');
+				if (gifts) gifts.textContent = `\u{1f381}\ufe0e ${options.gifts}`;
+			}
+		}
+		if ('sticker' in options) {
+			const sticker = /** @type {HTMLImageElement?} */ (el.querySelector('.sticker'));
+			if (sticker) sticker.src = options.sticker;
+		} else if ('body' in options && body) {
+			await options.body.connectTo(body);
+		}
+		if ('background' in options) {
+			if ('header' in options.background && header) {
+				const rgb = getColorRGB(options.background.header);
+				header.style.backgroundColor = `rgba(${rgb.join()},var(--yt-lcf-background-opacity))`;
+			}
+			if ('body' in options.background && body) {
+				const rgb = getColorRGB(options.background.body);
+				body.style.backgroundColor = `rgba(${rgb.join()},var(--yt-lcf-background-opacity))`;
+			} 
+		} else if ('text' in options) {
+			el.dataset.text = options.text;
+		}
+		return el;
 	}
 }
 
@@ -130,359 +258,277 @@ function getAuthorType(renderer) {
 /** @type {Map<string, string>} */
 const authorNameCache = new Map();
 
-export class LiveChatItemLayout {
-	/** @type {string} */ #key;
-	/** @type {LiveChat.RendererContent} */ #renderer;
-	/** @type {DocumentFragment} */ #authorFragment;
-	/** @type {HTMLElement} */ element;
-	/** @type {string} */ id;
-	/** @type {ChatMessageContainer} */ message;
+/**
+ * Fetches author info: id, name and thumbnail.
+ * @param {LiveChat.RendererContent} renderer renderer content
+ * @param {keyof typeof s.parts} type message type
+ * @returns author info
+ */
+async function fetchAuthorInfo(renderer, type) {
+	const id = renderer.authorExternalChannelId;
 
-	/**
-	 * @param {LiveChat.AnyRenderer} item message renderer
-	 */
-	constructor(item) {
-		this.#key = Object.keys(item)[0];
-		// @ts-expect-error
-		this.#renderer = item[this.#key];
-
-		this.element = document.createElement('div');
-		this.id = this.element.id = this.#renderer.id || '';
-		
-		this.#authorFragment = document.createDocumentFragment();
-		this.message = new ChatMessageContainer(this.#renderer.message);
+	/** @type {string} */
+	let name;
+	if (s.others.show_username && id) {
+		const cachedName = authorNameCache.get(id);
+		if (cachedName) {
+			name = cachedName;
+		} else if (type && s.parts[type].name) {
+			const url = new URL('/youtubei/v1/browse', location.origin);
+			try {
+				const json = await fetchInnerTube(url, { browseId: id });
+				const pageTitle = json?.header?.pageHeaderRenderer?.pageTitle;
+				if (pageTitle) {
+					authorNameCache.set(id, pageTitle);
+					name = pageTitle;
+				}
+			} catch (reason) {
+				console.error(reason);
+			}
+		}
 	}
+	name ||= getText(renderer.authorName);
 
-	/**
-	 * Renders a chat item element from the message renderer.
-	 * @returns {Promise<HTMLElement?>} promise of chat item element or null
-	 */
-	async render() {
-		if (RENDERING_SKIP_KEYS.includes(this.#key)) return null;
+	const thumbnail = renderer.authorPhoto.thumbnails[0].url;
+	return { id, name, thumbnail };
+}
 
-		const messageType = this.messageType;
-		/** @type {Promise<any>[]} */
-		const promises = [ this.getAuthorName(messageType) ];
+/**
+ * Renders chat item renderer.
+ * @param {LiveChat.AnyRenderer} item message renderer
+ * @param {LiveChatItemFactory} factory chat item factory
+ */
+export async function renderChatItem(item, factory) {
+	const key = Object.keys(item)[0];
+	if (RENDERING_SKIP_KEYS.includes(key)) throw 'Skipped rendering.';
 
-		const langIndex = s.others.translation;
+	/** @type {LiveChat.RendererContent} */
+	const renderer = item[key];
+	const body = new ChatMessageContainer(renderer.message);
+
+	const langIndex = s.others.translation;
+	if (langIndex) {
 		const langSuffix = s.others.suffix_original;
-		const nl = navigator.languages;
-		const tl = ['', ...nl][Math.abs(langIndex)];
-		if (tl) {
-			const lazy = s.others.translation_timing ?? 0;
-			const translating = this.message.translate(lazy ? 'lazy' : 'eager', tl, !!langSuffix);
-			promises.push(translating);
-		}
-		await Promise.all(promises);
-
-		switch (this.#key) {
-			case 'liveChatTextMessageRenderer': {
-				const allHidden = !Object.values(s.parts[messageType ?? 'normal']).includes(true);
-				if (allHidden) return null;
-				this.element.className = 'text ' + (messageType ?? 'normal');
-				const header = document.createElement('span');
-				header.className = 'header';
-				header.appendChild(this.#authorFragment);
-				const body = document.createElement('span');
-				body.part = 'message';
-				body.className = 'body';
-				body.append(...this.message);
-				this.element.append(header, body);
-				this.element.setAttribute('data-text', getText(this.#renderer.message));
-				return this.element;
-			}
-			case 'liveChatMembershipItemRenderer': {
-				const {
-					headerPrimaryText: primary,
-					headerSubtext: sub,
-				} = /** @type {LiveChat.MembershipItemRenderer["liveChatMembershipItemRenderer"]} */ (this.#renderer);
-				this.element.className = messageType ?? 'membership';
-				const allHidden = !Object.values(s.parts[messageType ?? 'membership']).includes(true);
-				if (allHidden) return null;
-				const header = document.createElement('div');
-				header.className = 'header';
-				header.style.backgroundColor = `rgba(${getColorRGB(0xff0f9d58).join()},var(--yt-lcf-background-opacity))`;
-				const months = document.createElement('span');
-				months.part = months.className = 'months';
-				months.append(...getChatMessage(primary || sub, { start: primary ? 1 : 0, filterMode: 0 }));
-				header.append(this.#authorFragment, months);
-				const body = document.createElement('div');
-				body.part = 'message';
-				body.className = 'body';
-				body.style.backgroundColor = `rgba(${getColorRGB(0xff0a8043).join()},var(--yt-lcf-background-opacity))`;
-				body.append(...this.message);
-				this.element.append(header, body);
-				return this.element;
-			}
-			case 'liveChatPaidMessageRenderer': {
-				const allHidden = !Object.values(s.parts.paid_message).includes(true);
-				if (allHidden) return null;
-				const {
-					headerBackgroundColor,
-					purchaseAmountText,
-					bodyBackgroundColor,
-				} = /** @type {LiveChat.PaidMessageRenderer["liveChatPaidMessageRenderer"]} */ (this.#renderer);
-				this.element.className = 'superchat';
-				const header = document.createElement('div');
-				header.className = 'header';
-				header.style.backgroundColor = `rgba(${getColorRGB(headerBackgroundColor).join()},var(--yt-lcf-background-opacity))`;
-				const amount = document.createElement('span');
-				amount.part = amount.className = 'amount';
-				amount.append(getText(purchaseAmountText));
-				header.append(this.#authorFragment, amount);
-				const body = document.createElement('div');
-				body.part = 'message';
-				body.className = 'body';
-				body.style.backgroundColor = `rgba(${getColorRGB(bodyBackgroundColor).join()},var(--yt-lcf-background-opacity))`;
-				body.append(...this.message);
-				this.element.append(header, body);
-				return this.element;
-			}
-			case 'liveChatPaidStickerRenderer': {
-				const allHidden = !Object.values(s.parts.paid_sticker).includes(true);
-				if (allHidden) return null;
-				const { backgroundColor, purchaseAmountText, moneyChipBackgroundColor, sticker }
-					= /** @type {LiveChat.PaidStickerRenderer["liveChatPaidStickerRenderer"]} */ (this.#renderer);
-				this.element.className = 'supersticker';
-				const header = document.createElement('div');
-				header.className = 'header';
-				header.style.backgroundColor = `rgba(${getColorRGB(backgroundColor).join()},var(--yt-lcf-background-opacity))`;
-				const amount = document.createElement('span');
-				amount.part = amount.className = 'amount';
-				amount.append(getText(purchaseAmountText));
-				header.append(this.#authorFragment, amount);
-				const body = document.createElement('figure');
-				body.part = 'sticker';
-				body.className = 'body';
-				body.style.backgroundColor = `rgba(${getColorRGB(moneyChipBackgroundColor).join()},var(--yt-lcf-background-opacity)`;
-				const image = new Image();
-				image.className = 'sticker';
-				image.src = (sticker.thumbnails.find(t => 2 * 36 <= (t.width || 36)) || sticker.thumbnails[0]).url;
-				image.loading = 'lazy';
-				body.appendChild(image);
-				this.element.append(header, body);
-				return this.element;
-			}
-			case 'liveChatSponsorshipsGiftPurchaseAnnouncementRenderer': {
-				const allHidden = !Object.values(s.parts.membership).includes(true);
-				if (allHidden) return null;
-				this.element.className = 'membership gift';
-				const {
-					header, // @ts-expect-error
-				} = /** @type {LiveChat.SponsorshipsGiftPurchaseAnnouncementRenderer["liveChatSponsorshipsGiftPurchaseAnnouncementRenderer"]} */ (this.#renderer);
-				const headerRenderer = header.liveChatSponsorshipsHeaderRenderer;
-				const count = headerRenderer.primaryText?.runs?.filter(r => !Number.isNaN(Number.parseInt(r.text, 10)))[0]?.text;
-				if (!count) break;
-				const div = document.createElement('div');
-				div.className = 'header';
-				div.style.backgroundColor = `rgba(${getColorRGB(0xff0f9d58).join()},var(--yt-lcf-background-opacity))`;
-				const gifts = document.createElement('span');
-				gifts.part = gifts.className = 'gifts';
-				gifts.textContent = `\u{1f381}\ufe0e ${count}`;
-				div.append(this.#authorFragment, gifts);
-				this.element.appendChild(div);
-				return this.element;
-			}
-			case 'liveChatViewerEngagementMessageRenderer': {
-				const {
-					icon, // @ts-expect-error
-				} = /** @type {LiveChat.ViewerEngagementMessageRenderer["liveChatViewerEngagementMessageRenderer"]} */ (this.#renderer);
-				switch (icon.iconType) {
-					case 'POLL': {
-						this.element.className = 'engagement-poll';
-						const div = document.createElement('div');
-						div.part = 'message';
-						div.className = 'body';
-						this.element.append(...this.message);
-						break;
-					}
-					case 'YOUTUBE_ROUND': break;
-					default: console.debug(this.#renderer);
-				}
-				break;
-			}
-			// liveChatModeChangeMessageRenderer
-			default:
-				console.debug({ [this.#key]: this.#renderer });
-		}
-		return null;
+		const tl = navigator.languages[Math.abs(langIndex) - 1];
+		const lazy = s.others.translation_timing ?? 0;
+		await body.translate(lazy ? 'lazy' : 'eager', tl, !!langSuffix);
 	}
 
-	get messageType() {
-		switch (this.#key) {
-			case 'liveChatTextMessageRenderer':
-				return getAuthorType(this.#renderer);
-			case 'liveChatMembershipItemRenderer':
-				return 'headerPrimaryText' in this.#renderer ? 'milestone': 'membership';
-			case 'liveChatPaidMessageRenderer':
-				return 'paid_message';
-			case 'liveChatPaidStickerRenderer':
-				return 'paid_sticker';
-			case 'liveChatSponsorshipsGiftPurchaseAnnouncementRenderer':
-				return 'membership';
-			default:
-				return null;
+	/** @type {(type: keyof typeof s.parts) => boolean} */
+	const allHidden = type => !Object.values(s.parts[type]).includes(true);
+
+	/** @type {HTMLElement?} */
+	let element = null;
+	switch (key) {
+		case 'liveChatTextMessageRenderer': {
+			const subtype = getAuthorType(renderer);
+			if (allHidden(subtype)) break;
+			element = await factory.new({
+				type: 'text',
+				subtype,
+				author: await fetchAuthorInfo(renderer, subtype),
+				body,
+				text: getText(renderer.message),
+			});
+			break;
 		}
-	}
-
-	/**
-	 * Fetches author name, and then renders the name and thumbnail.
-	 * @param {keyof typeof s.parts | null} messageType 
-	 * @returns {Promise<string?>}
-	 */
-	async getAuthorName(messageType) {
-		const authorId = this.#renderer.authorExternalChannelId;
-		this.element.setAttribute('data-author-id', authorId);
-
-		/** @type {string | undefined} */
-		let authorName;
-		if (s.others.show_username && authorId) {
-			if (authorNameCache.has(authorId)) {
-				authorName = authorNameCache.get(authorId);
-			} else if (messageType && s.parts[messageType].name) {
-				const url = new URL('/youtubei/v1/browse', location.origin);
-				try {
-					const json = await fetchInnerTube(url, { browseId: authorId });
-					authorName = json?.header?.pageHeaderRenderer?.pageTitle;
-					if (authorName) authorNameCache.set(authorId, authorName);
-				} catch (reason) {
-					console.error(reason);
-				}
-			}
+		case 'liveChatMembershipItemRenderer': {
+			const subtype = 'headerPrimaryText' in renderer ? 'milestone': 'membership';
+			if (allHidden(subtype)) break;
+			const {
+				headerPrimaryText: primary,
+				headerSubtext: sub,
+			} = /** @type {LiveChat.MembershipItemRenderer["liveChatMembershipItemRenderer"]} */ (renderer);
+			element = await factory.new({
+				type: 'membership',
+				subtype,
+				author: await fetchAuthorInfo(renderer, subtype),
+				months: getChatMessage(primary || sub, { start: primary ? 1 : 0, filterMode: 0 }),
+				body,
+				background: { header: 0xff0f9d58, body: 0xff0a8043 },
+			});
+			break;
 		}
-		authorName ||= getText(this.#renderer.authorName);
-		if (!authorName) return null;
-		this.element.setAttribute('data-author-name', authorName);
-
-		const a = document.createElement('a');
-		a.href = `/channel/${authorId}`;
-		a.target = '_blank';
-		a.title = authorName;
-		
-		const img = new Image();
-		img.part = img.className = 'photo';
-		img.src = this.#renderer.authorPhoto.thumbnails[0].url;
-		img.loading = 'lazy';
-		a.appendChild(img);
-		
-		const span = document.createElement('span');
-		span.part = span.className = 'name';
-		span.textContent = authorName;
-		
-		this.#authorFragment.append(a, span);
-		return authorName;
-	}
-
-	/**
-	 * Appends this element to the shadow root.
-	 * @param {LiveChatLayoutCache} cache layout cache object
-	 * @param {"dense" | "random"} [mode="dense"] layout mode
-	 * @returns {string} renderer id
-	 */
-	appendTo(cache, mode = 'dense') {
-		this.element.style.visibility = 'hidden';
-		cache.dom.appendChild(this.element);
-
-		const hh = cache.dom.host.clientHeight, hw = cache.dom.host.clientWidth;
-		const ch = this.element.clientHeight, cw = this.element.clientWidth;
-		if (cw >= hw * (Number.parseInt(s.styles.max_width, 10) / 100 || 1)) {
-			this.element.classList.add('wrap');
+		case 'liveChatPaidMessageRenderer': {
+			const type = 'paid_message';
+			if (allHidden(type)) break;
+			const {
+				headerBackgroundColor,
+				purchaseAmountText,
+				bodyBackgroundColor,
+			} = /** @type {LiveChat.PaidMessageRenderer["liveChatPaidMessageRenderer"]} */ (renderer);
+			element = await factory.new({
+				type,
+				author: await fetchAuthorInfo(renderer, type),
+				amount: getText(purchaseAmountText),
+				body,
+				background: { header: headerBackgroundColor, body: bodyBackgroundColor },
+			});
+			break;
 		}
-		
-		this.element.style.setProperty('--yt-lcf-translate-x', `-${hw + cw}px`);
-
-		const body = /** @type {HTMLElement?} */ (this.element.lastElementChild);
-		if (body) {
-			const content = body.textContent;
-			if (content) {
-				browser.i18n.detectLanguage(content).then(result => {
-					if (result.isReliable) {
-						body.lang = result.languages[0].language;
-					}
-				});
-			}
+		case 'liveChatPaidStickerRenderer': {
+			const type = 'paid_sticker';
+			if (allHidden(type)) break;
+			const {
+				backgroundColor,
+				purchaseAmountText,
+				moneyChipBackgroundColor,
+				sticker,
+			} = /** @type {LiveChat.PaidStickerRenderer["liveChatPaidStickerRenderer"]} */ (renderer);
+			element = await factory.new({
+				type,
+				author: await fetchAuthorInfo(renderer, type),
+				amount: getText(purchaseAmountText),
+				sticker: (sticker.thumbnails.find(t => 2 * 36 <= (t.width || 36)) || sticker.thumbnails[0]).url,
+				background: { header: backgroundColor, body: moneyChipBackgroundColor },
+			});
+			break;
 		}
-
-		const lhf = Number.parseFloat(s.styles.line_height) || 1.4;
-
-		let y = 0;
-		/** @type {ChatLayoutInfo} */
-		let layout;
-		
-		const dir = s.others.direction & 1 ? 'bottom' : 'top';
-		if (ch >= hh) {
-			this.element.style[dir] = '0px';
-			this.element.setAttribute('data-line', '0');
-			this.element.style.visibility = '';
-			layout = new ChatLayoutInfo(this.element, y);
-			cache.set(this.id, layout);
-			return this.id;
+		case 'liveChatSponsorshipsGiftPurchaseAnnouncementRenderer': {
+			const subtype = 'membership';
+			if (allHidden(subtype)) break;
+			// @ts-expect-error
+			const headerRenderer = /** @type {LiveChat.SponsorshipsHeaderRenderer} */(renderer.header).liveChatSponsorshipsHeaderRenderer;
+			const count = headerRenderer.primaryText?.runs?.filter(r => !Number.isNaN(Number.parseInt(r.text, 10)))[0]?.text;
+			if (!count) break;
+			element = await factory.new({
+				type: 'gift',
+				author: await fetchAuthorInfo(renderer, subtype),
+				gifts: count,
+				background: { header: 0xff0f9d58 },
+			});
+			break;
 		}
-		const overline = cache.maps.length;
-		const reversed = (s.others.direction & 2) > 0;
-		const parentRect = cache.dom.host.getBoundingClientRect();
-
-		switch (mode) {
-			case 'dense': {
-				do {
-					this.element.style[dir] = `${y * lhf}em`;
-					this.element.setAttribute('data-line', `${y}`);
-					layout = new ChatLayoutInfo(this.element, y);
-					const overflow = layout.isOverflow(parentRect);
-					if (overflow) continue;
-					const collidable = cache.anyCollides(layout, reversed);
-					if (collidable) continue;
-					this.element.style.visibility = '';
-					cache.set(this.id, layout);
-					return this.id;
-				} while (++y <= overline);
-
-				this.element.classList.add('overlap');
-				const st = s.others.overlapping;
-				const o = st & 0b01 ? .8 : 1;
-				const dy = st & 0b10 ? .5 : 0;
-
-				y = cache.maps.reduce((pi, cv, ci, arr) => cv.size < arr[pi].size ? ci : pi, 0);
-				this.element.setAttribute('data-line', `${y}`);
-				layout = new ChatLayoutInfo(this.element, y);
-				const len = [...cache.maps[y].values().filter(layout => layout.isCollidable(layout))].length || 1;
-				this.element.style.top = `${(y + dy) * lhf}em`;
-				this.element.style.opacity = `${Math.max(.5, o ** len)}`;
-				this.element.style.zIndex = `-${len}`;
-				this.element.style.visibility = '';
-				cache.set(this.id, layout);
-				return this.id;
-			}
-			
-			case 'random': {
-				const calculatedLine = new Set(Array(overline).keys());
-				do {
-					y = (overline * Math.random()) | 0;
-					this.element.style[dir] = `${y * lhf}em`;
-					this.element.setAttribute('data-line', `${y}`);
-					layout = new ChatLayoutInfo(this.element, y);
-					const overflow = layout.isOverflow(parentRect);
-					if (overflow) {
-						for (let i = y; i < overline; i++) {
-							calculatedLine.delete(i);
-						}
-						continue;
-					}
-					const collidable = cache.anyCollides(layout, reversed);
-					if (collidable) {
-						calculatedLine.delete(y);
-						continue;
-					}
+		case 'liveChatViewerEngagementMessageRenderer': {
+			// @ts-expect-error
+			switch (renderer.icon.iconType) {
+				case 'POLL':
+					element = await factory.new({ type: 'poll', body });
 					break;
-				} while (calculatedLine.size > 0);
-				this.element.style.visibility = '';
-				cache.set(this.id, layout);
-				return this.id;
+				case 'YOUTUBE_ROUND':
+					break;
+				default:
+					console.debug(renderer);
 			}
 		}
+	}
+	if (element) {
+		element.id = renderer.id;
+		return element;
+	} else {
+		throw 'Failed to render a chat item element.';
 	}
 }
 
+/**
+ * 
+ * @param {HTMLElement} el rendered element
+ * @param {LiveChatLayoutCache} cache layout cache container
+ * @param {"dense" | "random"} [mode] layout mode
+ * @return renderer/element id
+ */
+export function layoutChatItem(el, cache, mode = 'dense') {
+	el.style.visibility = 'hidden';
+	cache.dom.appendChild(el);
+
+	const hh = cache.dom.host.clientHeight, hw = cache.dom.host.clientWidth;
+	const ch = el.clientHeight, cw = el.clientWidth;
+	if (cw >= hw * (Number.parseInt(s.styles.max_width, 10) / 100 || 1)) {
+		el.classList.add('wrap');
+	}
+	
+	el.style.setProperty('--yt-lcf-translate-x', `-${hw + cw}px`);
+
+	const body = /** @type {HTMLElement?} */ (el.lastElementChild);
+	if (body) {
+		const content = body.textContent;
+		if (content) {
+			browser.i18n.detectLanguage(content).then(result => {
+				if (result.isReliable) {
+					body.lang = result.languages[0].language;
+				}
+			});
+		}
+	}
+
+	const lhf = Number.parseFloat(s.styles.line_height) || 1.4;
+
+	let y = 0;
+	/** @type {ChatLayoutInfo} */
+	let layout;
+	
+	const dir = s.others.direction & 1 ? 'bottom' : 'top';
+	if (ch >= hh) {
+		el.style[dir] = '0px';
+		el.setAttribute('data-line', '0');
+		el.style.visibility = '';
+		layout = new ChatLayoutInfo(el, y);
+		cache.set(el.id, layout);
+		return el.id;
+	}
+	const overline = cache.maps.length;
+	const reversed = (s.others.direction & 2) > 0;
+	const parentRect = cache.dom.host.getBoundingClientRect();
+
+	switch (mode) {
+		case 'dense': {
+			do {
+				el.style[dir] = `${y * lhf}em`;
+				el.setAttribute('data-line', `${y}`);
+				layout = new ChatLayoutInfo(el, y);
+				const overflow = layout.isOverflow(parentRect);
+				if (overflow) continue;
+				const collidable = cache.anyCollides(layout, reversed);
+				if (collidable) continue;
+				el.style.visibility = '';
+				cache.set(el.id, layout);
+				return el.id;
+			} while (++y <= overline);
+
+			el.classList.add('overlap');
+			const st = s.others.overlapping;
+			const o = st & 0b01 ? .8 : 1;
+			const dy = st & 0b10 ? .5 : 0;
+
+			y = cache.maps.reduce((pi, cv, ci, arr) => cv.size < arr[pi].size ? ci : pi, 0);
+			el.setAttribute('data-line', `${y}`);
+			layout = new ChatLayoutInfo(el, y);
+			const len = [...cache.maps[y].values().filter(layout => layout.isCollidable(layout))].length || 1;
+			el.style.top = `${(y + dy) * lhf}em`;
+			el.style.opacity = `${Math.max(.5, o ** len)}`;
+			el.style.zIndex = `-${len}`;
+			el.style.visibility = '';
+			cache.set(el.id, layout);
+			return el.id;
+		}
+		
+		case 'random': {
+			const calculatedLine = new Set(Array(overline).keys());
+			do {
+				y = (overline * Math.random()) | 0;
+				el.style[dir] = `${y * lhf}em`;
+				el.setAttribute('data-line', `${y}`);
+				layout = new ChatLayoutInfo(el, y);
+				const overflow = layout.isOverflow(parentRect);
+				if (overflow) {
+					for (let i = y; i < overline; i++) {
+						calculatedLine.delete(i);
+					}
+					continue;
+				}
+				const collidable = cache.anyCollides(layout, reversed);
+				if (collidable) {
+					calculatedLine.delete(y);
+					continue;
+				}
+				break;
+			} while (calculatedLine.size > 0);
+			el.style.visibility = '';
+			cache.set(el.id, layout);
+			return el.id;
+		}
+	}
+}
 
 class ChatLayoutInfo {
 	/** @type {DOMRect} */ #rect;
@@ -581,8 +627,6 @@ class ChatLayoutInfo {
 /**
  * @typedef TranslationControllerOptions
  * @prop {object} translation
- * @prop {string} translation.translator
- * @prop {string} translation.url
  * @prop {boolean} translation.regexp
  * @prop {string[]} translation.plainList
  * @prop {object} others
@@ -590,63 +634,58 @@ class ChatLayoutInfo {
  */
 
 class TranslationController {
+	/** @readonly */
+	static TRANSLATABLE_PATTERN = /[\p{L}\p{N}]/u;
+
 	/**
 	 * @param {TranslationControllerOptions} options
 	 */
 	constructor(options) {
-		this.mode = options.translation.translator;
-		this.templateUrl = options.translation.url;
-
 		this.exceptedLanguages = navigator.languages.filter((_, i) => options.others.except_lang & 1 << i);
 
 		const re = options.translation.regexp;
-		const list = options.translation.plainList;
-		this.exceptionRules = re ? {
-			rules: list.map(r => new RegExp(r)),
-			/** @param {string} s text */
-			match(s) {
-				for (const r of this.rules) if (r.test(s)) return true;
-				return false;
-			},
-		}: {
-			rules: list,
-			/** @param {string} s text */
-			match(s) {
-				for (const r of this.rules) if (s.includes(r)) return true;
-				return false;
-			}
-		};
+		const list = options.translation.plainList.filter(l => l.trim());
+		if (list.length > 0) {
+			/** @type {(r: string) => string} */
+			const transform = re ? r => `(?:${r})` : r => r.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+			this.exceptionRule = new RegExp(list.map(transform).join('|'));
+		} else {
+			this.exceptionRule = /$^/;
+		}
 	}
 
 	/**
 	 * Checks if the message will be translated.
 	 * @param {string} text original message
-	 * @returns {Promise<LanguageDetection>} detection result
+	 * @returns {Promise<LanguageDetection?>} detection result
 	 */
 	async check(text) {
-		if (!text) throw 'Empty text was passed.';
+		if (!text) {
+			console.warn('Empty text was passed.');
+			return null;
+		}
+		if (!TranslationController.TRANSLATABLE_PATTERN.test(text)) {
+			console.warn('Text does not contain any translatable characters.');
+			return null;
+		}
+		if (this.exceptionRule.test(text)) {
+			console.debug('Text contains an exception word.');
+			return null;
+		}
 		const detection = await browser.i18n.detectLanguage(text);
-		const source = detection.languages.at(0)?.language;
-		if (!source) throw 'Failed to detect the source language.';
-		if (this.exceptedLanguages.includes(source)) {
-			throw `Source language (${source}) is set as exceptions: ` + this.exceptedLanguages.join();
+		const source = detection.languages.at(0);
+		if (!source) {
+			console.debug('Failed to detect the source language: ' + text);
+			return null;
 		}
-		if (this.exceptionRules.match(text)) {
-			throw 'Text contains an exception word.';
+		if (this.exceptedLanguages.includes(source.language)) {
+			console.debug(`Source language (${source.language}) is set as exceptions: ` + this.exceptedLanguages.join());
+			return null;
 		}
-		return { source, isReliable: detection.isReliable };
-	}
-
-	/**
-	 * 
-	 * @param {Record<string, string>} replacer 
-	 */
-	getReadyUrl(replacer) {
-		let url = this.templateUrl;
-		for (const [k, v] of Object.entries(replacer)) {
-			url = url.replace(k, v);
-		}
-		return url;
+		return {
+			source: source.language,
+			isReliable: detection.isReliable || source.percentage > 50,
+		};
 	}
 
 	/**
@@ -655,58 +694,43 @@ class TranslationController {
 	 * @param {string} target target launguage
 	 * @returns {Promise<Node>} translated node
 	 */
-	async translateNode(node, detection, target) {
+	async translate(node, detection, target) {
 		const text = node.textContent;
 		if (!text) return node;
 
 		const span = document.createElement('span');
-		const { source, isReliable } = detection;
-		if (isReliable) {
-			span.setAttribute('data-srclang', source);
-		}
-		
-		const url = this.getReadyUrl({
-			$sl: isReliable ? source : 'auto',
-			$tl: target,
-			$q: encodeURIComponent(text),
-		});
-		/** @type { { sentences: { trans: string }[], src: string }? } */
-		const json = await fetch(url).then(res => res.json());
-		if (json && !this.exceptedLanguages.includes(json.src)) {
-			if (!span.hasAttribute('data-srclang')) {
-				span.setAttribute('data-srclang', json.src);
-			}
-			span.textContent = json.sentences.map(s => s.trans).join('') || '';
+
+		/** @type {Record<string, string>} */
+		const translation = { text, target };
+		if (detection.isReliable) translation.source = detection.source;
+		/** @type { { sentence: string, src: string } | undefined } */
+		const res = await browser.runtime.sendMessage({ translation });
+		if (res && !this.exceptedLanguages.includes(res.src)) {
+			span.setAttribute('data-srclang', res.src);
+			span.textContent = res.sentence;
 		} else {
-			span.removeAttribute('data-srclang');
 			span.textContent = text;
 		}
 		return span;
 	}
 }
 
-const translationCtl = new TranslationController(s);
+const translator = new TranslationController(s);
+const RESOLVED_NULL = Promise.resolve(null);
 
-class ChatMessageContainer {
-	/** @type {Array<HTMLSpanElement | Text>} */ original;
-	/** @type {HTMLElement} */ suffix;
-	/** @type {Node[]} */ translated = [];
-	/** @type {boolean} */ hasTranslated = false;
+export class ChatMessageContainer {
+	/** @type {DocumentFragment | Text} */ #original;
+	/** @type {HTMLElement} */ #suffix;
+	/** @type {Promise<DocumentFragment?>} */ translating = RESOLVED_NULL;
+	lazy = false;
 
 	/**
 	 * @param {LiveChat.RendererContent["message"]} message 
 	 */
 	constructor(message) {
-		this.original = getChatMessage(message);
-		this.suffix = document.createElement('small');
-		this.suffix.classList.add('original');
-	}
-
-	detectAsync() {
-		return Promise.allSettled(this.original.map(node => {
-			const text = node.textContent;
-			return translationCtl.check(text);
-		}));
+		this.#original = getChatMessage(message);
+		this.#suffix = document.createElement('small');
+		this.#suffix.classList.add('original');
 	}
 
 	/**
@@ -715,77 +739,63 @@ class ChatMessageContainer {
 	 * @param {boolean} suffix whether suffixes original message
 	 */
 	async translate(mode, target, suffix = false) {
-		const detectionResults = await this.detectAsync();
-		this.hasTranslated = detectionResults.some(p => p.status === 'fulfilled');
-		switch (mode) {
-			case 'eager':
-				return this.#translateEager(detectionResults, target, suffix);
-			case 'lazy':
-				return this.#translateLazy(detectionResults, target, suffix);
-		}
+		this.lazy = mode === 'lazy';
+		const detections = await this.#detect();
+		const sourceNodes = this.#original.childNodes;
+		this.translating = Promise.all(detections.map((d, i) => {
+			const node = sourceNodes[i]//.cloneNode(true);
+			return d ? translator.translate(node, d, target) : node;
+		})).then(nodes => {
+			const eq = this.#original.textContent === nodes.map(n => n.textContent).join('');
+			if (!eq) {
+				if (suffix) this.#suffix.textContent = this.#getOriginalText();
+				const fragment = document.createDocumentFragment();
+				if (suffix) {
+					this.#suffix.textContent = this.#getOriginalText();
+					fragment.append(...nodes, this.#suffix);
+				} else {
+					fragment.append(...nodes);
+				}
+				return fragment;
+			}
+			return null;
+		});
+		return this.lazy ? RESOLVED_NULL : this.translating;
 	}
 
+	async #detect() {
+		const nodes = this.#original.childNodes;
+		const len = nodes.length;
+
+		/** @type {Promise<LanguageDetection?>[]} */
+		const promises = new Array(len);
+		for (let i = 0; i < len; i++) {
+			const text = nodes[i].textContent;
+			promises[i] = text ? translator.check(text) : RESOLVED_NULL;
+		}
+		return Promise.all(promises);
+	}
+
+	#getOriginalText() {
+		if (this.#original.nodeType === Node.TEXT_NODE) {
+			return this.#original.textContent;
+		}
+		let text = '';
+		const nodes = this.#original.childNodes;
+		for (let i = 0, l = nodes.length; i < l; i++) {
+			const cn = nodes[i];
+			const isEmoji = cn.nodeType === Node.ELEMENT_NODE && /** @type {Element} */ (cn).classList.contains('emoji');
+			if (!isEmoji) text += cn.textContent;
+		}
+		return text;
+	}
+	
 	/**
-	 * @param {PromiseSettledResult<LanguageDetection>[]} detectionResults results of detection promise
-	 * @param {string} target target language
-	 * @param {boolean} suffix whether suffixes original message
+	 * @param {HTMLElement} element 
 	 */
-	async #translateEager(detectionResults, target, suffix) {
-		this.translated = await Promise.all(detectionResults.map(async (p, i) => {
-			const node = this.original[i];
-			if (p.status === 'fulfilled') {
-				return await translationCtl.translateNode(node, p.value, target);
-			} else {
-				return node;
-			}
-		}));
-		if (suffix && !this.equals()) {
-			this.suffix.append(...this.original);
-		}
-	}
-
-	/**
-	 * @param {PromiseSettledResult<LanguageDetection>[]} detectionResults results of detection promise
-	 * @param {string} target target language
-	 * @param {boolean} suffix whether suffixes original message
-	 */
-	async #translateLazy(detectionResults, target, suffix) {
-		this.translated = this.original.map(node => node.cloneNode(true));
-		this.translated = await Promise.all(detectionResults.map(async (p, i) => {
-			const node = this.original[i];
-			if (p.status === 'fulfilled') {
-				const translated = await translationCtl.translateNode(node, p.value, target);
-				const child = this.translated[i];
-				child?.parentNode?.replaceChild(translated, child);
-				return translated;
-			} else {
-				return node;
-			}
-		}));
-		if (suffix && !this.equals()) {
-			/** @param {Node} node */
-			const cloneText = node => node instanceof Element && node.classList.contains('emoji') ? new Text() : node.cloneNode();
-			this.suffix.append(...this.original.map(cloneText));
-		}
-	}
-
-	equals() {
-		const originalText = this.original.map(n => n.textContent).join('');
-		const translatedText = this.translated.map(n => n.textContent).join('');
-		return originalText === translatedText;
-	}
-
-	*[Symbol.iterator]() {
-		if (this.hasTranslated) {
-			for (const node of this.translated) {
-				yield node;
-			}
-			yield this.suffix;
-		} else {
-			for (const node of this.original) {
-				yield node;
-			}
-		}
+	async connectTo(element) {
+		const translated = await this.translating;
+		element.append(translated || this.#original);
 	}
 }
 
@@ -816,10 +826,10 @@ export function updateMutedWordsList() {
  * @param {number} [options.end] end position of message
  * @param {EmojiModeEnum} [options.emoji] emoji mode
  * @param {MutedWordModeEnum} [options.filterMode] filter mode
- * @returns {Array<HTMLSpanElement | Text>} nodes of chat message
+ * @returns {DocumentFragment | Text} nodes of chat message
  */
 function getChatMessage(message, options = {}) {
-	if (!message) return [];
+	if (!message) return new Text();
 	
 	const { start, end, filterMode } = options;
 	const filterOptions = {
@@ -829,16 +839,16 @@ function getChatMessage(message, options = {}) {
 	};
 	if ('simpleText' in message) {
 		const str = filterMessage(message.simpleText, filterOptions).value;
-		return [ new Text(start || end ? str.slice(start, end) : str) ];
+		return new Text(start || end ? str.slice(start, end) : str);
 	}
-	const rslt = [];
+	const rslt = document.createDocumentFragment();
 	const runs = start || end ? message.runs.slice(start, end) : message.runs;
 	for (const r of runs) {
 		if ('text' in r) {
 			const filtered = filterMessage(r.text, filterOptions);
-			if (filtered.done && filterMode === MutedWordModeEnum.ALL) return [];
-			let node;
+			if (filtered.done && filterMode === MutedWordModeEnum.ALL) return new Text();
 			if (r.navigationEndpoint || r.bold || r.italics) {
+				let node;
 				if (r.navigationEndpoint) {
 					node = document.createElement('a');
 					const ep = r.navigationEndpoint.urlEndpoint || r.navigationEndpoint.watchEndpoint;
@@ -855,22 +865,22 @@ function getChatMessage(message, options = {}) {
 						svg.setAttribute('fill', 'currentColor');
 						svg.setAttribute('stroke', '#000');
 						svg.setAttribute('paint-order', 'stroke');
-						if (iconref) svg.appendChild(iconref.cloneNode(true));
-						node.appendChild(svg);
+						if (iconref) svg.append(iconref.cloneNode(true));
+						node.append(svg);
 					}
 				} else {
 					node = document.createElement('span');
 				}
 				if (r.bold) node.classList.add('b');
 				if (r.italics) node.classList.add('i');
+				rslt.append(node);
 			} else {
-				node = new Text(filtered.value);
+				rslt.append(filtered.value);
 			}
-			rslt.push(node);
 		} else {
 			const emoji = options.emoji ?? s.others.emoji;
 			if (emoji < 0) {
-				rslt.push(new Text(r.emoji.shortcuts?.at(0) || r.emoji.emojiId || ''));
+				rslt.append(r.emoji.shortcuts?.at(0) || r.emoji.emojiId || '');
 			} else if (emoji) {
 				let skip = false;
 				if (filterMode) {
@@ -883,12 +893,12 @@ function getChatMessage(message, options = {}) {
 						const replacement = s.mutedWords.replacement;
 						switch (filterMode) {
 							case MutedWordModeEnum.ALL:
-								return [];
+								return new Text();
 							case MutedWordModeEnum.WORD:
-								rslt.push(new Text(replacement));
+								rslt.append(replacement);
 								break;
 							case MutedWordModeEnum.CHAR:
-								rslt.push(new Text([...replacement][0] || ''));
+								rslt.append([...replacement][0] || '');
 								break;
 						}
 						break;
@@ -903,14 +913,14 @@ function getChatMessage(message, options = {}) {
 						img.src = thumbnail.url;
 						img.alt = label;
 					} else {
-						img = new Text(r.emoji.emojiId);
+						img = r.emoji.emojiId;
 					}
 					const span = document.createElement('span');
 					span.classList.add('emoji');
 					span.setAttribute('data-label', label);
 					span.setAttribute('data-shortcut', r.emoji.shortcuts?.at(0) || '');
-					span.appendChild(img);
-					rslt.push(span);
+					span.append(img);
+					rslt.append(span);
 				}
 			}
 		}

@@ -371,12 +371,6 @@
 	"suffixOriginalMessage": {
 		"message": "Suffix original message"
 	},
-	"translationBlacklist": {
-		"message": "Translation Exclusion List"
-	},
-	"translationUrl": {
-		"message": "Translation URL (GET)"
-	},
 	"timeshift": {
 		"message": "Time-shift"
 	},
@@ -458,11 +452,29 @@
 	"hotkey_panel": {
 		"message": "Config Panel"
 	},
+	"translationBlacklist": {
+		"message": "Translation Exclusion List"
+	},
+	"translator": {
+		"message": "Translator"
+	},
+	"translator_internal": {
+		"message": "Browser built-in (Local)"
+	},
+	"translator_external": {
+		"message": "External service (URL)"
+	},
+	"translator_fallbackNote": {
+		"message": "It will be felled back to the external service when browser built-in translator is unavailable."
+	},
+	"translationUrl": {
+		"message": "Translation URL (GET)"
+	},
 	"save": {
 		"message": "Save"
 	},
 	"warn_notSaved": {
-		"message": "If saved, all tabs opening YouTube will be refreshed automatically."
+		"message": "After save, this extension will restart. You will need to manually refresh any YouTube tabs."
 	},
 	"pip_marker": {
 		"message": "Now playing in picture-in-picture mode"

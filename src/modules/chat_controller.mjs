@@ -6,8 +6,7 @@ import { isNotPip, loadTemplateDocument, formatHexColor, getColorRGB } from './u
 import { LiveChatLayer } from './chat_layer.mjs'
 import { LiveChatPanel } from './chat_panel.mjs';
 import { LiveChatContextMenu } from './chat_contextmenu.mjs';
-
-import { LiveChatLayoutCache, LiveChatItemLayout, EmojiModeEnum, updateMutedWordsList } from './chat_message.mjs';
+import { LiveChatLayoutCache, LiveChatItemFactory, EmojiModeEnum, renderChatItem, layoutChatItem, updateMutedWordsList } from './chat_message.mjs';
 
 /** @enum {number} */
 export const SimultaneousModeEnum = Object.freeze({
@@ -42,6 +41,7 @@ export class LiveChatController {
 		this.layer = new LiveChatLayer(this);
 		const root = this.layer.root;
 		this.layoutCache = new LiveChatLayoutCache(root);
+		this.itemFactory = new LiveChatItemFactory();
 
 		root.addEventListener('contextmenu', e => {
 			const origin = /** @type {HTMLElement} */ (e.target).closest('[id]');
@@ -99,6 +99,7 @@ export class LiveChatController {
 			// fetching your channel ID and set styles for you
 			this.#setupViewerStyle(),
 			this.#setupSettingMenu(),
+			this.itemFactory.load(),
 		];
 
 		updateMutedWordsList();
@@ -445,54 +446,47 @@ export class LiveChatController {
 			filtered.add.splice(1, Infinity, ...notext);
 		}
 
-		const renderings = filtered.add.map(async action => {
+		for (const action of filtered.add) {
 			const item = action.addChatItemAction?.item;
 			if (!item) {
 				console.warn('Failed to add message.');
-				return null;
+				continue;
 			}
-			const layout = new LiveChatItemLayout(item);
-			const elem = await layout.render();
-			return { layout, elem };
-		});
-
-		for await (const result of renderings) {
-			if (!result) continue;
-			const { layout, elem } = result;
-			if (!elem) continue;
-			const text = elem.getAttribute('data-text');
-			if (sv === SimultaneousModeEnum.MERGE || sv === SimultaneousModeEnum.LAST_MERGE) {
-				const body = text ? `<!-- ${elem.className} -->${text}` : '';
-				if (body) {
-					const index = bodies.indexOf(body);
-					if (index < 0) {
-						bodies.push(body);
-						ids.push(elem.id);
-					} else {
-						const earlier = root.getElementById(ids[index]);
-						/** @type {HTMLElement | null | undefined} */
-						const _name = earlier?.querySelector('.name');
-						/** @type {HTMLSpanElement?} */
-						const _photo = elem.querySelector('.photo');
-						if (earlier && _name && _photo) {
-							const parent = _photo.parentElement;
-							if (parent) _name.insertAdjacentElement('beforebegin', parent);
-							if (!_name.textContent)  _name.textContent = '';
-							this.updateCurrentItem(earlier);
+			renderChatItem(item, this.itemFactory).then(el => {
+				const text = el.getAttribute('data-text');
+				if (sv === SimultaneousModeEnum.MERGE || sv === SimultaneousModeEnum.LAST_MERGE) {
+					const body = text ? `<!-- ${el.className} -->${text}` : '';
+					if (body) {
+						const index = bodies.indexOf(body);
+						if (index < 0) {
+							bodies.push(body);
+							ids.push(el.id);
+						} else {
+							const earlier = root.getElementById(ids[index]);
+							/** @type {HTMLElement | null | undefined} */
+							const _name = earlier?.querySelector('.name');
+							/** @type {HTMLSpanElement?} */
+							const _photo = el.querySelector('.photo');
+							if (earlier && _name && _photo) {
+								const parent = _photo.parentElement;
+								if (parent) _name.insertAdjacentElement('beforebegin', parent);
+								if (!_name.textContent)  _name.textContent = '';
+								this.updateCurrentItem(earlier);
+								return;
+							}
 						}
-						continue;
 					}
 				}
-			}
-			if (root.getElementById(elem.id)) {
-				const type = elem.className.match(/text (.+)/)?.at(1) || 'normal';
-				const color = getComputedStyle(le).getPropertyValue(`--yt-lcf-${type}-color`);
-				console.debug(`Message duplication #${elem.id}: %c${text || elem.lastElementChild?.textContent}`, color ? 'color:' + color : '');
-			} else {
-				/** @type { ["dense", "random"] } */
-				const mode = ['dense', 'random'];
-				layout.appendTo(this.layoutCache, mode[s.others.density]);
-			}
+				if (root.getElementById(el.id)) {
+					const type = el.className.match(/text (.+)/)?.at(1) || 'normal';
+					const color = getComputedStyle(le).getPropertyValue(`--yt-lcf-${type}-color`);
+					console.debug(`Message duplication #${el.id}: %c${text || el.lastElementChild?.textContent}`, color ? 'color:' + color : '');
+				} else {
+					/** @type { ["dense", "random"] } */
+					const modeOptions = ['dense', 'random'];
+					layoutChatItem(el, this.layoutCache, modeOptions[s.others.density]);
+				}
+			});
 		}
 		
 		// Delete
@@ -525,11 +519,8 @@ export class LiveChatController {
 			const target = root.getElementById(id);
 			const item = action.replaceChatItemAction?.replacementItem;
 			if (target && item) {
-				const layout = new LiveChatItemLayout(item);
-				const elem = await layout.render();
-				if (elem) {
-					target.replaceWith(elem);
-				}
+				const elem = await renderChatItem(item, this.itemFactory);
+				if (elem) target.replaceWith(elem);
 			} else {
 				console.warn('Failed to replace message: #' + id);
 			}

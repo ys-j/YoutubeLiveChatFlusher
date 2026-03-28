@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "__MSG_manifestName__",
-	"version": "0.13.8",
+	"version": "0.14.0",
 	"author": "_y_s",
 	"action": {},
 	"background": {
@@ -39,7 +39,6 @@
 	"options_ui": {
 		"page": "options/options.html"
 	},
-	"optional_permissions": ["tabs"],
 	"permissions": ["storage"],
 	"web_accessible_resources": [
 		{

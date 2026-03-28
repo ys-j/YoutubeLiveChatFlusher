@@ -111,6 +111,13 @@
 				</label>
 				<br>
 				<textarea name=translation_blacklist rows=20 data-i18n-placeholder=placeholder_mutedWordsList></textarea>
+			<dt data-i18n=translator>
+			<dd>
+				<select name=translation_translator>
+					<option data-i18n=translator_internal value=internal>
+					<option data-i18n=translator_external value=external>
+				</select>
+				<div><small data-i18n=translator_fallbackNote></small></div>
 			<dt data-i18n=translationUrl>
 			<dd><input type=url name=translation_url required>
 		</dl>
