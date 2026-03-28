@@ -131,7 +131,7 @@ export class LiveChatLayoutCache {
  * @prop {"membership"} type
  * @prop {"membership" | "milestone"} subtype
  * @prop {AuthorInfo} author
- * @prop {Node[]} months
+ * @prop {Node} months
  * @prop {ChatMessageContainer} body
  * @prop { { header: number, body: number } } background
  */
@@ -185,7 +185,7 @@ export class LiveChatItemFactory {
 	 * Creates new chat message element.
 	 * @param {TextItemFactoryOptions | MembershipItemFactoryOptions | PaidMessageItemFactoryOptions | PaidStickerItemFactoryOptions | GiftItemFactoryOptions | PollItemFactoryOptions} options
 	 */
-	new(options) {
+	async new(options) {
 		const type = options.type;
 		const el = this.#templates.get(type)?.cloneNode(true);
 		if (!el) return null;
@@ -209,7 +209,7 @@ export class LiveChatItemFactory {
 
 			if ('months' in options) {
 				const months = header?.querySelector('.months');
-				months?.append(...options.months);
+				months?.append(options.months);
 			} else if ('amount' in options) {
 				const amount = header?.querySelector('.amount');
 				if (amount) amount.textContent = options.amount;
@@ -218,11 +218,11 @@ export class LiveChatItemFactory {
 				if (gifts) gifts.textContent = `\u{1f381}\ufe0e ${options.gifts}`;
 			}
 		}
-		if ('body' in options) {
-			body?.append(...options.body);
-		} else if ('sticker' in options) {
+		if ('sticker' in options) {
 			const sticker = /** @type {HTMLImageElement?} */ (el.querySelector('.sticker'));
 			if (sticker) sticker.src = options.sticker;
+		} else if ('body' in options && body) {
+			await options.body.connectTo(body);
 		}
 		if ('background' in options) {
 			if ('header' in options.background && header) {
@@ -323,7 +323,7 @@ export async function renderChatItem(item, factory) {
 		case 'liveChatTextMessageRenderer': {
 			const subtype = getAuthorType(renderer);
 			if (allHidden(subtype)) break;
-			element = factory.new({
+			element = await factory.new({
 				type: 'text',
 				subtype,
 				author: await fetchAuthorInfo(renderer, subtype),
@@ -339,7 +339,7 @@ export async function renderChatItem(item, factory) {
 				headerPrimaryText: primary,
 				headerSubtext: sub,
 			} = /** @type {LiveChat.MembershipItemRenderer["liveChatMembershipItemRenderer"]} */ (renderer);
-			element = factory.new({
+			element = await factory.new({
 				type: 'membership',
 				subtype,
 				author: await fetchAuthorInfo(renderer, subtype),
@@ -357,7 +357,7 @@ export async function renderChatItem(item, factory) {
 				purchaseAmountText,
 				bodyBackgroundColor,
 			} = /** @type {LiveChat.PaidMessageRenderer["liveChatPaidMessageRenderer"]} */ (renderer);
-			element = factory.new({
+			element = await factory.new({
 				type,
 				author: await fetchAuthorInfo(renderer, type),
 				amount: getText(purchaseAmountText),
@@ -375,7 +375,7 @@ export async function renderChatItem(item, factory) {
 				moneyChipBackgroundColor,
 				sticker,
 			} = /** @type {LiveChat.PaidStickerRenderer["liveChatPaidStickerRenderer"]} */ (renderer);
-			element = factory.new({
+			element = await factory.new({
 				type,
 				author: await fetchAuthorInfo(renderer, type),
 				amount: getText(purchaseAmountText),
@@ -391,7 +391,7 @@ export async function renderChatItem(item, factory) {
 			const headerRenderer = /** @type {LiveChat.SponsorshipsHeaderRenderer} */(renderer.header).liveChatSponsorshipsHeaderRenderer;
 			const count = headerRenderer.primaryText?.runs?.filter(r => !Number.isNaN(Number.parseInt(r.text, 10)))[0]?.text;
 			if (!count) break;
-			element = factory.new({
+			element = await factory.new({
 				type: 'gift',
 				author: await fetchAuthorInfo(renderer, subtype),
 				gifts: count,
@@ -403,7 +403,7 @@ export async function renderChatItem(item, factory) {
 			// @ts-expect-error
 			switch (renderer.icon.iconType) {
 				case 'POLL':
-					element = factory.new({ type: 'poll', body });
+					element = await factory.new({ type: 'poll', body });
 					break;
 				case 'YOUTUBE_ROUND':
 					break;
@@ -634,6 +634,9 @@ class ChatLayoutInfo {
  */
 
 class TranslationController {
+	/** @readonly */
+	static NO_WHITESPACE = /\S/;
+
 	/**
 	 * @param {TranslationControllerOptions} options
 	 */
@@ -641,39 +644,39 @@ class TranslationController {
 		this.exceptedLanguages = navigator.languages.filter((_, i) => options.others.except_lang & 1 << i);
 
 		const re = options.translation.regexp;
-		const list = options.translation.plainList;
-		this.exceptionRules = re ? {
-			rules: list.map(r => new RegExp(r)),
-			/** @param {string} s text */
-			match(s) {
-				for (const r of this.rules) if (r.test(s)) return true;
-				return false;
-			},
-		}: {
-			rules: list,
-			/** @param {string} s text */
-			match(s) {
-				for (const r of this.rules) if (s.includes(r)) return true;
-				return false;
-			}
-		};
+		const list = options.translation.plainList.filter(l => l.trim());
+		if (list.length > 0) {
+			/** @type {(r: string) => string} */
+			const transform = re ? r => `(?:${r})` : r => r.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+			this.exceptionRule = new RegExp(list.map(transform).join('|'));
+		} else {
+			this.exceptionRule = /$^/;
+		}
 	}
 
 	/**
 	 * Checks if the message will be translated.
 	 * @param {string} text original message
-	 * @returns {Promise<LanguageDetection>} detection result
+	 * @returns {Promise<LanguageDetection?>} detection result
 	 */
 	async check(text) {
-		if (!text) throw 'Empty text was passed.';
+		if (!text || !TranslationController.NO_WHITESPACE.test(text)) {
+			console.warn('Empty text was passed.');
+			return null;
+		}
+		if (this.exceptionRule.test(text)) {
+			console.debug('Text contains an exception word.');
+			return null;
+		}
 		const detection = await browser.i18n.detectLanguage(text);
 		const source = detection.languages.at(0);
-		if (!source) throw 'Failed to detect the source language.';
-		if (this.exceptedLanguages.includes(source.language)) {
-			throw `Source language (${source.language}) is set as exceptions: ` + this.exceptedLanguages.join();
+		if (!source) {
+			console.debug('Failed to detect the source language: ' + text);
+			return null;
 		}
-		if (this.exceptionRules.match(text)) {
-			throw 'Text contains an exception word.';
+		if (this.exceptedLanguages.includes(source.language)) {
+			console.debug(`Source language (${source.language}) is set as exceptions: ` + this.exceptedLanguages.join());
+			return null;
 		}
 		return {
 			source: source.language,
@@ -687,7 +690,7 @@ class TranslationController {
 	 * @param {string} target target launguage
 	 * @returns {Promise<Node>} translated node
 	 */
-	async translateNode(node, detection, target) {
+	async translate(node, detection, target) {
 		const text = node.textContent;
 		if (!text) return node;
 
@@ -696,9 +699,9 @@ class TranslationController {
 		/** @type {Record<string, string>} */
 		const translation = { text, target };
 		if (detection.isReliable) translation.source = detection.source;
-		/** @type { { sentence: string, src: string } } */
+		/** @type { { sentence: string, src: string } | undefined } */
 		const res = await browser.runtime.sendMessage({ translation });
-		if (!this.exceptedLanguages.includes(res.src)) {
+		if (res && !this.exceptedLanguages.includes(res.src)) {
 			span.setAttribute('data-srclang', res.src);
 			span.textContent = res.sentence;
 		} else {
@@ -708,28 +711,22 @@ class TranslationController {
 	}
 }
 
-const translationCtl = new TranslationController(s);
+const translator = new TranslationController(s);
+const RESOLVED_NULL = Promise.resolve(null);
 
 export class ChatMessageContainer {
-	/** @type {Array<HTMLSpanElement | Text>} */ original;
-	/** @type {HTMLElement} */ suffix;
-	/** @type {Node[]} */ translated = [];
-	/** @type {boolean} */ hasTranslated = false;
+	/** @type {DocumentFragment | Text} */ #original;
+	/** @type {HTMLElement} */ #suffix;
+	/** @type {Promise<DocumentFragment?>} */ translating = RESOLVED_NULL;
+	lazy = false;
 
 	/**
 	 * @param {LiveChat.RendererContent["message"]} message 
 	 */
 	constructor(message) {
-		this.original = getChatMessage(message);
-		this.suffix = document.createElement('small');
-		this.suffix.classList.add('original');
-	}
-
-	detectAsync() {
-		return Promise.allSettled(this.original.map(node => {
-			const text = node.textContent;
-			return translationCtl.check(text);
-		}));
+		this.#original = getChatMessage(message);
+		this.#suffix = document.createElement('small');
+		this.#suffix.classList.add('original');
 	}
 
 	/**
@@ -738,77 +735,63 @@ export class ChatMessageContainer {
 	 * @param {boolean} suffix whether suffixes original message
 	 */
 	async translate(mode, target, suffix = false) {
-		const detectionResults = await this.detectAsync();
-		this.hasTranslated = detectionResults.some(p => p.status === 'fulfilled');
-		switch (mode) {
-			case 'eager':
-				return this.#translateEager(detectionResults, target, suffix);
-			case 'lazy':
-				return this.#translateLazy(detectionResults, target, suffix);
-		}
+		this.lazy = mode === 'lazy';
+		const detections = await this.#detect();
+		const sourceNodes = this.#original.childNodes;
+		this.translating = Promise.all(detections.map((d, i) => {
+			const node = sourceNodes[i]//.cloneNode(true);
+			return d ? translator.translate(node, d, target) : node;
+		})).then(nodes => {
+			const eq = this.#original.textContent === nodes.map(n => n.textContent).join('');
+			if (!eq) {
+				if (suffix) this.#suffix.textContent = this.#getOriginalText();
+				const fragment = document.createDocumentFragment();
+				if (suffix) {
+					this.#suffix.textContent = this.#getOriginalText();
+					fragment.append(...nodes, this.#suffix);
+				} else {
+					fragment.append(...nodes);
+				}
+				return fragment;
+			}
+			return null;
+		});
+		return this.lazy ? RESOLVED_NULL : this.translating;
 	}
 
+	async #detect() {
+		const nodes = this.#original.childNodes;
+		const len = nodes.length;
+
+		/** @type {Promise<LanguageDetection?>[]} */
+		const promises = new Array(len);
+		for (let i = 0; i < len; i++) {
+			const text = nodes[i].textContent;
+			promises[i] = text ? translator.check(text) : RESOLVED_NULL;
+		}
+		return Promise.all(promises);
+	}
+
+	#getOriginalText() {
+		if (this.#original.nodeType === Node.TEXT_NODE) {
+			return this.#original.textContent;
+		}
+		let text = '';
+		const nodes = this.#original.childNodes;
+		for (let i = 0, l = nodes.length; i < l; i++) {
+			const cn = nodes[i];
+			const isEmoji = cn.nodeType === Node.ELEMENT_NODE && /** @type {Element} */ (cn).classList.contains('emoji');
+			if (!isEmoji) text += cn.textContent;
+		}
+		return text;
+	}
+	
 	/**
-	 * @param {PromiseSettledResult<LanguageDetection>[]} detectionResults results of detection promise
-	 * @param {string} target target language
-	 * @param {boolean} suffix whether suffixes original message
+	 * @param {HTMLElement} element 
 	 */
-	async #translateEager(detectionResults, target, suffix) {
-		this.translated = await Promise.all(detectionResults.map(async (p, i) => {
-			const node = this.original[i];
-			if (p.status === 'fulfilled') {
-				return await translationCtl.translateNode(node, p.value, target);
-			} else {
-				return node;
-			}
-		}));
-		if (suffix && !this.equals()) {
-			this.suffix.append(...this.original);
-		}
-	}
-
-	/**
-	 * @param {PromiseSettledResult<LanguageDetection>[]} detectionResults results of detection promise
-	 * @param {string} target target language
-	 * @param {boolean} suffix whether suffixes original message
-	 */
-	async #translateLazy(detectionResults, target, suffix) {
-		this.translated = this.original.map(node => node.cloneNode(true));
-		this.translated = await Promise.all(detectionResults.map(async (p, i) => {
-			const node = this.original[i];
-			if (p.status === 'fulfilled') {
-				const translated = await translationCtl.translateNode(node, p.value, target);
-				const child = this.translated[i];
-				child?.parentNode?.replaceChild(translated, child);
-				return translated;
-			} else {
-				return node;
-			}
-		}));
-		if (suffix && !this.equals()) {
-			/** @param {Node} node */
-			const cloneText = node => node instanceof Element && node.classList.contains('emoji') ? new Text() : node.cloneNode();
-			this.suffix.append(...this.original.map(cloneText));
-		}
-	}
-
-	equals() {
-		const originalText = this.original.map(n => n.textContent).join('');
-		const translatedText = this.translated.map(n => n.textContent).join('');
-		return originalText === translatedText;
-	}
-
-	*[Symbol.iterator]() {
-		if (this.hasTranslated) {
-			for (const node of this.translated) {
-				yield node;
-			}
-			yield this.suffix;
-		} else {
-			for (const node of this.original) {
-				yield node;
-			}
-		}
+	async connectTo(element) {
+		const translated = await this.translating;
+		element.append(translated || this.#original);
 	}
 }
 
@@ -839,10 +822,10 @@ export function updateMutedWordsList() {
  * @param {number} [options.end] end position of message
  * @param {EmojiModeEnum} [options.emoji] emoji mode
  * @param {MutedWordModeEnum} [options.filterMode] filter mode
- * @returns {Array<HTMLSpanElement | Text>} nodes of chat message
+ * @returns {DocumentFragment | Text} nodes of chat message
  */
 function getChatMessage(message, options = {}) {
-	if (!message) return [];
+	if (!message) return new Text();
 	
 	const { start, end, filterMode } = options;
 	const filterOptions = {
@@ -852,16 +835,16 @@ function getChatMessage(message, options = {}) {
 	};
 	if ('simpleText' in message) {
 		const str = filterMessage(message.simpleText, filterOptions).value;
-		return [ new Text(start || end ? str.slice(start, end) : str) ];
+		return new Text(start || end ? str.slice(start, end) : str);
 	}
-	const rslt = [];
+	const rslt = document.createDocumentFragment();
 	const runs = start || end ? message.runs.slice(start, end) : message.runs;
 	for (const r of runs) {
 		if ('text' in r) {
 			const filtered = filterMessage(r.text, filterOptions);
-			if (filtered.done && filterMode === MutedWordModeEnum.ALL) return [];
-			let node;
+			if (filtered.done && filterMode === MutedWordModeEnum.ALL) return new Text();
 			if (r.navigationEndpoint || r.bold || r.italics) {
+				let node;
 				if (r.navigationEndpoint) {
 					node = document.createElement('a');
 					const ep = r.navigationEndpoint.urlEndpoint || r.navigationEndpoint.watchEndpoint;
@@ -878,22 +861,22 @@ function getChatMessage(message, options = {}) {
 						svg.setAttribute('fill', 'currentColor');
 						svg.setAttribute('stroke', '#000');
 						svg.setAttribute('paint-order', 'stroke');
-						if (iconref) svg.appendChild(iconref.cloneNode(true));
-						node.appendChild(svg);
+						if (iconref) svg.append(iconref.cloneNode(true));
+						node.append(svg);
 					}
 				} else {
 					node = document.createElement('span');
 				}
 				if (r.bold) node.classList.add('b');
 				if (r.italics) node.classList.add('i');
+				rslt.append(node);
 			} else {
-				node = new Text(filtered.value);
+				rslt.append(filtered.value);
 			}
-			rslt.push(node);
 		} else {
 			const emoji = options.emoji ?? s.others.emoji;
 			if (emoji < 0) {
-				rslt.push(new Text(r.emoji.shortcuts?.at(0) || r.emoji.emojiId || ''));
+				rslt.append(r.emoji.shortcuts?.at(0) || r.emoji.emojiId || '');
 			} else if (emoji) {
 				let skip = false;
 				if (filterMode) {
@@ -906,12 +889,12 @@ function getChatMessage(message, options = {}) {
 						const replacement = s.mutedWords.replacement;
 						switch (filterMode) {
 							case MutedWordModeEnum.ALL:
-								return [];
+								return new Text();
 							case MutedWordModeEnum.WORD:
-								rslt.push(new Text(replacement));
+								rslt.append(replacement);
 								break;
 							case MutedWordModeEnum.CHAR:
-								rslt.push(new Text([...replacement][0] || ''));
+								rslt.append([...replacement][0] || '');
 								break;
 						}
 						break;
@@ -926,14 +909,14 @@ function getChatMessage(message, options = {}) {
 						img.src = thumbnail.url;
 						img.alt = label;
 					} else {
-						img = new Text(r.emoji.emojiId);
+						img = r.emoji.emojiId;
 					}
 					const span = document.createElement('span');
 					span.classList.add('emoji');
 					span.setAttribute('data-label', label);
 					span.setAttribute('data-shortcut', r.emoji.shortcuts?.at(0) || '');
-					span.appendChild(img);
-					rslt.push(span);
+					span.append(img);
+					rslt.append(span);
 				}
 			}
 		}

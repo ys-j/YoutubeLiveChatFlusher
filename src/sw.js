@@ -37,10 +37,10 @@ browser.tabs.onCreated.addListener(tab => {
 	if (tab.url) events.toggleAction(tab.id, tab.url);
 });
 
-/** @type {TranslatorController} */
-let translationController;
+/** @type {TranslatorController?} */
+let translationController = null;
 
-browser.runtime.onMessage.addListener((message, _sender, response) => {
+browser.runtime.onMessage.addListener((message, _sender, respond) => {
 	if ('translation' in message) {
 		/** @type {Record<string, string>} */
 		const { text, source, target: tl } = message.translation;
@@ -49,10 +49,10 @@ browser.runtime.onMessage.addListener((message, _sender, response) => {
 			? Promise.resolve(source)
 			: browser.i18n.detectLanguage(text).then(d => d.isReliable && d.languages.at(0)?.language || 'auto')
 		)
-		.then(sl => translationController.translate(text, tl, sl))
-		.then(response);
+		.then(sl => translationController?.translate(text, tl, sl))
+		.then(respond);
 	} else if ('fire' in message) {
-		events[message.fire]?.()?.then(response);
+		events[message.fire]?.()?.then(respond);
 	}
 	return true;
 });
