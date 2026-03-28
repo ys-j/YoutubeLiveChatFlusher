@@ -635,7 +635,7 @@ class ChatLayoutInfo {
 
 class TranslationController {
 	/** @readonly */
-	static NO_WHITESPACE = /\S/;
+	static TRANSLATABLE_PATTERN = /[\p{L}\p{N}]/u;
 
 	/**
 	 * @param {TranslationControllerOptions} options
@@ -660,8 +660,12 @@ class TranslationController {
 	 * @returns {Promise<LanguageDetection?>} detection result
 	 */
 	async check(text) {
-		if (!text || !TranslationController.NO_WHITESPACE.test(text)) {
+		if (!text) {
 			console.warn('Empty text was passed.');
+			return null;
+		}
+		if (!TranslationController.TRANSLATABLE_PATTERN.test(text)) {
+			console.warn('Text does not contain any translatable characters.');
 			return null;
 		}
 		if (this.exceptionRule.test(text)) {

@@ -39,6 +39,14 @@ async function openPip(element) {
 	});
 	if (!pipWindow) throw new Error('Document Picture-in-Picture API is not implemented.');
 
+	try {
+		void pipWindow.origin;
+	} catch {
+		console.error('Access to document picture-in-picture window was denied.');
+		pipWindow.close();
+		return self;
+	}
+
 	top?.addEventListener('keydown', disableKeyboardShortcutOnParentWindow, true);
 	pipWindow?.addEventListener('keydown', enableKeyboardShortcutOnChildWindow, true);
 
