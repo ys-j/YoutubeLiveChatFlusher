@@ -99,7 +99,7 @@ class ExternalTranslatorSession {
 		const p = this.url.searchParams;
 		if (this.#q) p.set(this.#q, text);
 		/** @type { { sentences: { trans: string }[], src: string }? } */
-		const json = await fetch(this.url).then(res => res.json());
+		const json = await fetch(this.url).then(res => res.json()).catch(console.warn);
 		this.lastSrc = json?.src || 'und';
 		return json?.sentences.map(s => s.trans).join('') || text;
 	}

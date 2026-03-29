@@ -486,7 +486,7 @@ export class LiveChatController {
 					const modeOptions = ['dense', 'random'];
 					layoutChatItem(el, this.layoutCache, modeOptions[s.others.density]);
 				}
-			});
+			}).catch(_ => {});
 		}
 		
 		// Delete
@@ -519,8 +519,7 @@ export class LiveChatController {
 			const target = root.getElementById(id);
 			const item = action.replaceChatItemAction?.replacementItem;
 			if (target && item) {
-				const elem = await renderChatItem(item, this.itemFactory);
-				if (elem) target.replaceWith(elem);
+				renderChatItem(item, this.itemFactory).then(target.replaceWith, console.warn);
 			} else {
 				console.warn('Failed to replace message: #' + id);
 			}
