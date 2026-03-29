@@ -91,7 +91,6 @@ export async function initialize(e) {
  * @param { CustomEvent<NavigateFinishEventDetail> | { target: EventTarget, detail: NavigateFinishEventDetail } } e
  */
 async function onYtNavigateFinish(e) {
-	if (e.detail?.pageType !== 'watch') return;
 	const toggle = state.controller?.player.querySelector('#yt-lcf-cb');
 	toggle?.setAttribute('aria-disabled', 'true');
 

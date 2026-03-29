@@ -13,18 +13,15 @@
 	max-width: var(--yt-lcf-max-width);
 	overflow: hidden;
 	padding-inline: var(--yt-lcf-stroke-offset);
+	paint-order: stroke fill;
 	pointer-events: auto;
 	position: absolute;
 	text-overflow: ellipsis;
-	text-shadow:
-	var(--yt-lcf-stroke-color) calc(var(--yt-lcf-stroke-offset) * -1) calc(var(--yt-lcf-stroke-offset) * -1) var(--yt-lcf-stroke-blur),
-	var(--yt-lcf-stroke-color) calc(var(--yt-lcf-stroke-offset) * -1) 0 var(--yt-lcf-stroke-blur),
-	var(--yt-lcf-stroke-color) calc(var(--yt-lcf-stroke-offset) * -1) var(--yt-lcf-stroke-offset) var(--yt-lcf-stroke-blur),
-	var(--yt-lcf-stroke-color) 0 calc(var(--yt-lcf-stroke-offset) * -1) var(--yt-lcf-stroke-blur),
-	var(--yt-lcf-stroke-color) 0 var(--yt-lcf-stroke-offset) var(--yt-lcf-stroke-blur),
-	var(--yt-lcf-stroke-color) var(--yt-lcf-stroke-offset) calc(var(--yt-lcf-stroke-offset) * -1) var(--yt-lcf-stroke-blur),
-	var(--yt-lcf-stroke-color) var(--yt-lcf-stroke-offset) 0 var(--yt-lcf-stroke-blur),
-	var(--yt-lcf-stroke-color) var(--yt-lcf-stroke-offset) var(--yt-lcf-stroke-offset) var(--yt-lcf-stroke-blur);
+	text-shadow: var(--yt-lcf-stroke-color) 0 0 var(--yt-lcf-stroke-blur);
+	-webkit-text-stroke: var(--yt-lcf-stroke-color) calc(var(--yt-lcf-stroke-offset) * 2);
+}
+:host([style*="--yt-lcf-stroke-blur: 0px;"]) > div {
+	text-shadow: none;
 }
 :host(.direction-reversed-x) > div {
 	animation-direction: reverse;
