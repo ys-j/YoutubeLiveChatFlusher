@@ -6,7 +6,8 @@ import { isNotPip, loadTemplateDocument, formatHexColor, getColorRGB } from './u
 import { LiveChatLayer } from './chat_layer.mjs'
 import { LiveChatPanel } from './chat_panel.mjs';
 import { LiveChatContextMenu } from './chat_contextmenu.mjs';
-import { LiveChatLayoutCache, LiveChatItemFactory, EmojiModeEnum, renderChatItem, layoutChatItem, updateMutedWordsList } from './chat_message.mjs';
+import { LiveChatItemFactory, EmojiModeEnum, renderChatItem, updateMutedWordsList } from './chat_message.mjs';
+import { LiveChatLayoutCache, layoutChatItem } from './chat_layout.mjs';
 
 /** @enum {number} */
 export const SimultaneousModeEnum = Object.freeze({
