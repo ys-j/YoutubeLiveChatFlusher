@@ -149,7 +149,7 @@ export async function* getLiveChatActionsAsyncIterable(signal, initialContinuati
  */
 async function getContentsAsync(url, body) {
 	try {
-		const json = await fetchInnerTube(url, body);
+		const json = await fetchInnerTube(url, body, { auth: true });
 		return json.continuationContents?.liveChatContinuation;
 	} catch (reason) {
 		console.error(reason);

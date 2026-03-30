@@ -1,8 +1,8 @@
-/// <reference lib="esnext" />
-
 import { fetchInnerTube } from './innertube.mjs';
 import { store as s } from './store.mjs';
 import { filterMessage, getColorRGB, getText, loadTemplateDocument } from './utils.mjs';
+
+import { TranslationController } from './chat_translator.mjs';
 
 /** @enum {string} */
 const AuthorType = Object.freeze({
@@ -36,79 +36,6 @@ const RENDERING_SKIP_KEYS = [
 
 /** @type {RegExp[]} */
 const mutedWordsList = [];
-
-export class LiveChatLayoutCache {
-	/**
-	 * @param {ShadowRoot} root shadow root
-	 * @param {number} [numOfLanes] number of lanes
-	 */
-	constructor(root, numOfLanes = 20) {
-		this.dom = root;
-		/** @type {Map<string, ChatLayoutInfo>[]} */
-		this.maps = Array.from({ length: numOfLanes }, () => new Map());
-	}
-
-	get size() {
-		return this.maps.reduce((a, c) => a.union(c), new Set()).size;
-	}
-
-	/**
-	 * @param {number} numOfLanes 
-	 */
-	resize(numOfLanes) {
-		const len = this.maps.length;
-		this.maps.length = numOfLanes;
-		for (let i = len; i < numOfLanes; i++) {
-			this.maps[i] = new Map();
-		}
-	}
-
-	/**
-	 * @param {string} id renderer id
-	 * @returns {ChatLayoutInfo[] | undefined} list of layout info or undefined
-	 */
-	get(id) {
-		const rslt = this.maps.map(m => m.get(id)).filter(v => v !== undefined);
-		return rslt.length ? rslt : undefined;
-	}
-
-	/**
-	 * @param {string} id renderer id
-	 * @param {ChatLayoutInfo} layout layout info 
-	 */
-	set(id, layout) {
-		for (let i = layout.lineStart; i < layout.lineEnd; i++) {
-			this.maps[i].set(id, layout);
-		}
-	}
-
-	/**
-	 * @param {string} id renderer id
-	 * @returns {boolean[]} if succeeded
-	 */
-	delete(id) {
-		return this.maps.map(m => m.delete(id));
-	}
-
-	clear() {
-		for (const m of this.maps) m.clear();
-	}
-
-	/**
-	 * @param {ChatLayoutInfo} target 
-	 * @param {boolean} [reversed=false] 
-	 * @returns {boolean} if this message collides against any preceding layout
-	 */
-	anyCollides(target, reversed = false) {
-		for (let i = target.lineStart; i < target.lineEnd; i++) {
-			for (const preceding of this.maps[i].values()) {
-				const collides = target.isCollidable(preceding, reversed);
-				if (collides) return true;
-			}
-		}
-		return false;
-	}
-}
 
 /**
  * @typedef AuthorInfo
@@ -420,303 +347,26 @@ export async function renderChatItem(item, factory) {
 	}
 }
 
-/**
- * 
- * @param {HTMLElement} el rendered element
- * @param {LiveChatLayoutCache} cache layout cache container
- * @param {"dense" | "random"} [mode] layout mode
- * @return renderer/element id
- */
-export function layoutChatItem(el, cache, mode = 'dense') {
-	el.style.visibility = 'hidden';
-	cache.dom.appendChild(el);
-
-	const hh = cache.dom.host.clientHeight, hw = cache.dom.host.clientWidth;
-	const ch = el.clientHeight, cw = el.clientWidth;
-	if (cw >= hw * (Number.parseInt(s.styles.max_width, 10) / 100 || 1)) {
-		el.classList.add('wrap');
-	}
-	
-	el.style.setProperty('--yt-lcf-translate-x', `-${hw + cw}px`);
-
-	const body = /** @type {HTMLElement?} */ (el.lastElementChild);
-	if (body) {
-		const content = body.textContent;
-		if (content) {
-			browser.i18n.detectLanguage(content).then(result => {
-				if (result.isReliable) {
-					body.lang = result.languages[0].language;
-				}
-			});
-		}
-	}
-
-	const lhf = Number.parseFloat(s.styles.line_height) || 1.4;
-
-	let y = 0;
-	/** @type {ChatLayoutInfo} */
-	let layout;
-	
-	const dir = s.others.direction & 1 ? 'bottom' : 'top';
-	if (ch >= hh) {
-		el.style[dir] = '0px';
-		el.setAttribute('data-line', '0');
-		el.style.visibility = '';
-		layout = new ChatLayoutInfo(el, y);
-		cache.set(el.id, layout);
-		return el.id;
-	}
-	const overline = cache.maps.length;
-	const reversed = (s.others.direction & 2) > 0;
-	const parentRect = cache.dom.host.getBoundingClientRect();
-
-	switch (mode) {
-		case 'dense': {
-			do {
-				el.style[dir] = `${y * lhf}em`;
-				el.setAttribute('data-line', `${y}`);
-				layout = new ChatLayoutInfo(el, y);
-				const overflow = layout.isOverflow(parentRect);
-				if (overflow) continue;
-				const collidable = cache.anyCollides(layout, reversed);
-				if (collidable) continue;
-				el.style.visibility = '';
-				cache.set(el.id, layout);
-				return el.id;
-			} while (++y <= overline);
-
-			el.classList.add('overlap');
-			const st = s.others.overlapping;
-			const o = st & 0b01 ? .8 : 1;
-			const dy = st & 0b10 ? .5 : 0;
-
-			y = cache.maps.reduce((pi, cv, ci, arr) => cv.size < arr[pi].size ? ci : pi, 0);
-			el.setAttribute('data-line', `${y}`);
-			layout = new ChatLayoutInfo(el, y);
-			const len = [...cache.maps[y].values().filter(layout => layout.isCollidable(layout))].length || 1;
-			el.style.top = `${(y + dy) * lhf}em`;
-			el.style.opacity = `${Math.max(.5, o ** len)}`;
-			el.style.zIndex = `-${len}`;
-			el.style.visibility = '';
-			cache.set(el.id, layout);
-			return el.id;
-		}
-		
-		case 'random': {
-			const calculatedLine = new Set(Array(overline).keys());
-			do {
-				y = (overline * Math.random()) | 0;
-				el.style[dir] = `${y * lhf}em`;
-				el.setAttribute('data-line', `${y}`);
-				layout = new ChatLayoutInfo(el, y);
-				const overflow = layout.isOverflow(parentRect);
-				if (overflow) {
-					for (let i = y; i < overline; i++) {
-						calculatedLine.delete(i);
-					}
-					continue;
-				}
-				const collidable = cache.anyCollides(layout, reversed);
-				if (collidable) {
-					calculatedLine.delete(y);
-					continue;
-				}
-				break;
-			} while (calculatedLine.size > 0);
-			el.style.visibility = '';
-			cache.set(el.id, layout);
-			return el.id;
-		}
-	}
-}
-
-class ChatLayoutInfo {
-	/** @type {DOMRect} */ #rect;
-	/** @type {number} */ #line;
-	/** @type {number} */ #range;
-
-	/**
-	 * @param {HTMLElement} elem 
-	 * @param {number} [line] 
-	 */
-	constructor(elem, line = undefined) {
-		this.#rect = elem.getBoundingClientRect();
-
-		this.#line = line ?? Number.parseInt(elem.getAttribute('data-line') || '0', 10);
-
-		const computedStyle = getComputedStyle(elem);
-		const lh = Number.parseFloat(computedStyle.lineHeight); // px
-		this.#range = Math.ceil(this.height / lh);
-
-		const [_durMatch, durNum, durUnit] = computedStyle.animationDuration.match(/^([\d.]+)(\D+)/) || [];
-		const durFactor = durNum && durUnit && { 's': 1000, 'ms': 1 }[durUnit] || 0;
-		this.duration = durFactor ? Number.parseFloat(durNum) * durFactor : Number.parseFloat(s.styles.animation_duration) * 1000;
-
-		const [_translateMatch, translateX] = elem.style.getPropertyValue('--yt-lcf-translate-x').match(/^-?([\d.]+)px/) || [];
-		this.speed = Number.parseFloat(translateX) / this.duration;
-		this.createdOn = Date.now();
-	}
-
-	get lineStart() {
-		return this.#line;
-	}
-	get lineEnd() {
-		return this.#line + this.#range;
-	}
-
-	get width() {
-		return this.#rect.width;
-	}
-	get height() {
-		return this.#rect.height;
-	}
-	get top() {
-		return this.#rect.top;
-	}
-	get bottom() {
-		return this.#rect.bottom;
-	}
-	get left() {
-		const elapsed = Date.now() - this.createdOn;
-		return this.#rect.left - this.speed * elapsed;
-	}
-	get right() {
-		const elapsed = Date.now() - this.createdOn;
-		return this.#rect.right - this.speed * elapsed;
-	}
-
-	/**
-	 * Checks whether two flowing messages collide.
-	 * @param {ChatLayoutInfo} before other preceding layout
-	 * @param {boolean} [reversed=false] if direction is reversed
-	 * @returns {boolean} whether this message collides against the preceding message
-	 */
-	isCollidable(before, reversed = false) {
-		if (before.top <= this.top && this.top < before.bottom) {
-			if (reversed ? before.left <= this.right : this.left <= before.right) {
-				return true;
-			} else if (before.duration <= this.duration && before.width >= this.width) {
-				return false;
-			} else {
-				const speedDiff = this.width / this.duration - before.width / before.duration;
-				const posDiff = reversed ? before.left - this.right : this.left - before.right;
-				return posDiff < speedDiff * Math.min(before.duration, this.duration);
-			}
-		} else {
-			return false;
-		}
-	}
-
-	/**
-	 * Checks whether this element's position exceeds the size of parent.
-	 * @param { { top: number, height: number } } parent parent bounding box
-	 * @returns {boolean} whether child element is overflowing the parent
-	 */
-	isOverflow(parent) {
-		return this.bottom > parent.top + parent.height;
-	}
-}
-
-
-/**
- * @typedef LanguageDetection
- * @prop {string} source
- * @prop {boolean} isReliable
- */
-
-/**
- * @typedef TranslationControllerOptions
- * @prop {object} translation
- * @prop {boolean} translation.regexp
- * @prop {string[]} translation.plainList
- * @prop {object} others
- * @prop {number} others.except_lang
- */
-
-class TranslationController {
-	/** @readonly */
-	static TRANSLATABLE_PATTERN = /[\p{L}\p{N}]/u;
-
-	/**
-	 * @param {TranslationControllerOptions} options
-	 */
-	constructor(options) {
-		this.exceptedLanguages = navigator.languages.filter((_, i) => options.others.except_lang & 1 << i);
-
-		const re = options.translation.regexp;
-		const list = options.translation.plainList.filter(l => l.trim());
-		if (list.length > 0) {
-			/** @type {(r: string) => string} */
-			const transform = re ? r => `(?:${r})` : r => r.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-			this.exceptionRule = new RegExp(list.map(transform).join('|'));
-		} else {
-			this.exceptionRule = /$^/;
-		}
-	}
-
-	/**
-	 * Checks if the message will be translated.
-	 * @param {string} text original message
-	 * @returns {Promise<LanguageDetection?>} detection result
-	 */
-	async check(text) {
-		if (!text) {
-			console.warn('Empty text was passed.');
-			return null;
-		}
-		if (!TranslationController.TRANSLATABLE_PATTERN.test(text)) {
-			console.warn('Text does not contain any translatable characters.');
-			return null;
-		}
-		if (this.exceptionRule.test(text)) {
-			console.debug('Text contains an exception word.');
-			return null;
-		}
-		const detection = await browser.i18n.detectLanguage(text);
-		const source = detection.languages.at(0);
-		if (!source) {
-			console.debug('Failed to detect the source language: ' + text);
-			return null;
-		}
-		if (this.exceptedLanguages.includes(source.language)) {
-			console.debug(`Source language (${source.language}) is set as exceptions: ` + this.exceptedLanguages.join());
-			return null;
-		}
-		return {
-			source: source.language,
-			isReliable: detection.isReliable || source.percentage > 50,
-		};
-	}
-
-	/**
-	 * @param {Node} node `<span>` element or text node
-	 * @param {LanguageDetection} detection source launguage detection
-	 * @param {string} target target launguage
-	 * @returns {Promise<Node>} translated node
-	 */
-	async translate(node, detection, target) {
-		const text = node.textContent;
-		if (!text) return node;
-
-		const span = document.createElement('span');
-
-		/** @type {Record<string, string>} */
-		const translation = { text, target };
-		if (detection.isReliable) translation.source = detection.source;
-		/** @type { { sentence: string, src: string } | undefined } */
-		const res = await browser.runtime.sendMessage({ translation });
-		if (res && !this.exceptedLanguages.includes(res.src)) {
-			span.setAttribute('data-srclang', res.src);
-			span.textContent = res.sentence;
-		} else {
-			span.textContent = text;
-		}
-		return span;
-	}
-}
-
-const translator = new TranslationController(s);
+const translator = new TranslationController(await s.load());
 const RESOLVED_NULL = Promise.resolve(null);
+
+/**
+ * Detects each node language async.
+ * @param {ArrayLike<Node>} nodes 
+ */
+export function detectLanguageAsync(nodes) {
+	if (!translator.detector.isReady) translator.detector.ready();
+	const len = nodes.length;
+
+	/** @type {Promise<import("./chat_translator.mjs").LanguageDetection?>[]} */
+	const promises = new Array(len);
+	for (let i = 0; i < len; i++) {
+		const text = nodes[i].textContent;
+		promises[i] = text ? translator.check(text) : RESOLVED_NULL;
+	}
+	return Promise.all(promises);
+}
+
 
 export class ChatMessageContainer {
 	/** @type {DocumentFragment | Text} */ #original;
@@ -729,6 +379,7 @@ export class ChatMessageContainer {
 	 */
 	constructor(message) {
 		this.#original = getChatMessage(message);
+		this.#original.normalize();
 		this.#suffix = document.createElement('small');
 		this.#suffix.classList.add('original');
 	}
@@ -740,8 +391,8 @@ export class ChatMessageContainer {
 	 */
 	async translate(mode, target, suffix = false) {
 		this.lazy = mode === 'lazy';
-		const detections = await this.#detect();
 		const sourceNodes = this.#original.childNodes;
+		const detections = await detectLanguageAsync(sourceNodes);
 		this.translating = Promise.all(detections.map((d, i) => {
 			const node = sourceNodes[i]//.cloneNode(true);
 			return d ? translator.translate(node, d, target) : node;
@@ -761,19 +412,6 @@ export class ChatMessageContainer {
 			return null;
 		});
 		return this.lazy ? RESOLVED_NULL : this.translating;
-	}
-
-	async #detect() {
-		const nodes = this.#original.childNodes;
-		const len = nodes.length;
-
-		/** @type {Promise<LanguageDetection?>[]} */
-		const promises = new Array(len);
-		for (let i = 0; i < len; i++) {
-			const text = nodes[i].textContent;
-			promises[i] = text ? translator.check(text) : RESOLVED_NULL;
-		}
-		return Promise.all(promises);
 	}
 
 	#getOriginalText() {

@@ -40,6 +40,12 @@ browser.tabs.onCreated.addListener(tab => {
 /** @type {TranslatorController?} */
 let translationController = null;
 
+browser.storage.local.get('translation').then(s => {
+	/** @type {typeof import("./modules/store.mjs").DEFAULT_CONFIG.translation} */
+	const { translator, url } = s.translation;
+	translationController = new TranslatorController(/** @type {"internal" | "external"} */ (translator ?? 'internal'), url);
+});
+
 browser.runtime.onMessage.addListener((message, _sender, respond) => {
 	if ('translation' in message) {
 		/** @type {Record<string, string>} */
@@ -57,55 +63,6 @@ browser.runtime.onMessage.addListener((message, _sender, respond) => {
 	return true;
 });
 
-
-class ExternalTranslatorSession {
-	static DEFAULT_URL = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=$sl&tl=$tl&dt=t&dt=bd&dj=1&q=$q';
-
-	/** @type {string?} */ #q = null;
-	/** @type {string} */ lastSrc = 'und';
-
-	/**
-	 * @param {TranslatorCreateCoreOptions & { url: string }} options 
-	 */
-	constructor(options) {
-		try {
-			this.url = new URL(options.url);
-			this.#setParams(options);
-			if (!this.#q) {
-				throw `Translator URL has no $q token: ${options.url}`;
-			}
-		} catch {
-			this.url = new URL(ExternalTranslatorSession.DEFAULT_URL);
-			this.#setParams(options);
-		}
-	}
-
-	/**
-	 * @param {TranslatorCreateCoreOptions} options 
-	 */
-	#setParams({ sourceLanguage: sl, targetLanguage: tl }) {
-		const p = this.url.searchParams;
-		for (const [k, v] of p) {
-			if (v === '$sl') p.set(k, sl);
-			else if (v === '$tl') p.set(k, tl);
-			else if (v === '$q') this.#q = k;
-		}
-	}
-
-	/**
-	 * @param {string} text source message
-	 */
-	async translate(text) {
-		const p = this.url.searchParams;
-		if (this.#q) p.set(this.#q, text);
-		/** @type { { sentences: { trans: string }[], src: string }? } */
-		const json = await fetch(this.url).then(res => res.json()).catch(console.warn);
-		this.lastSrc = json?.src || 'und';
-		return json?.sentences.map(s => s.trans).join('') || text;
-	}
-
-	destroy() {}
-}
 
 class TranslatorController {
 	/** @type {Map<string, TranslatorSession | ExternalTranslatorSession>} */
@@ -164,8 +121,51 @@ class TranslatorController {
 	}
 }
 
-browser.storage.local.get('translation').then(s => {
-	/** @type {typeof import("./modules/store.mjs").DEFAULT_CONFIG.translation} */
-	const { translator, url } = s.translation;
-	translationController = new TranslatorController(/** @type {"internal" | "external"} */ (translator ?? 'internal'), url);
-});
+class ExternalTranslatorSession {
+	static DEFAULT_URL = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=$sl&tl=$tl&dt=t&dt=bd&dj=1&q=$q';
+
+	/** @type {string?} */ #q = null;
+	/** @type {string} */ lastSrc = 'und';
+
+	/**
+	 * @param {TranslatorCreateCoreOptions & { url: string }} options 
+	 */
+	constructor(options) {
+		try {
+			this.url = new URL(options.url);
+			this.#setParams(options);
+			if (!this.#q) {
+				throw `Translator URL has no $q token: ${options.url}`;
+			}
+		} catch {
+			this.url = new URL(ExternalTranslatorSession.DEFAULT_URL);
+			this.#setParams(options);
+		}
+	}
+
+	/**
+	 * @param {TranslatorCreateCoreOptions} options 
+	 */
+	#setParams({ sourceLanguage: sl, targetLanguage: tl }) {
+		const p = this.url.searchParams;
+		for (const [k, v] of p) {
+			if (v === '$sl') p.set(k, sl);
+			else if (v === '$tl') p.set(k, tl);
+			else if (v === '$q') this.#q = k;
+		}
+	}
+
+	/**
+	 * @param {string} text source message
+	 */
+	async translate(text) {
+		const p = this.url.searchParams;
+		if (this.#q) p.set(this.#q, text);
+		/** @type { { sentences: { trans: string }[], src: string }? } */
+		const json = await fetch(this.url).then(res => res.json()).catch(console.warn);
+		this.lastSrc = json?.src || 'und';
+		return json?.sentences.map(s => s.trans).join('') || text;
+	}
+
+	destroy() {}
+}

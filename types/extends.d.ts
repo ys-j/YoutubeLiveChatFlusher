@@ -36,6 +36,7 @@ interface DocumentPictureInPicture extends EventTarget {
 interface Window {
 	queryLocalFonts?(options?: { postscriptNames: string[] }): Promise<FontData[]>;
 	documentPictureInPicture?: DocumentPictureInPicture;
+	LanguageDetector: LanguageDetectorFactory;
 	Translator: TranslatorFactory;
 }
 
@@ -59,6 +60,18 @@ interface HTMLFormControlsCollection {
 	[K: string]: RadioNodeList | HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | HTMLFieldSetElement | HTMLElement | undefined;
 }
 
+type TranslationAvailability = "available" | "downloadable" | "downloading" | "unavailable";
+
+interface LanguageDetectorFactory {
+	availability(options?: { expectedInputLanguages: string[] }): Promise<TranslationAvailability?>;
+	create(options?: { expectedInputLanguages: string[] }): Promise<LanguageDetectorSession>;
+}
+
+interface LanguageDetectorSession {
+	detect(input: string, options?: { signal: AbortSignal }): Promise<{ detectedLanguage: string, confidence: number }[]>;
+	destroy(): void;
+}
+
 interface TranslatorCreateCoreOptions {
 	sourceLanguage: string;
 	targetLanguage: string;
@@ -69,12 +82,12 @@ interface TranslatorCreateOptions extends TranslatorCreateCoreOptions {
 	signal?: AbortSignal
 }
 
-interface TranslatorSession {
-	translate(text: string): Promise<string>;
-	destroy(): void;
+interface TranslatorFactory {
+	availability(options: TranslatorCreateCoreOptions): Promise<TranslationAvailability?>;
+	create(options: TranslatorCreateOptions): Promise<TranslatorSession>;
 }
 
-interface TranslatorFactory {
-	availability(options: TranslatorCreateCoreOptions): Promise<"available" | "downloadable" | "downloading" | "unavailable">;
-	create(options: TranslatorCreateOptions): Promise<TranslatorSession>;
+interface TranslatorSession {
+	translate(input: string, options?: { signal: AbortSignal }): Promise<string>;
+	destroy(): void;
 }
