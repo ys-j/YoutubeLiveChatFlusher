@@ -1,13 +1,14 @@
 {
 	"manifest_version": 3,
 	"name": "__MSG_manifestName__",
-	"version": "0.14.2",
+	"version": "0.14.3",
 	"author": "_y_s",
 	"action": {
 		"default_state": "disabled"
 	},
 	"background": {
-		"service_worker": "sw.js"
+		"service_worker": "sw.js",
+		"type": "module"
 	},
 	"content_scripts": [
 		{

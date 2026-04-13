@@ -1,10 +1,8 @@
 import { store as s } from './store.mjs';
 
-import { LiveChatController } from './chat_controller.mjs';
-
 export class LiveChatLayer {
 	/**
-	 * @type {LiveChatController}
+	 * @type {import("./chat_controller.mjs").LiveChatController}
 	 */
 	#controller;
 
@@ -28,7 +26,7 @@ export class LiveChatLayer {
 
 	/** 
 	 * Creates new layer.
-	 * @param {LiveChatController} controller controller
+	 * @param {import("./chat_controller.mjs").LiveChatController} controller controller
 	 * @param {HTMLDivElement | undefined} div container element
 	 */
 	constructor(controller, div = undefined) {

@@ -1,12 +1,24 @@
 import { store as s } from './store.mjs';
 import { isNotPip, loadTemplateDocument } from './utils.mjs';
 
-import { LiveChatController, WrapStyleDefinitions } from './chat_controller.mjs';
 import { EmojiModeEnum, MutedWordModeEnum, updateMutedWordsList } from './chat_message.mjs';
+
+/**
+ * @typedef WrapStyleDefItem
+ * @prop {string} hyphens
+ * @prop {string} wordBreak
+ * @prop {string} whiteSpace
+ */
+/** @type {ReadonlyArray<WrapStyleDefItem>} */
+export const WrapStyleDefinitions = Object.freeze([
+	{ hyphens: 'manual', wordBreak: 'keep-all', whiteSpace: 'pre' },
+	{ hyphens: 'auto', wordBreak: 'normal', whiteSpace: 'pre-line' },
+	{ hyphens: 'auto', wordBreak: 'keep-all', whiteSpace: 'pre-line' },
+]);
 
 export class LiveChatPanel {
 	/**
-	 * @type {LiveChatController}
+	 * @type {import("./chat_controller.mjs").LiveChatController}
 	 */
 	#controller;
 
@@ -24,7 +36,7 @@ export class LiveChatPanel {
 
 	/**
 	 * Creates new config panel.
-	 * @param {LiveChatController} controller controller
+	 * @param {import("./chat_controller.mjs").LiveChatController} controller controller
 	 * @param {HTMLDivElement} [div] container element
 	 */
 	constructor(controller, div = undefined) {

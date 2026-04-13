@@ -4,7 +4,7 @@ import { store as s } from './store.mjs';
 import { isNotPip, loadTemplateDocument, formatHexColor, getColorRGB } from './utils.mjs';
 
 import { LiveChatLayer } from './chat_layer.mjs'
-import { LiveChatPanel } from './chat_panel.mjs';
+import { LiveChatPanel, WrapStyleDefinitions } from './chat_panel.mjs';
 import { LiveChatContextMenu } from './chat_contextmenu.mjs';
 import { LiveChatItemFactory, EmojiModeEnum, renderChatItem, updateMutedWordsList } from './chat_message.mjs';
 import { LiveChatLayoutCache, layoutChatItem } from './chat_layout.mjs';
@@ -16,19 +16,6 @@ export const SimultaneousModeEnum = Object.freeze({
 	MERGE: 2,
 	LAST_MERGE: 3,
 });
-
-/**
- * @typedef WrapStyleDefItem
- * @prop {string} hyphens
- * @prop {string} wordBreak
- * @prop {string} whiteSpace
- */
-/** @type {ReadonlyArray<WrapStyleDefItem>} */
-export const WrapStyleDefinitions = Object.freeze([
-	{ hyphens: 'manual', wordBreak: 'keep-all', whiteSpace: 'pre' },
-	{ hyphens: 'auto', wordBreak: 'normal', whiteSpace: 'pre-line' },
-	{ hyphens: 'auto', wordBreak: 'keep-all', whiteSpace: 'pre-line' },
-]);
 
 export class LiveChatController {
 	#skip = false;

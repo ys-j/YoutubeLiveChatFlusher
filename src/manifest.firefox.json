@@ -1,11 +1,12 @@
 {
 	"manifest_version": 3,
 	"name": "__MSG_manifestName__",
-	"version": "0.14.2",
+	"version": "0.14.3",
 	"author": "_y_s",
 	"action": {},
 	"background": {
-		"scripts": ["sw.js"]
+		"scripts": ["sw.js"],
+		"type": "module"
 	},
 	"browser_specific_settings": {
 		"gecko": {

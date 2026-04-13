@@ -29,10 +29,10 @@ export const MutedWordModeEnum = Object.freeze({
 	CHAR: 3,
 });
 
-const RENDERING_SKIP_KEYS = [
+const RENDERING_SKIP_KEYS = Object.freeze([
 	'liveChatPlaceholderItemRenderer',
 	'liveChatSponsorshipsGiftRedemptionAnnouncementRenderer',
-];
+]);
 
 /** @type {RegExp[]} */
 const mutedWordsList = [];

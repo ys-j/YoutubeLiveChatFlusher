@@ -1,3 +1,6 @@
+/// <reference path="../../types/browser.d.ts" />
+/// <reference path="../../types/extends.d.ts" />
+
 /**
  * @typedef LanguageDetection
  * @prop {string} source
@@ -61,9 +64,9 @@ export class LanguageDetectionController {
 
 export class TranslationController {
 	/** @readonly */
-	static TRANSLATABLE_PATTERN = /[\p{L}\p{N}]/u;
+	static TRANSLATABLE_PATTERN = /[\p{L}]/u;
 	/** @readonly */
-	static REPEATING_PATTERN = /^\w+$|^(\S)\1{2,}$/
+	static REPEATING_PATTERN = /^\w+$|^(\S)\1{2,}$/;
 
 	/**
 	 * @param {TranslationControllerOptions} options
