@@ -466,9 +466,7 @@ export class LiveChatController {
 					}
 				}
 				if (root.getElementById(el.id)) {
-					const type = el.className.match(/text (.+)/)?.at(1) || 'normal';
-					const color = getComputedStyle(le).getPropertyValue(`--yt-lcf-${type}-color`);
-					console.debug(`Message duplication #${el.id}: %c${text || el.lastElementChild?.textContent}`, color ? 'color:' + color : '');
+					console.debug(`Message duplication #${el.id}: ${text || el.lastElementChild?.textContent}`);
 				} else {
 					/** @type { ["dense", "random"] } */
 					const modeOptions = ['dense', 'random'];

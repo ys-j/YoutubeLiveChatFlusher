@@ -7,5 +7,7 @@
 			ytcfg: JSON.stringify(window['ytcfg']?.d()),
 		},
 	});
-	self.dispatchEvent(ev);
+	const dispatch = () => self.dispatchEvent(ev);
+	if (document.visibilityState === 'visible') dispatch();
+	else document.addEventListener('visibilitychange', dispatch, { once: true, passive: true });
 })();
