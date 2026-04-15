@@ -28,12 +28,6 @@ self.addEventListener('ytlcf-message', e => {
 	}
 }, { passive: true });
 
-setTimeout(() => {
-	const script = document.createElement('script');
-	script.src = browser.runtime.getURL('./injection.js');
-	document.body.append(script);
-}, 1000);
-
 self.addEventListener('ytlcf-ready', e => {
 	e.stopImmediatePropagation();
 	console.info(`${manifest.name} is ready!`);
