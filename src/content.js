@@ -14,11 +14,12 @@ self.addEventListener('ytlcf-message', e => {
 	const { ytInitialData, ytcfg } = e.detail;
 	if (ytInitialData) sessionStorage.setItem('ytlcf-initial-data', ytInitialData);
 	if (ytcfg) sessionStorage.setItem('ytlcf-cfg', ytcfg);
-	const target = document.querySelector('ytd-app') || document.getElementById('player-container-id');
+	const path = location.pathname.split('/').find(Boolean);
 	const detail = {
-		pageType: ['/watch', '/live'].includes(location.pathname) ? 'watch' : 'browser',
+		pageType: path === 'watch' || path === 'live' ? 'watch' : 'browse',
 		response: JSON.parse(ytInitialData),
 	};
+	const target = document.querySelector('ytd-app') || document.getElementById('player-container-id');
 	if (target) {
 		const url = browser.runtime.getURL('./modules/main.mjs');
 		import(url).then(module => {
