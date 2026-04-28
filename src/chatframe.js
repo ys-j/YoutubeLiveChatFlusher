@@ -18,7 +18,7 @@ import(url)
 });
 
 /**
- * @param {CustomEvent} e 
+ * @param {CustomEvent} e
  */
 function onAction(e) {
 	if (e.detail?.actionName === 'yt-live-chat-actions') {

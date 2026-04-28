@@ -27,7 +27,7 @@ class TranslationCache {
 		const cache = this.#container.get(target);
 		return cache?.get(plain);
 	}
-	
+
 	/**
 	 * Caches the translation result.
 	 * @param {string} target target language
@@ -61,7 +61,7 @@ export class TranslatorController {
 	/** @type {TranslationCache} */ #cache;
 
 	/**
-	 * @param {"internal" | "external"} mode translator mode 
+	 * @param {"internal" | "external"} mode translator mode
 	 * @param {string} [url] external URL
 	 * @param {object} [options]
 	 * @param {object} [options.cache]
@@ -141,7 +141,7 @@ class ExternalTranslatorSession {
 	/** @type {string} */ lastSrc = 'und';
 
 	/**
-	 * @param {TranslatorCreateCoreOptions & { url: string }} options 
+	 * @param {TranslatorCreateCoreOptions & { url: string }} options
 	 */
 	constructor(options) {
 		try {
@@ -157,7 +157,7 @@ class ExternalTranslatorSession {
 	}
 
 	/**
-	 * @param {TranslatorCreateCoreOptions} options 
+	 * @param {TranslatorCreateCoreOptions} options
 	 */
 	#setParams({ sourceLanguage: sl, targetLanguage: tl }) {
 		const p = this.url.searchParams;

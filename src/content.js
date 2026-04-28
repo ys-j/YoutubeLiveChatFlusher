@@ -19,13 +19,17 @@ self.addEventListener('ytlcf-message', e => {
 		pageType: path === 'watch' || path === 'live' ? 'watch' : 'browse',
 		response: JSON.parse(ytInitialData),
 	};
-	const target = document.querySelector('ytd-app') || document.getElementById('player-container-id');
-	if (target) {
-		const url = browser.runtime.getURL('./modules/main.mjs');
-		import(url).then(module => {
-			module.initialize({ target, detail });
-		});
-	}
+	const timer = setInterval(() => {
+		const target = document.querySelector('ytd-app') || document.getElementById('player-container-id');
+		if (target) {
+			const url = browser.runtime.getURL('./modules/main.mjs');
+			import(url).then(module => {
+				module.initialize({ target, detail });
+			}).finally(() => {
+				clearInterval(timer);
+			});
+		}
+	}, 1000);
 }, { passive: true });
 
 self.addEventListener('ytlcf-ready', e => {

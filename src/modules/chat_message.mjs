@@ -159,7 +159,7 @@ export class LiveChatItemFactory {
 			if ('body' in options.background && body) {
 				const rgb = getColorRGB(options.background.body);
 				body.style.backgroundColor = `rgba(${rgb.join()},var(--yt-lcf-background-opacity))`;
-			} 
+			}
 		} else if ('text' in options) {
 			el.dataset.text = options.text;
 		}
@@ -352,7 +352,7 @@ const RESOLVED_NULL = Promise.resolve(null);
 
 /**
  * Detects each node language async.
- * @param {ArrayLike<Node>} nodes 
+ * @param {ArrayLike<Node>} nodes
  */
 export function detectLanguageAsync(nodes) {
 	if (!translator.detector.isReady) translator.detector.ready();
@@ -375,7 +375,7 @@ export class ChatMessageContainer {
 	lazy = false;
 
 	/**
-	 * @param {LiveChat.RendererContent["message"]} message 
+	 * @param {LiveChat.RendererContent["message"]} message
 	 */
 	constructor(message) {
 		this.#original = getChatMessage(message);
@@ -427,9 +427,9 @@ export class ChatMessageContainer {
 		}
 		return text;
 	}
-	
+
 	/**
-	 * @param {HTMLElement} element 
+	 * @param {HTMLElement} element
 	 */
 	async connectTo(element) {
 		const translated = await this.translating;
@@ -468,7 +468,7 @@ export function updateMutedWordsList() {
  */
 function getChatMessage(message, options = {}) {
 	if (!message) return new Text();
-	
+
 	const { start, end, filterMode } = options;
 	const filterOptions = {
 		mode: filterMode || s.mutedWords.mode,

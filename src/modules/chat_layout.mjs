@@ -17,7 +17,7 @@ export class LiveChatLayoutCache {
 	}
 
 	/**
-	 * @param {number} numOfLanes 
+	 * @param {number} numOfLanes
 	 */
 	resize(numOfLanes) {
 		const len = this.maps.length;
@@ -38,7 +38,7 @@ export class LiveChatLayoutCache {
 
 	/**
 	 * @param {string} id renderer id
-	 * @param {ChatLayoutInfo} layout layout info 
+	 * @param {ChatLayoutInfo} layout layout info
 	 */
 	set(id, layout) {
 		for (let i = layout.lineStart; i < layout.lineEnd; i++) {
@@ -59,8 +59,8 @@ export class LiveChatLayoutCache {
 	}
 
 	/**
-	 * @param {ChatLayoutInfo} target 
-	 * @param {boolean} [reversed=false] 
+	 * @param {ChatLayoutInfo} target
+	 * @param {boolean} [reversed=false]
 	 * @returns {boolean} if this message collides against any preceding layout
 	 */
 	anyCollides(target, reversed = false) {
@@ -90,7 +90,7 @@ export function layoutChatItem(el, cache, mode = 'dense') {
 	if (cw >= hw * (Number.parseInt(s.styles.max_width, 10) / 100 || 1)) {
 		el.classList.add('wrap');
 	}
-	
+
 	el.style.setProperty('--yt-lcf-translate-x', `-${hw + cw}px`);
 
 	const body = /** @type {HTMLElement?} */ (el.lastElementChild);
@@ -105,83 +105,107 @@ export function layoutChatItem(el, cache, mode = 'dense') {
 		}
 	}
 
-	const lhf = Number.parseFloat(s.styles.line_height) || 1.4;
-
-	let y = 0;
-	/** @type {ChatLayoutInfo} */
-	let layout;
-	
 	const dir = s.others.direction & 1 ? 'bottom' : 'top';
 	if (ch >= hh) {
 		el.style[dir] = '0px';
 		el.setAttribute('data-line', '0');
 		el.style.visibility = '';
-		layout = new ChatLayoutInfo(el, y);
+		const layout = new ChatLayoutInfo(el, 0);
 		cache.set(el.id, layout);
 		return el.id;
 	}
+
+	switch (mode) {
+		case 'dense':
+			return placeChatItemDensely(el, cache);
+		case 'random':
+			return placeChatItemRandomly(el, cache);
+	}
+}
+
+/**
+ * @param {HTMLElement} el chat item element
+ * @param {LiveChatLayoutCache} cache cache object
+ * @returns element id
+ */
+function placeChatItemDensely(el, cache) {
 	const overline = cache.maps.length;
+	const lhf = Number.parseFloat(s.styles.line_height) || 1.4;
+	const dir = s.others.direction & 1 ? 'bottom' : 'top';
 	const reversed = (s.others.direction & 2) > 0;
 	const parentRect = cache.dom.host.getBoundingClientRect();
 
-	switch (mode) {
-		case 'dense': {
-			do {
-				el.style[dir] = `${y * lhf}em`;
-				el.setAttribute('data-line', `${y}`);
-				layout = new ChatLayoutInfo(el, y);
-				const overflow = layout.isOverflow(parentRect);
-				if (overflow) continue;
-				const collidable = cache.anyCollides(layout, reversed);
-				if (collidable) continue;
-				el.style.visibility = '';
-				cache.set(el.id, layout);
-				return el.id;
-			} while (++y <= overline);
+	let y = 0;
+	/** @type {ChatLayoutInfo} */
+	let layout;
+	do {
+		el.style[dir] = `${y * lhf}em`;
+		el.setAttribute('data-line', `${y}`);
+		layout = new ChatLayoutInfo(el, y);
+		const overflow = layout.isOverflow(parentRect);
+		if (overflow) continue;
+		const collidable = cache.anyCollides(layout, reversed);
+		if (collidable) continue;
+		el.style.visibility = '';
+		cache.set(el.id, layout);
+		return el.id;
+	} while (++y <= overline);
 
-			el.classList.add('overlap');
-			const st = s.others.overlapping;
-			const o = st & 0b01 ? .8 : 1;
-			const dy = st & 0b10 ? .5 : 0;
+	el.classList.add('overlap');
+	const st = s.others.overlapping;
+	const o = st & 0b01 ? .8 : 1;
+	const dy = st & 0b10 ? .5 : 0;
 
-			y = cache.maps.reduce((pi, cv, ci, arr) => cv.size < arr[pi].size ? ci : pi, 0);
-			el.setAttribute('data-line', `${y}`);
-			layout = new ChatLayoutInfo(el, y);
-			const len = [...cache.maps[y].values().filter(layout => layout.isCollidable(layout))].length || 1;
-			el.style.top = `${(y + dy) * lhf}em`;
-			el.style.opacity = `${Math.max(.5, o ** len)}`;
-			el.style.zIndex = `-${len}`;
-			el.style.visibility = '';
-			cache.set(el.id, layout);
-			return el.id;
+	y = cache.maps.reduce((pi, cv, ci, arr) => cv.size < arr[pi].size ? ci : pi, 0);
+	el.setAttribute('data-line', `${y}`);
+	layout = new ChatLayoutInfo(el, y);
+	const len = [...cache.maps[y].values().filter(layout => layout.isCollidable(layout))].length || 1;
+	el.style.top = `${(y + dy) * lhf}em`;
+	el.style.opacity = `${Math.max(.5, o ** len)}`;
+	el.style.zIndex = `-${len}`;
+	el.style.visibility = '';
+	cache.set(el.id, layout);
+	return el.id;
+}
+
+/**
+ * @param {HTMLElement} el chat item element
+ * @param {LiveChatLayoutCache} cache cache object
+ * @returns element id
+ */
+function placeChatItemRandomly(el, cache) {
+	const overline = cache.maps.length;
+	const lhf = Number.parseFloat(s.styles.line_height) || 1.4;
+	const dir = s.others.direction & 1 ? 'bottom' : 'top';
+	const reversed = (s.others.direction & 2) > 0;
+	const parentRect = cache.dom.host.getBoundingClientRect();
+
+	let y = 0;
+	/** @type {ChatLayoutInfo} */
+	let layout;
+	const calculatedLine = new Set(Array(overline).keys());
+	do {
+		y = (overline * Math.random()) | 0;
+		el.style[dir] = `${y * lhf}em`;
+		el.setAttribute('data-line', `${y}`);
+		layout = new ChatLayoutInfo(el, y);
+		const overflow = layout.isOverflow(parentRect);
+		if (overflow) {
+			for (let i = y; i < overline; i++) {
+				calculatedLine.delete(i);
+			}
+			continue;
 		}
-		
-		case 'random': {
-			const calculatedLine = new Set(Array(overline).keys());
-			do {
-				y = (overline * Math.random()) | 0;
-				el.style[dir] = `${y * lhf}em`;
-				el.setAttribute('data-line', `${y}`);
-				layout = new ChatLayoutInfo(el, y);
-				const overflow = layout.isOverflow(parentRect);
-				if (overflow) {
-					for (let i = y; i < overline; i++) {
-						calculatedLine.delete(i);
-					}
-					continue;
-				}
-				const collidable = cache.anyCollides(layout, reversed);
-				if (collidable) {
-					calculatedLine.delete(y);
-					continue;
-				}
-				break;
-			} while (calculatedLine.size > 0);
-			el.style.visibility = '';
-			cache.set(el.id, layout);
-			return el.id;
+		const collidable = cache.anyCollides(layout, reversed);
+		if (collidable) {
+			calculatedLine.delete(y);
+			continue;
 		}
-	}
+		break;
+	} while (calculatedLine.size > 0);
+	el.style.visibility = '';
+	cache.set(el.id, layout);
+	return el.id;
 }
 
 class ChatLayoutInfo {
@@ -190,8 +214,8 @@ class ChatLayoutInfo {
 	/** @type {number} */ #range;
 
 	/**
-	 * @param {HTMLElement} elem 
-	 * @param {number} [line] 
+	 * @param {HTMLElement} elem
+	 * @param {number} [line]
 	 */
 	constructor(elem, line = undefined) {
 		this.#rect = elem.getBoundingClientRect();

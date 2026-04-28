@@ -23,10 +23,10 @@ export class LanguageDetectionController {
 		}
 		this.isReady = true;
 	}
-	
+
 	/**
 	 * Detects text language.
-	 * @param {string} text 
+	 * @param {string} text
 	 * @returns {Promise<LanguageDetection>} detection
 	 */
 	async detect(text) {
@@ -66,7 +66,7 @@ export class TranslationController {
 	/** @readonly */
 	static TRANSLATABLE_PATTERN = /[\p{L}]/u;
 	/** @readonly */
-	static REPEATING_PATTERN = /^\w+$|^(\S)\1{2,}$/;
+	static REPEATING_PATTERN = /^(\S)\1{2,}$/;
 
 	/**
 	 * @param {TranslationControllerOptions} options
@@ -128,7 +128,7 @@ export class TranslationController {
 		if (!text) return node;
 
 		const span = document.createElement('span');
-		
+
 		/** @type {Record<string, string>} */
 		const translation = { text, target };
 		if (detection.isReliable) {

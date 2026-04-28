@@ -191,7 +191,7 @@
 		<div>
 			<div data-i18n=layerCSS></div>
 			<div>
-				<input type=text name=layer_css placeholder="property: value;" style=width:20.5em data-lang=text/css>
+				<input type=text name=layer_css placeholder="property: value;" style="width: 20.5em;" data-lang=text/css>
 				<br>
 				<button type=button id=layer_resize_helper class data-i18n-title=resizeLayer data-i18n=resizeLayer></button>
 			</div>
@@ -450,7 +450,7 @@
 						</label>
 					</div>
 					<div>
-						<label data-i18n-title=tooltip_stickerSize style="padding:0 0 0 4px">
+						<label data-i18n-title=tooltip_stickerSize style="padding:0 0 0 4px;">
 							<span data-i18n=display_stickerSize></span>
 							: x
 							<input type=number class=styles name=sticker_size min=1 max=10 step=0.1 data-size=5 data-unit=em>
@@ -527,7 +527,7 @@
 			</div>
 		</div>
 		<div>
-			<div data-i18n=common style=line-height:inherit></div>
+			<div data-i18n=common style="line-height: inherit;"></div>
 			<div>
 				<div>
 					<label>
@@ -553,7 +553,7 @@
 		<div>
 			<div data-i18n=mutedWordsReplacement></div>
 			<div>
-				<input type=text name=muted_words_replacement style=width:20.5em data-i18n-placeholder=placeholder_mutedWordsReplacement>
+				<input type=text name=muted_words_replacement style="width: 20.5em;" data-i18n-placeholder=placeholder_mutedWordsReplacement>
 			</div>
 		</div>
 		<div>
@@ -565,7 +565,7 @@
 				</label>
 			</div>
 		</div>
-		<textarea name=muted_words_list rows=20 style=width:32em data-i18n-placeholder=placeholder_mutedWordsList></textarea>
+		<textarea name=muted_words_list rows=20 style="width: 32em;" data-i18n-placeholder=placeholder_mutedWordsList></textarea>
 	</div>
 	<div class=ytp-sfn-content id=yt-lcf-panel-tabpanel-3 role=tabpanel aria-labelledby=yt-lcf-panel-tabbutton-3 hidden>
 		<div>
@@ -574,7 +574,7 @@
 				<button type=button id=user_css_helper class data-i18n-title=addUserStyle data-i18n=addUserStyle></button>
 			</div>
 		</div>
-		<textarea name=user_defined_css rows=30 placeholder=".name::after {&#x0a;  content: '\a';&#x0a;}" style=width:32em data-lang=text/css></textarea>
+		<textarea name=user_defined_css rows=30 placeholder=".name::after {&#x0a;  content: '\a';&#x0a;}" style="width: 32em;" data-lang=text/css></textarea>
 	</div>
 	<div class=ytp-sfn-content id=yt-lcf-panel-tabpanel-4 role=tabpanel aria-labelledby=yt-lcf-panel-tabbutton-4 hidden>
 		<div>
@@ -629,6 +629,16 @@
 </form>
 <dialog id=ytlcf-dialog-font_helper class=ytp-sfn>
 	<form method=dialog>
+		<template id=ytlcf-dialog-font_helper-family>
+			<li>
+				<div style="display: flex;align-items: center;">
+					<span style="flex: 3;"></span>
+					<button type=button data-funtion=up></button>
+					<button type=button data-funtion=down></button>
+					<button type=button data-funtion=delete></button>
+				</div>
+			</li>
+		</template>
 		<ol></ol>
 		<div class="top-level-buttons ytd-menu-renderer">
 			<select>
@@ -636,7 +646,7 @@
 			</select>
 			<button type=button data-i18n=add data-i18n-title=add>add</button>
 		</div>
-		<div class="top-level-buttons ytd-menu-renderer" style=margin-top:12px>
+		<div class="top-level-buttons ytd-menu-renderer" style="margin-top: 12px;">
 			<button data-i18n=confirm data-i18n-title=confirm>confirm</button>
 			<button type=button data-i18n=cancel data-i18n-title=cancel>cancel</button>
 		</div>
@@ -696,7 +706,7 @@
 		</div>
 	</form>
 	<textarea id=ytlcf-textarea-user_css_helper form=ytlcf-form-user_css_helper readonly rows=9 data-i18n-placeholder=placeholder_userStyleTextArea data-lang=text/css></textarea>
-	<div class="top-level-buttons ytd-menu-renderer" style=margin-top:12px>
+	<div class="top-level-buttons ytd-menu-renderer" style="margin-top: 12px;">
 		<button form=ytlcf-form-user_css_helper class data-i18n=add>add</button>
 		<button type=button class data-i18n=cancel>cancel</button>
 	</div>

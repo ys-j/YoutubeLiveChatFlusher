@@ -150,7 +150,7 @@ export class LiveChatController {
 	async #setupPanel() {
 		const le = this.layer.element;
 		le.after(this.panel.element);
-		
+
 		const form = this.panel.form;
 		if (!form) return;
 		this.#setupDynamicControls(form);
@@ -159,7 +159,7 @@ export class LiveChatController {
 	}
 
 	/**
-	 * @param {HTMLFormElement} form 
+	 * @param {HTMLFormElement} form
 	 */
 	#setupDynamicControls(form) {
 		const ctrls = form.elements;
@@ -183,31 +183,25 @@ export class LiveChatController {
 	}
 
 	/**
-	 * @param {HTMLFormElement} form 
+	 * @param {HTMLFormElement} form
 	 */
 	#applySettingsToControls(form) {
 		const le = this.layer.element;
 		const rect = le.getBoundingClientRect();
 		const ctrls = form.elements;
-		const selects = form.querySelectorAll('select');
-		for (const select of selects) {
+		for (const select of form.querySelectorAll('select')) {
 			if (select.name in s.others) {
 				const name = /** @type {keyof typeof s.others} */ (select.name);
 				const val = s.others[name];
 				select.selectedIndex = Math.abs(val);
-				switch (name) {
-					case 'emoji': {
-						le.setAttribute('data-emoji', Object.keys(EmojiModeEnum)[val].toLowerCase());
-						break;
-					}
-					case 'wrap': {
-						const wrapStyle = WrapStyleDefinitions[val];
-						le.style.setProperty('--yt-lcf-message-hyphens', wrapStyle.hyphens);
-						le.style.setProperty('--yt-lcf-message-word-break', wrapStyle.wordBreak);
-						le.style.setProperty('--yt-lcf-message-white-space', wrapStyle.whiteSpace);
-						le.style.setProperty('--yt-lcf-max-width', s.styles.max_width);
-						break;
-					}
+				if (name === 'emoji') {
+					le.setAttribute('data-emoji', Object.keys(EmojiModeEnum)[val].toLowerCase());
+				} else if (name === 'wrap') {
+					const wrapStyle = WrapStyleDefinitions[val];
+					le.style.setProperty('--yt-lcf-message-hyphens', wrapStyle.hyphens);
+					le.style.setProperty('--yt-lcf-message-word-break', wrapStyle.wordBreak);
+					le.style.setProperty('--yt-lcf-message-white-space', wrapStyle.whiteSpace);
+					le.style.setProperty('--yt-lcf-max-width', s.styles.max_width);
 				}
 			} else if (select.name === 'muted_words_mode') {
 				select.selectedIndex = s.mutedWords.mode;
@@ -215,97 +209,9 @@ export class LiveChatController {
 		}
 		const checkboxes = /** @type {NodeListOf<HTMLInputElement>} */ (form.querySelectorAll('input[type="checkbox"]'));
 		for (const cb of checkboxes) {
-			const match = cb.name.match(/^(.+)_display$/);
-			if (match) {
-				const [_, _type] = match;
-				if (_type in s.parts) {
-					const type = /** @type {keyof typeof s.parts} */ (_type);
-					const part = s.parts[type];
-					// @ts-expect-error
-					cb.checked = part[cb.value];
-					switch (cb.value) {
-						case 'color': {
-							// @ts-expect-error
-							const saved = part.color;
-							if (saved) le.style.setProperty(`--yt-lcf-${type.replace(/_/g, '-')}-color`, saved);
-							else le.style.removeProperty(`--yt-lcf-${type.replace(/_/g, '-')}-color`);
-							const picker = /** @type {HTMLInputElement?} */ (cb.parentElement?.nextElementSibling);
-							if (picker) picker.value = saved || formatHexColor(getComputedStyle(le).getPropertyValue('--yt-lcf-' + picker.name.replace(/_/g, '-')));
-							break;
-						}
-						// biome-ignore lint/suspicious/noFallthroughSwitchClause: To use default case
-						case 'name': {
-							const div = /** @type {HTMLDivElement} */ (cb.closest('div'));
-							if (cb.checked) div.classList.add('outlined');
-							cb.addEventListener('change', () => {
-								const method = cb.checked ? 'add' : 'remove';
-								div.classList[method]('outlined');
-								le.classList[method](`has-${type}-name`);
-							}, { passive: true });
-						}
-						default: {
-							le.style.setProperty(`--yt-lcf-${type.replace(/_/g, '-')}-display-${cb.value}`, cb.checked ? 'inline' : 'none');
-						}
-					}
-				}
-			} else {
-				switch (cb.name) {
-					case 'speed': {
-						cb.checked = s.others.px_per_sec > 0;
-						/** @type {HTMLInputElement} */ (ctrls.animation_duration).disabled = cb.checked;
-						/** @type {HTMLInputElement} */ (ctrls.px_per_sec).disabled = !cb.checked;
-						break;
-					}
-					case 'lines': {
-						cb.checked = s.others.number_of_lines > 0;
-						/** @type {HTMLInputElement} */ (ctrls.font_size).disabled = cb.checked;
-						/** @type {HTMLInputElement} */ (ctrls.number_of_lines).disabled = !cb.checked;
-						/** @type {HTMLInputElement} */ (ctrls.type_of_lines).disabled = !cb.checked;
-						break;
-					}
-					case 'unlimited': {
-						/** @type {HTMLInputElement} */ (ctrls.limit_number).disabled = cb.checked = s.others.limit === 0;
-						/** @type {LiveChatLayer} */ this.layer.limit = s.others.limit;
-						break;
-					}
-					case 'container_unlimited': {
-						/** @type {HTMLInputElement} */ (ctrls.container_limit_number).disabled = cb.checked = s.others.container_limit === 0;
-						break;
-					}
-					case 'overlapping':
-					case 'direction': {
-						const val = Number.parseInt(cb.value, 10);
-						cb.checked = !!(s.others[cb.name] & 1 << val);
-						break;
-					}
-					case 'show_username': {
-						cb.checked = s.others.show_username > 0;
-						break;
-					}
-					case 'muted_words_regexp': {
-						cb.checked = s.mutedWords.regexp;
-						break;
-					}
-					case 'except_lang': {
-						const val = Number.parseInt(cb.value, 10);
-						cb.checked = !!(s.others.except_lang & 1 << val);
-						const abs = Math.abs(s.others.translation);
-						cb.disabled = abs === 0 || abs === val + 1;
-						break;
-					}
-					case 'prefix_lang': {
-						cb.checked = s.others.translation < 0;
-						cb.disabled = /** @type {HTMLSelectElement} */ (ctrls.translation).selectedIndex === 0;
-						le.classList[cb.checked ? 'add' : 'remove'](cb.name);
-						break;
-					}
-					case 'suffix_original': {
-						cb.checked = s.others.suffix_original > 0;
-						le.classList[cb.checked ? 'add' : 'remove'](cb.name);
-						break;
-					}
-				}
-			}
+			const [_, _type] = cb.name.match(/^(.+)_display$/) || [];
+			if (_type in s.parts) this.#applyPartSetting(cb, /** @type {keyof typeof s.parts} */ (_type));
+			else this.#applyCheckboxSetting(cb, ctrls);
 		}
 
 		for (const [prop, value] of Object.entries(s.styles)) {
@@ -323,7 +229,7 @@ export class LiveChatController {
 			: Math.round(rect.width / /** @type {HTMLInputElement} */ (ctrls.animation_duration).valueAsNumber);
 		/** @type {HTMLInputElement} */ (ctrls.limit_number).valueAsNumber = s.others.limit || 100;
 		/** @type {HTMLInputElement} */ (ctrls.container_limit_number).valueAsNumber = s.others.container_limit || 20;
-		
+
 		const lines = s.others.number_of_lines;
 		const inputFontSize = /** @type {HTMLInputElement} */ (ctrls.font_size);
 		const inputLineNum = /** @type {HTMLInputElement} */ (ctrls.number_of_lines);
@@ -349,7 +255,107 @@ export class LiveChatController {
 	}
 
 	/**
-	 * @param {HTMLFormElement} form 
+	 * @param {HTMLInputElement} cb
+	 * @param {keyof typeof s.parts} type
+	 */
+	#applyPartSetting(cb, type) {
+		const le = this.layer.element;
+		const part = s.parts[type];
+		// @ts-expect-error
+		cb.checked = part[cb.value];
+		switch (cb.value) {
+			case 'color': {
+				// @ts-expect-error
+				const saved = part.color;
+				if (saved) le.style.setProperty(`--yt-lcf-${type.replace(/_/g, '-')}-color`, saved);
+				else le.style.removeProperty(`--yt-lcf-${type.replace(/_/g, '-')}-color`);
+				const picker = /** @type {HTMLInputElement?} */ (cb.parentElement?.nextElementSibling);
+				if (picker) picker.value = saved || formatHexColor(getComputedStyle(le).getPropertyValue('--yt-lcf-' + picker.name.replace(/_/g, '-')));
+				break;
+			}
+			// biome-ignore lint/suspicious/noFallthroughSwitchClause: To use default case
+			case 'name': {
+				const div = /** @type {HTMLDivElement} */ (cb.closest('div'));
+				if (cb.checked) div.classList.add('outlined');
+				cb.addEventListener('change', () => {
+					const method = cb.checked ? 'add' : 'remove';
+					div.classList[method]('outlined');
+					le.classList[method](`has-${type}-name`);
+				}, { passive: true });
+			}
+			default: {
+				le.style.setProperty(`--yt-lcf-${type.replace(/_/g, '-')}-display-${cb.value}`, cb.checked ? 'inline' : 'none');
+			}
+		}
+	}
+
+	/**
+	 *
+	 * @param {HTMLInputElement} cb
+	 * @param {HTMLFormControlsCollection} ctrls
+	 */
+	#applyCheckboxSetting(cb, ctrls) {
+		const le = this.layer.element;
+		switch (cb.name) {
+			case 'speed': {
+				cb.checked = s.others.px_per_sec > 0;
+				/** @type {HTMLInputElement} */ (ctrls.animation_duration).disabled = cb.checked;
+				/** @type {HTMLInputElement} */ (ctrls.px_per_sec).disabled = !cb.checked;
+				break;
+			}
+			case 'lines': {
+				cb.checked = s.others.number_of_lines > 0;
+				/** @type {HTMLInputElement} */ (ctrls.font_size).disabled = cb.checked;
+				/** @type {HTMLInputElement} */ (ctrls.number_of_lines).disabled = !cb.checked;
+				/** @type {HTMLInputElement} */ (ctrls.type_of_lines).disabled = !cb.checked;
+				break;
+			}
+			case 'unlimited': {
+				/** @type {HTMLInputElement} */ (ctrls.limit_number).disabled = cb.checked = s.others.limit === 0;
+				/** @type {LiveChatLayer} */ this.layer.limit = s.others.limit;
+				break;
+			}
+			case 'container_unlimited': {
+				/** @type {HTMLInputElement} */ (ctrls.container_limit_number).disabled = cb.checked = s.others.container_limit === 0;
+				break;
+			}
+			case 'overlapping':
+			case 'direction': {
+				const val = Number.parseInt(cb.value, 10);
+				cb.checked = !!(s.others[cb.name] & 1 << val);
+				break;
+			}
+			case 'show_username': {
+				cb.checked = s.others.show_username > 0;
+				break;
+			}
+			case 'muted_words_regexp': {
+				cb.checked = s.mutedWords.regexp;
+				break;
+			}
+			case 'except_lang': {
+				const val = Number.parseInt(cb.value, 10);
+				cb.checked = !!(s.others.except_lang & 1 << val);
+				const abs = Math.abs(s.others.translation);
+				cb.disabled = abs === 0 || abs === val + 1;
+				break;
+			}
+			case 'prefix_lang': {
+				cb.checked = s.others.translation < 0;
+				cb.disabled = /** @type {HTMLSelectElement} */ (ctrls.translation).selectedIndex === 0;
+				le.classList[cb.checked ? 'add' : 'remove'](cb.name);
+				break;
+			}
+			case 'suffix_original': {
+				cb.checked = s.others.suffix_original > 0;
+				le.classList[cb.checked ? 'add' : 'remove'](cb.name);
+				break;
+			}
+		}
+	}
+
+	/**
+	 * @param {HTMLFormElement} form
 	 */
 	#applyInitialStyles(form) {
 		const le = this.layer.element;
@@ -404,111 +410,137 @@ export class LiveChatController {
 
 	/**
 	 * Fires chat actions.
-	 * @param {CustomEvent<LiveChat.LiveChatItemAction[]>} event 
+	 * @param {CustomEvent<LiveChat.LiveChatItemAction[]>} event
 	 */
 	async #onAction(event) {
 		const le = this.layer.element;
 		const root = this.layer.root;
 		if ((isNotPip() && document.visibilityState === 'hidden') || le.hidden || le.parentElement?.classList.contains('paused-mode')) return;
 
-		const actions = event.detail;
-		const filtered = {
-			add: actions.filter(a => a && 'addChatItemAction' in a),
-			delete: actions.filter(a => a && 'markChatItemAsDeletedAction' in a),
-			delete_author: actions.filter(a => a && 'markChatItemsByAuthorAsDeletedAction' in a),
-			replace: actions.filter(a => a && 'replaceChatItemAction' in a),
+		/** @type {Record<string, LiveChat.LiveChatItemAction[]>} */
+		const filtered = { add: [], delete: [], delete_author: [], replace: [] };
+		for (const a of event.detail) {
+			if ('addChatItemAction' in a) filtered.add.push(a);
+			else if ('markChatItemAsDeletedAction' in a) filtered.delete.push(a);
+			else if ('markChatItemsByAuthorAsDeletedAction' in a) filtered.delete_author.push(a);
+			else if ('replaceChatItemAction' in a) filtered.replace.push(a);
 		};
 		if (this.#skip && filtered.add.length > 0) {
 			this.#skip = false;
 			return;
 		}
-		
+
 		// Add
 		const sv = s.others.simultaneous;
 		const last = sv === SimultaneousModeEnum.LAST_MERGE ? /** @type {HTMLElement?} */ (root.lastElementChild) : null;
 		const bodies = last ? [ `<!-- ${last.className} -->` + (last.getAttribute('data-text') || '') ] : [];
-		const ids = last ? [ last.id ] : [];
-		if (sv === SimultaneousModeEnum.FIRST) {
-			// @ts-expect-error
-			const notext = filtered.add.slice(1).filter(a => !a.addChatItemAction?.item.liveChatTextMessageRenderer);
-			filtered.add.splice(1, Infinity, ...notext);
-		}
-
-		for (const action of filtered.add) {
-			const item = action.addChatItemAction?.item;
-			if (!item) {
-				console.warn('Failed to add message.');
-				continue;
+		const ids = last ? [last.id] : [];
+		/** @type {(el: HTMLElement) => void} */
+		let merge = el => void el;
+		switch (s.others.simultaneous) {
+			case SimultaneousModeEnum.FIRST: {
+				// @ts-expect-error
+				const notext = filtered.add.slice(1).filter(a => !a.addChatItemAction?.item.liveChatTextMessageRenderer);
+				filtered.add.splice(1, Infinity, ...notext);
+				break;
 			}
-			renderChatItem(item, this.itemFactory).then(el => {
-				const text = el.getAttribute('data-text');
-				if (sv === SimultaneousModeEnum.MERGE || sv === SimultaneousModeEnum.LAST_MERGE) {
+			case SimultaneousModeEnum.LAST_MERGE:
+			case SimultaneousModeEnum.MERGE: {
+				merge = el => {
+					const text = el.getAttribute('data-text');
 					const body = text ? `<!-- ${el.className} -->${text}` : '';
-					if (body) {
-						const index = bodies.indexOf(body);
-						if (index < 0) {
-							bodies.push(body);
-							ids.push(el.id);
-						} else {
-							const earlier = root.getElementById(ids[index]);
-							/** @type {HTMLElement | null | undefined} */
-							const _name = earlier?.querySelector('.name');
-							/** @type {HTMLSpanElement?} */
-							const _photo = el.querySelector('.photo');
-							if (earlier && _name && _photo) {
-								const parent = _photo.parentElement;
-								if (parent) _name.insertAdjacentElement('beforebegin', parent);
-								if (!_name.textContent)  _name.textContent = '';
-								this.updateCurrentItem(earlier);
-								return;
-							}
+					if (!body) return;
+					const index = bodies.indexOf(body);
+					if (index < 0) {
+						bodies.push(body);
+						ids.push(el.id);
+					} else {
+						const earlier = root.getElementById(ids[index]);
+						/** @type {HTMLElement | null | undefined} */
+						const _name = earlier?.querySelector('.name');
+						/** @type {HTMLSpanElement?} */
+						const _photo = el.querySelector('.photo');
+						if (earlier && _name && _photo) {
+							const parent = _photo.parentElement;
+							if (parent) _name.insertAdjacentElement('beforebegin', parent);
+							if (!_name.textContent)  _name.textContent = '';
+							this.updateCurrentItem(earlier);
+							return;
 						}
 					}
-				}
-				if (root.getElementById(el.id)) {
-					console.debug(`Message duplication #${el.id}: ${text || el.lastElementChild?.textContent}`);
-				} else {
-					/** @type { ["dense", "random"] } */
-					const modeOptions = ['dense', 'random'];
-					layoutChatItem(el, this.layoutCache, modeOptions[s.others.density]);
-				}
-			}).catch(_ => {});
+				};
+				break;
+			}
 		}
-		
-		// Delete
-		for (const action of filtered.delete) {
-			// @ts-expect-error
-			const id = action.markChatItemAsDeletedAction.targetItemId;
-			if (this.layoutCache.delete(id).some(v => v)) {
-				const target = root.getElementById(id);
-				target?.remove();
+		for (const a of filtered.add) this.#addChatItem(a, merge);
+		for (const a of filtered.delete) this.#deleteChatItem(a);
+		for (const a of filtered.delete_author) this.#deleteChatItemByAuthor(a);
+		for (const a of filtered.replace) this.#replaceChatItem(a);
+	}
+
+	/**
+	 * @param {LiveChat.LiveChatItemAction} action add chat item action object
+	 * @param {(el: HTMLElement) => void} callback
+	 */
+	#addChatItem(action, callback) {
+		const item = action.addChatItemAction?.item;
+		if (!item) {
+			console.warn('Failed to add message.');
+			return;
+		}
+		return renderChatItem(item, this.itemFactory).then(el => {
+			const root = this.layer.root;
+			const text = el.getAttribute('data-text');
+			callback(el);
+			if (root.getElementById(el.id)) {
+				console.debug(`Message duplication #${el.id}: ${text || el.lastElementChild?.textContent}`);
 			} else {
-				console.warn('Failed to delete message: #' + id);
+				/** @type { ["dense", "random"] } */
+				const modeOptions = ['dense', 'random'];
+				layoutChatItem(el, this.layoutCache, modeOptions[s.others.density]);
 			}
+		}).catch(_ => {});
+	}
+
+	/**
+	 * @param {LiveChat.LiveChatItemAction} action
+	 */
+	#deleteChatItem(action) {
+		// @ts-expect-error
+		const id = action.markChatItemAsDeletedAction.targetItemId;
+		if (this.layoutCache.delete(id).some(v => v)) {
+			const target = this.layer.root.getElementById(id);
+			target?.remove();
+		} else {
+			console.warn('Failed to delete message: #' + id);
 		}
-		
-		// Delete by author
-		for (const action of filtered.delete_author) {
-			// @ts-expect-error
-			const id = action.markChatItemsByAuthorAsDeletedAction.externalChannelId;
-			const targets = root.querySelectorAll(`[data-author-id="${id}"]`);
-			for (const target of targets) {
-				this.layoutCache.delete(target.id);
-				target.remove();
-			}
+	}
+
+	/**
+	 * @param {LiveChat.LiveChatItemAction} action
+	 */
+	#deleteChatItemByAuthor(action) {
+		// @ts-expect-error
+		const id = action.markChatItemsByAuthorAsDeletedAction.externalChannelId;
+		const targets = this.layer.root.querySelectorAll(`[data-author-id="${id}"]`);
+		for (const target of targets) {
+			this.layoutCache.delete(target.id);
+			target.remove();
 		}
-		
-		// Replace
-		for (const action of filtered.replace) {
-			// @ts-expect-error
-			const id = action.replaceChatItemAction.targetItemId;
-			const target = root.getElementById(id);
-			const item = action.replaceChatItemAction?.replacementItem;
-			if (target && item) {
-				renderChatItem(item, this.itemFactory).then(target.replaceWith, console.warn);
-			} else {
-				console.warn('Failed to replace message: #' + id);
-			}
+	}
+
+	/**
+	 * @param {LiveChat.LiveChatItemAction} action
+	 */
+	#replaceChatItem(action) {
+		// @ts-expect-error
+		const id = action.replaceChatItemAction.targetItemId;
+		const target = this.layer.root.getElementById(id);
+		const item = action.replaceChatItemAction?.replacementItem;
+		if (target && item) {
+			renderChatItem(item, this.itemFactory).then(target.replaceWith, console.warn);
+		} else {
+			console.warn('Failed to replace message: #' + id);
 		}
 	}
 

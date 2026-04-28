@@ -24,7 +24,7 @@ export class LiveChatLayer {
 	 */
 	limit = 0;
 
-	/** 
+	/**
 	 * Creates new layer.
 	 * @param {import("./chat_controller.mjs").LiveChatController} controller controller
 	 * @param {HTMLDivElement | undefined} div container element
