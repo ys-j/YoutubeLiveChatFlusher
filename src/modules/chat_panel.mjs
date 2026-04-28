@@ -392,8 +392,8 @@ export class LiveChatPanel {
 						}
 						text += '}';
 					}
-					const invalidLineNum = lines.findIndex(id => id ? !pattern.test(id) : false);
-					const validityMsg = invalidLineNum < 0 ? '' : browser.i18n.getMessage('validation_channelId', invalidLineNum + 1);
+					const invalidLN = lines.map((id, i) => !id || pattern.test(id) ? -1 : i + 1).filter(v => v > 0);
+					const validityMsg = invalidLN.length > 0 ? browser.i18n.getMessage('validation_channelId', invalidLN.join()) : '';
 					textarea.setCustomValidity(validityMsg);
 					preview.value = text;
 				}, { passive: true });
