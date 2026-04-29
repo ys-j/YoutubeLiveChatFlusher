@@ -1,6 +1,59 @@
 import { LRUCache } from './lrucache.mjs';
 
 /**
+ * @typedef LanguageDetection
+ * @prop {string} source
+ * @prop {boolean} isReliable
+ */
+
+export class LanguageDetectionController {
+	/** @readonly */
+	static SCRIPT_MAP = Object.freeze({
+		'ja': /[\p{Script=Hiragana}\p{Script=Katakana}\uFF61-\uFF9F]/u,
+		'ko': /[\p{Script=Hangul}]/u,
+	});
+	/** @type {LanguageDetectorSession?} */ #detector = null;
+	isReady = false;
+
+	async ready() {
+		const availability = await self.LanguageDetector?.availability();
+		if (availability === 'available') {
+			const session = await self.LanguageDetector.create();
+			if (session) this.#detector = session;
+		}
+		this.isReady = true;
+	}
+
+	/**
+	 * Detects text language.
+	 * @param {string} text
+	 * @returns {Promise<LanguageDetection>} detection
+	 */
+	async detect(text) {
+		for (const [lang, pattern] of Object.entries(LanguageDetectionController.SCRIPT_MAP)) {
+			if (pattern.test(text)) {
+				return { source: lang, isReliable: true };
+			}
+		}
+		if (this.#detector) {
+			const result = await this.#detector.detect(text);
+			const firstResult = result.at(0);
+			if (firstResult && firstResult.confidence > .9) {
+				return {
+					source: firstResult.detectedLanguage,
+					isReliable: true,
+				};
+			}
+		}
+		const result = await browser.i18n.detectLanguage(text);
+		return {
+			source: result.languages.at(0)?.language || 'und',
+			isReliable: result.isReliable,
+		};
+	}
+}
+
+/**
  * @typedef TranslationResult
  * @prop {string} sentence
  * @prop {string} src
@@ -27,7 +80,7 @@ class TranslationCache {
 		const cache = this.#container.get(target);
 		return cache?.get(plain);
 	}
-	
+
 	/**
 	 * Caches the translation result.
 	 * @param {string} target target language
@@ -58,10 +111,11 @@ class TranslationCache {
 export class TranslatorController {
 	/** @type {Map<string, TranslatorSession | ExternalTranslatorSession>} */
 	#translators = new Map();
-	/** @type {TranslationCache} */ #cache;
+	/** @type {TranslationCache} */
+	#cache;
 
 	/**
-	 * @param {"internal" | "external"} mode translator mode 
+	 * @param {"internal" | "external"} mode translator mode
 	 * @param {string} [url] external URL
 	 * @param {object} [options]
 	 * @param {object} [options.cache]
@@ -72,7 +126,7 @@ export class TranslatorController {
 		this.mode = mode;
 		this.url = url ?? ExternalTranslatorSession.DEFAULT_URL;
 		this.options = Object.assign({
-			cache: { capacity: 100, maxLength: 5 },
+			cache: { capacity: 100, maxLength: 10 },
 		}, options);
 		this.#cache = new TranslationCache(this.options.cache.capacity);
 	}
@@ -95,9 +149,10 @@ export class TranslatorController {
 		const key = `${sl},${tl}`;
 		let translator = this.#translators.get(key);
 		if (translator) {
-			const sentence = await translator.translate(text);
 			const src = sl === 'auto' && 'lastSrc' in translator ? translator.lastSrc : sl;
-			return { sentence, src };
+			const req = translator.translate(text).then(sentence => ({ sentence, src }));
+			if ('lastSrc' in translator) this.tryCache(tl, text, req);
+			return req;
 		}
 
 		let skip = false;
@@ -119,17 +174,29 @@ export class TranslatorController {
 		if (!skip) this.#translators.set(key, translator);
 
 		/** @type {Promise<TranslationResult>} */
-		const requesting = translator.translate(text).then(sentence => {
-			// @ts-expect-error
-			return { sentence, src: translator.lastSrc };
-		}).catch(reason => {
+		const req = translator.translate(text)
+		.then(sentence => ({ sentence, src: /** @type {ExternalTranslatorSession} */ (translator).lastSrc }))
+		.catch(reason => {
 			this.#cache.delete(tl, text);
 			throw reason;
 		});
+		this.tryCache(tl, text, req);
+		return req;
+	}
+
+	/**
+	 * Tries to cache the translation result.
+	 * @param {string} tl target language
+	 * @param {string} text source text
+	 * @param {Promise<TranslationResult>} request promise of translation request
+	 * @returns {boolean} whether succeeded
+	 */
+	tryCache(tl, text, request) {
 		if (text.length <= this.options.cache.maxLength) {
-			this.#cache.set(tl, text, requesting);
+			this.#cache.set(tl, text, request);
+			return true;
 		}
-		return requesting;
+		return false;
 	}
 }
 
@@ -141,7 +208,7 @@ class ExternalTranslatorSession {
 	/** @type {string} */ lastSrc = 'und';
 
 	/**
-	 * @param {TranslatorCreateCoreOptions & { url: string }} options 
+	 * @param {TranslatorCreateCoreOptions & { url: string }} options
 	 */
 	constructor(options) {
 		try {
@@ -157,7 +224,7 @@ class ExternalTranslatorSession {
 	}
 
 	/**
-	 * @param {TranslatorCreateCoreOptions} options 
+	 * @param {TranslatorCreateCoreOptions} options
 	 */
 	#setParams({ sourceLanguage: sl, targetLanguage: tl }) {
 		const p = this.url.searchParams;

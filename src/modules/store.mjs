@@ -96,10 +96,10 @@ class ConfigHandler {
 	}
 
 	/**
-	 * @param {Record<string, any>} target 
-	 * @param {string} prop 
-	 * @param {any} val 
-	 * @param {any} _recv 
+	 * @param {Record<string, any>} target
+	 * @param {string} prop
+	 * @param {any} val
+	 * @param {any} _recv
 	 * @returns {boolean}
 	 */
 	set(target, prop, val, _recv) {
@@ -134,7 +134,7 @@ class ConfigStore {
 
 	/**
 	 * @template {typeof this.data} T
-	 * @param { { -readonly [P in keyof T]?: Partial<T[P]> } } [json] 
+	 * @param { { -readonly [P in keyof T]?: Partial<T[P]> } } [json]
 	 */
 	async load(json = undefined) {
 		/** @type {Partial<UnwrapReadonly<typeof this.data>>} */

@@ -8,10 +8,10 @@ export class ReplayActionBuffer {
 	/** @type {Map<number, Set<string>>} */
 	#map = new Map();
 	#lastOffset = 0;
-	
+
 	/**
 	 * Parses the raw replay actions and adds them to buffer.
-	 * @param {LiveChat.ReplayChatItemAction[]} rawActions 
+	 * @param {LiveChat.ReplayChatItemAction[]} rawActions
 	 */
 	pushActions(rawActions) {
 		for (const container of rawActions) {
@@ -29,8 +29,8 @@ export class ReplayActionBuffer {
 
 	/**
 	 * Gets the pending actions between the last offset and the current one.
-	 * @param {number} currentOffset 
-	 * @returns {any[]} 
+	 * @param {number} currentOffset
+	 * @returns {any[]}
 	 */
 	getPendingActions(currentOffset) {
 		/** @type {(time: number) => boolean} */
@@ -46,7 +46,7 @@ export class ReplayActionBuffer {
 	}
 
 	/**
-	 * @param {number} offset 
+	 * @param {number} offset
 	 */
 	update(offset) {
 		this.#lastOffset = offset;
@@ -73,7 +73,7 @@ export async function* getReplayChatActionsAsyncIterable(signal, initialContinua
 	let body = { continuation: initialContinuation };
 	/** @type { { actions: LiveChat.ReplayChatItemAction[] } } */
 	let contents = { actions: [] };
-	
+
 	/** @type { { offset: number } | undefined } */
 	let seekInfo;
 	let controller = new AbortController();

@@ -19,20 +19,18 @@ self.addEventListener('ytlcf-message', e => {
 		pageType: path === 'watch' || path === 'live' ? 'watch' : 'browse',
 		response: JSON.parse(ytInitialData),
 	};
-	const target = document.querySelector('ytd-app') || document.getElementById('player-container-id');
-	if (target) {
-		const url = browser.runtime.getURL('./modules/main.mjs');
-		import(url).then(module => {
-			module.initialize({ target, detail });
-		});
-	}
+	const timer = setInterval(() => {
+		const target = document.querySelector('ytd-app') || document.getElementById('player-container-id');
+		if (target) {
+			const url = browser.runtime.getURL('./modules/main.mjs');
+			import(url).then(module => {
+				module.initialize({ target, detail });
+			}).finally(() => {
+				clearInterval(timer);
+			});
+		}
+	}, 1000);
 }, { passive: true });
-
-setTimeout(() => {
-	const script = document.createElement('script');
-	script.src = browser.runtime.getURL('./injection.js');
-	document.body.append(script);
-}, 1000);
 
 self.addEventListener('ytlcf-ready', e => {
 	e.stopImmediatePropagation();

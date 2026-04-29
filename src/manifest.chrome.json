@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "__MSG_manifestName__",
-	"version": "0.14.3",
+	"version": "0.14.4",
 	"author": "_y_s",
 	"action": {
 		"default_state": "disabled"
@@ -15,6 +15,11 @@
 			"css": ["styles/content.css"],
 			"js": ["content.js"],
 			"matches": ["*://www.youtube.com/*"]
+		},
+		{
+			"js": ["injection.js"],
+			"matches": ["*://www.youtube.com/*"],
+			"world": "MAIN"
 		},
 		{
 			"all_frames": true,

@@ -46,7 +46,7 @@ export class LiveChatPanel {
 		this.element.className = 'ytp-sfn';
 		this.element.setAttribute('data-layer', '4');
 		this.hide();
-		
+
 		const c = { x: 10, y: 10 };
 		/** @type {(val: number, min: number, max: number) => number} */
 		const clamp = (val, min, max) => Math.max(min, Math.min(val, max));
@@ -89,7 +89,7 @@ export class LiveChatPanel {
 
 		const buttons = this.form.querySelectorAll('button[role="tab"]');
 		const tabs = this.form.querySelectorAll('[role="tabpanel"]');
-		
+
 		for (const btn of buttons) {
 			btn.addEventListener('click', () => {
 				for (const btn of buttons) {
@@ -109,275 +109,28 @@ export class LiveChatPanel {
 		const isDarkMode = document.documentElement.hasAttribute('dark');
 		/** @param {string[]} c */
 		const createButtonClassList = (...c) => {
-			const base = 'yt-spec-button-shape-next';
-			const list = c.map(v => `${base}--${v}`);
+			const base = 'ytSpecButtonShapeNext';
+			const list = c.map(v => base + v.replace(/(?:^|-+)(\w)/g, (_, p1) => p1.toUpperCase()));
 			list.unshift(base);
 			return list.join(' ');
 		};
 
 		/** @type {HTMLButtonElement?} */
-		const fontHelper = this.form.querySelector('#font_helper');
-		if (fontHelper)
-		if ('queryLocalFonts' in window) {
-			/** @type {HTMLDialogElement?} */
-			const dialog = doc.querySelector('#ytlcf-dialog-font_helper');
-			if (dialog) {
-				fontHelper.after(dialog);
-	
-				const form = dialog.querySelector('form');
-				const ol = dialog.querySelector('ol');
-				
-				const buttons = ['up', 'down', 'delete'].map(fn => {
-					const button = document.createElement('button');
-					button.type = 'button';
-					button.className = createButtonClassList('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-xs');
-					button.setAttribute('data-function', fn);
-					const label = browser.i18n.getMessage(fn);
-					button.title = label;
-					button.textContent = label;
-					return button;
-				});
-	
-				const select = dialog.querySelector('select');
-				// @ts-expect-error
-				window.queryLocalFonts().then(fonts => {
-					if (select) {
-						const families = new Set(fonts.map(f => f.family));
-						select.append(...Array.from(families, f => new Option(f)));
-					}
-				});
-	
-				const [addBtn, confirmBtn, cancelBtn] = dialog.querySelectorAll('form > div > button');
-				addBtn.className = createButtonClassList('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-s');
-				addBtn.addEventListener('click', () => {
-					const family = select?.value;
-					if (family) {
-						const li = document.createElement('li');
-						li.setAttribute('data-value', family);
-						const div = document.createElement('div');
-						div.style.display = 'flex';
-						div.style.alignItems = 'center';
-						const span = document.createElement('span');
-						span.style.fontFamily = family;
-						span.style.flex = '3 0';
-						span.textContent = family;
-						div.append(span, ...buttons.map(b => b.cloneNode(true)));
-						li.appendChild(div);
-						ol?.appendChild(li);
-					}
-				}, { passive: true });
-				ol?.addEventListener('click', e => {
-					const t = /** @type {HTMLElement?} */ (e.target);
-					if (t && t.tagName === 'BUTTON') {
-						const li = t.closest('li');
-						if (li)
-						switch (t.getAttribute('data-function')) {
-							case 'up': li.previousElementSibling?.before(li); break;
-							case 'down': li.nextElementSibling?.after(li); break;
-							case 'delete': li.remove();
-						}
-					}
-				}, { passive: true });
-	
-				confirmBtn.className = createButtonClassList('filled', isDarkMode ? 'mono' : 'mono-inverse', 'size-s');
-				cancelBtn.className = createButtonClassList('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-s');
-				cancelBtn.addEventListener('click', () => {
-					dialog.close();
-				}, { passive: true });
-	
-				if (form && ol) form.addEventListener('submit', () => {
-					const families = Array.from(ol.children).map(li => {
-						const val = li.getAttribute('data-value');
-						return val ? val.includes(' ') ? `"${val}"` : val : undefined;
-					});
-					const font_family = /** @type {HTMLInputElement | undefined} */ (this.form?.elements.font_family);
-					if (font_family) {
-						font_family.value = families.filter(f => !!f).join(', ');
-						this.updateStorage(font_family);
-					}
-				}, { passive: true });
-	
-				fontHelper.addEventListener('click', () => {
-					while (ol?.childElementCount) ol?.lastElementChild?.remove();
-					const families = s.styles.font_family.split(/\s*,\s*/).filter(s => s.length > 0).map(s => s.replace(/^"(.*)"$/, "$1"));
-					const listitems = families.map(family => {
-						const li = document.createElement('li');
-						li.setAttribute('data-value', family);
-						const div = document.createElement('div');
-						div.style.display = 'flex';
-						const span = document.createElement('span');
-						span.style.fontFamily = family;
-						span.style.flex = '3 0';
-						span.textContent = family;
-						div.append(span, ...buttons.map(b => b.cloneNode(true)));
-						li.appendChild(div);
-						return li;
-					});
-					ol?.append(...listitems);
-					dialog.showModal();
-				}, { passive: true });
-			}
-		} else {
-			fontHelper.hidden = true;
-		}
+		const fontHelperButton = this.form.querySelector('#font_helper');
+		/** @type {HTMLDialogElement?} */
+		const fontHelperDialog = doc.querySelector('#ytlcf-dialog-font_helper');
+		if (fontHelperButton && fontHelperDialog) this.#readyFontHelper(fontHelperButton, fontHelperDialog, createButtonClassList, isDarkMode);
 
 		/** @type {HTMLButtonElement?} */
-		const layerResizeHelper = this.form.querySelector('#layer_resize_helper');
-		if (layerResizeHelper) {
-			layerResizeHelper.className = createButtonClassList('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-xs');
-			layerResizeHelper.addEventListener('click', () => {
-				const le = this.#controller.layer.element;
-				const vc = this.#controller.player.querySelector('#ytd-player');
-				if (!vc) return;
-				le.classList.add('resize-mode');
-				le.focus();
-
-				const c = { x: le.clientLeft || 0, y: le.clientTop || 0 };
-				/** @type {(val: number, min: number, max: number) => number} */
-				const clamp = (val, min, max) => Math.max(min, Math.min(val, max));
-				/** @type {(e: MouseEvent) => void} */
-				const onmousemove = e => {
-					if (!isNotPip() || !vc) return;
-					const x = clamp(le.offsetLeft + e.clientX - c.x, 0, vc.clientWidth - le.clientWidth);
-					const y = clamp(le.offsetTop + e.clientY - c.y, 0, vc.clientHeight - le.clientHeight);
-					this.#controller.layer.move(x, y);
-					c.x = e.clientX;
-					c.y = e.clientY;
-				};
-				/** @type {(e: MouseEvent) => void} */
-				const onmouseup = () => {
-					self.removeEventListener('mousemove', onmousemove);
-					self.removeEventListener('mouseup', onmouseup);
-					window.removeEventListener('mouseup', onmouseup);
-				};
-				/** @type {(e: MouseEvent) => void} */
-				const onmousedown = e => {
-					if (e.clientX > le.clientWidth - 64 && e.clientY > le.clientHeight - 64) return;
-					c.x = e.clientX;
-					c.y = e.clientY;
-					self.addEventListener('mousemove', onmousemove, { passive: true });
-					self.addEventListener('mouseup', onmouseup, { passive: true });
-					window.addEventListener('mouseup', onmouseup, { passive: true });
-				};
-
-				/** @type { (e: MouseEvent) => void } */
-				const stopPropagation = e => e.stopPropagation();
-				/** @type {(e: KeyboardEvent) => void} */
-				const onkeydown = e => {
-					if (!['Enter', 'Escape'].includes(e.key)) return;
-					le.classList.remove('resize-mode');
-					document.removeEventListener('click', stopPropagation, { capture: true });
-					self.removeEventListener('keydown', onkeydown);
-					const input = /** @type {HTMLInputElement | undefined} */ (this.#controller.panel.form?.elements.layer_css);
-					const value = input?.value;
-					const styleMap = new Map(value ? value.split(/;\s*/).map(entry => {
-						const [prop, val] = entry.split(/:\s*/, 2);
-						return [prop.toLowerCase(), val];
-					}) : undefined);
-					if (e.key === 'Enter') {
-						const defaults = { left: 0, top: 0, width: 100, height: 100 };
-						const percents = {
-							left: ((le.offsetLeft - vc.clientLeft) / vc.clientWidth) * 100,
-							top: ((le.offsetTop - vc.clientTop) / vc.clientHeight) * 100,
-							width: (le.clientWidth / vc.clientWidth) * 100,
-							height: (le.clientHeight / vc.clientHeight) * 100,
-						}
-						for (const [prop, val] of Object.entries(percents)) {
-							if (val === defaults[prop]) {
-								styleMap.delete(prop);
-							} else if (val) {
-								styleMap.set(prop, val.toFixed(1) + '%');
-							}
-						}
-						styleMap.delete('');
-						if (input) {
-							const newValue = Array.from(styleMap.entries(), entry => entry.join(': ')).join('; ');
-							input.value = newValue ? newValue + ';' : '';
-							this.#controller.panel.updateStorage(input);
-						}
-						le.removeEventListener('mousedown', onmousedown);
-					} else {
-						le.style.left = styleMap.get('left') || '';
-						le.style.top = styleMap.get('top') || '';
-						le.style.width = styleMap.get('width') || '';
-						le.style.height = styleMap.get('height') || '';
-					}
-					le.blur();
-				}
-
-				self.addEventListener('keydown', onkeydown, { passive: true });
-				le.addEventListener('mousedown', onmousedown, { passive: true });
-				document.addEventListener('click', stopPropagation, { capture: true });
-			}, { passive: true });
-		}
+		const layerResizeHelperButton = this.form.querySelector('#layer_resize_helper');
+		if (layerResizeHelperButton) this.#readyLayerResizeHelper(layerResizeHelperButton, createButtonClassList, isDarkMode);
 
 		/** @type {HTMLButtonElement?} */
-		const userCssHelper = this.form.querySelector('#user_css_helper');
-		if (userCssHelper) {
-			userCssHelper.className = createButtonClassList('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-xs');
-			/** @type {HTMLDialogElement?} */
-			const dialog = doc.querySelector('#ytlcf-dialog-user_css_helper');
-			if (dialog) {
-				userCssHelper.after(dialog);
-				
-				/** @type {HTMLFormElement?} */
-				const form = dialog.querySelector('#ytlcf-form-user_css_helper');
-				/** @type {HTMLTextAreaElement?} */
-				const preview = dialog.querySelector('#ytlcf-textarea-user_css_helper');
-				const pattern = /^UC[\w-]{22}$/;
-				
-				if (form && preview) {
-					form.addEventListener('change', () => {
-						let text = '';
-						const ctrls = form.elements;
-						const label = /** @type {HTMLInputElement} */ (ctrls.label).value;
-						if (label) text += `/* ${label} */\n`;
-						const textarea = /** @type {HTMLTextAreaElement} */ (ctrls.channel_id);
-						const lines = textarea.value.split('\n');
-						const ids = lines.filter(id => pattern.test(id));
-						if (ids.length > 0) {
-							text += ids.map(id => `div[data-author-id="${id}"]`).join(',\n') + ' {\n';
-							for (const input of /** @type {RadioNodeList} */ (ctrls.this_display_)) {
-								const c = /** @type {HTMLInputElement} */ (input).value;
-								const v = /** @type {HTMLInputElement} */ (input).checked ? 'inline' : 'none';
-								text += `  .${c} { display: ${v}; }\n`;
-							}
-							if (/** @type {HTMLInputElement} */ (ctrls.this_color_display_).checked) {
-								text += `  color: ${/** @type {HTMLInputElement} */ (ctrls.this_color_).value};\n`;
-							}
-							if (/** @type {HTMLInputElement} */ (ctrls.font_factor).valueAsNumber !== 1) {
-								text += `  font-size: ${/** @type {HTMLInputElement} */ (ctrls.font_factor).value}em;\n`;
-							}
-							text += '}';
-						}
-						const invalidLineNum = lines.findIndex(id => id ? !pattern.test(id) : false);
-						const validityMsg = invalidLineNum < 0 ? '' : browser.i18n.getMessage('validation_channelId', invalidLineNum + 1);
-						textarea.setCustomValidity(validityMsg);
-						preview.value = text;
-					}, { passive: true });
-					form.addEventListener('submit', _ => {
-						const textarea = /** @type {HTMLTextAreaElement | undefined} */ (this.form?.elements.user_defined_css);
-						if (textarea) {
-							textarea.value += '\n' + preview.value;
-							this.updateStorage(textarea);
-						}
-						form.reset();
-						preview.value = '';
-					}, { passive: true });
-				}
-				const [confirmBtn, cancelBtn] = dialog.querySelectorAll('button');
-				confirmBtn.className = createButtonClassList('filled', isDarkMode ? 'mono' : 'mono-inverse', 'size-s');
-				cancelBtn.className = createButtonClassList('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-s');
-				cancelBtn.addEventListener('click', () => {
-					dialog.close();
-				}, { passive: true });
-				
-				userCssHelper.addEventListener('click', () => {
-					dialog.showModal();
-				}, { passive: true });
-			}
-		}
-		
+		const userCssHelperButton = this.form.querySelector('#user_css_helper');
+		/** @type {HTMLDialogElement?} */
+		const userCssHelperDialog = doc.querySelector('#ytlcf-dialog-user_css_helper');
+		if (userCssHelperButton && userCssHelperDialog) this.#readyUserCssHelper(userCssHelperButton, userCssHelperDialog, createButtonClassList, isDarkMode);
+
 		const othersBtn = this.form.querySelector('#ytlcf-config-others');
 		if (othersBtn) {
 			othersBtn.className = createButtonClassList('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-xs');
@@ -406,6 +159,263 @@ export class LiveChatPanel {
 		}, { passive: true });
 
 		return this.form;
+	}
+
+	/**
+	 * @param {HTMLButtonElement} button
+	 * @param {HTMLDialogElement} dialog
+	 * @param {(...cls: string[]) => string} clsBuilder
+	 * @param {boolean} isDarkMode
+	 */
+	#readyFontHelper(button, dialog, clsBuilder, isDarkMode) {
+		/** @type {HTMLTemplateElement?} */
+		const template = dialog.querySelector('#ytlcf-dialog-font_helper-family');
+
+		/**
+		 * @param {HTMLTemplateElement} template `<templete>` element
+		 * @param {string} family font family
+		 * @returns {HTMLElement | DocumentFragment} `<li>` element
+		 */
+		const createFontFamilyLI = (template, family) => {
+			const li = /** @type {HTMLElement} */ (template.content.firstElementChild)?.cloneNode(true);
+			if (!li) return document.createDocumentFragment();
+			li.setAttribute('data-value', family);
+			const span = li.querySelector('span');
+			if (span) {
+				span.textContent = family;
+				span.style.fontFamily = family;
+			}
+			for (const b of li.querySelectorAll('button')) {
+				b.className = clsBuilder('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-xs');
+				const fn = b.getAttribute('data-function');
+				if (fn) {
+					const label = browser.i18n.getMessage(fn);
+					if (label) b.title = b.textContent = label;
+				}
+			}
+			return li;
+		};
+
+		if ('queryLocalFonts' in window && template) {
+			button.after(dialog);
+			const form = dialog.querySelector('form');
+			const ol = dialog.querySelector('ol');
+			const select = dialog.querySelector('select');
+			// @ts-expect-error
+			window.queryLocalFonts().then(fonts => {
+				if (select) {
+					const families = new Set(fonts.map(f => f.family));
+					select.append(...Array.from(families, f => new Option(f, f)));
+				}
+			});
+			const [addBtn, confirmBtn, cancelBtn] = dialog.querySelectorAll('form > div > button');
+			addBtn.className = clsBuilder('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-s');
+			addBtn.addEventListener('click', () => {
+				const family = select?.value;
+				if (family) ol?.append(createFontFamilyLI(template, family));
+			}, { passive: true });
+			ol?.addEventListener('click', e => {
+				const t = /** @type {HTMLElement?} */ (e.target);
+				if (t && t.tagName === 'BUTTON') {
+					const li = t.closest('li');
+					if (li)
+					switch (t.getAttribute('data-function')) {
+						case 'up': li.previousElementSibling?.before(li); break;
+						case 'down': li.nextElementSibling?.after(li); break;
+						case 'delete': li.remove();
+					}
+				}
+			}, { passive: true });
+
+			confirmBtn.className = clsBuilder('filled', isDarkMode ? 'mono' : 'mono-inverse', 'size-s');
+			cancelBtn.className = clsBuilder('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-s');
+			cancelBtn.addEventListener('click', () => {
+				dialog.close();
+			}, { passive: true });
+
+			if (form && ol) form.addEventListener('submit', () => {
+				const families = Array.from(ol.children).map(li => {
+					const val = li.getAttribute('data-value');
+					return val ? val.includes(' ') ? `"${val}"` : val : undefined;
+				});
+				const font_family = /** @type {HTMLInputElement | undefined} */ (this.form?.elements.font_family);
+				if (font_family) {
+					font_family.value = families.filter(f => !!f).join(', ');
+					this.updateStorage(font_family);
+				}
+			}, { passive: true });
+
+			button.addEventListener('click', () => {
+				const families = s.styles.font_family.split(/\s*,\s*/).filter(Boolean).map(s => s.replace(/^"(.*)"$/, '$1'));
+				const listitems = families.map(family => createFontFamilyLI(template, family));
+				ol?.replaceChildren(...listitems);
+				dialog.showModal();
+			}, { passive: true });
+		} else {
+			button.hidden = true;
+		}
+	}
+
+	/**
+	 * @param {HTMLButtonElement} button
+	 * @param {(...cls: string[]) => string} clsBuilder
+	 * @param {boolean} isDarkMode
+	 */
+	#readyLayerResizeHelper(button, clsBuilder, isDarkMode) {
+		button.className = clsBuilder('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-xs');
+		button.addEventListener('click', () => {
+			const le = this.#controller.layer.element;
+			const vc = this.#controller.player.querySelector('#ytd-player');
+			if (!vc) return;
+			le.classList.add('resize-mode');
+			le.focus();
+
+			const c = { x: le.clientLeft || 0, y: le.clientTop || 0 };
+			/** @type {(val: number, min: number, max: number) => number} */
+			const clamp = (val, min, max) => Math.max(min, Math.min(val, max));
+			/** @type {(e: MouseEvent) => void} */
+			const onmousemove = e => {
+				if (!isNotPip() || !vc) return;
+				const x = clamp(le.offsetLeft + e.clientX - c.x, 0, vc.clientWidth - le.clientWidth);
+				const y = clamp(le.offsetTop + e.clientY - c.y, 0, vc.clientHeight - le.clientHeight);
+				this.#controller.layer.move(x, y);
+				c.x = e.clientX;
+				c.y = e.clientY;
+			};
+			/** @type {(e: MouseEvent) => void} */
+			const onmouseup = () => {
+				self.removeEventListener('mousemove', onmousemove);
+				self.removeEventListener('mouseup', onmouseup);
+				window.removeEventListener('mouseup', onmouseup);
+			};
+			/** @type {(e: MouseEvent) => void} */
+			const onmousedown = e => {
+				if (e.clientX > le.clientWidth - 64 && e.clientY > le.clientHeight - 64) return;
+				c.x = e.clientX;
+				c.y = e.clientY;
+				self.addEventListener('mousemove', onmousemove, { passive: true });
+				self.addEventListener('mouseup', onmouseup, { passive: true });
+				window.addEventListener('mouseup', onmouseup, { passive: true });
+			};
+
+			/** @type { (e: MouseEvent) => void } */
+			const stopPropagation = e => e.stopPropagation();
+			/** @type {(e: KeyboardEvent) => void} */
+			const onkeydown = e => {
+				if (!['Enter', 'Escape'].includes(e.key)) return;
+				le.classList.remove('resize-mode');
+				document.removeEventListener('click', stopPropagation, { capture: true });
+				self.removeEventListener('keydown', onkeydown);
+				const input = /** @type {HTMLInputElement | undefined} */ (this.#controller.panel.form?.elements.layer_css);
+				const value = input?.value;
+				const styleMap = new Map(value ? value.split(/;\s*/).map(entry => {
+					const [prop, val] = entry.split(/:\s*/, 2);
+					return [prop.toLowerCase(), val];
+				}) : undefined);
+				if (e.key === 'Enter') {
+					const defaults = { left: 0, top: 0, width: 100, height: 100 };
+					const percents = {
+						left: ((le.offsetLeft - vc.clientLeft) / vc.clientWidth) * 100,
+						top: ((le.offsetTop - vc.clientTop) / vc.clientHeight) * 100,
+						width: (le.clientWidth / vc.clientWidth) * 100,
+						height: (le.clientHeight / vc.clientHeight) * 100,
+					}
+					for (const [prop, val] of Object.entries(percents)) {
+						if (val === defaults[prop]) {
+							styleMap.delete(prop);
+						} else if (val) {
+							styleMap.set(prop, val.toFixed(1) + '%');
+						}
+					}
+					styleMap.delete('');
+					if (input) {
+						const newValue = Array.from(styleMap.entries(), entry => entry.join(': ')).join('; ');
+						input.value = newValue ? newValue + ';' : '';
+						this.#controller.panel.updateStorage(input);
+					}
+					le.removeEventListener('mousedown', onmousedown);
+				} else {
+					le.style.left = styleMap.get('left') || '';
+					le.style.top = styleMap.get('top') || '';
+					le.style.width = styleMap.get('width') || '';
+					le.style.height = styleMap.get('height') || '';
+				}
+				le.blur();
+			}
+
+			self.addEventListener('keydown', onkeydown, { passive: true });
+			le.addEventListener('mousedown', onmousedown, { passive: true });
+			document.addEventListener('click', stopPropagation, { capture: true });
+		}, { passive: true });
+	}
+
+	/**
+	 * @param {HTMLButtonElement} button
+	 * @param {HTMLDialogElement} dialog
+	 * @param {(...cls: string[]) => string} clsBuilder
+	 * @param {boolean} isDarkMode
+	 */
+	#readyUserCssHelper(button, dialog, clsBuilder, isDarkMode) {
+		button.className = clsBuilder('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-xs');
+		if (dialog) {
+			button.after(dialog);
+
+			/** @type {HTMLFormElement?} */
+			const form = dialog.querySelector('#ytlcf-form-user_css_helper');
+			/** @type {HTMLTextAreaElement?} */
+			const preview = dialog.querySelector('#ytlcf-textarea-user_css_helper');
+			const pattern = /^UC[\w-]{22}$/;
+
+			if (form && preview) {
+				form.addEventListener('change', () => {
+					let text = '';
+					const ctrls = form.elements;
+					const label = /** @type {HTMLInputElement} */ (ctrls.label).value;
+					if (label) text += `/* ${label} */\n`;
+					const textarea = /** @type {HTMLTextAreaElement} */ (ctrls.channel_id);
+					const lines = textarea.value.split('\n');
+					const ids = lines.filter(id => pattern.test(id));
+					if (ids.length > 0) {
+						text += ids.map(id => `div[data-author-id="${id}"]`).join(',\n') + ' {\n';
+						for (const input of /** @type {RadioNodeList} */ (ctrls.this_display_)) {
+							const c = /** @type {HTMLInputElement} */ (input).value;
+							const v = /** @type {HTMLInputElement} */ (input).checked ? 'inline' : 'none';
+							text += `  .${c} { display: ${v}; }\n`;
+						}
+						if (/** @type {HTMLInputElement} */ (ctrls.this_color_display_).checked) {
+							text += `  color: ${/** @type {HTMLInputElement} */ (ctrls.this_color_).value};\n`;
+						}
+						if (/** @type {HTMLInputElement} */ (ctrls.font_factor).valueAsNumber !== 1) {
+							text += `  font-size: ${/** @type {HTMLInputElement} */ (ctrls.font_factor).value}em;\n`;
+						}
+						text += '}';
+					}
+					const invalidLN = lines.map((id, i) => !id || pattern.test(id) ? -1 : i + 1).filter(v => v > 0);
+					const validityMsg = invalidLN.length > 0 ? browser.i18n.getMessage('validation_channelId', invalidLN.join()) : '';
+					textarea.setCustomValidity(validityMsg);
+					preview.value = text;
+				}, { passive: true });
+				form.addEventListener('submit', _ => {
+					const textarea = /** @type {HTMLTextAreaElement | undefined} */ (this.form?.elements.user_defined_css);
+					if (textarea) {
+						textarea.value += '\n' + preview.value;
+						this.updateStorage(textarea);
+					}
+					form.reset();
+					preview.value = '';
+				}, { passive: true });
+			}
+			const [confirmBtn, cancelBtn] = dialog.querySelectorAll('button');
+			confirmBtn.className = clsBuilder('filled', isDarkMode ? 'mono' : 'mono-inverse', 'size-s');
+			cancelBtn.className = clsBuilder('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-s');
+			cancelBtn.addEventListener('click', () => {
+				dialog.close();
+			}, { passive: true });
+
+			button.addEventListener('click', () => {
+				dialog.showModal();
+			}, { passive: true });
+		}
 	}
 
 	/**

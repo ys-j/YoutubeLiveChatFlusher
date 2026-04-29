@@ -1,5 +1,61 @@
 import { loadTemplateDocument } from './utils.mjs';
-import { LiveChatPanel } from './chat_panel.mjs';
+
+const menuFns = {
+	/**
+	 * @param {HTMLElement} target target message element
+	 */
+	resume_animation(target) {
+		target.classList.remove('paused');
+	},
+
+	/**
+	 * @param {HTMLElement} target target message element
+	 */
+	move_message(target) {
+		target.style.cursor = 'move';
+		target.addEventListener('mousedown', e => {
+			const [_, y] = (target.style.translate || '0 0').split(' ').map(v => Number.parseInt(v, 10));
+			const computedStyle = getComputedStyle(target);
+			const speed = Number.parseInt(target.style.getPropertyValue('--yt-lcf-translate-x'), 10) / Number.parseFloat(computedStyle.animationDuration);
+			const x = speed * Number.parseFloat(computedStyle.animationDelay);
+			const startX = e.x + x, startY = e.y - y;
+			/** @type {(e: MouseEvent) => void} */
+			const onmousemove = e => {
+				target.style.translate = [0, e.y - startY].map(i => i + 'px').join(' ');
+				target.style.animationDelay = ((startX - e.x) / speed).toFixed(3) + 's';
+			};
+			document.addEventListener('mousemove', onmousemove, { passive: true });
+			document.addEventListener('mouseup', () => {
+				target.style.cursor = '';
+				document.removeEventListener('mousemove', onmousemove);
+			}, { once: true, passive: true });
+		}, { once: true });
+	},
+
+	/**
+	 * @param {Element} target target message element
+	 */
+	copy_user_id(target) {
+		const authorId = target.getAttribute('data-author-id');
+		if (authorId) {
+			navigator.clipboard.writeText(authorId);
+		}
+	},
+
+	/**
+	 * @param {Element} target target message element
+	 * @param {import("./chat_panel.mjs").LiveChatPanel} panel config panel
+	 */
+	hide_user(target, panel) {
+		const authorId = target.getAttribute('data-author-id');
+		const textarea = /** @type {HTMLTextAreaElement | undefined} */ (panel.form?.elements.user_defined_css);
+		if (authorId && textarea) {
+			textarea.value += `\ndiv[data-author-id="${authorId}"] { display: none !important }`;
+			panel.updateStorage(textarea);
+		}
+		target.remove();
+	},
+};
 
 export class LiveChatContextMenu {
 	/** @type {HTMLElement} */
@@ -27,106 +83,39 @@ export class LiveChatContextMenu {
 	/**
 	 * Displays the context menu for the given message element.
 	 * @param {MouseEvent} event mouse event object
-	 * @param {Element} target target message element
-	 * @param {LiveChatPanel} panel 
+	 * @param {HTMLElement} target target message element
+	 * @param {import("./chat_panel.mjs").LiveChatPanel} panel config panel
 	 */
 	async show(event, target, panel) {
-		while (this.#element.firstChild) this.#element.firstChild.remove();
+		this.#element.replaceChildren();
 		const doc = await loadTemplateDocument('../templates/panel_contextmenu.html');
 		this.#element.append(...doc.body.childNodes);
 		this.#element.style.display = '';
 		this.#element.style.opacity = '1';
-		const rects = Array.from(this.#element.children, c => c.getBoundingClientRect());
-		const width = Math.max(...rects.map(r => r.width));
-		const height = rects.reduce((a, c) => a + c.height, 0);
+		let width = 0, height = 0;
+		for (const c of this.#element.children) {
+			const rect = c.getBoundingClientRect();
+			if (width < rect.width) width = rect.width;
+			height += rect.height;
+		}
 		this.#element.style.width = width ? width + 'px' : '';
 		this.#element.style.height = height ? height + 'px' : '';
 		this.#element.style.left = `${event.x}px`;
 		this.#element.style.top = `${event.y}px`;
 		this.#element.onclick = e => {
-			this.#onClickMenu(e.composedPath(), target, panel);
+			for (const el of e.composedPath()) {
+				/** @type {keyof typeof menuFns | null} */ // @ts-expect-error
+				const name = el.getAttribute('data-menu');
+				if (name && name in menuFns) {
+					menuFns[name](target, panel);
+					this.hide();
+					return;
+				}
+			}
 		};
 	}
 
 	hide() {
 		this.#element.style.opacity = '0';
-	}
-
-	/**
-	 * @param {EventTarget[]} composedPath
-	 * @param {Element} target  
-	 * @param {LiveChatPanel} panel 
-	 */
-	#onClickMenu(composedPath, target, panel) {
-		const menus = {
-			resume_animation: this.#resumeAnimation,
-			move_message: this.#moveMessage,
-			copy_user_id: this.#copyUserId,
-			hide_user: this.#hideUser,
-		};
-		for (const el of composedPath) {
-			const name = /** @type {Element} */ (el).getAttribute('data-menu');
-			if (name && name in menus) {
-				// @ts-expect-error
-				menus[name](target, panel);
-				this.hide();
-				return;
-			}
-		}
-	}
-
-	/**
-	 * @param {HTMLElement} target  
-	 */
-	#resumeAnimation(target) {
-		target.classList.remove('paused');
-	}
-
-	/**
-	 * @param {HTMLElement} target  
-	 */
-	#moveMessage(target) {
-		target.style.cursor = 'move';
-		target.addEventListener('mousedown', e => {
-			const [_, y] = (target.style.translate || '0 0').split(' ').map(v => Number.parseInt(v, 10));
-			const computedStyle = getComputedStyle(target);
-			const speed = Number.parseInt(target.style.getPropertyValue('--yt-lcf-translate-x'), 10) / Number.parseFloat(computedStyle.animationDuration);
-			const x = speed * Number.parseFloat(computedStyle.animationDelay);
-			const startX = e.x + x, startY = e.y - y;
-			/** @type {(e: MouseEvent) => void} */
-			const onmousemove = e => {
-				target.style.translate = [0, e.y - startY].map(i => i + 'px').join(' ');
-				target.style.animationDelay = ((startX - e.x) / speed).toFixed(3) + 's';
-			};
-			document.addEventListener('mousemove', onmousemove, { passive: true });
-			document.addEventListener('mouseup', () => {
-				target.style.cursor = '';
-				document.removeEventListener('mousemove', onmousemove);
-			}, { once: true, passive: true });
-		}, { once: true });
-	}
-
-	/**
-	 * @param {Element} target  
-	 */
-	#copyUserId(target) {
-		const authorId = target.getAttribute('data-author-id');
-		if (authorId) {
-			navigator.clipboard.writeText(authorId);
-		}
-	}
-
-	/**
-	 * @param {Element} target  
-	 * @param {LiveChatPanel} panel 
-	 */
-	#hideUser(target, panel) {
-		const authorId = target.getAttribute('data-author-id');
-		const textarea = /** @type {HTMLTextAreaElement | undefined} */ (panel.form?.elements.user_defined_css);
-		if (authorId && textarea) {
-			textarea.value += `\ndiv[data-author-id="${authorId}"] { display: none !important }`;
-			panel.updateStorage(textarea);
-		}
-		target.remove();
 	}
 }

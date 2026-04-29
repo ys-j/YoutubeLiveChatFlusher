@@ -7,7 +7,18 @@
 			ytcfg: JSON.stringify(window['ytcfg']?.d()),
 		},
 	});
-	const dispatch = () => self.dispatchEvent(ev);
+	const dispatch = () => {
+		if ('playerOverlays' in window['ytInitialData']) {
+			const timer = setInterval(() => {
+				if (document.querySelector('#movie_player video')) {
+					clearInterval(timer);
+					self.dispatchEvent(ev);
+				}
+			}, 1000);
+		} else {
+			self.dispatchEvent(ev);
+		}
+	};
 	if (document.visibilityState === 'visible') dispatch();
 	else document.addEventListener('visibilitychange', dispatch, { once: true, passive: true });
 })();

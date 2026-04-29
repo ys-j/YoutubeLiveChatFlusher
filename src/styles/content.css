@@ -364,8 +364,12 @@
 			background: transparent;
 		}
 	}
-	button[id|="ytlcf-config"] {
-		display: inline-flex;
+	button{
+		border: 0;
+		cursor: pointer;
+		&[id|="ytlcf-config"] {
+			display: inline-flex;
+		}
 	}
 }
 #yt-lcf-panel-tabpanel-1, #ytlcf-dialog-user_css_helper > form {

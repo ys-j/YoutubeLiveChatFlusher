@@ -16,7 +16,7 @@ export class LRUCache {
 	 * @param {number} capacity capacity of LRU cache
 	 */
 	constructor(capacity) {
-		if (capacity < 2) throw RangeError('Capacity must be at least 2.')
+		if (capacity < 2) throw RangeError('Capacity must be at least 2.');
 		this.limit = capacity;
 		this.size = 0;
 		/** @type {Record<K, LRUCacheNode<K, V>>} */
@@ -28,7 +28,7 @@ export class LRUCache {
 	}
 
 	/**
-	 * @param {LRUCacheNode<K, V>} node 
+	 * @param {LRUCacheNode<K, V>} node
 	 */
 	#updateMostRecent(node) {
 		if (node === this.tail) return;
@@ -49,7 +49,7 @@ export class LRUCache {
 
 	/**
 	 * Gets value and updates most recent list.
-	 * @param {K} key 
+	 * @param {K} key
 	 * @returns {V | undefined} value
 	 */
 	get(key) {
@@ -61,8 +61,8 @@ export class LRUCache {
 
 	/**
 	 * Sets value to cache or updates most recent list.
-	 * @param {K} key 
-	 * @param {V} value 
+	 * @param {K} key
+	 * @param {V} value
 	 */
 	set(key, value) {
 		/** @type {LRUCacheNode<K, V>?} */
@@ -79,7 +79,7 @@ export class LRUCache {
 			recycled.key = key;
 			recycled.value = value;
 			this.cache[key] = recycled;
-			
+
 			this.#updateMostRecent(recycled);
 			return;
 		}
@@ -90,7 +90,7 @@ export class LRUCache {
 	}
 
 	/**
-	 * @param {K} key 
+	 * @param {K} key
 	 */
 	delete(key) {
 		/** @type {LRUCacheNode<K, V>?} */
