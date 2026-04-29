@@ -32,6 +32,7 @@ export class LiveChatController {
 		this.itemFactory = new LiveChatItemFactory();
 
 		root.addEventListener('contextmenu', e => {
+			/** @type {HTMLElement?} */
 			const origin = /** @type {HTMLElement} */ (e.target).closest('[id]');
 			if (origin && s.others.message_pause) {
 				e.preventDefault();

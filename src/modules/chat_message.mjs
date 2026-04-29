@@ -347,7 +347,7 @@ export async function renderChatItem(item, factory) {
 
 const RESOLVED_NULL = Promise.resolve(null);
 const TRANSLATABLE_PATTERN = /[\p{L}]/u;
-const NO_REPEATING_PATTERN = /(\S)(?!\s*\1)\S/;
+const NO_REPEATING_PATTERN = /^\p{L}$|(\p{L})(?!\P{L}*\1)\p{L}/u;
 
 /**
  * @typedef {import("./translator.mjs").LanguageDetection} LanguageDetection

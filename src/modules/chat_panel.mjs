@@ -170,6 +170,32 @@ export class LiveChatPanel {
 	#readyFontHelper(button, dialog, clsBuilder, isDarkMode) {
 		/** @type {HTMLTemplateElement?} */
 		const template = dialog.querySelector('#ytlcf-dialog-font_helper-family');
+
+		/**
+		 * @param {HTMLTemplateElement} template `<templete>` element
+		 * @param {string} family font family
+		 * @returns {HTMLElement | DocumentFragment} `<li>` element
+		 */
+		const createFontFamilyLI = (template, family) => {
+			const li = /** @type {HTMLElement} */ (template.content.firstElementChild)?.cloneNode(true);
+			if (!li) return document.createDocumentFragment();
+			li.setAttribute('data-value', family);
+			const span = li.querySelector('span');
+			if (span) {
+				span.textContent = family;
+				span.style.fontFamily = family;
+			}
+			for (const b of li.querySelectorAll('button')) {
+				b.className = clsBuilder('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-xs');
+				const fn = b.getAttribute('data-function');
+				if (fn) {
+					const label = browser.i18n.getMessage(fn);
+					if (label) b.title = b.textContent = label;
+				}
+			}
+			return li;
+		};
+
 		if ('queryLocalFonts' in window && template) {
 			button.after(dialog);
 			const form = dialog.querySelector('form');
@@ -179,27 +205,14 @@ export class LiveChatPanel {
 			window.queryLocalFonts().then(fonts => {
 				if (select) {
 					const families = new Set(fonts.map(f => f.family));
-					select.append(...Array.from(families, f => new Option(f)));
+					select.append(...Array.from(families, f => new Option(f, f)));
 				}
 			});
 			const [addBtn, confirmBtn, cancelBtn] = dialog.querySelectorAll('form > div > button');
 			addBtn.className = clsBuilder('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-s');
 			addBtn.addEventListener('click', () => {
 				const family = select?.value;
-				if (!family) return;
-				const fragment = template.content.cloneNode(true);
-				fragment.querySelector('li')?.setAttribute('data-value', family);
-				const span = fragment.querySelector('span');
-				if (span) span.textContent = family;
-				for (const b of fragment.querySelectorAll('button')) {
-					b.className = clsBuilder('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-xs');
-					const fn = b.getAttribute('data-function');
-					if (fn) {
-						const label = browser.i18n.getMessage(fn);
-						if (label) b.title = b.textContent = label;
-					}
-				}
-				ol?.append(fragment);
+				if (family) ol?.append(createFontFamilyLI(template, family));
 			}, { passive: true });
 			ol?.addEventListener('click', e => {
 				const t = /** @type {HTMLElement?} */ (e.target);
@@ -233,24 +246,9 @@ export class LiveChatPanel {
 			}, { passive: true });
 
 			button.addEventListener('click', () => {
-				while (ol?.childElementCount) ol.replaceChildren();
-				const families = s.styles.font_family.split(/\s*,\s*/).filter(s => s.length > 0).map(s => s.replace(/^"(.*)"$/, "$1"));
-				const listitems = families.map(family => {
-					const fragment = template.content.cloneNode(true);
-					fragment.querySelector('li')?.setAttribute('data-value', family);
-					const span = fragment.querySelector('span');
-					if (span) span.textContent = family;
-					for (const b of fragment.querySelectorAll('button')) {
-						b.className = clsBuilder('tonal', isDarkMode ? 'mono' : 'mono-inverse', 'size-xs');
-						const fn = b.getAttribute('data-function');
-						if (fn) {
-							const label = browser.i18n.getMessage(fn);
-							if (label) b.title = b.textContent = label;
-						}
-					}
-					return fragment;
-				});
-				ol?.append(...listitems);
+				const families = s.styles.font_family.split(/\s*,\s*/).filter(Boolean).map(s => s.replace(/^"(.*)"$/, '$1'));
+				const listitems = families.map(family => createFontFamilyLI(template, family));
+				ol?.replaceChildren(...listitems);
 				dialog.showModal();
 			}, { passive: true });
 		} else {
