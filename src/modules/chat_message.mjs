@@ -2,8 +2,6 @@ import { fetchInnerTube } from './innertube.mjs';
 import { store as s } from './store.mjs';
 import { filterMessage, getColorRGB, getText, loadTemplateDocument } from './utils.mjs';
 
-import { TranslationController } from './chat_translator.mjs';
-
 /** @enum {string} */
 const AuthorType = Object.freeze({
 	NORMAL: 'normal',
@@ -233,12 +231,12 @@ export async function renderChatItem(item, factory) {
 	const renderer = item[key];
 	const body = new ChatMessageContainer(renderer.message);
 
-	const langIndex = s.others.translation;
-	if (langIndex) {
-		const langSuffix = s.others.suffix_original;
-		const tl = navigator.languages[Math.abs(langIndex) - 1];
+	const targetLangIndex = s.others.translation;
+	if (targetLangIndex) {
+		const suffix = s.others.suffix_original;
+		const tl = navigator.languages[Math.abs(targetLangIndex) - 1];
 		const lazy = s.others.translation_timing ?? 0;
-		await body.translate(lazy ? 'lazy' : 'eager', tl, !!langSuffix);
+		await body.translate(lazy ? 'lazy' : 'eager', tl, !!suffix);
 	}
 
 	/** @type {(type: keyof typeof s.parts) => boolean} */
@@ -347,24 +345,42 @@ export async function renderChatItem(item, factory) {
 	}
 }
 
-const translator = new TranslationController(await s.load());
 const RESOLVED_NULL = Promise.resolve(null);
+const TRANSLATABLE_PATTERN = /[\p{L}]/u;
+const NO_REPEATING_PATTERN = /(\S)(?!\s*\1)\S/;
+
+/**
+ * @typedef {import("./translator.mjs").LanguageDetection} LanguageDetection
+ */
 
 /**
  * Detects each node language async.
  * @param {ArrayLike<Node>} nodes
+ * @param {string} target
+ * @param {string[]} exceptionLangs
+ * @returns {Promise<Array<import("./translator.mjs").TranslationResult?>>}
  */
-export function detectLanguageAsync(nodes) {
-	if (!translator.detector.isReady) translator.detector.ready();
-	const len = nodes.length;
-
-	/** @type {Promise<import("./chat_translator.mjs").LanguageDetection?>[]} */
-	const promises = new Array(len);
-	for (let i = 0; i < len; i++) {
-		const text = nodes[i].textContent;
-		promises[i] = text ? translator.check(text) : RESOLVED_NULL;
-	}
-	return Promise.all(promises);
+function translateNodesAsync(nodes, target, exceptionLangs) {
+	const exceptions = [target, ...exceptionLangs];
+	return Promise.all(Array.from(nodes, async node => {
+		const text = node.textContent;
+		const translatable = text && TRANSLATABLE_PATTERN.test(text) && NO_REPEATING_PATTERN.test(text);
+		if (!translatable) return null;
+		try {
+			/** @type {LanguageDetection} */
+			const detection = await browser.runtime.sendMessage({ detection: { text } });
+			if (exceptions.includes(detection.source)) return null;
+			const translation = {
+				text: node.textContent,
+				source: detection.isReliable ? detection.source : 'auto',
+				target,
+			};
+			return browser.runtime.sendMessage({ translation });
+		} catch (reason) {
+			console.warn(reason, text);
+			return null;
+		}
+	}));
 }
 
 
@@ -391,25 +407,19 @@ export class ChatMessageContainer {
 	 */
 	async translate(mode, target, suffix = false) {
 		this.lazy = mode === 'lazy';
-		const sourceNodes = this.#original.childNodes;
-		const detections = await detectLanguageAsync(sourceNodes);
-		this.translating = Promise.all(detections.map((d, i) => {
-			const node = sourceNodes[i]//.cloneNode(true);
-			return d ? translator.translate(node, d, target) : node;
-		})).then(nodes => {
-			const eq = this.#original.textContent === nodes.map(n => n.textContent).join('');
-			if (!eq) {
-				if (suffix) this.#suffix.textContent = this.#getOriginalText();
-				const fragment = document.createDocumentFragment();
-				if (suffix) {
-					this.#suffix.textContent = this.#getOriginalText();
-					fragment.append(...nodes, this.#suffix);
-				} else {
-					fragment.append(...nodes);
-				}
-				return fragment;
+		const srcNodes = this.#original.childNodes;
+		const exceptionLangs = navigator.languages.filter((_, i) => s.others.except_lang >>> i & 1);
+		this.translating = translateNodesAsync(srcNodes, target, exceptionLangs).then(results => {
+			const result = results.map((r, i) => r?.sentence ?? srcNodes[i].textContent).join('');
+			const eq = this.#original.textContent === result;
+			if (eq) return null;
+			const fragment = document.createDocumentFragment();
+			fragment.append(result);
+			if (suffix) {
+				this.#suffix.textContent = this.#getOriginalText();
+				fragment.append(this.#suffix);
 			}
-			return null;
+			return fragment;
 		});
 		return this.lazy ? RESOLVED_NULL : this.translating;
 	}

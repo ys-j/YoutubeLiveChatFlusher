@@ -1,7 +1,7 @@
 /// <reference path="../types/browser.d.ts" />
 /// <reference path="../types/extends.d.ts" />
 
-import { TranslatorController } from './modules/translator.mjs';
+import { LanguageDetectionController, TranslatorController } from './modules/translator.mjs';
 
 self.browser ??= chrome;
 
@@ -39,6 +39,8 @@ browser.tabs.onCreated.addListener(tab => {
 	if (tab.url) events.toggleAction(tab.id, tab.url);
 });
 
+const detector = new LanguageDetectionController();
+
 /** @type {TranslatorController?} */
 let translationController = null;
 
@@ -49,13 +51,19 @@ browser.storage.local.get('translation').then(s => {
 });
 
 browser.runtime.onMessage.addListener((message, _sender, respond) => {
-	if ('translation' in message) {
+	if ('detection' in message) {
+		/** @type {Record<string, string>} */
+		const { text } = message.detection;
+		(detector.isReady ? Promise.resolve() : detector.ready())
+		.then(() => detector.detect(text))
+		.then(respond);
+	} else if ('translation' in message) {
 		/** @type {Record<string, string>} */
 		const { text, source, target: tl } = message.translation;
 		(
 			source
 			? Promise.resolve(source)
-			: browser.i18n.detectLanguage(text).then(d => d.isReliable && d.languages.at(0)?.language || 'auto')
+			: detector.detect(text).then(d => d.isReliable && d.source || 'auto')
 		)
 		.then(sl => translationController?.translate(text, tl, sl))
 		.then(respond);
