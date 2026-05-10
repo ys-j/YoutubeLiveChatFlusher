@@ -64,6 +64,7 @@ export async function initialize(e) {
 
 	document.body.addEventListener('keydown', e => {
 		if (e.repeat) return;
+		if (e.altKey || e.ctrlKey || e.metaKey) return;
 		switch (e.key) {
 			case store.hotkeys.layer: {
 				const checkbox = /** @type {HTMLElement?} */ (player.querySelector('#yt-lcf-cb'));
