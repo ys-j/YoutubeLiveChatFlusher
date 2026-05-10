@@ -83,7 +83,6 @@ export class LiveChatController {
 		if (s.others.disabled) this.layer.hide();
 		videoContainer.after(this.layer.element);
 
-		/** @type {Promise<void>[]} */
 		const promises = [
 			// fetching your channel ID and set styles for you
 			this.#setupViewerStyle(),
@@ -104,25 +103,33 @@ export class LiveChatController {
 		const channel = matches?.[1] || '';
 		if (!channel) return;
 
-		/** @type {?HTMLStyleElement | undefined} */
 		const style = this.layer.root.querySelector('#yourcss');
 		if (!style) return;
 
-		const you = `[data-author-id="${channel}"]`;
-		style.textContent = [
-			`${you} { color: var(--yt-lcf-you-color) }`,
-			`:host(.has-you-name) ${you}.text { background-color: var(--yt-live-chat-you-message-background-color); border-radius: .5em; padding: 0 .25em }`,
-			`${you}.text .photo { display: var(--yt-lcf-you-display-photo) }`,
-			`${you}.text .name { display: var(--yt-lcf-you-display-name) }`,
-			`${you}.text .message { display: var(--yt-lcf-you-display-message) }`,
-		].join('\n');
+		style.textContent = `\
+			[data-author-id="${channel}"] {
+				color: var(--yt-lcf-you-color);
+				:host(.has-you-name) &.text {
+					background-color: var(--yt-live-chat-you-message-background-color);
+					border-radius: .5em;
+					padding: 0 .25em;
+				}
+				&.text .photo {
+					display: var(--yt-lcf-you-display-photo);
+				}
+				&.text .name {
+					display: var(--yt-lcf-you-display-name);
+				}
+				&.text .message {
+					display: var(--yt-lcf-you-display-message);
+				}
+			}`;
 	}
 
 	/**
 	 * Adds setting menus to the video control.
 	 */
 	async #setupSettingMenu() {
-		/** @type {HTMLElement | null | undefined} */
 		const ytpPanelMenu = this.player.querySelector('.ytp-settings-menu .ytp-panel-menu');
 		if (!ytpPanelMenu) return;
 

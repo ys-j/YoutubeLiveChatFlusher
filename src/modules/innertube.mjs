@@ -48,9 +48,9 @@ export async function fetchInnerTube(url, body, options = {}) {
 export async function getAuthorication(data) {
 	const datasyncId = data['DATASYNC_ID'].split('||')[0];
 	const timestamp = (Date.now() / 1e3) | 0;
-	const cookies = new Map(document.cookie.split(/;\s*/).map(kv => {
-		const pos = kv.indexOf('=');
-		return pos >= 0 ? [ kv.substring(0, pos), kv.substring(pos + 1) ] : [ '', '' ];
+	const cookies = new Map(document.cookie.split(/;\s*/).flatMap(c => {
+		const i = c.indexOf('=');
+		return i < 0 ? [] : [[ c.substring(0, i).trim(), decodeURIComponent(c.substring(i + 1)) ]];
 	}));
 	const sApisId = cookies.get('SAPISID');
 	const bytes = new TextEncoder().encode([datasyncId, timestamp, sApisId, location.origin].join(' '));

@@ -40,7 +40,6 @@ const FetchingModeEnum = Object.freeze({
  * @param { CustomEvent<NavigateFinishEventDetail> | { target: EventTarget, detail: NavigateFinishEventDetail } } e
  */
 export async function initialize(e) {
-	// run app
 	const player = /** @type {HTMLElement} */ (e.target);
 	state.controller = new LiveChatController(player);
 	await state.controller.start().then(() => {
@@ -59,7 +58,6 @@ export async function initialize(e) {
 		return;
 	}
 
-	// when page load started
 	self.addEventListener('yt-navigate-start', () => {
 		state.reset();
 	}, { passive: true });
@@ -131,7 +129,6 @@ async function onYtNavigateFinish(e) {
 			video.removeEventListener('seeking', onSeeking);
 			video.removeEventListener('timeupdate', onTimeUpdate);
 
-			// Fetching chat actions async
 			const liveChatRenderer = response?.contents?.twoColumnWatchNextResults?.conversationBar?.liveChatRenderer
 				?? response?.contents?.singleColumnWatchNextResults?.results?.results;
 			/** @type {string?} */
