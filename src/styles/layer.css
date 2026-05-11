@@ -201,10 +201,13 @@ div.body:empty {
 :host(.prefix_lang) [data-srclang]::before {
 	content: '[' attr(data-srclang) '] ';
 }
-:host(.suffix_original) small.original {
-	display: block;
-	line-height: 1;
-	&:empty {
-		height: 1em;
+small.original {
+	display: none;
+	:host(.suffix_original) & {
+		display: block;
+		line-height: 1.1;
+		&:empty {
+			height: 1.1em;
+		}
 	}
 }

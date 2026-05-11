@@ -452,20 +452,18 @@ export class LiveChatPanel {
 				const val = Number.parseInt(elem.value, 10);
 				if (name === 'translation') {
 					const prefix = /** @type {HTMLInputElement} */ (ctrls.prefix_lang);
-					prefix.disabled = val === 0;
+					const suffix = /** @type {HTMLInputElement} */ (ctrls.suffix_original);
+					prefix.disabled = suffix.disabled = val === 0;
 					s.others[name] = val * (prefix.checked ? -1 : 1);
+					le.classList[prefix.checked ? 'add' : 'remove']('prefix_lang');
 					const cb = /** @type {NodeListOf<HTMLInputElement>} */ (ctrls.except_lang);
 					if (val) {
 						const i = Math.abs(val) - 1;
 						cb[i].checked = true;
-						for (let j = 0; j < cb.length; j++) {
-							cb[j].disabled = i === j;
-						}
+						for (let j = 0; j < cb.length; j++) cb[j].disabled = i === j;
 						s.others.except_lang |= 1 << i;
 					} else {
-						for (const e of cb) {
-							e.disabled = true;
-						}
+						for (const e of cb) e.disabled = true;
 					}
 				} else {
 					// @ts-expect-error
