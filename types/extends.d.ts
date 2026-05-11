@@ -30,7 +30,7 @@ interface DocumentPictureInPictureEvent extends Event {
 interface DocumentPictureInPicture extends EventTarget {
 	window?: Window;
 	requestWindow(options?: DocumentPictureInPictureOptions): Promise<Window>;
-	addEventListener(type: "enter", callback: (evt: DocumentPictureInPictureEvent) => void | null, options?: AddEventListenerOptions | boolean)
+	addEventListener(type: "enter", callback: (evt: DocumentPictureInPictureEvent) => void, options?: AddEventListenerOptions | boolean): void;
 }
 
 interface Window {
@@ -63,7 +63,7 @@ interface HTMLFormControlsCollection {
 type TranslationAvailability = "available" | "downloadable" | "downloading" | "unavailable";
 
 interface LanguageDetectorFactory {
-	availability(options?: { expectedInputLanguages: string[] }): Promise<TranslationAvailability?>;
+	availability(options?: { expectedInputLanguages: string[] }): Promise<TranslationAvailability>;
 	create(options?: { expectedInputLanguages: string[] }): Promise<LanguageDetectorSession>;
 }
 
@@ -78,12 +78,12 @@ interface TranslatorCreateCoreOptions {
 }
 
 interface TranslatorCreateOptions extends TranslatorCreateCoreOptions {
-	monitor?: CreateMonitor
-	signal?: AbortSignal
+	monitor?: CreateMonitor;
+	signal?: AbortSignal;
 }
 
 interface TranslatorFactory {
-	availability(options: TranslatorCreateCoreOptions): Promise<TranslationAvailability?>;
+	availability(options: TranslatorCreateCoreOptions): Promise<TranslationAvailability>;
 	create(options: TranslatorCreateOptions): Promise<TranslatorSession>;
 }
 

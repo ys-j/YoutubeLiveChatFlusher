@@ -83,7 +83,6 @@ export class LiveChatController {
 		if (s.others.disabled) this.layer.hide();
 		videoContainer.after(this.layer.element);
 
-		/** @type {Promise<void>[]} */
 		const promises = [
 			// fetching your channel ID and set styles for you
 			this.#setupViewerStyle(),
@@ -104,25 +103,33 @@ export class LiveChatController {
 		const channel = matches?.[1] || '';
 		if (!channel) return;
 
-		/** @type {?HTMLStyleElement | undefined} */
 		const style = this.layer.root.querySelector('#yourcss');
 		if (!style) return;
 
-		const you = `[data-author-id="${channel}"]`;
-		style.textContent = [
-			`${you} { color: var(--yt-lcf-you-color) }`,
-			`:host(.has-you-name) ${you}.text { background-color: var(--yt-live-chat-you-message-background-color); border-radius: .5em; padding: 0 .25em }`,
-			`${you}.text .photo { display: var(--yt-lcf-you-display-photo) }`,
-			`${you}.text .name { display: var(--yt-lcf-you-display-name) }`,
-			`${you}.text .message { display: var(--yt-lcf-you-display-message) }`,
-		].join('\n');
+		style.textContent = `\
+[data-author-id="${channel}"] {
+	color: var(--yt-lcf-you-color);
+	:host(.has-you-name) &.text {
+		background-color: var(--yt-live-chat-you-message-background-color);
+		border-radius: .5em;
+		padding: 0 .25em;
+	}
+	&.text .photo {
+		display: var(--yt-lcf-you-display-photo);
+	}
+	&.text .name {
+		display: var(--yt-lcf-you-display-name);
+	}
+	&.text .message {
+		display: var(--yt-lcf-you-display-message);
+	}
+}`;
 	}
 
 	/**
 	 * Adds setting menus to the video control.
 	 */
 	async #setupSettingMenu() {
-		/** @type {HTMLElement | null | undefined} */
 		const ytpPanelMenu = this.player.querySelector('.ytp-settings-menu .ytp-panel-menu');
 		if (!ytpPanelMenu) return;
 
@@ -341,14 +348,10 @@ export class LiveChatController {
 				cb.disabled = abs === 0 || abs === val + 1;
 				break;
 			}
-			case 'prefix_lang': {
-				cb.checked = s.others.translation < 0;
-				cb.disabled = /** @type {HTMLSelectElement} */ (ctrls.translation).selectedIndex === 0;
-				le.classList[cb.checked ? 'add' : 'remove'](cb.name);
-				break;
-			}
+			case 'prefix_lang':
 			case 'suffix_original': {
-				cb.checked = s.others.suffix_original > 0;
+				cb.checked = cb.name === 'prefix_lang' ? s.others.translation < 0 : s.others.suffix_original > 0;
+				cb.disabled = /** @type {HTMLSelectElement} */ (ctrls.translation).selectedIndex === 0;
 				le.classList[cb.checked ? 'add' : 'remove'](cb.name);
 				break;
 			}
@@ -401,6 +404,8 @@ export class LiveChatController {
 			le.classList[dir & 1 ? 'add': 'remove']('direction-reversed-y');
 			le.classList[dir & 2 ? 'add': 'remove']('direction-reversed-x');
 		}
+		const langIndex = s.others.translation;
+		if (langIndex < 0) le.classList.add('prefix_lang');
 
 		// layer CSS
 		/** @type {HTMLInputElement} */ (ctrls.layer_css).value = s.styles.layer_css;

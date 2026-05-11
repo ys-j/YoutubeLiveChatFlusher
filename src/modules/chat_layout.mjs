@@ -215,12 +215,11 @@ class ChatLayoutInfo {
 
 	/**
 	 * @param {HTMLElement} elem
-	 * @param {number} [line]
+	 * @param {number} line
 	 */
-	constructor(elem, line = undefined) {
+	constructor(elem, line) {
 		this.#rect = elem.getBoundingClientRect();
-
-		this.#line = line ?? Number.parseInt(elem.getAttribute('data-line') || '0', 10);
+		this.#line = line;
 
 		const computedStyle = getComputedStyle(elem);
 		const lh = Number.parseFloat(computedStyle.lineHeight); // px

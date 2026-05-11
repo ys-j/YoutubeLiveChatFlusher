@@ -5,8 +5,10 @@
 import { fetchInnerTube } from './innertube.mjs';
 
 export class ReplayActionBuffer {
-	/** @type {Map<number, Set<string>>} */
+	/** @type {Map<number, Set<LiveChat.LiveChatItemAction>>} */
 	#map = new Map();
+	/** @type {number[]} */
+	#sortedTimes = [];
 	#lastOffset = 0;
 
 	/**
@@ -14,34 +16,53 @@ export class ReplayActionBuffer {
 	 * @param {LiveChat.ReplayChatItemAction[]} rawActions
 	 */
 	pushActions(rawActions) {
+		let sortNeeded = false;
 		for (const container of rawActions) {
 			const rawAction = container.replayChatItemAction;
-			const time = Number.parseInt(rawAction.videoOffsetTimeMsec, 10);
+			const time = +rawAction.videoOffsetTimeMsec;
 			const actions = rawAction.actions;
-			const set = this.#map.get(time);
-			if (set) {
-				for (const a of actions) set.add(JSON.stringify(a));
-			} else {
-				this.#map.set(time, new Set(actions.map(a => JSON.stringify(a))));
+
+			let set = this.#map.get(time);
+			if (!set) {
+				set = new Set();
+				this.#map.set(time, set);
+				this.#sortedTimes.push(time);
+				sortNeeded = true;
 			}
+			for (const a of actions) set.add(a);
 		}
+		if (sortNeeded) this.#sortedTimes.sort((a, b) => a - b);
 	}
 
 	/**
 	 * Gets the pending actions between the last offset and the current one.
 	 * @param {number} currentOffset
-	 * @returns {any[]}
+	 * @returns {LiveChat.LiveChatItemAction[]}
 	 */
 	getPendingActions(currentOffset) {
-		/** @type {(time: number) => boolean} */
-		const predicate = time => Math.max(this.#lastOffset, currentOffset - 1000) < time && time <= currentOffset;
-		const targetKeys = Array.from(this.#map.keys().filter(predicate));
-		this.#lastOffset = currentOffset;
-		return Array.from(targetKeys, k => Array.from(this.#map.get(k) || [], s => JSON.parse(s))).flat();
+		if (currentOffset < this.#lastOffset) {
+			this.update(currentOffset - 1000);
+		}
+		/** @type {LiveChat.LiveChatItemAction[]} */
+		const result = [];
+		const lowerBound = this.#lastOffset + 1;
+		if (currentOffset < lowerBound || this.#sortedTimes.length === 0) {
+			this.update(currentOffset);
+			return result;
+		}
+		const startIndex = binarySearch(this.#sortedTimes, lowerBound);
+		for (let i = startIndex, l = this.#sortedTimes.length; i < l; i++) {
+			const time = this.#sortedTimes[i];
+			if (time > currentOffset) break;
+			this.#map.get(time)?.forEach(a => result.push(a));
+		}
+		this.update(currentOffset);
+		return result;
 	}
 
 	clear() {
 		this.#map.clear();
+		this.#sortedTimes.length = 0;
 		this.#lastOffset = 0;
 	}
 
@@ -87,7 +108,7 @@ export async function* getReplayChatActionsAsyncIterable(signal, initialContinua
 	while (!signal.aborted && prev) {
 		let i = 0;
 		while (continuations.has(prev) && ++i < continuations.size) {
-			if (isRecursiveMap(continuations)) return [];
+			if (isCyclicMap(continuations)) return [];
 			prev = continuations.get(prev) || '';
 			body = { continuation: prev };
 		}
@@ -190,30 +211,57 @@ function getContinuation(contents, isReplay, offset) {
  * @param {AbortSignal} [options.signal] signal for aborting sleep
  * @returns {Promise<void>} void promise
  */
-function sleep(ms, options = {}) {
-	/** @type {Promise<void>} */
-	return new Promise(resolve => {
-		const timer = Number.isFinite(ms) ? setTimeout(() => resolve(), ms) : 0;
-		if (options.signal) {
-			options.signal.onabort = () => {
-				clearTimeout(timer);
-				resolve();
-			};
-		}
-	});
+function sleep(ms, { signal } = {}) {
+	/** @type {PromiseWithResolvers<void>} */
+	const { promise, resolve } = Promise.withResolvers();
+	if (signal?.aborted) {
+		resolve();
+		return promise;
+	}
+	/** @type {number | undefined} */
+	let timer = undefined;
+	const onDone = () => {
+		clearTimeout(timer);
+		signal?.removeEventListener('abort', onDone);
+		resolve();
+	};
+	if (ms > 0 && Number.isFinite(ms)) timer = setTimeout(onDone, ms);
+	signal?.addEventListener('abort', onDone, { once: true });
+	return promise;
 }
 
 /**
- * Determines whether the map is recursive.
+ * Determines whether the map is cyclic.
  * @param {Map<any, any>} map map object
- * @returns {boolean} if the map is recursive
+ * @returns {boolean} if the map is cyclic
  */
-function isRecursiveMap(map) {
-	const keys = Array.from(map.keys());
-	const values = Array.from(map.values());
-	values.unshift(values.pop());
-	for (let i = 0; i < keys.length; i++) {
-		if (keys[i] !== values[i]) return false;
+function isCyclicMap(map) {
+	const iter = map.entries();
+	const { value, done } = iter.next();
+	if (done) return false;
+
+	const [firstKey, firstVal] = value;
+	let prevVal = firstVal;
+	for (const [key, val] of iter) {
+		if (key !== prevVal) return false;
+		prevVal = val;
 	}
-	return true;
+	return prevVal === firstKey;
+}
+
+/**
+ * Finds the lowest index in a sorted array where the element is greater than or equal to the target value.
+ * @param {number[]} arr sorted array of numbers
+ * @param {number} target the value to search for
+ * @returns {number} the index of lower bound
+ */
+function binarySearch(arr, target) {
+	let low = 0;
+	let high = arr.length;
+	while (low < high) {
+		const mid = (low + high) >>> 1;
+		if (arr[mid] < target) low = mid + 1;
+		else high = mid;
+	}
+	return low;
 }

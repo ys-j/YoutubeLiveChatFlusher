@@ -1,7 +1,8 @@
-/** @type integer */
-type integer = number
+type integer = number;
+type MessageLike = Record<string, any> | Array<any>;
+
 declare namespace browser {
-	const action = browserAction
+	var action: typeof browserAction;
 	namespace alarms {
 		type Alarm = {
 			name: string
@@ -884,7 +885,7 @@ declare namespace browser {
 			name: string
 			sender: T
 			onDisconnect: events.Event<[port: Port]>
-			onMessage: events.Event<[message: Record|Array]>
+			onMessage: events.Event<[message: MessageLike]>
 		}
 		type MessageSender = {
 			tab?: tabs.Tab
@@ -915,7 +916,7 @@ declare namespace browser {
 		function requestUpdateCheck(): Promise<[status: RequestUpdateCheckStatus, details?: { version: string }]>
 		function connect(extensionId?: string, connectInfo?: { name?: string, includeTlsChannelId?: boolean }): Port
 		function connectNative(application: string): Port
-		function sendMessage(extensionId?: string, message: any, options?: { includeTlsChannelId?: boolean }): Promise<any>
+		function sendMessage(extensionId: string, message: any, options?: { includeTlsChannelId?: boolean }): Promise<any>
 		function sendMessage(message: any, options?: { includeTlsChannelId?: boolean }): Promise<any>
 		function sendNativeMessage(application: string, message: object): Promise<any>
 		function getPlatformInfo(): Promise<PlatformInfo>
@@ -929,14 +930,14 @@ declare namespace browser {
 		const onConnect: events.Event<[port: Required<Port<Required<MessageSender>>>]>
 		const onConnectExternal: events.Event<[port: Required<Port<Required<MessageSender>>>]>
 		const onMessage: events.Event<[
-			message: Record|Array,
+			message: MessageLike,
 			sender: MessageSender,
-			sendResponse: (message: Record|Array) => any,
+			sendResponse: (message: MessageLike) => any,
 		], void | boolean | Promise<any>>
 		const onMessageExternal: events.Event<[
-			message: Record|Array,
+			message: MessageLike,
 			sender: MessageSender,
-			sendResponse: (message: Record|Array) => any
+			sendResponse: (message: MessageLike) => any
 		], void | boolean | Promise<any>>
 		// const onRestartRequired: events.Event<[reason: OnRestartRequiredReason]>
 	}
@@ -1456,4 +1457,4 @@ declare namespace browser {
 		const onFocusChanged: events.Event<[windowId: integer]>
 	}
 }
-declare var chrome: browser;
+declare var chrome: typeof browser;

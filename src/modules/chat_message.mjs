@@ -110,7 +110,7 @@ export class LiveChatItemFactory {
 	 * Creates new chat message element.
 	 * @param {TextItemFactoryOptions | MembershipItemFactoryOptions | PaidMessageItemFactoryOptions | PaidStickerItemFactoryOptions | GiftItemFactoryOptions | PollItemFactoryOptions} options
 	 */
-	async new(options) {
+	new(options) {
 		const type = options.type;
 		const el = this.#templates.get(type)?.cloneNode(true);
 		if (!el) return null;
@@ -147,7 +147,7 @@ export class LiveChatItemFactory {
 			const sticker = /** @type {HTMLImageElement?} */ (el.querySelector('.sticker'));
 			if (sticker) sticker.src = options.sticker;
 		} else if ('body' in options && body) {
-			await options.body.connectTo(body);
+			options.body.connectTo(body);
 		}
 		if ('background' in options) {
 			if ('header' in options.background && header) {
@@ -235,8 +235,9 @@ export async function renderChatItem(item, factory) {
 	if (targetLangIndex) {
 		const suffix = s.others.suffix_original;
 		const tl = navigator.languages[Math.abs(targetLangIndex) - 1];
-		const lazy = s.others.translation_timing ?? 0;
-		await body.translate(lazy ? 'lazy' : 'eager', tl, !!suffix);
+		/** @type {"lazy" | "eager"} */ // @ts-expect-error
+		const mode = ['eager', 'lazy'].at(s.others.translation_timing) ?? 'eager';
+		await body.translate(mode, tl, Boolean(suffix));
 	}
 
 	/** @type {(type: keyof typeof s.parts) => boolean} */
@@ -248,7 +249,7 @@ export async function renderChatItem(item, factory) {
 		case 'liveChatTextMessageRenderer': {
 			const subtype = getAuthorType(renderer);
 			if (allHidden(subtype)) break;
-			element = await factory.new({
+			element = factory.new({
 				type: 'text',
 				subtype,
 				author: await fetchAuthorInfo(renderer, subtype),
@@ -264,7 +265,7 @@ export async function renderChatItem(item, factory) {
 				headerPrimaryText: primary,
 				headerSubtext: sub,
 			} = /** @type {LiveChat.MembershipItemRenderer["liveChatMembershipItemRenderer"]} */ (renderer);
-			element = await factory.new({
+			element = factory.new({
 				type: 'membership',
 				subtype,
 				author: await fetchAuthorInfo(renderer, subtype),
@@ -282,7 +283,7 @@ export async function renderChatItem(item, factory) {
 				purchaseAmountText,
 				bodyBackgroundColor,
 			} = /** @type {LiveChat.PaidMessageRenderer["liveChatPaidMessageRenderer"]} */ (renderer);
-			element = await factory.new({
+			element = factory.new({
 				type,
 				author: await fetchAuthorInfo(renderer, type),
 				amount: getText(purchaseAmountText),
@@ -300,7 +301,7 @@ export async function renderChatItem(item, factory) {
 				moneyChipBackgroundColor,
 				sticker,
 			} = /** @type {LiveChat.PaidStickerRenderer["liveChatPaidStickerRenderer"]} */ (renderer);
-			element = await factory.new({
+			element = factory.new({
 				type,
 				author: await fetchAuthorInfo(renderer, type),
 				amount: getText(purchaseAmountText),
@@ -316,7 +317,7 @@ export async function renderChatItem(item, factory) {
 			const headerRenderer = /** @type {LiveChat.SponsorshipsHeaderRenderer} */(renderer.header).liveChatSponsorshipsHeaderRenderer;
 			const count = headerRenderer.primaryText?.runs?.filter(r => !Number.isNaN(Number.parseInt(r.text, 10)))[0]?.text;
 			if (!count) break;
-			element = await factory.new({
+			element = factory.new({
 				type: 'gift',
 				author: await fetchAuthorInfo(renderer, subtype),
 				gifts: count,
@@ -328,7 +329,7 @@ export async function renderChatItem(item, factory) {
 			// @ts-expect-error
 			switch (renderer.icon.iconType) {
 				case 'POLL':
-					element = await factory.new({ type: 'poll', body });
+					element = factory.new({ type: 'poll', body });
 					break;
 				case 'YOUTUBE_ROUND':
 					break;
@@ -352,13 +353,16 @@ const NO_REPEATING_PATTERN = /^\p{L}$|(\p{L})(?!\P{L}*\1)\p{L}/u;
 /**
  * @typedef {import("./translator.mjs").LanguageDetection} LanguageDetection
  */
+/**
+ * @typedef {import("./translator.mjs").TranslationResult} TranslationResult
+ */
 
 /**
  * Detects each node language async.
  * @param {ArrayLike<Node>} nodes
  * @param {string} target
  * @param {string[]} exceptionLangs
- * @returns {Promise<Array<import("./translator.mjs").TranslationResult?>>}
+ * @returns {Promise<(?TranslationResult)[]>}
  */
 function translateNodesAsync(nodes, target, exceptionLangs) {
 	const exceptions = [target, ...exceptionLangs];
@@ -385,9 +389,13 @@ function translateNodesAsync(nodes, target, exceptionLangs) {
 
 
 export class ChatMessageContainer {
-	/** @type {DocumentFragment | Text} */ #original;
-	/** @type {HTMLElement} */ #suffix;
-	/** @type {Promise<DocumentFragment?>} */ translating = RESOLVED_NULL;
+	/** @type {DocumentFragment | Text} */
+	#original;
+	/** @type {HTMLElement} */
+	#suffixTemplate;
+	/** @type {Promise<(TranslationResult & { suffix?: string })?>?} */
+	translating = null;
+	
 	lazy = false;
 
 	/**
@@ -396,8 +404,8 @@ export class ChatMessageContainer {
 	constructor(message) {
 		this.#original = getChatMessage(message);
 		this.#original.normalize();
-		this.#suffix = document.createElement('small');
-		this.#suffix.classList.add('original');
+		this.#suffixTemplate = document.createElement('small');
+		this.#suffixTemplate.classList.add('original');
 	}
 
 	/**
@@ -405,21 +413,40 @@ export class ChatMessageContainer {
 	 * @param {string} target target language
 	 * @param {boolean} suffix whether suffixes original message
 	 */
-	async translate(mode, target, suffix = false) {
+	translate(mode, target, suffix = false) {
 		this.lazy = mode === 'lazy';
 		const srcNodes = this.#original.childNodes;
 		const exceptionLangs = navigator.languages.filter((_, i) => s.others.except_lang >>> i & 1);
-		this.translating = translateNodesAsync(srcNodes, target, exceptionLangs).then(results => {
-			const result = results.map((r, i) => r?.sentence ?? srcNodes[i].textContent).join('');
-			const eq = this.#original.textContent === result;
-			if (eq) return null;
-			const fragment = document.createDocumentFragment();
-			fragment.append(result);
-			if (suffix) {
-				this.#suffix.textContent = this.#getOriginalText();
-				fragment.append(this.#suffix);
+		const originalText = this.#getOriginalText();
+
+		this.translating = translateNodesAsync(srcNodes, target, exceptionLangs)
+		.then(results => {
+			const counts = new Map();
+			let freqSrc = null, maxCount = 0;
+			let combined = '';
+			for (let i = 0; i < results.length; i++) {
+				const result = results[i];
+				if (result) {
+					const { sentence, src } = result;
+					combined += sentence;
+					const c = (counts.get(src) || 0) + 1;
+					counts.set(src, c);
+					if (c > maxCount) {
+						maxCount = c;
+						freqSrc = src;
+					}
+				} else {
+					combined += srcNodes[i]?.textContent || '';
+				}
 			}
-			return fragment;
+			/** @type {(s: string) => string} */
+			const format = s => s.normalize('NFKC').toLowerCase().replaceAll(' ', '');
+			const like = format(originalText) === format(combined);
+			if (!freqSrc || freqSrc === target || like) return null;
+			/** @type {TranslationResult & { suffix?: string }} */
+			const res = { sentence: combined, src: freqSrc };
+			if (suffix) res.suffix = originalText;
+			return res;
 		});
 		return this.lazy ? RESOLVED_NULL : this.translating;
 	}
@@ -442,8 +469,25 @@ export class ChatMessageContainer {
 	 * @param {HTMLElement} element
 	 */
 	async connectTo(element) {
-		const translated = await this.translating;
-		element.append(translated || this.#original);
+		if (!this.translating) {
+			element.replaceChildren(this.#original);
+			return;
+		}
+		if (this.lazy) element.replaceChildren(this.#original);
+		const result = await this.translating;
+		if (!result) {
+			if (!this.lazy) element.replaceChildren(this.#original);
+			return;
+		}
+		const { sentence, src, suffix } = result;
+		if (suffix) {
+			const small = this.#suffixTemplate.cloneNode(true);
+			small.append(suffix);
+			element.replaceChildren(sentence, small);
+		} else {
+			element.replaceChildren(sentence);
+		}
+		element.setAttribute('data-srclang', src);
 	}
 }
 
