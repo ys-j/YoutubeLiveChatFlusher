@@ -1,7 +1,7 @@
 /// <reference path="../../types/ytlivechatrenderer.d.ts" />
 
 import { store as s } from './store.mjs';
-import { isNotPip, loadTemplateDocument, formatHexColor, getColorRGB } from './utils.mjs';
+import { isNotPip, loadTemplateDocument, getColorRGB } from './utils.mjs';
 
 import { LiveChatLayer } from './chat_layer.mjs'
 import { LiveChatPanel, WrapStyleDefinitions } from './chat_panel.mjs';
@@ -284,9 +284,9 @@ export class LiveChatController {
 
 				const computed = getComputedStyle(le);
 				const fillPicker = /** @type {HTMLInputElement?} */ (cb.parentElement?.nextElementSibling);
-				if (fillPicker) fillPicker.value = part.color || formatHexColor(computed.getPropertyValue(fillProp), '#fff');
+				if (fillPicker) fillPicker.value = part.color || computed.getPropertyValue(fillProp) || '#ffffff';
 				const strokePicker = /** @type {HTMLInputElement?} */ (fillPicker?.nextElementSibling);
-				if (strokePicker) strokePicker.value = part.strokeColor || formatHexColor(computed.getPropertyValue(strokeProp), '#000');
+				if (strokePicker) strokePicker.value = part.strokeColor || computed.getPropertyValue(strokeProp) || '#000000';
 				break;
 			}
 			// biome-ignore lint/suspicious/noFallthroughSwitchClause: To use default case

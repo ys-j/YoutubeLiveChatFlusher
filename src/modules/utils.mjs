@@ -91,29 +91,3 @@ export function getColorRGB(long) {
 	const separated = long.toString(16).match(/[0-9a-f]{2}/g) || [];
 	return separated.map(hex => Number.parseInt(hex, 16)).slice(1);
 }
-
-/**
- * Converts CSS color value from short hex-format or rgb()-format to normal hex-format.
- * @param {string} css short hex-format or rgb()-format color value (e.g. `#abc`, `rgb(0, 128, 255)`)
- * @param {string} [inherit='#ffffff'] default value
- * @returns {string} normal hex-format color (e.g. `#123456`)
- */
-export function formatHexColor(css, inherit = '#ffffff') {
-	const color = css.trim();
-	if (color.startsWith('#')) {
-		if (color.length > 6) {
-			return color.slice(0, 7);
-		} else if (color.length > 3) {
-			const [_, r, g, b] = color;
-			return '#' + [r, g, b].map(s => s + s).join('');
-		}
-	} else if (color.startsWith('rgb')) {
-		const [_, r, g, b] = color.match(/(\d+),?\s*(\d+),?\s*(\d+)/) || [];
-		if (_) {
-			/** @type {(s: string) => string} */
-			const dec2hex = s => Number.parseInt(s, 10).toString(16).padStart(2, '0');
-			return '#' + [r, g, b].map(dec2hex).join('');
-		}
-	}
-	return inherit;
-}
