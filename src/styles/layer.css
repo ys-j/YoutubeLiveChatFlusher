@@ -63,55 +63,85 @@ a {
 	padding-right: 1em;
 }
 
-.normal { color: var(--yt-lcf-normal-color) }
-:host(.has-normal-name) .normal {
-	background-color: var(--yt-live-chat-normal-message-background-color); 
-	border-radius: .5em;
-	padding: 0 .25em;
+.normal {
+	color: var(--yt-lcf-normal-color);
+	:host > & {
+		text-shadow: var(--yt-lcf-normal-stroke-color, var(--yt-lcf-stroke-color)) 0 0 var(--yt-lcf-stroke-blur);
+		-webkit-text-stroke-color: var(--yt-lcf-normal-stroke-color, var(--yt-lcf-stroke-color));
+	}
+	:host(.has-normal-name) > & {
+		background-color: var(--yt-live-chat-normal-message-background-color); 
+		border-radius: .5em;
+		padding: 0 .25em;
+	}
+	.photo { display: var(--yt-lcf-normal-display-photo) }
+	.name { display: var(--yt-lcf-normal-display-name) }
+	.body { display: var(--yt-lcf-normal-display-message) }
 }
-.normal .photo { display: var(--yt-lcf-normal-display-photo) }
-.normal .name { display: var(--yt-lcf-normal-display-name) }
-.normal .body { display: var(--yt-lcf-normal-display-message) }
 
-.member { color: var(--yt-lcf-member-color) }
-:host(.has-member-name) .member {
-	background-color: var(--yt-live-chat-member-message-background-color);
-	border-radius: .5em;
-	padding: 0 .25em;
+.member {
+	color: var(--yt-lcf-member-color);
+	:host > & {
+		text-shadow: var(--yt-lcf-member-stroke-color, var(--yt-lcf-stroke-color)) 0 0 var(--yt-lcf-stroke-blur);
+		-webkit-text-stroke-color: var(--yt-lcf-member-stroke-color, var(--yt-lcf-stroke-color));
+	}
+	:host(.has-member-name) > & {
+		background-color: var(--yt-live-chat-member-message-background-color);
+		border-radius: .5em;
+		padding: 0 .25em;
+	}
+	.photo { display: var(--yt-lcf-member-display-photo) }
+	.name { display: var(--yt-lcf-member-display-name) }
+	.body { display: var(--yt-lcf-member-display-message) }
 }
-.member .photo { display: var(--yt-lcf-member-display-photo) }
-.member .name { display: var(--yt-lcf-member-display-name) }
-.member .body { display: var(--yt-lcf-member-display-message) }
 
-.verified { color: var(--yt-lcf-verified-color) }
-:host(.has-verified-name) .verified {
-	background-color: var(--yt-live-chat-verified-message-background-color);
-	border-radius: .5em;
-	padding: 0 .25em;
+.verified {
+	color: var(--yt-lcf-verified-color);
+	:host > & {
+		text-shadow: var(--yt-lcf-verified-stroke-color, var(--yt-lcf-stroke-color)) 0 0 var(--yt-lcf-stroke-blur);
+		-webkit-text-stroke-color: var(--yt-lcf-verified-stroke-color, var(--yt-lcf-stroke-color));
+	}
+	:host(.has-verified-name) > & {
+		background-color: var(--yt-live-chat-verified-message-background-color);
+		border-radius: .5em;
+		padding: 0 .25em;
+	}
+	.photo { display: var(--yt-lcf-verified-display-photo) }
+	.name { display: var(--yt-lcf-verified-display-name) }
+	.body { display: var(--yt-lcf-verified-display-message) }
 }
-.verified .photo { display: var(--yt-lcf-verified-display-photo) }
-.verified .name { display: var(--yt-lcf-verified-display-name) }
-.verified .body { display: var(--yt-lcf-verified-display-message) }
 
-.moderator { color: var(--yt-lcf-moderator-color) }
-:host(.has-moderator-name) .moderator {
-	background-color: var(--yt-live-chat-moderator-message-background-color);
-	border-radius: .5em;
-	padding: 0 .25em;
+.moderator {
+	color: var(--yt-lcf-moderator-color);
+	:host > & {
+		text-shadow: var(--yt-lcf-moderator-stroke-color, var(--yt-lcf-stroke-color)) 0 0 var(--yt-lcf-stroke-blur);
+		-webkit-text-stroke-color: var(--yt-lcf-moderator-stroke-color, var(--yt-lcf-stroke-color));
+	}
+	:host(.has-moderator-name) > & {
+		background-color: var(--yt-live-chat-moderator-message-background-color);
+		border-radius: .5em;
+		padding: 0 .25em;
+	}
+	.photo { display: var(--yt-lcf-moderator-display-photo) }
+	.name { display: var(--yt-lcf-moderator-display-name) }
+	.body { display: var(--yt-lcf-moderator-display-message) }
 }
-.moderator .photo { display: var(--yt-lcf-moderator-display-photo) }
-.moderator .name { display: var(--yt-lcf-moderator-display-name) }
-.moderator .body { display: var(--yt-lcf-moderator-display-message) }
 
-.owner { color: var(--yt-lcf-owner-color) }
-:host(.has-owner-name) .owner {
-	background-color: var(--yt-live-chat-owner-message-background-color);
-	border-radius: .5em;
-	padding: 0 .25em;
+.owner {
+	color: var(--yt-lcf-owner-color);
+	:host > & {
+		text-shadow: var(--yt-lcf-owner-stroke-color, var(--yt-lcf-stroke-color)) 0 0 var(--yt-lcf-stroke-blur);
+		-webkit-text-stroke-color: var(--yt-lcf-owner-stroke-color, var(--yt-lcf-stroke-color));
+	}
+	:host(.has-owner-name) > & {
+		background-color: var(--yt-live-chat-owner-message-background-color);
+		border-radius: .5em;
+		padding: 0 .25em;
+	}
+	.photo { display: var(--yt-lcf-owner-display-photo) }
+	.name { display: var(--yt-lcf-owner-display-name) }
+	.body { display: var(--yt-lcf-owner-display-message) }
 }
-.owner .photo { display: var(--yt-lcf-owner-display-photo) }
-.owner .name { display: var(--yt-lcf-owner-display-name) }
-.owner .body { display: var(--yt-lcf-owner-display-message) }
 
 div.header {
 	display: flex;
@@ -156,29 +186,49 @@ div.body:empty {
 :host([style*="--yt-lcf-paid-message-display-photo: none; --yt-lcf-paid-message-display-name: none; --yt-lcf-paid-message-display-amount: none"]) .superchat .body,
 :host([style*="--yt-lcf-paid-sticker-display-photo: none; --yt-lcf-paid-sticker-display-name: none; --yt-lcf-paid-sticker-display-amount: none"]) .supersticker .body { padding-top: 2px }
 
-.membership { color: var(--yt-lcf-membership-color) }
-.membership .photo { display: var(--yt-lcf-membership-display-photo) }
-.membership .name { display: var(--yt-lcf-membership-display-name) }
-.membership .gifts { display: var(--yt-lcf-membership-display-months) }
-.membership .months { display: var(--yt-lcf-membership-display-message) }
+.membership {
+	color: var(--yt-lcf-membership-color);
+	:host > & {
+		text-shadow: var(--yt-lcf-membership-stroke-color, var(--yt-lcf-stroke-color)) 0 0 var(--yt-lcf-stroke-blur);
+		-webkit-text-stroke-color: var(--yt-lcf-membership-stroke-color, var(--yt-lcf-stroke-color));
+	}
+	.photo { display: var(--yt-lcf-membership-display-photo) }
+	.name { display: var(--yt-lcf-membership-display-name) }
+	.gifts { display: var(--yt-lcf-membership-display-months) }
+	.months { display: var(--yt-lcf-membership-display-message) }
+}
 
-.milestone { color: var(--yt-lcf-milestone-color) }
-.milestone .photo { display: var(--yt-lcf-milestone-display-photo) }
-.milestone .name { display: var(--yt-lcf-milestone-display-name) }
-.milestone .months { display: var(--yt-lcf-milestone-display-months) }
-.milestone .body { display: var(--yt-lcf-milestone-display-message) }
+.milestone {
+	color: var(--yt-lcf-milestone-color);
+	:host > & {
+		text-shadow: var(--yt-lcf-milestone-stroke-color, var(--yt-lcf-stroke-color)) 0 0 var(--yt-lcf-stroke-blur);
+		-webkit-text-stroke-color: var(--yt-lcf-milestone-stroke-color, var(--yt-lcf-stroke-color));
+	}
+	.photo { display: var(--yt-lcf-milestone-display-photo) }
+	.name { display: var(--yt-lcf-milestone-display-name) }
+	.months { display: var(--yt-lcf-milestone-display-months) }
+	.body { display: var(--yt-lcf-milestone-display-message) }
+}
 
-.superchat { color: var(--yt-lcf-paid-message-color) }
-.superchat .photo { display: var(--yt-lcf-paid-message-display-photo) }
-.superchat .name { display: var(--yt-lcf-paid-message-display-name) }
-.superchat .amount { display: var(--yt-lcf-paid-message-display-amount) }
-.superchat .body { display: var(--yt-lcf-paid-message-display-message) }
+.superchat {
+	color: var(--yt-lcf-paid-message-color);
+	:host > & {
+		text-shadow: var(--yt-lcf-paid-message-stroke-color, var(--yt-lcf-stroke-color)) 0 0 var(--yt-lcf-stroke-blur);
+		-webkit-text-stroke-color: var(--yt-lcf-paid-message-stroke-color, var(--yt-lcf-stroke-color));
+	}
+	.photo { display: var(--yt-lcf-paid-message-display-photo) }
+	.name { display: var(--yt-lcf-paid-message-display-name) }
+	.amount { display: var(--yt-lcf-paid-message-display-amount) }
+	.body { display: var(--yt-lcf-paid-message-display-message) }
+}
 
-.supersticker { color: var(--yt-lcf-paid-sticker-color) }
-.supersticker .photo { display: var(--yt-lcf-paid-sticker-display-photo) }
-.supersticker .name { display: var(--yt-lcf-paid-sticker-display-name) }
-.supersticker .amount { display: var(--yt-lcf-paid-sticker-display-amount) }
-.supersticker .body { display: var(--yt-lcf-paid-sticker-display-sticker) }
+.supersticker {
+	color: var(--yt-lcf-paid-sticker-color);
+	.photo { display: var(--yt-lcf-paid-sticker-display-photo) }
+	.name { display: var(--yt-lcf-paid-sticker-display-name) }
+	.amount { display: var(--yt-lcf-paid-sticker-display-amount) }
+	.body { display: var(--yt-lcf-paid-sticker-display-sticker) }
+}
 
 .engagement-poll {
 	background-color: rgba(64, 64, 64, var(--yt-lcf-background-opacity));

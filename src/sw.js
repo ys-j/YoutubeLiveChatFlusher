@@ -66,6 +66,7 @@ browser.runtime.onMessage.addListener((message, _sender, respond) => {
 			: detector.detect(text).then(d => d.isReliable && d.source || 'auto')
 		)
 		.then(sl => translationController?.translate(text, tl, sl))
+		// @ts-expect-error
 		.then(respond);
 	} else if ('fire' in message) {
 		events[message.fire]?.()?.then(respond);

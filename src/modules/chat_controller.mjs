@@ -1,12 +1,12 @@
 /// <reference path="../../types/ytlivechatrenderer.d.ts" />
 
 import { store as s } from './store.mjs';
-import { isNotPip, loadTemplateDocument, formatHexColor, getColorRGB } from './utils.mjs';
+import { isNotPip, loadTemplateDocument, getColorRGB } from './utils.mjs';
 
 import { LiveChatLayer } from './chat_layer.mjs'
 import { LiveChatPanel, WrapStyleDefinitions } from './chat_panel.mjs';
 import { LiveChatContextMenu } from './chat_contextmenu.mjs';
-import { LiveChatItemFactory, EmojiModeEnum, renderChatItem, updateMutedWordsList } from './chat_message.mjs';
+import { LiveChatItemFactory, EmojiModeEnum, renderChatItem, updateMutedWordsList, updateTlExclusionList } from './chat_message.mjs';
 import { LiveChatLayoutCache, layoutChatItem } from './chat_layout.mjs';
 
 /** @enum {number} */
@@ -91,6 +91,8 @@ export class LiveChatController {
 		];
 
 		updateMutedWordsList();
+		updateTlExclusionList();
+
 		this.#setupPanel();
 		this.layer.element.style.cssText += '--yt-lcf-layer-css: below;' + s.styles.layer_css;
 		await Promise.allSettled(promises);
@@ -223,7 +225,7 @@ export class LiveChatController {
 		}
 
 		for (const [prop, value] of Object.entries(s.styles)) {
-			le.style.setProperty('--yt-lcf-' + prop.replace(/_/g, '-'), value);
+			le.style.setProperty(`--yt-lcf-${prop.replace(/_/g, '-')}`, value);
 			/** @type {HTMLInputElement?} */
 			const input = form.querySelector(`input.styles[name="${prop}"]`);
 			if (input) {
@@ -268,31 +270,39 @@ export class LiveChatController {
 	 */
 	#applyPartSetting(cb, type) {
 		const le = this.layer.element;
+		const kebab = type.replace(/_/g, '-');
 		const part = s.parts[type];
-		// @ts-expect-error
-		cb.checked = part[cb.value];
 		switch (cb.value) {
-			case 'color': {
-				// @ts-expect-error
-				const saved = part.color;
-				if (saved) le.style.setProperty(`--yt-lcf-${type.replace(/_/g, '-')}-color`, saved);
-				else le.style.removeProperty(`--yt-lcf-${type.replace(/_/g, '-')}-color`);
-				const picker = /** @type {HTMLInputElement?} */ (cb.parentElement?.nextElementSibling);
-				if (picker) picker.value = saved || formatHexColor(getComputedStyle(le).getPropertyValue('--yt-lcf-' + picker.name.replace(/_/g, '-')));
+			case 'color': if ('color' in part) {
+				cb.checked = part.color + part.strokeColor !== '';
+				const fillProp = `--yt-lcf-${kebab}-color`;
+				const strokeProp = `--yt-lcf-${kebab}-stroke-color`;
+				if (part.color) le.style.setProperty(fillProp, part.color);
+				else le.style.removeProperty(fillProp);
+				if (part.strokeColor) le.style.setProperty(strokeProp, part.strokeColor);
+				else le.style.removeProperty(strokeProp);
+
+				const computed = getComputedStyle(le);
+				const fillPicker = /** @type {HTMLInputElement?} */ (cb.parentElement?.nextElementSibling);
+				if (fillPicker) fillPicker.value = part.color || computed.getPropertyValue(fillProp) || '#ffffff';
+				const strokePicker = /** @type {HTMLInputElement?} */ (fillPicker?.nextElementSibling);
+				if (strokePicker) strokePicker.value = part.strokeColor || computed.getPropertyValue(strokeProp) || '#000000';
 				break;
 			}
 			// biome-ignore lint/suspicious/noFallthroughSwitchClause: To use default case
 			case 'name': {
 				const div = /** @type {HTMLDivElement} */ (cb.closest('div'));
-				if (cb.checked) div.classList.add('outlined');
+				if (part.name) div.classList.add('outlined');
 				cb.addEventListener('change', () => {
-					const method = cb.checked ? 'add' : 'remove';
+					const method = part.name ? 'add' : 'remove';
 					div.classList[method]('outlined');
 					le.classList[method](`has-${type}-name`);
 				}, { passive: true });
 			}
 			default: {
-				le.style.setProperty(`--yt-lcf-${type.replace(/_/g, '-')}-display-${cb.value}`, cb.checked ? 'inline' : 'none');
+				// @ts-expect-error
+				cb.checked = part[cb.value];
+				le.style.setProperty(`--yt-lcf-${kebab}-display-${cb.value}`, cb.checked ? 'inline' : 'none');
 			}
 		}
 	}

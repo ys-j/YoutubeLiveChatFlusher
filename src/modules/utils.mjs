@@ -58,56 +58,27 @@ export function getText(message) {
 }
 
 /**
- * Gets message filtered according to the rules.
- * @param {string} str original message
- * @param {object} [options] filtering options
- * @param {number} [options.mode] `0` for no filtering, `1` for all removal, `2` for word replacement, or `3` for character replacement
- * @param {RegExp[]} [options.rules] filtering rules
- * @param {string} [options.replacement] replacement string
- * @returns {IteratorResult<string, string>} filtering result
+ * Escapes the text in order to convert into regular expression.
+ * @param {string} str plain text
+ * @returns escaped text
  */
-export function filterMessage(str, options = {}) {
-	let done = false;
-	const mode = options.mode || 0;
-	const rules = options.rules || [];
-	const replacement = options.replacement || '';
-	switch (mode) {
-		// g.index.mutedWords.all
-		case 1: {
-			for (const rule of rules) {
-				if (rule.test(str)) {
-					rule.lastIndex = 0;
-					return { value: '', done: true };
-				}
-			}
-			break;
-		}
-		// g.index.mutedWords.word
-		case 2: {
-			for (const rule of rules) {
-				if (rule.test(str)) {
-					str = str.replace(rule, replacement);
-					done = true;
-				}
-			}
-			break;
-		}
-		// g.index.mutedWords.char
-		case 3: {
-			const char = [...replacement][0];
-			for (const rule of rules) {
-				if (rule.test(str)) {
-					str = char ? str.replace(rule, m => {
-						const len = [...m].length;
-						return char.repeat(len);
-					}) : str.replace(rule, '');
-					done = true;
-				}
-			}
-			break;
-		}
+export const escapeRegExp = str => str.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Refreshes the regular expression list from the original list.
+ * @param {RegExp[]} reList regular expression list
+ * @param {object} opt
+ * @param {boolean} opt.regexp whether the original list is regular expression
+ * @param {string[]} opt.plainList original list
+ */
+export function refreshWordsList(reList, { regexp, plainList }) {
+	reList.length = 0;
+	if (regexp) {
+		for (const s of plainList) reList.push(new RegExp(s, 'g'));
+	} else if (plainList.length > 0) {
+		const re = new RegExp(plainList.map(escapeRegExp).join('|'), 'g');
+		reList.push(re);
 	}
-	return { value: str, done };
 }
 
 /**
@@ -119,30 +90,4 @@ export function getColorRGB(long) {
 	/** @type {string[]} */
 	const separated = long.toString(16).match(/[0-9a-f]{2}/g) || [];
 	return separated.map(hex => Number.parseInt(hex, 16)).slice(1);
-}
-
-/**
- * Converts CSS color value from short hex-format or rgb()-format to normal hex-format.
- * @param {string} css short hex-format or rgb()-format color value (e.g. `#abc`, `rgb(0, 128, 255)`)
- * @param {string} [inherit='#ffffff'] default value
- * @returns {string} normal hex-format color (e.g. `#123456`)
- */
-export function formatHexColor(css, inherit = '#ffffff') {
-	const color = css.trim();
-	if (color.startsWith('#')) {
-		if (color.length > 6) {
-			return color.slice(0, 7);
-		} else if (color.length > 3) {
-			const [_, r, g, b] = color;
-			return '#' + [r, g, b].map(s => s + s).join('');
-		}
-	} else if (color.startsWith('rgb')) {
-		const [_, r, g, b] = color.match(/(\d+),?\s*(\d+),?\s*(\d+)/) || [];
-		if (_) {
-			/** @type {(s: string) => string} */
-			const dec2hex = s => Number.parseInt(s, 10).toString(16).padStart(2, '0');
-			return '#' + [r, g, b].map(dec2hex).join('');
-		}
-	}
-	return inherit;
 }
