@@ -223,7 +223,7 @@ export class LiveChatController {
 		}
 
 		for (const [prop, value] of Object.entries(s.styles)) {
-			le.style.setProperty('--yt-lcf-' + prop.replace(/_/g, '-'), value);
+			le.style.setProperty(`--yt-lcf-${prop.replace(/_/g, '-')}`, value);
 			/** @type {HTMLInputElement?} */
 			const input = form.querySelector(`input.styles[name="${prop}"]`);
 			if (input) {
@@ -268,31 +268,39 @@ export class LiveChatController {
 	 */
 	#applyPartSetting(cb, type) {
 		const le = this.layer.element;
+		const kebab = type.replace(/_/g, '-');
 		const part = s.parts[type];
-		// @ts-expect-error
-		cb.checked = part[cb.value];
 		switch (cb.value) {
-			case 'color': {
-				// @ts-expect-error
-				const saved = part.color;
-				if (saved) le.style.setProperty(`--yt-lcf-${type.replace(/_/g, '-')}-color`, saved);
-				else le.style.removeProperty(`--yt-lcf-${type.replace(/_/g, '-')}-color`);
-				const picker = /** @type {HTMLInputElement?} */ (cb.parentElement?.nextElementSibling);
-				if (picker) picker.value = saved || formatHexColor(getComputedStyle(le).getPropertyValue('--yt-lcf-' + picker.name.replace(/_/g, '-')));
+			case 'color': if ('color' in part) {
+				cb.checked = part.color + part.strokeColor !== '';
+				const fillProp = `--yt-lcf-${kebab}-color`;
+				const strokeProp = `--yt-lcf-${kebab}-stroke-color`;
+				if (part.color) le.style.setProperty(fillProp, part.color);
+				else le.style.removeProperty(fillProp);
+				if (part.strokeColor) le.style.setProperty(strokeProp, part.strokeColor);
+				else le.style.removeProperty(strokeProp);
+
+				const computed = getComputedStyle(le);
+				const fillPicker = /** @type {HTMLInputElement?} */ (cb.parentElement?.nextElementSibling);
+				if (fillPicker) fillPicker.value = part.color || formatHexColor(computed.getPropertyValue(fillProp), '#fff');
+				const strokePicker = /** @type {HTMLInputElement?} */ (fillPicker?.nextElementSibling);
+				if (strokePicker) strokePicker.value = part.strokeColor || formatHexColor(computed.getPropertyValue(strokeProp), '#000');
 				break;
 			}
 			// biome-ignore lint/suspicious/noFallthroughSwitchClause: To use default case
 			case 'name': {
 				const div = /** @type {HTMLDivElement} */ (cb.closest('div'));
-				if (cb.checked) div.classList.add('outlined');
+				if (part.name) div.classList.add('outlined');
 				cb.addEventListener('change', () => {
-					const method = cb.checked ? 'add' : 'remove';
+					const method = part.name ? 'add' : 'remove';
 					div.classList[method]('outlined');
 					le.classList[method](`has-${type}-name`);
 				}, { passive: true });
 			}
 			default: {
-				le.style.setProperty(`--yt-lcf-${type.replace(/_/g, '-')}-display-${cb.value}`, cb.checked ? 'inline' : 'none');
+				// @ts-expect-error
+				cb.checked = part[cb.value];
+				le.style.setProperty(`--yt-lcf-${kebab}-display-${cb.value}`, cb.checked ? 'inline' : 'none');
 			}
 		}
 	}

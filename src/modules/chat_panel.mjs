@@ -507,7 +507,7 @@ export class LiveChatPanel {
 					case 'max_width': layer.updateCurrentItemStyle();
 				}
 				// @ts-expect-error
-				le.style.setProperty('--yt-lcf-' + name.replace(/_/g, '-'), s.styles[name]);
+				le.style.setProperty(`--yt-lcf-${name.replace(/_/g, '-')}`, s.styles[name]);
 			}
 		} else if (name.startsWith('stroke_')) {
 			// @ts-expect-error
@@ -517,22 +517,27 @@ export class LiveChatPanel {
 		} else if (name.endsWith('_display')) {
 			const match = name.match(/^(.+)_display$/);
 			if (match && elem.tagName === 'INPUT') {
-				const [_, type] = match;
-				if (type in s.parts && le) {
-					if (elem.value !== 'color') {
+				const input = /** @type {HTMLInputElement} */ (elem);
+				const [_, _type] = match;
+				if (_type in s.parts && le) {
+					const type = /** @type {keyof typeof s.parts} */ (_type);
+					if (input.value !== 'color') {
 						// @ts-expect-error
-						s.parts[type][elem.value] = /** @type {HTMLInputElement} */ (elem).checked;
-						le.style.setProperty('--yt-lcf-' + name.replace(/_/g, '-') + '-' + elem.value, /** @type {HTMLInputElement} */ (elem).checked ? 'inherit' : 'none');
-					} else {
-						if (/** @type {HTMLInputElement} */ (elem).checked) {
-							// @ts-expect-error
-							s.parts[type].color = /** @type {HTMLInputElement?} */ (ctrls[type + '_color'])?.value;
-							// @ts-expect-error
-							le.style.setProperty('--yt-lcf-' + type.replace(/_/g, '-') + '-color', s.parts[type].color || 'inherit');
+						s.parts[type][input.value] = input.checked;
+						le.style.setProperty(`--yt-lcf-${name.replace(/_/g, '-')}-${input.value}`, input.checked ? 'inherit' : 'none');
+					} else if (type !== 'paid_sticker') {
+						const kebab = type.replace(/_/g, '-');
+						const fillProp = `--yt-lcf-${kebab}-color`;
+						const strokeProp = `--yt-lcf-${kebab}-stroke-color`;
+						if (input.checked) {
+							s.parts[type].color = /** @type {HTMLInputElement?} */ (ctrls[`${type}_color`])?.value || '';
+							s.parts[type].strokeColor = /** @type {HTMLInputElement?} */ (ctrls[`${type}_strokeColor`])?.value || '';
+							le.style.setProperty(fillProp, s.parts[type].color || 'unset');
+							le.style.setProperty(strokeProp, s.parts[type].strokeColor || 'unset');
 						} else {
-							// @ts-expect-error
-							s.parts[type].color = null;
-							le.style.removeProperty('--yt-lcf-' + type.replace(/_/g, '-') + '-color');
+							s.parts[type].color = s.parts[type].strokeColor = '';
+							le.style.removeProperty(fillProp);
+							le.style.removeProperty(strokeProp);
 						}
 					}
 					// @ts-expect-error
@@ -540,19 +545,27 @@ export class LiveChatPanel {
 					layer.updateCurrentItemStyle(type);
 				}
 			}
-		} else if (name.endsWith('_color')) {
-			const match = name.match(/^(.+)_color$/);
+		} else if (name.endsWith('_color') || name.endsWith('_strokeColor')) {
+			const match = name.match(/^(.+)_(?:color|strokeColor)$/);
 			if (match) {
-				const [_, type] = match;
-				if (/** @type {HTMLInputElement?} */ (elem.previousElementSibling?.firstElementChild)?.checked) {
-					// @ts-expect-error
-					s.parts[type].color = /** @type {HTMLInputElement?} */ (ctrls[type + '_color'])?.value;
-					// @ts-expect-error
-					le.style.setProperty('--yt-lcf-' + type.replace('_', '-') + '-color', s.parts[type].color || 'inherit');
-				} else {
-					// @ts-expect-error
-					s.parts[type].color = null;
-					le.style.removeProperty('--yt-lcf-' + type.replace('_', '-') + '-color');
+				const [_, _type] = match;
+				const type = /** @type {keyof typeof s.parts} */ (_type);
+				if (type !== 'paid_sticker') {
+					const kebab = type.replace(/_/g, '-');
+					const fillProp = `--yt-lcf-${kebab}-color`;
+					const strokeProp = `--yt-lcf-${kebab}-stroke-color`;
+					const cb = /** @type {HTMLInputElement?} */ (elem.previousElementSibling?.firstElementChild);
+					if (cb?.checked) {
+						// @ts-expect-error
+						s.parts[type].color = /** @type {HTMLInputElement?} */ (ctrls[`${type}_color`])?.value;
+						s.parts[type].strokeColor = /** @type {HTMLInputElement?} */ (ctrls[`${type}_strokeColor`])?.value || '';
+						le.style.setProperty(fillProp, s.parts[type].color || 'unset');
+						le.style.setProperty(strokeProp, s.parts[type].strokeColor || 'unset');
+					} else {
+						s.parts[type].color = s.parts[type].strokeColor = '';
+						le.style.removeProperty(fillProp);
+						le.style.removeProperty(strokeProp);
+					}
 				}
 			}
 		} else if (name === 'layer_css') {
