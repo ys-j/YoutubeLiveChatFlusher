@@ -1,6 +1,6 @@
 import { fetchInnerTube } from './innertube.mjs';
 import { store as s } from './store.mjs';
-import { filterMessage, getColorRGB, getText, loadTemplateDocument } from './utils.mjs';
+import { getColorRGB, getText, loadTemplateDocument, refreshWordsList } from './utils.mjs';
 
 /** @enum {string} */
 const AuthorType = Object.freeze({
@@ -34,6 +34,13 @@ const RENDERING_SKIP_KEYS = Object.freeze([
 
 /** @type {RegExp[]} */
 const mutedWordsList = [];
+/** @type {RegExp[]} */
+const tlExclusionList = [];
+
+/** Updates muted words list from settings. */
+export const updateMutedWordsList = () => refreshWordsList(mutedWordsList, s.mutedWords);
+/** Updates translation exceptions list from settings. */
+export const updateTlExclusionList = () => refreshWordsList(tlExclusionList, s.translation);
 
 /**
  * @typedef AuthorInfo
@@ -232,7 +239,7 @@ export async function renderChatItem(item, factory) {
 	const body = new ChatMessageContainer(renderer.message);
 
 	const targetLangIndex = s.others.translation;
-	if (targetLangIndex) {
+	if (targetLangIndex && !tlExclusionList.some(rule => rule.test(body.message))) {
 		const suffix = s.others.suffix_original;
 		const tl = navigator.languages[Math.abs(targetLangIndex) - 1];
 		/** @type {"lazy" | "eager"} */ // @ts-expect-error
@@ -390,22 +397,45 @@ function translateNodesAsync(nodes, target, exceptionLangs) {
 
 export class ChatMessageContainer {
 	/** @type {DocumentFragment | Text} */
-	#original;
-	/** @type {HTMLElement} */
-	#suffixTemplate;
+	#rawNode;
+	/** @type {string?} */
+	#rawText = null;
 	/** @type {Promise<(TranslationResult & { suffix?: string })?>?} */
 	translating = null;
 	
 	lazy = false;
 
+	/** @type {HTMLElement} */
+	static #suffixTemplate = (() => {
+		const el = document.createElement('small');
+		el.classList.add('original');
+		return el;
+	})();
+
 	/**
 	 * @param {LiveChat.RendererContent["message"]} message
 	 */
 	constructor(message) {
-		this.#original = getChatMessage(message);
-		this.#original.normalize();
-		this.#suffixTemplate = document.createElement('small');
-		this.#suffixTemplate.classList.add('original');
+		this.#rawNode = getChatMessage(message);
+		this.#rawNode.normalize();
+		this.#rawText = null;
+	}
+
+	get message() {
+		if (this.#rawText === null) {
+			if (this.#rawNode.nodeType === Node.TEXT_NODE) {
+				this.#rawText = this.#rawNode.textContent;
+			} else {
+				this.#rawText = '';
+				const nodes = this.#rawNode.childNodes;
+				for (let i = 0, l = nodes.length; i < l; i++) {
+					const cn = nodes[i];
+					const isEmoji = cn.nodeType === Node.ELEMENT_NODE && /** @type {Element} */ (cn).classList.contains('emoji');
+					if (!isEmoji) this.#rawText += cn.textContent;
+				}
+			}
+		}
+		return this.#rawText;
 	}
 
 	/**
@@ -415,9 +445,8 @@ export class ChatMessageContainer {
 	 */
 	translate(mode, target, suffix = false) {
 		this.lazy = mode === 'lazy';
-		const srcNodes = this.#original.childNodes;
+		const srcNodes = this.#rawNode.childNodes;
 		const exceptionLangs = navigator.languages.filter((_, i) => s.others.except_lang >>> i & 1);
-		const originalText = this.#getOriginalText();
 
 		this.translating = translateNodesAsync(srcNodes, target, exceptionLangs)
 		.then(results => {
@@ -441,28 +470,14 @@ export class ChatMessageContainer {
 			}
 			/** @type {(s: string) => string} */
 			const format = s => s.normalize('NFKC').toLowerCase().replaceAll(' ', '');
-			const like = format(originalText) === format(combined);
+			const like = format(this.message) === format(combined);
 			if (!freqSrc || freqSrc === target || like) return null;
 			/** @type {TranslationResult & { suffix?: string }} */
 			const res = { sentence: combined, src: freqSrc };
-			if (suffix) res.suffix = originalText;
+			if (suffix) res.suffix = this.message;
 			return res;
 		});
 		return this.lazy ? RESOLVED_NULL : this.translating;
-	}
-
-	#getOriginalText() {
-		if (this.#original.nodeType === Node.TEXT_NODE) {
-			return this.#original.textContent;
-		}
-		let text = '';
-		const nodes = this.#original.childNodes;
-		for (let i = 0, l = nodes.length; i < l; i++) {
-			const cn = nodes[i];
-			const isEmoji = cn.nodeType === Node.ELEMENT_NODE && /** @type {Element} */ (cn).classList.contains('emoji');
-			if (!isEmoji) text += cn.textContent;
-		}
-		return text;
 	}
 
 	/**
@@ -470,43 +485,24 @@ export class ChatMessageContainer {
 	 */
 	async connectTo(element) {
 		if (!this.translating) {
-			element.replaceChildren(this.#original);
+			element.replaceChildren(this.#rawNode);
 			return;
 		}
-		if (this.lazy) element.replaceChildren(this.#original);
+		if (this.lazy) element.replaceChildren(this.#rawNode);
 		const result = await this.translating;
 		if (!result) {
-			if (!this.lazy) element.replaceChildren(this.#original);
+			if (!this.lazy) element.replaceChildren(this.#rawNode);
 			return;
 		}
 		const { sentence, src, suffix } = result;
 		if (suffix) {
-			const small = this.#suffixTemplate.cloneNode(true);
+			const small = ChatMessageContainer.#suffixTemplate.cloneNode(true);
 			small.append(suffix);
 			element.replaceChildren(sentence, small);
 		} else {
 			element.replaceChildren(sentence);
 		}
 		element.setAttribute('data-srclang', src);
-	}
-}
-
-/**
- * Updates muted word list.
- */
-export function updateMutedWordsList() {
-	/** @type { (str: string) => string } */
-	const escapeRegExp = str => str.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
-	const { regexp, plainList } = s.mutedWords;
-	// clear list
-	mutedWordsList.length = 0;
-	if (regexp) {
-		for (const s of plainList) {
-			mutedWordsList.push(new RegExp(s, 'g'));
-		}
-	} else if (plainList.length > 0) {
-		const re = new RegExp(plainList.map(escapeRegExp).join('|'), 'g');
-		mutedWordsList.push(re);
 	}
 }
 
@@ -618,4 +614,54 @@ function getChatMessage(message, options = {}) {
 		}
 	}
 	return rslt;
+}
+
+/**
+ * Gets message filtered according to the rules.
+ * @param {string} str original message
+ * @param {object} [options] filtering options
+ * @param {MutedWordModeEnum} [options.mode] filtering mode
+ * @param {RegExp[]} [options.rules] filtering rules
+ * @param {string} [options.replacement] replacement string
+ * @returns {IteratorResult<string, string>} filtering result
+ */
+function filterMessage(str, options = {}) {
+	let done = false;
+	const mode = options.mode || 0;
+	const rules = options.rules || [];
+	const replacement = options.replacement || '';
+	switch (mode) {
+		case MutedWordModeEnum.ALL: {
+			for (const rule of rules) {
+				if (rule.test(str)) {
+					rule.lastIndex = 0;
+					return { value: '', done: true };
+				}
+			}
+			break;
+		}
+		case MutedWordModeEnum.WORD: {
+			for (const rule of rules) {
+				if (rule.test(str)) {
+					str = str.replace(rule, replacement);
+					done = true;
+				}
+			}
+			break;
+		}
+		case MutedWordModeEnum.CHAR: {
+			const char = [...replacement][0];
+			for (const rule of rules) {
+				if (rule.test(str)) {
+					str = char ? str.replace(rule, m => {
+						const len = [...m].length;
+						return char.repeat(len);
+					}) : str.replace(rule, '');
+					done = true;
+				}
+			}
+			break;
+		}
+	}
+	return { value: str, done };
 }

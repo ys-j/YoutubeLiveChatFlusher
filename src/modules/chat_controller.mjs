@@ -6,7 +6,7 @@ import { isNotPip, loadTemplateDocument, formatHexColor, getColorRGB } from './u
 import { LiveChatLayer } from './chat_layer.mjs'
 import { LiveChatPanel, WrapStyleDefinitions } from './chat_panel.mjs';
 import { LiveChatContextMenu } from './chat_contextmenu.mjs';
-import { LiveChatItemFactory, EmojiModeEnum, renderChatItem, updateMutedWordsList } from './chat_message.mjs';
+import { LiveChatItemFactory, EmojiModeEnum, renderChatItem, updateMutedWordsList, updateTlExclusionList } from './chat_message.mjs';
 import { LiveChatLayoutCache, layoutChatItem } from './chat_layout.mjs';
 
 /** @enum {number} */
@@ -91,6 +91,8 @@ export class LiveChatController {
 		];
 
 		updateMutedWordsList();
+		updateTlExclusionList();
+
 		this.#setupPanel();
 		this.layer.element.style.cssText += '--yt-lcf-layer-css: below;' + s.styles.layer_css;
 		await Promise.allSettled(promises);

@@ -58,56 +58,27 @@ export function getText(message) {
 }
 
 /**
- * Gets message filtered according to the rules.
- * @param {string} str original message
- * @param {object} [options] filtering options
- * @param {number} [options.mode] `0` for no filtering, `1` for all removal, `2` for word replacement, or `3` for character replacement
- * @param {RegExp[]} [options.rules] filtering rules
- * @param {string} [options.replacement] replacement string
- * @returns {IteratorResult<string, string>} filtering result
+ * Escapes the text in order to convert into regular expression.
+ * @param {string} str plain text
+ * @returns escaped text
  */
-export function filterMessage(str, options = {}) {
-	let done = false;
-	const mode = options.mode || 0;
-	const rules = options.rules || [];
-	const replacement = options.replacement || '';
-	switch (mode) {
-		// g.index.mutedWords.all
-		case 1: {
-			for (const rule of rules) {
-				if (rule.test(str)) {
-					rule.lastIndex = 0;
-					return { value: '', done: true };
-				}
-			}
-			break;
-		}
-		// g.index.mutedWords.word
-		case 2: {
-			for (const rule of rules) {
-				if (rule.test(str)) {
-					str = str.replace(rule, replacement);
-					done = true;
-				}
-			}
-			break;
-		}
-		// g.index.mutedWords.char
-		case 3: {
-			const char = [...replacement][0];
-			for (const rule of rules) {
-				if (rule.test(str)) {
-					str = char ? str.replace(rule, m => {
-						const len = [...m].length;
-						return char.repeat(len);
-					}) : str.replace(rule, '');
-					done = true;
-				}
-			}
-			break;
-		}
+export const escapeRegExp = str => str.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Refreshes the regular expression list from the original list.
+ * @param {RegExp[]} reList regular expression list
+ * @param {object} opt
+ * @param {boolean} opt.regexp whether the original list is regular expression
+ * @param {string[]} opt.plainList original list
+ */
+export function refreshWordsList(reList, { regexp, plainList }) {
+	reList.length = 0;
+	if (regexp) {
+		for (const s of plainList) reList.push(new RegExp(s, 'g'));
+	} else if (plainList.length > 0) {
+		const re = new RegExp(plainList.map(escapeRegExp).join('|'), 'g');
+		reList.push(re);
 	}
-	return { value: str, done };
 }
 
 /**
