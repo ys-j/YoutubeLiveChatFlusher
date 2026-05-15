@@ -142,10 +142,8 @@ function placeChatItemDensely(el, cache) {
 		el.style[dir] = `${y * lhf}em`;
 		el.setAttribute('data-line', `${y}`);
 		layout = new ChatLayoutInfo(el, y);
-		const overflow = layout.isOverflow(parentRect);
-		if (overflow) continue;
-		const collidable = cache.anyCollides(layout, reversed);
-		if (collidable) continue;
+		if (layout.isOverflow(parentRect)) continue;
+		if (cache.anyCollides(layout, reversed)) continue;
 		el.style.visibility = '';
 		cache.set(el.id, layout);
 		return el.id;
@@ -159,7 +157,7 @@ function placeChatItemDensely(el, cache) {
 	y = cache.maps.reduce((pi, cv, ci, arr) => cv.size < arr[pi].size ? ci : pi, 0);
 	el.setAttribute('data-line', `${y}`);
 	layout = new ChatLayoutInfo(el, y);
-	const len = [...cache.maps[y].values().filter(layout => layout.isCollidable(layout))].length || 1;
+	const len = cache.maps[y].values().filter(other => layout.isCollidable(other, reversed)).toArray().length || 1;
 	el.style.top = `${(y + dy) * lhf}em`;
 	el.style.opacity = `${Math.max(.5, o ** len)}`;
 	el.style.zIndex = `-${len}`;
@@ -189,15 +187,11 @@ function placeChatItemRandomly(el, cache) {
 		el.style[dir] = `${y * lhf}em`;
 		el.setAttribute('data-line', `${y}`);
 		layout = new ChatLayoutInfo(el, y);
-		const overflow = layout.isOverflow(parentRect);
-		if (overflow) {
-			for (let i = y; i < overline; i++) {
-				calculatedLine.delete(i);
-			}
+		if (layout.isOverflow(parentRect)) {
+			for (let i = y; i < overline; i++) calculatedLine.delete(i);
 			continue;
 		}
-		const collidable = cache.anyCollides(layout, reversed);
-		if (collidable) {
+		if (cache.anyCollides(layout, reversed)) {
 			calculatedLine.delete(y);
 			continue;
 		}
@@ -253,13 +247,14 @@ class ChatLayoutInfo {
 	get bottom() {
 		return this.#rect.bottom;
 	}
-	get left() {
+
+	getLeft(factor = 1) {
 		const elapsed = Date.now() - this.createdOn;
-		return this.#rect.left - this.speed * elapsed;
+		return this.#rect.left - this.speed * elapsed * factor;
 	}
-	get right() {
+	getRight(factor = 1) {
 		const elapsed = Date.now() - this.createdOn;
-		return this.#rect.right - this.speed * elapsed;
+		return this.#rect.right - this.speed * elapsed * factor;
 	}
 
 	/**
@@ -270,15 +265,11 @@ class ChatLayoutInfo {
 	 */
 	isCollidable(before, reversed = false) {
 		if (before.top <= this.top && this.top < before.bottom) {
-			if (reversed ? before.left <= this.right : this.left <= before.right) {
-				return true;
-			} else if (before.duration <= this.duration && before.width >= this.width) {
-				return false;
-			} else {
-				const speedDiff = this.width / this.duration - before.width / before.duration;
-				const posDiff = reversed ? before.left - this.right : this.left - before.right;
-				return posDiff < speedDiff * Math.min(before.duration, this.duration);
-			}
+			const posDiff = reversed ? before.getLeft(-1) - this.getRight(-1) : this.getLeft() - before.getRight();
+			if (posDiff <= 0) return true;
+			const speedDiff = this.speed - before.speed;
+			if (speedDiff <= 0) return false;
+			return posDiff < speedDiff * Math.min(before.duration, this.duration);
 		} else {
 			return false;
 		}

@@ -293,8 +293,8 @@ export class LiveChatController {
 			case 'name': {
 				const div = /** @type {HTMLDivElement} */ (cb.closest('div'));
 				if (part.name) div.classList.add('outlined');
-				cb.addEventListener('change', () => {
-					const method = part.name ? 'add' : 'remove';
+				cb.addEventListener('change', e => {
+					const method = /** @type {HTMLInputElement} */ (e.target).checked ? 'add' : 'remove';
 					div.classList[method]('outlined');
 					le.classList[method](`has-${type}-name`);
 				}, { passive: true });
