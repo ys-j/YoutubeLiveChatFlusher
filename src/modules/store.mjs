@@ -1,5 +1,3 @@
-/// <reference path="../../types/browser.d.ts" />
-
 export const DEFAULT_CONFIG = Object.freeze({
 	styles: {
 		animation_duration: '8s',

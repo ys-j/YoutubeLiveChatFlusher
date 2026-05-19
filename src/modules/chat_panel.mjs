@@ -554,10 +554,9 @@ export class LiveChatPanel {
 					const kebab = type.replace(/_/g, '-');
 					const fillProp = `--yt-lcf-${kebab}-color`;
 					const strokeProp = `--yt-lcf-${kebab}-stroke-color`;
-					const cb = /** @type {HTMLInputElement?} */ (elem.previousElementSibling?.firstElementChild);
+					const cb = Array.from(/** @type {RadioNodeList?} */ (ctrls[`${type}_display`]) || []).findLast(i => i.value === 'color');
 					if (cb?.checked) {
-						// @ts-expect-error
-						s.parts[type].color = /** @type {HTMLInputElement?} */ (ctrls[`${type}_color`])?.value;
+						s.parts[type].color = /** @type {HTMLInputElement?} */ (ctrls[`${type}_color`])?.value || '';
 						s.parts[type].strokeColor = /** @type {HTMLInputElement?} */ (ctrls[`${type}_strokeColor`])?.value || '';
 						le.style.setProperty(fillProp, s.parts[type].color || 'unset');
 						le.style.setProperty(strokeProp, s.parts[type].strokeColor || 'unset');

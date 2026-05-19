@@ -1,5 +1,3 @@
-/// <reference path="../../types/ytlivechatrenderer.d.ts" />
-
 import { store as s } from './store.mjs';
 import { isNotPip, loadTemplateDocument, getColorRGB } from './utils.mjs';
 

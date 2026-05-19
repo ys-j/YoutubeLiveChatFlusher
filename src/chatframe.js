@@ -1,6 +1,4 @@
-/// <reference path="../types/browser.d.ts" />
-/// <reference path="../types/extends.d.ts" />
-
+// @ts-expect-error
 self.browser ??= chrome;
 
 const isLive = location.pathname === '/live_chat';

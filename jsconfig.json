@@ -1,0 +1,14 @@
+{
+	"compilerOptions": {
+		"module": "esnext",
+		"target": "esnext",
+		"checkJs": true,
+		"experimentalDecorators": true,
+		"types": [
+			"chrome",
+			"dom-chromium-ai",
+			"webextension-polyfill",
+		]
+	},
+	"include": ["src/**/*", "types/*"]
+}

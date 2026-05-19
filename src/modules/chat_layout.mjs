@@ -1,4 +1,3 @@
-/// <reference lib="esnext" />
 import { store as s } from './store.mjs';
 
 export class LiveChatLayoutCache {

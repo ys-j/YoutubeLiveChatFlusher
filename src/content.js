@@ -1,6 +1,4 @@
-/// <reference path="../types/browser.d.ts" />
-/// <reference path="../types/extends.d.ts" />
-
+// @ts-expect-error
 self.browser ??= chrome;
 
 const isNotPip = () => !self.documentPictureInPicture?.window;
@@ -50,6 +48,7 @@ document.addEventListener('yt-action', e => {
 
 async function checkAutoStart() {
 	const store = await browser.storage.local.get('others');
+	// @ts-expect-error
 	const enabled = store?.others?.autostart;
 	if (!enabled) return false;
 

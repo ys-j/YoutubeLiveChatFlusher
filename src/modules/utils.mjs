@@ -1,7 +1,3 @@
-/// <reference path="../../types/browser.d.ts" />
-/// <reference path="../../types/extends.d.ts" />
-/// <reference path="../../types/ytlivechatrenderer.d.ts" />
-
 /**
  * Checks if now in PiP-mode
  * @returns {boolean} if not PiP-mode now
