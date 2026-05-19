@@ -1,5 +1,3 @@
-/// <reference path="../../types/extends.d.ts" />
-
 import { loadTemplateDocument } from './utils.mjs';
 
 const menuFns = {

@@ -1,8 +1,6 @@
-/// <reference path="../types/browser.d.ts" />
-/// <reference path="../types/extends.d.ts" />
-
 import { LanguageDetectionController, TranslatorController } from './modules/translator.mjs';
 
+//@ts-expect-error
 self.browser ??= chrome;
 
 const manifest = browser.runtime.getManifest();
@@ -45,14 +43,14 @@ const detector = new LanguageDetectionController();
 let translationController = null;
 
 browser.storage.local.get('translation').then(s => {
-	/** @type {typeof import("./modules/store.mjs").DEFAULT_CONFIG.translation} */
-	const { translator, url } = s.translation;
+	const { translator, url } = /** @type {typeof import("./modules/store.mjs").DEFAULT_CONFIG.translation} */ (s.translation);
 	translationController = new TranslatorController(/** @type {"internal" | "external"} */ (translator ?? 'internal'), url);
 });
 
-browser.runtime.onMessage.addListener((message, _sender, respond) => {
+browser.runtime.onMessage.addListener((_message, _sender, respond) => {
+	const message = /** @type {Record<string, any>} */ (_message);
 	if ('detection' in message) {
-		/** @type {Record<string, string>} */
+		/** @type {Record<string, string>} */ 
 		const { text } = message.detection;
 		(detector.isReady ? Promise.resolve() : detector.ready())
 		.then(() => detector.detect(text))
@@ -66,7 +64,6 @@ browser.runtime.onMessage.addListener((message, _sender, respond) => {
 			: detector.detect(text).then(d => d.isReliable && d.source || 'auto')
 		)
 		.then(sl => translationController?.translate(text, tl, sl))
-		// @ts-expect-error
 		.then(respond);
 	} else if ('fire' in message) {
 		events[message.fire]?.()?.then(respond);
