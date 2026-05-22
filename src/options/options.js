@@ -1,8 +1,4 @@
-/// <reference path="../../types/browser.d.ts" />
-
 import { store as s } from '../modules/store.mjs';
-
-self.browser ??= chrome;
 
 const manifest = browser.runtime.getManifest();
 document.documentElement.dataset.browser = 'browser_specific_settings' in manifest ? 'firefox' : 'chrome';
@@ -30,6 +26,7 @@ for (const el of i18nPlaceholders) {
 const manifestElems = document.querySelectorAll('[data-manifest]');
 for (const el of manifestElems) {
 	const key = el.dataset.manifest;
+	// @ts-expect-error
 	if (key && key in manifest) el.textContent = manifest[key];
 }
 
@@ -88,6 +85,7 @@ const {
 	hotkey_panel,
 	autostart,
 	message_pause,
+	person_detection,
 	translation_blacklist_regexp,
 	translation_blacklist,
 	translation_translator,
@@ -102,12 +100,15 @@ s.load().then(() => {
 	// autostart
 	autostart.value = s.others.autostart.toString();
 
-	// message pause
-	message_pause.value = s.others.message_pause.toString();
-
 	// hotkeys
 	hotkey_layer.value = s.hotkeys.layer;
 	hotkey_panel.value = s.hotkeys.panel;
+
+	// message pause
+	message_pause.value = s.others.message_pause.toString();
+
+	// person detection
+	person_detection.value = s.others.person_detection.toString();
 
 	// translation
 	/** @type {HTMLInputElement} */
@@ -125,6 +126,13 @@ form.addEventListener('change', () => {
 
 form.addEventListener('submit', async e => {
 	e.preventDefault();
+	if (Number.parseInt(person_detection.value, 10) > 0) {
+		/** @type { { permissions: ["trialML"] } } */
+		const permission = { permissions: ['trialML'] };
+		const granted = await browser.permissions.request(permission);
+		if (!granted) person_detection.value = '0';
+	}
+
 	const config = {
 		/** @type {Partial<typeof s.data.others>} */
 		others: {
@@ -132,6 +140,7 @@ form.addEventListener('submit', async e => {
 			mode_replay: Number.parseInt(mode_replay.value, 10),
 			autostart: Number.parseInt(autostart.value, 10),
 			message_pause: Number.parseInt(message_pause.value, 10),
+			person_detection: Number.parseInt(person_detection.value, 10),
 		},
 		/** @type {Partial<typeof s.data.hotkeys>} */
 		hotkeys: {

@@ -12,13 +12,13 @@ export class LanguageDetectionController {
 		'ja': /[\p{Script=Hiragana}\p{Script=Katakana}\uFF61-\uFF9F]/u,
 		'ko': /[\p{Script=Hangul}]/u,
 	});
-	/** @type {LanguageDetectorSession?} */ #detector = null;
+	/** @type {LanguageDetector?} */ #detector = null;
 	isReady = false;
 
 	async ready() {
-		const availability = await self.LanguageDetector?.availability();
+		const availability = 'LanguageDetector' in self ? await LanguageDetector.availability() : null;
 		if (availability === 'available') {
-			const session = await self.LanguageDetector.create();
+			const session = await LanguageDetector.create();
 			if (session) this.#detector = session;
 		}
 		this.isReady = true;
@@ -36,14 +36,11 @@ export class LanguageDetectionController {
 			}
 		}
 		if (this.#detector) {
-			const result = await this.#detector.detect(text);
-			const firstResult = result.at(0);
-			if (firstResult && firstResult.confidence > .9) {
-				return {
-					source: firstResult.detectedLanguage,
-					isReliable: true,
-				};
-			}
+			const results = await this.#detector.detect(text);
+			const r = results.at(0);
+			const isReliable = (r?.confidence || 0) > .9;
+			const source = r?.detectedLanguage;
+			if (isReliable && source) return { source, isReliable };
 		}
 		const result = await browser.i18n.detectLanguage(text);
 		return {
@@ -109,7 +106,7 @@ class TranslationCache {
 
 
 export class TranslatorController {
-	/** @type {Map<string, TranslatorSession | ExternalTranslatorSession>} */
+	/** @type {Map<string, Translator | ExternalTranslator>} */
 	#translators = new Map();
 	/** @type {TranslationCache} */
 	#cache;
@@ -124,7 +121,7 @@ export class TranslatorController {
 	 */
 	constructor(mode, url, options) {
 		this.mode = mode;
-		this.url = url ?? ExternalTranslatorSession.DEFAULT_URL;
+		this.url = url ?? ExternalTranslator.DEFAULT_URL;
 		this.options = Object.assign({
 			cache: { capacity: 100, maxLength: 10 },
 		}, options);
@@ -157,9 +154,9 @@ export class TranslatorController {
 
 		let skip = false;
 		if (this.mode === 'internal' && sl !== 'auto' && 'Translator' in self) {
-			const availability = await self.Translator.availability(options);
+			const availability = await Translator.availability(options);
 			if (availability === 'available') {
-				const translator = await self.Translator.create(options);
+				const translator = await Translator.create(options);
 				this.#translators.set(key, translator);
 				return {
 					sentence: await translator.translate(text),
@@ -170,12 +167,12 @@ export class TranslatorController {
 				if (availability === 'downloading') skip = true;
 			}
 		}
-		translator = new ExternalTranslatorSession({ url: this.url, ...options });
+		translator = new ExternalTranslator({ url: this.url, ...options });
 		if (!skip) this.#translators.set(key, translator);
 
 		/** @type {Promise<TranslationResult>} */
 		const req = translator.translate(text)
-		.then(sentence => ({ sentence, src: /** @type {ExternalTranslatorSession} */ (translator).lastSrc }))
+		.then(sentence => ({ sentence, src: /** @type {ExternalTranslator} */ (translator).lastSrc }))
 		.catch(reason => {
 			this.#cache.delete(tl, text);
 			throw reason;
@@ -201,7 +198,7 @@ export class TranslatorController {
 }
 
 
-class ExternalTranslatorSession {
+class ExternalTranslator {
 	static DEFAULT_URL = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=$sl&tl=$tl&dt=t&dt=bd&dj=1&q=$q';
 
 	/** @type {string?} */ #q = null;
@@ -218,7 +215,7 @@ class ExternalTranslatorSession {
 				throw `Translator URL has no $q token: ${options.url}`;
 			}
 		} catch {
-			this.url = new URL(ExternalTranslatorSession.DEFAULT_URL);
+			this.url = new URL(ExternalTranslator.DEFAULT_URL);
 			this.#setParams(options);
 		}
 	}

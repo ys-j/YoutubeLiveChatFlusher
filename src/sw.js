@@ -42,22 +42,52 @@ const detector = new LanguageDetectionController();
 /** @type {TranslatorController?} */
 let translationController = null;
 
-browser.storage.local.get('translation').then(s => {
+let isReadyPersonDetection = false;
+
+browser.storage.local.get(['translation', 'others']).then(async s => {
 	const { translator, url } = /** @type {typeof import("./modules/store.mjs").DEFAULT_CONFIG.translation} */ (s.translation);
 	translationController = new TranslatorController(/** @type {"internal" | "external"} */ (translator ?? 'internal'), url);
+
+	const { person_detection } = /** @type {typeof import("./modules/store.mjs").DEFAULT_CONFIG.others} */ (s.others);
+	if (person_detection > 0 && manifest.optional_permissions?.includes('trialML')) {
+		/** @type { { permissions: ["trialML"] } } */
+		const permissions = { permissions: ['trialML'] };
+		const granted = await browser.permissions.contains(permissions);
+		if (granted) {
+			if (browser.trial?.ml) {
+				const req = {
+					modelHub: 'huggingface',
+					taskName: 'image-segmentation',
+					modelId: 'onnx-community/mediapipe_selfie_segmentation',
+					dtype: 'fp32',
+					device: 'gpu',
+				};
+				browser.trial.ml.createEngine(req).then(res => {
+					console.info('Successfully created the MLEngine:', req);
+					isReadyPersonDetection = true;
+				}, () => {
+					console.error('Failed to create the MLEngine:', req);
+				});
+			} else {
+				console.warn('WebExtensions AI API is not supported.');
+			}
+		} else {
+			console.warn('Permission "trialML" was rejected.');
+		}
+	}
 });
 
 browser.runtime.onMessage.addListener((_message, _sender, respond) => {
-	const message = /** @type {Record<string, any>} */ (_message);
-	if ('detection' in message) {
+	const msg = /** @type {Record<string, any>} */ (_message);
+	if ('detection' in msg) {
 		/** @type {Record<string, string>} */ 
-		const { text } = message.detection;
+		const { text } = msg.detection;
 		(detector.isReady ? Promise.resolve() : detector.ready())
 		.then(() => detector.detect(text))
 		.then(respond);
-	} else if ('translation' in message) {
+	} else if ('translation' in msg) {
 		/** @type {Record<string, string>} */
-		const { text, source, target: tl } = message.translation;
+		const { text, source, target: tl } = msg.translation;
 		(
 			source
 			? Promise.resolve(source)
@@ -65,8 +95,14 @@ browser.runtime.onMessage.addListener((_message, _sender, respond) => {
 		)
 		.then(sl => translationController?.translate(text, tl, sl))
 		.then(respond);
-	} else if ('fire' in message) {
-		events[message.fire]?.()?.then(respond);
+	} else if ('mask' in msg && isReadyPersonDetection) {
+		const blob = msg.mask;
+		browser.trial.ml.runEngine({ args: [ blob ] })
+		.then(respond)
+		.catch(console.warn)
+		.then(respond);
+	} else if ('fire' in msg) {
+		events[msg.fire]?.()?.then(respond);
 	}
 	return true;
 });

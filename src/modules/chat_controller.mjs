@@ -1,7 +1,7 @@
 import { store as s } from './store.mjs';
 import { isNotPip, loadTemplateDocument, getColorRGB } from './utils.mjs';
 
-import { LiveChatLayer } from './chat_layer.mjs'
+import { LiveChatLayer, VideoSegmentationExecutor } from './chat_layer.mjs'
 import { LiveChatPanel, WrapStyleDefinitions } from './chat_panel.mjs';
 import { LiveChatContextMenu } from './chat_contextmenu.mjs';
 import { LiveChatItemFactory, EmojiModeEnum, renderChatItem, updateMutedWordsList, updateTlExclusionList } from './chat_message.mjs';
@@ -17,6 +17,9 @@ export const SimultaneousModeEnum = Object.freeze({
 
 export class LiveChatController {
 	#skip = false;
+
+	/** @type {?VideoSegmentationExecutor} */
+	segmenter = null;
 
 	/**
 	 * @param {HTMLElement} player YouTube player element
@@ -65,8 +68,10 @@ export class LiveChatController {
 	}
 
 	async start() {
-		const videoContainer = this.player.querySelector('#movie_player video')?.parentElement;
-		if (!videoContainer) {
+		/** @type {?HTMLVideoElement} */
+		const video = this.player.querySelector('#movie_player video');
+		const videoContainer = video?.parentElement;
+		if (!video || !videoContainer) {
 			return Promise.reject('No video container element.');
 		}
 
@@ -94,6 +99,7 @@ export class LiveChatController {
 		this.#setupPanel();
 		this.layer.element.style.cssText += '--yt-lcf-layer-css: below;' + s.styles.layer_css;
 		await Promise.allSettled(promises);
+		this.#startSendingFrame(video);
 	}
 
 	async #setupViewerStyle() {
@@ -420,6 +426,58 @@ export class LiveChatController {
 
 		/** @type {HTMLInputElement} */ (ctrls.muted_words_replacement).value = s.mutedWords.replacement;
 		/** @type {HTMLTextAreaElement} */ (ctrls.muted_words_list).value = s.mutedWords.plainList.join('\n');
+	}
+
+	/**
+	 * @param {HTMLVideoElement} video 
+	 */
+	#startSendingFrame(video) {
+		if (s.others.person_detection > 0) {
+			const canvas = document.createElement('canvas');
+			const ctx = canvas.getContext('bitmaprenderer');
+			if (!ctx) {
+				console.warn('ImageBitmapRenderingContext is not supported.');
+				return;
+			}
+			canvas.id = 'yt-lcf-mask-canvas';
+			canvas.style.pointerEvents = 'none';
+			canvas.style.position = 'absolute';
+			canvas.style.visibility = 'hidden';
+
+			[canvas.width, canvas.height] = VideoSegmentationExecutor.getTargetSize(video);
+			let imageData = new ImageData(canvas.width, canvas.height);
+			let u32data = new Uint32Array(imageData.data.buffer);
+
+			this.segmenter = new VideoSegmentationExecutor(async res => {
+				const mask = res?.at(0)?.mask;
+				if (!mask) return;
+				const { data, width, height } = mask;
+				if (width !== imageData.width || height !== imageData.height) {
+					canvas.width = width;
+					canvas.height = height;
+					imageData = new ImageData(width, height);
+					u32data = new Uint32Array(imageData.data.buffer);
+				}
+				const ALPHA_MASK = 0xFF000000 >>> 0;
+				for (let i = 0, l = data.length; i < l; i++) {
+					const b = data[i];
+					u32data[i] = (ALPHA_MASK | (b << 16) | (b << 8) | b) >>> 0;
+				}
+				const bitmap = await createImageBitmap(imageData);
+				ctx.transferFromImageBitmap(bitmap);
+				bitmap.close();
+			});
+			this.segmenter.observe(video, this.layer);
+
+			const le = this.layer.element;
+			le.style.maskImage = `linear-gradient(#fff, #fff), -moz-element(#${canvas.id})`;
+			le.style.maskMode = 'luminance';
+			le.style.maskPosition = `0px 0px, ${video.style.left} ${video.style.top}`;
+			le.style.maskSize = `100% 100%, ${video.style.width} ${video.style.height}`;
+			le.style.maskRepeat = 'no-repeat, no-repeat';
+			le.style.maskComposite = 'exclude';
+			le.after(canvas);
+		}
 	}
 
 	/**

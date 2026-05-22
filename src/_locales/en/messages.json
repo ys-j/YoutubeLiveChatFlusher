@@ -434,9 +434,6 @@
 	"autostart": {
 		"message": "Automatically open chat frame when watching replays"
 	},
-	"message_pause": {
-		"message": "Animation pausing by right-clicking a message"
-	},
 	"disabled": {
 		"message": "Disable"
 	},
@@ -451,6 +448,12 @@
 	},
 	"hotkey_panel": {
 		"message": "Config Panel"
+	},
+	"message_pause": {
+		"message": "Animation pausing by right-clicking a message"
+	},
+	"person_detection": {
+		"message": "Person Detection (Firefox only, alpha-release)"
 	},
 	"translationBlacklist": {
 		"message": "Translation Exclusion List"

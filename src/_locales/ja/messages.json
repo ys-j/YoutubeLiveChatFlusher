@@ -434,9 +434,6 @@
 	"autostart": {
 		"message": "チャット欄の自動オープン（アーカイブ再生時）"
 	},
-	"message_pause": {
-		"message": "右クリックでメッセージを一時停止"
-	},
 	"disabled": {
 		"message": "しない"
 	},
@@ -451,6 +448,12 @@
 	},
 	"hotkey_panel": {
 		"message": "設定パネル"
+	},
+	"message_pause": {
+		"message": "右クリックでメッセージを一時停止"
+	},
+	"person_detection": {
+		"message": "人物検出（Firefoxのみ・アルファ版）"
 	},
 	"translationBlacklist": {
 		"message": "翻訳NGリスト"

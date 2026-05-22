@@ -37,6 +37,7 @@ export const DEFAULT_CONFIG = Object.freeze({
 		mode_replay: 1,
 		autostart: 0,
 		message_pause: 1,
+		person_detection: 0,
 	},
 	parts: {
 		normal: { photo: false, name: false, message: true, color: '', strokeColor: '' },

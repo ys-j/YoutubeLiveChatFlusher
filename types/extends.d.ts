@@ -64,35 +64,3 @@ interface DocumentPictureInPicture extends EventTarget {
 	requestWindow(options?: DocumentPictureInPictureOptions): Promise<Window>;
 	addEventListener(type: "enter", callback: (evt: DocumentPictureInPictureEvent) => void, options?: AddEventListenerOptions | boolean): void;
 }
-
-type TranslationAvailability = "available" | "downloadable" | "downloading" | "unavailable";
-
-interface LanguageDetectorFactory {
-	availability(options?: { expectedInputLanguages: string[] }): Promise<TranslationAvailability>;
-	create(options?: { expectedInputLanguages: string[] }): Promise<LanguageDetectorSession>;
-}
-
-interface LanguageDetectorSession {
-	detect(input: string, options?: { signal: AbortSignal }): Promise<{ detectedLanguage: string, confidence: number }[]>;
-	destroy(): void;
-}
-
-interface TranslatorCreateCoreOptions {
-	sourceLanguage: string;
-	targetLanguage: string;
-}
-
-interface TranslatorCreateOptions extends TranslatorCreateCoreOptions {
-	monitor?: CreateMonitor;
-	signal?: AbortSignal;
-}
-
-interface TranslatorFactory {
-	availability(options: TranslatorCreateCoreOptions): Promise<TranslationAvailability>;
-	create(options: TranslatorCreateOptions): Promise<TranslatorSession>;
-}
-
-interface TranslatorSession {
-	translate(input: string, options?: { signal: AbortSignal }): Promise<string>;
-	destroy(): void;
-}
