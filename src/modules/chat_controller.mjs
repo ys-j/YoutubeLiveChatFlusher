@@ -432,52 +432,59 @@ export class LiveChatController {
 	 * @param {HTMLVideoElement} video 
 	 */
 	#startSendingFrame(video) {
-		if (s.others.person_detection > 0) {
-			const canvas = document.createElement('canvas');
-			const ctx = canvas.getContext('bitmaprenderer');
-			if (!ctx) {
-				console.warn('ImageBitmapRenderingContext is not supported.');
-				return;
-			}
-			canvas.id = 'yt-lcf-mask-canvas';
-			canvas.style.pointerEvents = 'none';
-			canvas.style.position = 'absolute';
-			canvas.style.visibility = 'hidden';
+		if (!s.others.person_detection) return;
 
-			[canvas.width, canvas.height] = VideoSegmentationExecutor.getTargetSize(video);
-			let imageData = new ImageData(canvas.width, canvas.height);
-			let u32data = new Uint32Array(imageData.data.buffer);
-
-			this.segmenter = new VideoSegmentationExecutor(async res => {
-				const mask = res?.at(0)?.mask;
-				if (!mask) return;
-				const { data, width, height } = mask;
-				if (width !== imageData.width || height !== imageData.height) {
-					canvas.width = width;
-					canvas.height = height;
-					imageData = new ImageData(width, height);
-					u32data = new Uint32Array(imageData.data.buffer);
-				}
-				const ALPHA_MASK = 0xFF000000 >>> 0;
-				for (let i = 0, l = data.length; i < l; i++) {
-					const b = data[i];
-					u32data[i] = (ALPHA_MASK | (b << 16) | (b << 8) | b) >>> 0;
-				}
-				const bitmap = await createImageBitmap(imageData);
-				ctx.transferFromImageBitmap(bitmap);
-				bitmap.close();
-			});
-			this.segmenter.observe(video, this.layer);
-
-			const le = this.layer.element;
-			le.style.maskImage = `linear-gradient(#fff, #fff), -moz-element(#${canvas.id})`;
-			le.style.maskMode = 'luminance';
-			le.style.maskPosition = `0px 0px, ${video.style.left} ${video.style.top}`;
-			le.style.maskSize = `100% 100%, ${video.style.width} ${video.style.height}`;
-			le.style.maskRepeat = 'no-repeat, no-repeat';
-			le.style.maskComposite = 'exclude';
-			le.after(canvas);
+		const canvas = document.createElement('canvas');
+		const ctx = canvas.getContext('bitmaprenderer');
+		if (!ctx) {
+			console.warn('ImageBitmapRenderingContext is not supported.');
+			return;
 		}
+		canvas.id = 'yt-lcf-mask-canvas';
+		canvas.style.pointerEvents = 'none';
+		canvas.style.position = 'absolute';
+		canvas.style.visibility = 'hidden';
+
+		[canvas.width, canvas.height] = VideoSegmentationExecutor.getTargetSize(video);
+		let imageData = new ImageData(canvas.width, canvas.height);
+		let u32data = new Uint32Array(imageData.data.buffer);
+		/** @type {?Uint8ClampedArray} */
+		let prevRecv = null;
+
+		this.segmenter = new VideoSegmentationExecutor(async res => {
+			const mask = res?.at(0)?.mask;
+			if (!mask) return;
+			const { data, width, height } = mask;
+			if (width !== imageData.width || height !== imageData.height) {
+				canvas.width = width;
+				canvas.height = height;
+				imageData = new ImageData(width, height);
+				u32data = new Uint32Array(imageData.data.buffer);
+			}
+			if (!prevRecv || prevRecv.length !== data.length) {
+				prevRecv = new Uint8ClampedArray(data.length);
+			}
+			const ALPHA_MASK = 0xFF000000 >>> 0;
+			const THRESHOLD = 128;
+			for (let i = 0, l = data.length; i < l; i++) {
+				const b = prevRecv[i] * .5 + data[i] * .5 < THRESHOLD ? 0 : 255;
+				u32data[i] = (ALPHA_MASK | (b << 16) | (b << 8) | b) >>> 0;
+				prevRecv[i] = data[i];
+			}
+			const bitmap = await createImageBitmap(imageData);
+			ctx.transferFromImageBitmap(bitmap);
+			bitmap.close();
+		});
+		this.segmenter.observe(video, this.layer);
+
+		const le = this.layer.element;
+		le.style.maskImage = `linear-gradient(#fff, #fff), -moz-element(#${canvas.id})`;
+		le.style.maskMode = 'luminance';
+		le.style.maskPosition = `0px 0px, ${video.style.left} ${video.style.top}`;
+		le.style.maskSize = `100% 100%, ${video.style.width} ${video.style.height}`;
+		le.style.maskRepeat = 'no-repeat, no-repeat';
+		le.style.maskComposite = 'exclude';
+		le.after(canvas);
 	}
 
 	/**

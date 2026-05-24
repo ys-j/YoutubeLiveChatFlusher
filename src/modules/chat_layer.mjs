@@ -200,6 +200,9 @@ export class LiveChatLayer {
  */
 
 export class VideoSegmentationExecutor {
+	/** @type {[number, number]} */
+	static INITIAL_TARGET_SIZE = [256, 144];
+
 	/** @type {SegmentationCallback} */ #callback;
 	/** @type {AbortController} */ #abortController;
 	/** @type {number} */ #callbackId = 0;
@@ -210,7 +213,7 @@ export class VideoSegmentationExecutor {
 	constructor(callback) {
 		this.#callback = callback;
 		this.#abortController = new AbortController();
-		this.offscreen = new OffscreenCanvas(256, 144);
+		this.offscreen = new OffscreenCanvas(...VideoSegmentationExecutor.INITIAL_TARGET_SIZE);
 		this.context = this.offscreen.getContext('bitmaprenderer');
 	}
 
@@ -219,8 +222,8 @@ export class VideoSegmentationExecutor {
 	 * @return {[number, number]} width and height
 	 */
 	static getTargetSize(video) {
+		const [ width, ] = VideoSegmentationExecutor.INITIAL_TARGET_SIZE;
 		const aspectRatio = video.videoWidth / video.videoHeight;
-		const width = 256;
 		return [ width, (width / aspectRatio) | 0 ];
 	}
 

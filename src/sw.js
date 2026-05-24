@@ -1,4 +1,5 @@
 import { LanguageDetectionController, TranslatorController } from './modules/translator.mjs';
+import { MLEngineManager } from './modules/ml_engine.mjs';
 
 //@ts-expect-error
 self.browser ??= chrome;
@@ -42,7 +43,13 @@ const detector = new LanguageDetectionController();
 /** @type {TranslatorController?} */
 let translationController = null;
 
-let isReadyPersonDetection = false;
+const personDetectionEngine = new MLEngineManager({
+	modelHub: 'huggingface',
+	taskName: 'image-segmentation',
+	modelId: 'onnx-community/mediapipe_selfie_segmentation',
+	dtype: 'fp32',
+	device: 'gpu',
+});
 
 browser.storage.local.get(['translation', 'others']).then(async s => {
 	const { translator, url } = /** @type {typeof import("./modules/store.mjs").DEFAULT_CONFIG.translation} */ (s.translation);
@@ -50,30 +57,9 @@ browser.storage.local.get(['translation', 'others']).then(async s => {
 
 	const { person_detection } = /** @type {typeof import("./modules/store.mjs").DEFAULT_CONFIG.others} */ (s.others);
 	if (person_detection > 0 && manifest.optional_permissions?.includes('trialML')) {
-		/** @type { { permissions: ["trialML"] } } */
-		const permissions = { permissions: ['trialML'] };
-		const granted = await browser.permissions.contains(permissions);
-		if (granted) {
-			if (browser.trial?.ml) {
-				const req = {
-					modelHub: 'huggingface',
-					taskName: 'image-segmentation',
-					modelId: 'onnx-community/mediapipe_selfie_segmentation',
-					dtype: 'fp32',
-					device: 'gpu',
-				};
-				browser.trial.ml.createEngine(req).then(res => {
-					console.info('Successfully created the MLEngine:', req);
-					isReadyPersonDetection = true;
-				}, () => {
-					console.error('Failed to create the MLEngine:', req);
-				});
-			} else {
-				console.warn('WebExtensions AI API is not supported.');
-			}
-		} else {
-			console.warn('Permission "trialML" was rejected.');
-		}
+		const granted = await browser.permissions.contains({ permissions: ['trialML'] });
+		if (granted) await personDetectionEngine.ensureReady();
+		else console.warn('Permission "trialML" was rejected.');
 	}
 });
 
@@ -95,12 +81,13 @@ browser.runtime.onMessage.addListener((_message, _sender, respond) => {
 		)
 		.then(sl => translationController?.translate(text, tl, sl))
 		.then(respond);
-	} else if ('mask' in msg && isReadyPersonDetection) {
-		const blob = msg.mask;
-		browser.trial.ml.runEngine({ args: [ blob ] })
+	} else if ('mask' in msg) {
+		personDetectionEngine.run({ args: [ msg.mask ] })
 		.then(respond)
-		.catch(console.warn)
-		.then(respond);
+		.catch(err => {
+			console.warn(err?.message ?? err);
+			respond(null);
+		});
 	} else if ('fire' in msg) {
 		events[msg.fire]?.()?.then(respond);
 	}
