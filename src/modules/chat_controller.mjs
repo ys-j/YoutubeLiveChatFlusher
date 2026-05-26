@@ -33,7 +33,7 @@ export class LiveChatController {
 		this.itemFactory = new LiveChatItemFactory();
 
 		root.addEventListener('contextmenu', e => {
-			/** @type {HTMLElement?} */
+			/** @type {?HTMLElement} */
 			const origin = /** @type {HTMLElement} */ (e.target).closest('[id]');
 			if (origin && s.others.message_pause) {
 				e.preventDefault();
@@ -51,7 +51,7 @@ export class LiveChatController {
 			if (interactiveTags.includes(origin?.tagName || 'BODY')) {
 				e.stopPropagation();
 			} else {
-				/** @type {HTMLElement?} */ (e.target)?.parentElement?.click();
+				/** @type {?HTMLElement} */ (e.target)?.parentElement?.click();
 			}
 		}, { passive: true });
 		root.addEventListener('animationend', e => {
@@ -143,7 +143,7 @@ export class LiveChatController {
 		const [checkbox, popupmenu, pipmenu] = doc.body.children;
 		checkbox.setAttribute('aria-checked', s.others.disabled ? 'false' : 'true');
 		checkbox.addEventListener('click', e => {
-			const cb = /** @type {HTMLElement?} */ (e.currentTarget);
+			const cb = /** @type {?HTMLElement} */ (e.currentTarget);
 			if (!cb) return;
 			const checked = cb.getAttribute('aria-checked') === 'true';
 			cb.setAttribute('aria-checked', (!checked).toString());
@@ -230,7 +230,7 @@ export class LiveChatController {
 
 		for (const [prop, value] of Object.entries(s.styles)) {
 			le.style.setProperty(`--yt-lcf-${prop.replace(/_/g, '-')}`, value);
-			/** @type {HTMLInputElement?} */
+			/** @type {?HTMLInputElement} */
 			const input = form.querySelector(`input.styles[name="${prop}"]`);
 			if (input) {
 				if (input.type === 'number') input.valueAsNumber = Number.parseFloat(value);
@@ -287,9 +287,9 @@ export class LiveChatController {
 				else le.style.removeProperty(strokeProp);
 
 				const computed = getComputedStyle(le);
-				const fillPicker = /** @type {HTMLInputElement?} */ (cb.parentElement?.nextElementSibling);
+				const fillPicker = /** @type {?HTMLInputElement} */ (cb.parentElement?.nextElementSibling);
 				if (fillPicker) fillPicker.value = part.color || computed.getPropertyValue(fillProp) || '#ffffff';
-				const strokePicker = /** @type {HTMLInputElement?} */ (fillPicker?.nextElementSibling);
+				const strokePicker = /** @type {?HTMLInputElement} */ (fillPicker?.nextElementSibling);
 				if (strokePicker) strokePicker.value = part.strokeColor || computed.getPropertyValue(strokeProp) || '#000000';
 				break;
 			}
@@ -405,11 +405,11 @@ export class LiveChatController {
 			if (selector) {
 				if (customCss) customCss.textContent += `:host>${selector}{${css}}`;
 				const name = selector.substring(1) + '_css';
-				const input = /** @type {HTMLInputElement?} */ (ctrls[name]);
+				const input = /** @type {?HTMLInputElement} */ (ctrls[name]);
 				if (input) input.value = css;
 			} else {
 				if (userDefinedCss) userDefinedCss.textContent = css;
-				const textarea = /** @type {HTMLTextAreaElement?} */ (ctrls.user_defined_css);
+				const textarea = /** @type {?HTMLTextAreaElement} */ (ctrls.user_defined_css);
 				if (textarea) textarea.value = css;
 			}
 		}
@@ -511,7 +511,7 @@ export class LiveChatController {
 
 		// Add
 		const sv = s.others.simultaneous;
-		const last = sv === SimultaneousModeEnum.LAST_MERGE ? /** @type {HTMLElement?} */ (root.lastElementChild) : null;
+		const last = sv === SimultaneousModeEnum.LAST_MERGE ? /** @type {?HTMLElement} */ (root.lastElementChild) : null;
 		const bodies = last ? [ `<!-- ${last.className} -->` + (last.getAttribute('data-text') || '') ] : [];
 		const ids = last ? [last.id] : [];
 		/** @type {(el: HTMLElement) => void} */
@@ -535,9 +535,9 @@ export class LiveChatController {
 						ids.push(el.id);
 					} else {
 						const earlier = root.getElementById(ids[index]);
-						/** @type {HTMLElement | null | undefined} */
+						/** @type {?HTMLElement | undefined} */
 						const _name = earlier?.querySelector('.name');
-						/** @type {HTMLSpanElement?} */
+						/** @type {?HTMLSpanElement} */
 						const _photo = el.querySelector('.photo');
 						if (earlier && _name && _photo) {
 							const parent = _photo.parentElement;

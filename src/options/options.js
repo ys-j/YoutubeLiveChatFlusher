@@ -1,5 +1,8 @@
 import { store as s } from '../modules/store.mjs';
 
+// @ts-expect-error
+self.browser ??= chrome;
+
 const manifest = browser.runtime.getManifest();
 document.documentElement.dataset.browser = 'browser_specific_settings' in manifest ? 'firefox' : 'chrome';
 
@@ -72,7 +75,7 @@ initBtn?.addEventListener('click', async () => {
 	location.reload();
 }, { passive: true });
 
-const saveBtn = /** @type {HTMLButtonElement?} */ (document.getElementById('btn-save'));
+const saveBtn = /** @type {?HTMLButtonElement} */ (document.getElementById('btn-save'));
 
 const form = document.forms[0];
 

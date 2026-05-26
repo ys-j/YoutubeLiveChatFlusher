@@ -40,7 +40,7 @@ browser.tabs.onCreated.addListener(tab => {
 
 const detector = new LanguageDetectionController();
 
-/** @type {TranslatorController?} */
+/** @type {?TranslatorController} */
 let translationController = null;
 
 const personDetectionEngine = new MLEngineManager({

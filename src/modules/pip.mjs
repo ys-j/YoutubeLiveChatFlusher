@@ -119,7 +119,7 @@ async function openPip(element) {
 				v.style.width = `${parent.clientWidth|0}px`;
 				v.style.height = 'auto';
 				v.style.top = v.style.left = '0px';
-				/** @type {HTMLElement?} */
+				/** @type {?HTMLElement} */
 				const b = parent.querySelector('.ytp-chrome-bottom');
 				if (b) {
 					const left = Number.parseInt(b.style.left, 10);
@@ -145,17 +145,17 @@ async function openPip(element) {
  * @param {Window} win picture-in-picture window
  */
 function updateProgressBarSize(win) {
-	/** @type {HTMLElement?} */
+	/** @type {?HTMLElement} */
 	const bottomElem = win.document.querySelector('.ytp-chrome-bottom');
 	if (bottomElem) {
 		const left = Number.parseInt(bottomElem.style.left, 10);
 		const bottomWidth = win.innerWidth - left * 2;
 		bottomElem.style.width = `${bottomWidth}px`;
 
-		/** @type {HTMLElement?} */
+		/** @type {?HTMLElement} */
 		const progressBar = bottomElem.querySelector('.ytp-progress-bar');
 		if (progressBar) {
-			/** @type {HTMLElement?} */
+			/** @type {?HTMLElement} */
 			const hoverContainer = bottomElem.querySelector('.ytp-chapter-hover-container');
 			const containerWidth = Number.parseInt(hoverContainer?.style.width || '0', 10);
 			if (containerWidth > 0) {
@@ -163,7 +163,7 @@ function updateProgressBarSize(win) {
 				progressBar.style.transform = `scaleX(${bottomWidth / containerWidth})`;
 			}
 		}
-		/** @type {HTMLElement?} */
+		/** @type {?HTMLElement} */
 		const heatMap = bottomElem.querySelector('.ytp-heat-map-chapter');
 		if (heatMap) {
 			heatMap.style.width = '100%';

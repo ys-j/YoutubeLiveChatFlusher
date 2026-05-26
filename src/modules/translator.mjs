@@ -12,7 +12,7 @@ export class LanguageDetectionController {
 		'ja': /[\p{Script=Hiragana}\p{Script=Katakana}\uFF61-\uFF9F]/u,
 		'ko': /[\p{Script=Hangul}]/u,
 	});
-	/** @type {LanguageDetector?} */ #detector = null;
+	/** @type {?LanguageDetector} */ #detector = null;
 	isReady = false;
 
 	async ready() {
@@ -201,7 +201,7 @@ export class TranslatorController {
 class ExternalTranslator {
 	static DEFAULT_URL = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=$sl&tl=$tl&dt=t&dt=bd&dj=1&q=$q';
 
-	/** @type {string?} */ #q = null;
+	/** @type {?string} */ #q = null;
 	/** @type {string} */ lastSrc = 'und';
 
 	/**

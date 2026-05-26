@@ -10,7 +10,7 @@ const state = {
 	succeeded: true,
 	action: new ReplayActionBuffer(),
 	abortController: new AbortController(),
-	/** @type {LiveChatController?} */
+	/** @type {?LiveChatController} */
 	controller: null,
 
 	reset() {
@@ -67,19 +67,19 @@ export async function initialize(e) {
 		if (e.altKey || e.ctrlKey || e.metaKey) return;
 		switch (e.key) {
 			case store.hotkeys.layer: {
-				const checkbox = /** @type {HTMLElement?} */ (player.querySelector('#yt-lcf-cb'));
+				const checkbox = /** @type {?HTMLElement} */ (player.querySelector('#yt-lcf-cb'));
 				checkbox?.click();
 				break;
 			}
 			case store.hotkeys.panel: {
-				const popupmenu = /** @type {HTMLElement?} */ (player.querySelector('#yt-lcf-pm'));
+				const popupmenu = /** @type {?HTMLElement} */ (player.querySelector('#yt-lcf-pm'));
 				popupmenu?.click();
 				break;
 			}
 		}
 	}, { passive: true });
 
-	/** @type {HTMLVideoElement?} */
+	/** @type {?HTMLVideoElement} */
 	const video = document.querySelector('#movie_player video');
 	video?.addEventListener('ratechange', function () {
 		sessionStorage.setItem('yt-player-playback-rate', `{"data":"${this.playbackRate}"}`);
@@ -132,7 +132,7 @@ async function onYtNavigateFinish(e) {
 
 			const liveChatRenderer = response?.contents?.twoColumnWatchNextResults?.conversationBar?.liveChatRenderer
 				?? response?.contents?.singleColumnWatchNextResults?.results?.results;
-			/** @type {string?} */
+			/** @type {?string} */
 			const initialContinuation = liveChatRenderer?.continuations?.at(0)?.reloadContinuationData?.continuation;
 			if (initialContinuation) {
 				state.controller?.listen();

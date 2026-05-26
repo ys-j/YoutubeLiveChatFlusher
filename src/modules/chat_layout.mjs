@@ -92,7 +92,7 @@ export function layoutChatItem(el, cache, mode = 'dense') {
 
 	el.style.setProperty('--yt-lcf-translate-x', `-${hw + cw}px`);
 
-	const body = /** @type {HTMLElement?} */ (el.lastElementChild);
+	const body = /** @type {?HTMLElement} */ (el.lastElementChild);
 	if (body) {
 		const content = body.textContent;
 		if (content) {

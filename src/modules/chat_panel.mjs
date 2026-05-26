@@ -115,19 +115,19 @@ export class LiveChatPanel {
 			return list.join(' ');
 		};
 
-		/** @type {HTMLButtonElement?} */
+		/** @type {?HTMLButtonElement} */
 		const fontHelperButton = this.form.querySelector('#font_helper');
-		/** @type {HTMLDialogElement?} */
+		/** @type {?HTMLDialogElement} */
 		const fontHelperDialog = doc.querySelector('#ytlcf-dialog-font_helper');
 		if (fontHelperButton && fontHelperDialog) this.#readyFontHelper(fontHelperButton, fontHelperDialog, createButtonClassList, isDarkMode);
 
-		/** @type {HTMLButtonElement?} */
+		/** @type {?HTMLButtonElement} */
 		const layerResizeHelperButton = this.form.querySelector('#layer_resize_helper');
 		if (layerResizeHelperButton) this.#readyLayerResizeHelper(layerResizeHelperButton, createButtonClassList, isDarkMode);
 
-		/** @type {HTMLButtonElement?} */
+		/** @type {?HTMLButtonElement} */
 		const userCssHelperButton = this.form.querySelector('#user_css_helper');
-		/** @type {HTMLDialogElement?} */
+		/** @type {?HTMLDialogElement} */
 		const userCssHelperDialog = doc.querySelector('#ytlcf-dialog-user_css_helper');
 		if (userCssHelperButton && userCssHelperDialog) this.#readyUserCssHelper(userCssHelperButton, userCssHelperDialog, createButtonClassList, isDarkMode);
 
@@ -168,7 +168,7 @@ export class LiveChatPanel {
 	 * @param {boolean} isDarkMode
 	 */
 	#readyFontHelper(button, dialog, clsBuilder, isDarkMode) {
-		/** @type {HTMLTemplateElement?} */
+		/** @type {?HTMLTemplateElement} */
 		const template = dialog.querySelector('#ytlcf-dialog-font_helper-family');
 
 		/**
@@ -215,7 +215,7 @@ export class LiveChatPanel {
 				if (family) ol?.append(createFontFamilyLI(template, family));
 			}, { passive: true });
 			ol?.addEventListener('click', e => {
-				const t = /** @type {HTMLElement?} */ (e.target);
+				const t = /** @type {?HTMLElement} */ (e.target);
 				if (t && t.tagName === 'BUTTON') {
 					const li = t.closest('li');
 					if (li)
@@ -360,9 +360,9 @@ export class LiveChatPanel {
 		if (dialog) {
 			button.after(dialog);
 
-			/** @type {HTMLFormElement?} */
+			/** @type {?HTMLFormElement} */
 			const form = dialog.querySelector('#ytlcf-form-user_css_helper');
-			/** @type {HTMLTextAreaElement?} */
+			/** @type {?HTMLTextAreaElement} */
 			const preview = dialog.querySelector('#ytlcf-textarea-user_css_helper');
 			const pattern = /^UC[\w-]{22}$/;
 
@@ -530,8 +530,8 @@ export class LiveChatPanel {
 						const fillProp = `--yt-lcf-${kebab}-color`;
 						const strokeProp = `--yt-lcf-${kebab}-stroke-color`;
 						if (input.checked) {
-							s.parts[type].color = /** @type {HTMLInputElement?} */ (ctrls[`${type}_color`])?.value || '';
-							s.parts[type].strokeColor = /** @type {HTMLInputElement?} */ (ctrls[`${type}_strokeColor`])?.value || '';
+							s.parts[type].color = /** @type {?HTMLInputElement} */ (ctrls[`${type}_color`])?.value || '';
+							s.parts[type].strokeColor = /** @type {?HTMLInputElement} */ (ctrls[`${type}_strokeColor`])?.value || '';
 							le.style.setProperty(fillProp, s.parts[type].color || 'unset');
 							le.style.setProperty(strokeProp, s.parts[type].strokeColor || 'unset');
 						} else {
@@ -554,10 +554,10 @@ export class LiveChatPanel {
 					const kebab = type.replace(/_/g, '-');
 					const fillProp = `--yt-lcf-${kebab}-color`;
 					const strokeProp = `--yt-lcf-${kebab}-stroke-color`;
-					const cb = Array.from(/** @type {RadioNodeList?} */ (ctrls[`${type}_display`]) || []).findLast(i => i.value === 'color');
+					const cb = Array.from(/** @type {?RadioNodeList} */ (ctrls[`${type}_display`]) || []).findLast(i => i.value === 'color');
 					if (cb?.checked) {
-						s.parts[type].color = /** @type {HTMLInputElement?} */ (ctrls[`${type}_color`])?.value || '';
-						s.parts[type].strokeColor = /** @type {HTMLInputElement?} */ (ctrls[`${type}_strokeColor`])?.value || '';
+						s.parts[type].color = /** @type {?HTMLInputElement} */ (ctrls[`${type}_color`])?.value || '';
+						s.parts[type].strokeColor = /** @type {?HTMLInputElement} */ (ctrls[`${type}_strokeColor`])?.value || '';
 						le.style.setProperty(fillProp, s.parts[type].color || 'unset');
 						le.style.setProperty(strokeProp, s.parts[type].strokeColor || 'unset');
 					} else {
@@ -568,7 +568,7 @@ export class LiveChatPanel {
 				}
 			}
 		} else if (name === 'layer_css') {
-			const newCss = /** @type {HTMLInputElement?} */ (ctrls[name])?.value || '';
+			const newCss = /** @type {?HTMLInputElement} */ (ctrls[name])?.value || '';
 			s.styles.layer_css = newCss;
 			le.style.cssText = le.style.cssText.replace(/--yt-lcf-layer-css: below;.*$/, '--yt-lcf-layer-css: below; ' + newCss);
 		} else if (name.endsWith('_css')) {
@@ -577,7 +577,7 @@ export class LiveChatPanel {
 				const [_, type] = match;
 				const selector = type && type !== 'user_defined' ? '.' + type : '';
 				// @ts-expect-error
-				s.cssTexts[selector] = /** @type {HTMLInputElement?} */ (ctrls[type + '_css'])?.value || '';
+				s.cssTexts[selector] = /** @type {?HTMLInputElement} */ (ctrls[type + '_css'])?.value || '';
 				if (selector) {
 					const style = layer.root.getElementById('customcss');
 					if (style) {

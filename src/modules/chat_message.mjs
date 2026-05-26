@@ -122,8 +122,8 @@ export class LiveChatItemFactory {
 		const el = this.#templates.get(type)?.cloneNode(true);
 		if (!el) return null;
 
-		const header = /** @type {HTMLElement?} */ (el.querySelector('.header'));
-		const body = /** @type {HTMLElement?} */ (el.querySelector('.body'));
+		const header = /** @type {?HTMLElement} */ (el.querySelector('.header'));
+		const body = /** @type {?HTMLElement} */ (el.querySelector('.body'));
 		if ('author' in options) {
 			if ('subtype' in options) el.classList.add(options.subtype);
 			el.dataset.authorId = options.author.id;
@@ -151,7 +151,7 @@ export class LiveChatItemFactory {
 			}
 		}
 		if ('sticker' in options) {
-			const sticker = /** @type {HTMLImageElement?} */ (el.querySelector('.sticker'));
+			const sticker = /** @type {?HTMLImageElement} */ (el.querySelector('.sticker'));
 			if (sticker) sticker.src = options.sticker;
 		} else if ('body' in options && body) {
 			options.body.connectTo(body);
@@ -250,7 +250,7 @@ export async function renderChatItem(item, factory) {
 	/** @type {(type: keyof typeof s.parts) => boolean} */
 	const allHidden = type => !Object.values(s.parts[type]).includes(true);
 
-	/** @type {HTMLElement?} */
+	/** @type {?HTMLElement} */
 	let element = null;
 	switch (key) {
 		case 'liveChatTextMessageRenderer': {
@@ -398,9 +398,9 @@ function translateNodesAsync(nodes, target, exceptionLangs) {
 export class ChatMessageContainer {
 	/** @type {DocumentFragment | Text} */
 	#rawNode;
-	/** @type {string?} */
+	/** @type {?string} */
 	#rawText = null;
-	/** @type {Promise<(TranslationResult & { suffix?: string })?>?} */
+	/** @type {?Promise<?(TranslationResult & { suffix?: string })>} */
 	translating = null;
 	
 	lazy = false;
@@ -541,7 +541,7 @@ function getChatMessage(message, options = {}) {
 					node = document.createElement('a');
 					const ep = r.navigationEndpoint.urlEndpoint || r.navigationEndpoint.watchEndpoint;
 					if (ep) {
-						/** @type {SVGGElement?} */
+						/** @type {?SVGGElement} */
 						const iconref = document.querySelector('iron-iconset-svg #open-in-new');
 						node.href = 'url' in ep ? ep.url : (ep.videoId ? '/watch?v=' + ep.videoId : '');
 						node.classList.add('open_in_new');
