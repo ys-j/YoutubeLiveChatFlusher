@@ -12,13 +12,13 @@ export class LanguageDetectionController {
 		'ja': /[\p{Script=Hiragana}\p{Script=Katakana}\uFF61-\uFF9F]/u,
 		'ko': /[\p{Script=Hangul}]/u,
 	});
-	/** @type {LanguageDetectorSession?} */ #detector = null;
+	/** @type {?LanguageDetector} */ #detector = null;
 	isReady = false;
 
 	async ready() {
-		const availability = await self.LanguageDetector?.availability();
+		const availability = 'LanguageDetector' in self ? await LanguageDetector.availability() : null;
 		if (availability === 'available') {
-			const session = await self.LanguageDetector.create();
+			const session = await LanguageDetector.create();
 			if (session) this.#detector = session;
 		}
 		this.isReady = true;
@@ -36,14 +36,11 @@ export class LanguageDetectionController {
 			}
 		}
 		if (this.#detector) {
-			const result = await this.#detector.detect(text);
-			const firstResult = result.at(0);
-			if (firstResult && firstResult.confidence > .9) {
-				return {
-					source: firstResult.detectedLanguage,
-					isReliable: true,
-				};
-			}
+			const results = await this.#detector.detect(text);
+			const r = results.at(0);
+			const isReliable = (r?.confidence || 0) > .9;
+			const source = r?.detectedLanguage;
+			if (isReliable && source) return { source, isReliable };
 		}
 		const result = await browser.i18n.detectLanguage(text);
 		return {
@@ -109,7 +106,7 @@ class TranslationCache {
 
 
 export class TranslatorController {
-	/** @type {Map<string, TranslatorSession | ExternalTranslatorSession>} */
+	/** @type {Map<string, Translator | ExternalTranslatorSession>} */
 	#translators = new Map();
 	/** @type {TranslationCache} */
 	#cache;
@@ -157,9 +154,9 @@ export class TranslatorController {
 
 		let skip = false;
 		if (this.mode === 'internal' && sl !== 'auto' && 'Translator' in self) {
-			const availability = await self.Translator.availability(options);
+			const availability = await Translator.availability(options);
 			if (availability === 'available') {
-				const translator = await self.Translator.create(options);
+				const translator = await Translator.create(options);
 				this.#translators.set(key, translator);
 				return {
 					sentence: await translator.translate(text),
@@ -204,7 +201,7 @@ export class TranslatorController {
 class ExternalTranslatorSession {
 	static DEFAULT_URL = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=$sl&tl=$tl&dt=t&dt=bd&dj=1&q=$q';
 
-	/** @type {string?} */ #q = null;
+	/** @type {?string} */ #q = null;
 	/** @type {string} */ lastSrc = 'und';
 
 	/**

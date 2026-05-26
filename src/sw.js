@@ -1,6 +1,6 @@
 import { LanguageDetectionController, TranslatorController } from './modules/translator.mjs';
 
-//@ts-expect-error
+// @ts-expect-error
 self.browser ??= chrome;
 
 const manifest = browser.runtime.getManifest();
@@ -39,7 +39,7 @@ browser.tabs.onCreated.addListener(tab => {
 
 const detector = new LanguageDetectionController();
 
-/** @type {TranslatorController?} */
+/** @type {?TranslatorController} */
 let translationController = null;
 
 browser.storage.local.get('translation').then(s => {

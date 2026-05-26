@@ -68,10 +68,8 @@ export class LiveChatLayer {
 	 * @returns {LiveChatLayer} layer
 	 */
 	clear() {
-		while (this.root.childElementCount > 4) {
-			// @ts-expect-error
-			this.root.removeChild(this.root.lastChild);
-		}
+		const styles = this.root.querySelectorAll('link,style');
+		this.root.replaceChildren(...styles);
 		return this;
 	}
 
@@ -112,21 +110,25 @@ export class LiveChatLayer {
 
 	/**
 	 * Resets the font size.
-	 * @param {number} numberOfLines number of lines
+	 * @param {number} numOfLines number of lines
 	 */
-	resetFontSize(numberOfLines = s.others.number_of_lines) {
-		if (numberOfLines) {
-			const rect = this.element.getBoundingClientRect();
-			const lh = Number.parseFloat(s.styles.line_height) || 1.4;
-			const sizeByLines = (rect.height / lh / numberOfLines) | 0;
+	resetFontSize(numOfLines = s.others.number_of_lines) {
+		const rect = this.element.getBoundingClientRect();
+		if (!rect.height) return;
+		const lh = Number.parseFloat(s.styles.line_height) || 1.4;
+		if (numOfLines > 0) {
+			const sizeByLines = (rect.height / lh / numOfLines) | 0;
 			this.element.style.setProperty('--yt-lcf-font-size', [
 				`${sizeByLines}px`,
 				`max(${s.styles.font_size}, ${sizeByLines}px)`,
 				`min(${s.styles.font_size}, ${sizeByLines}px)`,
 			][s.others.type_of_lines]);
-			this.#controller.layoutCache.resize(numberOfLines);
+			this.#controller.layoutCache.resize(numOfLines);
 		} else {
+			const fs = Number.parseFloat(s.styles.font_size);
+			const linesBySize = (rect.height / lh / fs) | 0;
 			this.element.style.setProperty('--yt-lcf-font-size', s.styles.font_size);
+			this.#controller.layoutCache.resize(linesBySize);
 		}
 	}
 

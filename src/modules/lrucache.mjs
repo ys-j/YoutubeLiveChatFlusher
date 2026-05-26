@@ -3,8 +3,8 @@
  * @typedef LRUCacheNode
  * @prop {K} key
  * @prop {V} value
- * @prop {LRUCacheNode<K, V>?} prev
- * @prop {LRUCacheNode<K, V>?} next
+ * @prop {?LRUCacheNode<K, V>} prev
+ * @prop {?LRUCacheNode<K, V>} next
  */
 
 /**
@@ -21,9 +21,9 @@ export class LRUCache {
 		this.size = 0;
 		/** @type {Record<K, LRUCacheNode<K, V>>} */
 		this.cache = Object.create(null);
-		/** @type {LRUCacheNode<K, V>?} */
+		/** @type {?LRUCacheNode<K, V>} */
 		this.head = null;
-		/** @type {LRUCacheNode<K, V>?} */
+		/** @type {?LRUCacheNode<K, V>} */
 		this.tail = null;
 	}
 
@@ -65,7 +65,7 @@ export class LRUCache {
 	 * @param {V} value
 	 */
 	set(key, value) {
-		/** @type {LRUCacheNode<K, V>?} */
+		/** @type {?LRUCacheNode<K, V>} */
 		let node = this.cache[key];
 		if (node) {
 			node.value = value;
@@ -93,7 +93,7 @@ export class LRUCache {
 	 * @param {K} key
 	 */
 	delete(key) {
-		/** @type {LRUCacheNode<K, V>?} */
+		/** @type {?LRUCacheNode<K, V>} */
 		const node = this.cache[key];
 		if (!node) return false;
 

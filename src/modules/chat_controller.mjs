@@ -30,7 +30,7 @@ export class LiveChatController {
 		this.itemFactory = new LiveChatItemFactory();
 
 		root.addEventListener('contextmenu', e => {
-			/** @type {HTMLElement?} */
+			/** @type {?HTMLElement} */
 			const origin = /** @type {HTMLElement} */ (e.target).closest('[id]');
 			if (origin && s.others.message_pause) {
 				e.preventDefault();
@@ -48,7 +48,7 @@ export class LiveChatController {
 			if (interactiveTags.includes(origin?.tagName || 'BODY')) {
 				e.stopPropagation();
 			} else {
-				/** @type {HTMLElement?} */ (e.target)?.parentElement?.click();
+				/** @type {?HTMLElement} */ (e.target)?.parentElement?.click();
 			}
 		}, { passive: true });
 		root.addEventListener('animationend', e => {
@@ -137,7 +137,7 @@ export class LiveChatController {
 		const [checkbox, popupmenu, pipmenu] = doc.body.children;
 		checkbox.setAttribute('aria-checked', s.others.disabled ? 'false' : 'true');
 		checkbox.addEventListener('click', e => {
-			const cb = /** @type {HTMLElement?} */ (e.currentTarget);
+			const cb = /** @type {?HTMLElement} */ (e.currentTarget);
 			if (!cb) return;
 			const checked = cb.getAttribute('aria-checked') === 'true';
 			cb.setAttribute('aria-checked', (!checked).toString());
@@ -195,7 +195,6 @@ export class LiveChatController {
 	 */
 	#applySettingsToControls(form) {
 		const le = this.layer.element;
-		const rect = le.getBoundingClientRect();
 		const ctrls = form.elements;
 		for (const select of form.querySelectorAll('select')) {
 			if (select.name in s.others) {
@@ -224,38 +223,39 @@ export class LiveChatController {
 
 		for (const [prop, value] of Object.entries(s.styles)) {
 			le.style.setProperty(`--yt-lcf-${prop.replace(/_/g, '-')}`, value);
-			/** @type {HTMLInputElement?} */
+			/** @type {?HTMLInputElement} */
 			const input = form.querySelector(`input.styles[name="${prop}"]`);
 			if (input) {
 				if (input.type === 'number') input.valueAsNumber = Number.parseFloat(value);
 				else input.value = value;
 			}
 		}
-		// number
-		/** @type {HTMLInputElement} */ (ctrls.px_per_sec).valueAsNumber = /** @type {HTMLInputElement} */ (ctrls.speed).checked
-			? s.others.px_per_sec
-			: Math.round(rect.width / /** @type {HTMLInputElement} */ (ctrls.animation_duration).valueAsNumber);
+
+		const rect = le.getBoundingClientRect();
+		if (/** @type {HTMLInputElement} */ (ctrls.speed).checked) {
+			/** @type {HTMLInputElement} */ (ctrls.px_per_sec).valueAsNumber = s.others.px_per_sec;
+		} else if (rect.width > 0) {
+			const dur = /** @type {HTMLInputElement} */ (ctrls.animation_duration).valueAsNumber;
+			/** @type {HTMLInputElement} */ (ctrls.px_per_sec).valueAsNumber = Math.round(rect.width / dur);
+		}
 		/** @type {HTMLInputElement} */ (ctrls.limit_number).valueAsNumber = s.others.limit || 100;
 		/** @type {HTMLInputElement} */ (ctrls.container_limit_number).valueAsNumber = s.others.container_limit || 20;
 
 		const lines = s.others.number_of_lines;
-		const inputFontSize = /** @type {HTMLInputElement} */ (ctrls.font_size);
 		const inputLineNum = /** @type {HTMLInputElement} */ (ctrls.number_of_lines);
-		if (lines > 0) {
-			const sizeByLines = (rect.height / lines / Number.parseFloat(s.styles.line_height)) | 0;
-			if (s.others.type_of_lines > 0) {
-				le.style.setProperty('--yt-lcf-font-size', `max(${s.styles.font_size}, ${sizeByLines}px)`);
-				inputFontSize.valueAsNumber = sizeByLines;
+		if (rect.height > 0) {
+			if (lines > 0) {
+				const sizeByLines = (rect.height / lines / Number.parseFloat(s.styles.line_height)) | 0;
+				const fsVal = s.others.type_of_lines > 0 ? `max(${s.styles.font_size}, ${sizeByLines}px)` : `${sizeByLines}px`;
+				le.style.setProperty('--yt-lcf-font-size', fsVal);
+				inputLineNum.valueAsNumber = lines;
+				this.layoutCache.resize(lines);
 			} else {
-				le.style.setProperty('--yt-lcf-font-size', `${sizeByLines}px`);
+				const linesBySize = (rect.height / Number.parseFloat(s.styles.font_size) / Number.parseFloat(s.styles.line_height)) | 0;
+				le.style.setProperty('--yt-lcf-font-size', s.styles.font_size);
+				inputLineNum.valueAsNumber = linesBySize;
+				this.layoutCache.resize(linesBySize);
 			}
-			inputLineNum.valueAsNumber = lines;
-			this.layoutCache.resize(lines);
-		} else {
-			const linesBySize = (rect.height / Number.parseFloat(s.styles.font_size) / Number.parseFloat(s.styles.line_height)) | 0;
-			le.style.setProperty('--yt-lcf-font-size', s.styles.font_size);
-			inputLineNum.valueAsNumber = linesBySize;
-			this.layoutCache.resize(linesBySize);
 		}
 
 		/** @type {HTMLInputElement} */ (ctrls.time_shift).valueAsNumber = s.others.time_shift || 0;
@@ -281,9 +281,9 @@ export class LiveChatController {
 				else le.style.removeProperty(strokeProp);
 
 				const computed = getComputedStyle(le);
-				const fillPicker = /** @type {HTMLInputElement?} */ (cb.parentElement?.nextElementSibling);
+				const fillPicker = /** @type {?HTMLInputElement} */ (cb.parentElement?.nextElementSibling);
 				if (fillPicker) fillPicker.value = part.color || computed.getPropertyValue(fillProp) || '#ffffff';
-				const strokePicker = /** @type {HTMLInputElement?} */ (fillPicker?.nextElementSibling);
+				const strokePicker = /** @type {?HTMLInputElement} */ (fillPicker?.nextElementSibling);
 				if (strokePicker) strokePicker.value = part.strokeColor || computed.getPropertyValue(strokeProp) || '#000000';
 				break;
 			}
@@ -399,11 +399,11 @@ export class LiveChatController {
 			if (selector) {
 				if (customCss) customCss.textContent += `:host>${selector}{${css}}`;
 				const name = selector.substring(1) + '_css';
-				const input = /** @type {HTMLInputElement?} */ (ctrls[name]);
+				const input = /** @type {?HTMLInputElement} */ (ctrls[name]);
 				if (input) input.value = css;
 			} else {
 				if (userDefinedCss) userDefinedCss.textContent = css;
-				const textarea = /** @type {HTMLTextAreaElement?} */ (ctrls.user_defined_css);
+				const textarea = /** @type {?HTMLTextAreaElement} */ (ctrls.user_defined_css);
 				if (textarea) textarea.value = css;
 			}
 		}
@@ -446,7 +446,7 @@ export class LiveChatController {
 
 		// Add
 		const sv = s.others.simultaneous;
-		const last = sv === SimultaneousModeEnum.LAST_MERGE ? /** @type {HTMLElement?} */ (root.lastElementChild) : null;
+		const last = sv === SimultaneousModeEnum.LAST_MERGE ? /** @type {?HTMLElement} */ (root.lastElementChild) : null;
 		const bodies = last ? [ `<!-- ${last.className} -->` + (last.getAttribute('data-text') || '') ] : [];
 		const ids = last ? [last.id] : [];
 		/** @type {(el: HTMLElement) => void} */
@@ -472,7 +472,7 @@ export class LiveChatController {
 						const earlier = root.getElementById(ids[index]);
 						/** @type {HTMLElement | null | undefined} */
 						const _name = earlier?.querySelector('.name');
-						/** @type {HTMLSpanElement?} */
+						/** @type {?HTMLSpanElement} */
 						const _photo = el.querySelector('.photo');
 						if (earlier && _name && _photo) {
 							const parent = _photo.parentElement;

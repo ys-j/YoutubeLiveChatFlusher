@@ -1,7 +1,6 @@
-/// <reference path="../../types/browser.d.ts" />
-
 import { store as s } from '../modules/store.mjs';
 
+// @ts-expect-error
 self.browser ??= chrome;
 
 const manifest = browser.runtime.getManifest();
@@ -30,6 +29,7 @@ for (const el of i18nPlaceholders) {
 const manifestElems = document.querySelectorAll('[data-manifest]');
 for (const el of manifestElems) {
 	const key = el.dataset.manifest;
+	// @ts-expect-error
 	if (key && key in manifest) el.textContent = manifest[key];
 }
 
@@ -75,7 +75,7 @@ initBtn?.addEventListener('click', async () => {
 	location.reload();
 }, { passive: true });
 
-const saveBtn = /** @type {HTMLButtonElement?} */ (document.getElementById('btn-save'));
+const saveBtn = /** @type {?HTMLButtonElement} */ (document.getElementById('btn-save'));
 
 const form = document.forms[0];
 

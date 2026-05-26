@@ -1,6 +1,3 @@
-/// <reference path="../../types/extends.d.ts" />
-/// <reference path="../../types/ytlivechatrenderer.d.ts" />
-
 import { fetchInnerTube } from './innertube.mjs';
 
 export class ReplayActionBuffer {
