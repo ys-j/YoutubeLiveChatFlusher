@@ -14,7 +14,6 @@ const events = {
 	 */
 	async toggleAction(tabId, url) {
 		const urlObj = new URL(url);
-		/** @type {string[] | undefined} */
 		const hosts = manifest.host_permissions;
 		const isHostMatch = hosts?.some(url => url.match(/:\/\/([^/]*)/)?.[1] === urlObj.hostname);
 		return browser.action[isHostMatch ? 'enable' : 'disable'](tabId);
@@ -43,23 +42,32 @@ const detector = new LanguageDetectionController();
 /** @type {?TranslatorController} */
 let translationController = null;
 
-const personDetectionEngine = new MLEngineManager({
-	modelHub: 'huggingface',
-	taskName: 'image-segmentation',
-	modelId: 'onnx-community/mediapipe_selfie_segmentation',
-	dtype: 'fp32',
-	device: 'gpu',
-});
+/** @type {?MLEngineManager} */
+let personDetectionEngine = null;
 
 browser.storage.local.get(['translation', 'others']).then(async s => {
 	const { translator, url } = /** @type {typeof import("./modules/store.mjs").DEFAULT_CONFIG.translation} */ (s.translation);
-	translationController = new TranslatorController(/** @type {"internal" | "external"} */ (translator ?? 'internal'), url);
-
+	translationController = new TranslatorController(translator ?? 'internal', url);
+	
 	const { person_detection } = /** @type {typeof import("./modules/store.mjs").DEFAULT_CONFIG.others} */ (s.others);
-	if (person_detection > 0 && manifest.optional_permissions?.includes('trialML')) {
+	const engineOption = /** @type {const} */ ([
+		undefined,
+		{ dtype: 'q8', device: 'wasm' },
+		{ dtype: 'fp32', device: 'gpu' },
+	]).at(person_detection);
+	if (engineOption && manifest.optional_permissions?.includes('trialML')) {
 		const granted = await browser.permissions.contains({ permissions: ['trialML'] });
-		if (granted) await personDetectionEngine.ensureReady();
-		else console.warn('Permission "trialML" was rejected.');
+		if (granted) {
+			personDetectionEngine = new MLEngineManager({
+				modelHub: 'huggingface',
+				taskName: 'image-segmentation',
+				modelId: 'onnx-community/mediapipe_selfie_segmentation',
+				...engineOption,
+			});
+			await personDetectionEngine.ensureReady();
+		} else {
+			console.warn('Permission "trialML" was rejected.');
+		}
 	}
 });
 
@@ -81,15 +89,58 @@ browser.runtime.onMessage.addListener((_message, _sender, respond) => {
 		)
 		.then(sl => translationController?.translate(text, tl, sl))
 		.then(respond);
-	} else if ('mask' in msg) {
-		personDetectionEngine.run({ args: [ msg.mask ] })
-		.then(respond)
-		.catch(err => {
+	} else if ('mask' in msg && personDetectionEngine) {
+		const { mask, width, height } = msg;
+		const blob = new Blob([ createBmpHeader(width, height), mask ], { type: 'image/bmp' });
+		personDetectionEngine.run({ args: [ blob ] })
+		.then(respond, err => {
 			console.warn(err?.message ?? err);
-			respond(null);
+			respond({
+				label: null,
+				score: null,
+				mask: [
+					{ data: new Uint8ClampedArray(width * height), width, height, channel: 1 },
+				],
+			});
 		});
 	} else if ('fire' in msg) {
 		events[msg.fire]?.()?.then(respond);
 	}
 	return true;
 });
+
+/**
+ * @param {number} width pixels of width
+ * @param {number} height pixels of height
+ */
+function createBmpHeader(width, height) {
+	const headerSize = 66;
+	const bodySize = width * height * 4;
+	const resolution = Math.ceil(72 / .0254);
+	const buffer = new ArrayBuffer(headerSize);
+	const view = new DataView(buffer);
+
+	view.setUint8(0, 0x42);
+	view.setUint8(1, 0x4D);
+	view.setUint32(2, headerSize + bodySize, true);
+	view.setUint32(6, 0, true);
+	view.setUint32(10, headerSize, true);
+
+	view.setUint32(14, 40, true);
+	view.setInt32(18, width, true);
+	view.setInt32(22, -height, true);
+	view.setUint16(26, 1, true);
+	view.setUint16(28, 32, true);
+	view.setUint32(30, 3, true);
+	view.setUint32(34, bodySize, true);
+	view.setInt32(38, resolution, true);
+	view.setInt32(42, resolution, true);
+	view.setUint32(46, 0, true);
+	view.setUint32(50, 0, true);
+
+	view.setUint32(54, 0x000000FF, true);
+	view.setUint32(58, 0x0000FF00, true);
+	view.setUint32(62, 0x00FF0000, true);
+
+	return buffer;
+}

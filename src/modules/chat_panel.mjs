@@ -201,8 +201,7 @@ export class LiveChatPanel {
 			const form = dialog.querySelector('form');
 			const ol = dialog.querySelector('ol');
 			const select = dialog.querySelector('select');
-			// @ts-expect-error
-			window.queryLocalFonts().then(fonts => {
+			window.queryLocalFonts?.().then(fonts => {
 				if (select) {
 					const families = new Set(fonts.map(f => f.family));
 					select.append(...Array.from(families, f => new Option(f, f)));
@@ -523,19 +522,21 @@ export class LiveChatPanel {
 					const type = /** @type {keyof typeof s.parts} */ (_type);
 					if (input.value !== 'color') {
 						// @ts-expect-error
-						s.parts[type][input.value] = input.checked;
+						s.data.parts[type][input.value] = input.checked;
 						le.style.setProperty(`--yt-lcf-${name.replace(/_/g, '-')}-${input.value}`, input.checked ? 'inherit' : 'none');
 					} else if (type !== 'paid_sticker') {
 						const kebab = type.replace(/_/g, '-');
 						const fillProp = `--yt-lcf-${kebab}-color`;
 						const strokeProp = `--yt-lcf-${kebab}-stroke-color`;
 						if (input.checked) {
-							s.parts[type].color = /** @type {?HTMLInputElement} */ (ctrls[`${type}_color`])?.value || '';
-							s.parts[type].strokeColor = /** @type {?HTMLInputElement} */ (ctrls[`${type}_strokeColor`])?.value || '';
-							le.style.setProperty(fillProp, s.parts[type].color || 'unset');
-							le.style.setProperty(strokeProp, s.parts[type].strokeColor || 'unset');
+							const colorVal = /** @type {?HTMLInputElement} */ (ctrls[`${type}_color`])?.value || '';
+							const strokeColorVal = /** @type {?HTMLInputElement} */ (ctrls[`${type}_strokeColor`])?.value || '';
+							s.data.parts[type].color = colorVal;
+							s.data.parts[type].strokeColor = strokeColorVal;
+							le.style.setProperty(fillProp, colorVal || 'unset');
+							le.style.setProperty(strokeProp, strokeColorVal || 'unset');
 						} else {
-							s.parts[type].color = s.parts[type].strokeColor = '';
+							s.data.parts[type].color = s.data.parts[type].strokeColor = '';
 							le.style.removeProperty(fillProp);
 							le.style.removeProperty(strokeProp);
 						}
@@ -556,15 +557,19 @@ export class LiveChatPanel {
 					const strokeProp = `--yt-lcf-${kebab}-stroke-color`;
 					const cb = Array.from(/** @type {?RadioNodeList} */ (ctrls[`${type}_display`]) || []).findLast(i => i.value === 'color');
 					if (cb?.checked) {
-						s.parts[type].color = /** @type {?HTMLInputElement} */ (ctrls[`${type}_color`])?.value || '';
-						s.parts[type].strokeColor = /** @type {?HTMLInputElement} */ (ctrls[`${type}_strokeColor`])?.value || '';
+						const colorVal = /** @type {?HTMLInputElement} */ (ctrls[`${type}_color`])?.value || '';
+						const strokeColorVal = /** @type {?HTMLInputElement} */ (ctrls[`${type}_strokeColor`])?.value || '';
+						s.data.parts[type].color = colorVal;
+						s.data.parts[type].strokeColor = strokeColorVal;
 						le.style.setProperty(fillProp, s.parts[type].color || 'unset');
 						le.style.setProperty(strokeProp, s.parts[type].strokeColor || 'unset');
 					} else {
-						s.parts[type].color = s.parts[type].strokeColor = '';
+						s.data.parts[type].color = s.data.parts[type].strokeColor = '';
 						le.style.removeProperty(fillProp);
 						le.style.removeProperty(strokeProp);
 					}
+					// @ts-expect-error
+					s.parts[type] = s.data.parts[type];
 				}
 			}
 		} else if (name === 'layer_css') {

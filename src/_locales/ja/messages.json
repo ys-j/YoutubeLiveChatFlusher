@@ -455,6 +455,12 @@
 	"person_detection": {
 		"message": "人物検出（Firefoxのみ・アルファ版）"
 	},
+	"enabled_wasm": {
+		"message": "する (WASM)"
+	},
+	"enabled_gpu": {
+		"message": "する (GPU)"
+	},
 	"translationBlacklist": {
 		"message": "翻訳NGリスト"
 	},

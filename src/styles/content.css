@@ -439,7 +439,7 @@
 	top: 12px;
 	left: 12px;
 	font-size: 2em;
-	color: var(--yt-spec-text-primary);
+	color: var(--paper-menu-color, var(--yt-spec-text-primary));
 
 	#player:has(&) .yt-simple-endpoint {
 		cursor: auto;

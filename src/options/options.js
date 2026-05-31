@@ -154,7 +154,7 @@ form.addEventListener('submit', async e => {
 		translation: {
 			regexp: /** @type {HTMLInputElement} */ (translation_blacklist_regexp).checked,
 			plainList: translation_blacklist.value.split(/\n+/).filter(s => s.length > 0),
-			translator: translation_translator.value,
+			translator: /** @type {"external" | "internal"} */ (translation_translator.value),
 			url: translation_url.value,
 		},
 	};

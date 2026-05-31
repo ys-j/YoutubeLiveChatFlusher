@@ -445,7 +445,7 @@ export class LiveChatController {
 		canvas.style.position = 'absolute';
 		canvas.style.visibility = 'hidden';
 
-		[canvas.width, canvas.height] = VideoSegmentationExecutor.getTargetSize(video);
+		[canvas.width, canvas.height] = VideoSegmentationExecutor.TARGET_SIZE;
 		let imageData = new ImageData(canvas.width, canvas.height);
 		let u32data = new Uint32Array(imageData.data.buffer);
 		/** @type {?Uint8ClampedArray} */

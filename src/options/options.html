@@ -100,14 +100,11 @@
 				</label>
 			<dt class=only-firefox data-i18n=person_detection>
 			<dd class=only-firefox>
-				<label>
-					<input type=radio name=person_detection value=0>
-					<span data-i18n=disabled></span>
-				</label>
-				<label>
-					<input type=radio name=person_detection value=1>
-					<span data-i18n=enabled></span>
-				</label>
+				<select name=person_detection>
+					<option data-i18n=disabled value=0>
+					<option data-i18n=enabled_wasm value=1>
+					<option data-i18n=enabled_gpu value=2>
+				</select>
 		</dl>
 	</section>
 	<section>

@@ -83,10 +83,8 @@ export class LiveChatLayer {
 	 * @returns {LiveChatLayer} layer
 	 */
 	clear() {
-		while (this.count > 0) {
-			// @ts-expect-error
-			this.root.removeChild(this.root.lastChild);
-		}
+		const styles = this.root.querySelectorAll('link,style');
+		this.root.replaceChildren(...styles);
 		return this;
 	}
 
@@ -127,21 +125,26 @@ export class LiveChatLayer {
 
 	/**
 	 * Resets the font size.
-	 * @param {number} numberOfLines number of lines
+	 * @param {number} numOfLines number of lines
 	 */
-	resetFontSize(numberOfLines = s.others.number_of_lines) {
-		if (numberOfLines) {
-			const rect = this.element.getBoundingClientRect();
+	resetFontSize(numOfLines = s.others.number_of_lines) {
+		const rect = this.element.getBoundingClientRect();
+		if (!rect.height) return;
+		const lh = Number.parseFloat(s.styles.line_height) || 1.4;
+		if (numOfLines > 0) {
 			const lh = Number.parseFloat(s.styles.line_height) || 1.4;
-			const sizeByLines = (rect.height / lh / numberOfLines) | 0;
+			const sizeByLines = (rect.height / lh / numOfLines) | 0;
 			this.element.style.setProperty('--yt-lcf-font-size', [
 				`${sizeByLines}px`,
 				`max(${s.styles.font_size}, ${sizeByLines}px)`,
 				`min(${s.styles.font_size}, ${sizeByLines}px)`,
 			][s.others.type_of_lines]);
-			this.#controller.layoutCache.resize(numberOfLines);
+			this.#controller.layoutCache.resize(numOfLines);
 		} else {
+			const fs = Number.parseFloat(s.styles.font_size);
+			const linesBySize = (rect.height / lh / fs) | 0;
 			this.element.style.setProperty('--yt-lcf-font-size', s.styles.font_size);
+			this.#controller.layoutCache.resize(linesBySize);
 		}
 	}
 
@@ -201,7 +204,7 @@ export class LiveChatLayer {
 
 export class VideoSegmentationExecutor {
 	/** @type {[number, number]} */
-	static INITIAL_TARGET_SIZE = [256, 144];
+	static TARGET_SIZE = [256, 256];
 
 	/** @type {SegmentationCallback} */ #callback;
 	/** @type {AbortController} */ #abortController;
@@ -213,45 +216,22 @@ export class VideoSegmentationExecutor {
 	constructor(callback) {
 		this.#callback = callback;
 		this.#abortController = new AbortController();
-		this.offscreen = new OffscreenCanvas(...VideoSegmentationExecutor.INITIAL_TARGET_SIZE);
-		this.context = this.offscreen.getContext('bitmaprenderer');
-	}
-
-	/**
-	 * @param {HTMLVideoElement} video 
-	 * @return {[number, number]} width and height
-	 */
-	static getTargetSize(video) {
-		const [ width, ] = VideoSegmentationExecutor.INITIAL_TARGET_SIZE;
-		const aspectRatio = video.videoWidth / video.videoHeight;
-		return [ width, (width / aspectRatio) | 0 ];
+		this.offscreen = new OffscreenCanvas(...VideoSegmentationExecutor.TARGET_SIZE);
+		this.context = this.offscreen.getContext('2d');
+		this.frameInterval = 4;
 	}
 
 	/**
 	 * @param {HTMLVideoElement} video
 	 */
 	async #sendFrame(video) {
-		const [width, height] = VideoSegmentationExecutor.getTargetSize(video);
-		if (this.offscreen.width !== width || this.offscreen.height !== height) {
-			this.offscreen.width = width;
-			this.offscreen.height = height;
-		}
-		
-		/** @type {?ImageBitmap} */
-		let bitmap = null;
+		const [width, height] = VideoSegmentationExecutor.TARGET_SIZE;
 		try {
-			bitmap = await createImageBitmap(video, {
-				resizeWidth: width,
-				resizeHeight: height,
-				resizeQuality: 'low',
-			});
-			this.context?.transferFromImageBitmap(bitmap);
-			const blob = await this.offscreen.convertToBlob();
-			return await browser.runtime.sendMessage({ mask: blob });
+			this.context?.drawImage(video, 0, 0, width, height);
+			const imageData = this.context?.getImageData(0, 0, width, height);
+			return await browser.runtime.sendMessage({ mask: imageData?.data.buffer, width, height });
 		} catch (reason) {
 			console.warn('Failed to send a video frame to the person detector:', reason);
-		} finally {
-			bitmap?.close();
 		}
 	}
 
@@ -261,7 +241,8 @@ export class VideoSegmentationExecutor {
 	 */
 	observe(video, layer) {
 		let inProgress = false;
-		const frame = () => {
+		/** @type {VideoFrameRequestCallback} */
+		const frame = (now, metadata) => {
 			if (this.#abortController.signal.aborted) {
 				this.#abortController = new AbortController();
 				return;
@@ -271,7 +252,9 @@ export class VideoSegmentationExecutor {
 				&& layer.count > 0
 				&& !video.paused
 				&& !video.ended
-				&& !video.parentElement?.classList.contains('ad-showing')) {
+				&& metadata.presentedFrames % this.frameInterval === 0
+				&& !video.closest('#movie_player')?.classList.contains('ad-showing')
+			) {
 				inProgress = true;
 				this.#sendFrame(video).then(r => {
 					// @ts-expect-error

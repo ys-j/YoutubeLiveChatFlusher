@@ -1,7 +1,7 @@
 /**
  * Initializes the PiP-mode menu.
  */
-export function initPipMenu() {
+(function initPipMenu() {
 	const pipmenuTop = document.getElementById('yt-lcf-pp');
 	if ('documentPictureInPicture' in window) {
 		const pipmenu = pipmenuTop || self.documentPictureInPicture?.window?.document.getElementById('yt-lcf-pp');
@@ -10,24 +10,23 @@ export function initPipMenu() {
 			if (pipWindow) {
 				pipWindow.close();
 			} else {
-				const layer = document.getElementById('yt-lcf-layer');
-				if (layer) {
-					const player = layer.closest('#player-container');
-					if (player) await openPip(player);
-				}
+				const player = document.getElementById('yt-lcf-layer')?.closest('#player-container');
+				const params = document.getElementById('yt-lcf-pip-script')?.dataset;
+				if (player && params) await openPip(player, params);
 			}
 		}, { passive: true });
 	} else {
 		if (pipmenuTop) pipmenuTop.hidden = true;
 	}
-}
+})();
 
 /**
  * Creates and opens document picture-in-picture window of the video player container.
  * @param {Element} element element of video player container
+ * @param {DOMStringMap} params dataset of injected `<script>` (self)
  * @returns {Promise<Window>} document picture-in-picture window
  */
-async function openPip(element) {
+async function openPip(element, params) {
 	const parent = element.parentElement;
 	if (!parent) throw new Error('No parent element.');
 	const pipWindow = await top?.documentPictureInPicture?.requestWindow({
@@ -59,7 +58,7 @@ async function openPip(element) {
 	const pipLink = document.createElement('link');
 	pipLink.rel = 'stylesheet';
 	pipLink.type = 'text/css';
-	pipLink.href = browser.runtime.getURL('../styles/content.css');
+	pipLink.href = params.paramCssUrl || '';
 	const pipStyle = document.createElement('style');
 	pipStyle.textContent = `\
 	:root,body,body>*{height:100%;overflow:hidden}\
@@ -85,7 +84,7 @@ async function openPip(element) {
 
 	const pipMarker = document.createElement('span');
 	pipMarker.id = 'yt-lcf-pip-marker';
-	pipMarker.textContent = browser.i18n.getMessage('pip_marker');
+	pipMarker.textContent = params.paramPipMarkerText || '';
 	element.before(pipMarker);
 	pipWindow.document.body.appendChild(element);
 	pipWindow.document.body.dataset.browser = document.body.dataset.browser;

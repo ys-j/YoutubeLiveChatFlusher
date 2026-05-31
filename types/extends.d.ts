@@ -10,7 +10,6 @@ declare global {
 
 	interface Window {
 		queryLocalFonts?(options?: { postscriptNames: string[] }): Promise<FontData[]>;
-		documentPictureInPicture?: DocumentPictureInPicture;
 	}
 
 	interface Node {
