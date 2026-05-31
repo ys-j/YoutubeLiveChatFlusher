@@ -13,16 +13,18 @@ Please refer to *[wiki](https://github.com/ys-j/YoutubeLiveChatFlusher/wiki)* fo
 
 ## Features / 特徴
 
-- Written in Vanilla JS and CSS (No libraries used)\
+- Written in Vanilla JS and CSS (No libraries used)  
   Vanilla JSとCSSで書かれています（ライブラリを使用していません）
-- Translation function is available\
+- Translation function is available  
   翻訳機能が利用可能です
-- Customizable styles\
+- Customizable styles  
   スタイルをカスタマイズ可能です
-- Document Picture-in-Picture (PiP w/ chat) is available on Chrome\
-  Chrome版は Document Picture-in-Picture (PiP w/ chat) が利用可能です
-- Time-shifted chat is available (Replay only)\
+- Time-shifted chat is available (Replay only)  
   タイムシフト機能が利用可能です（リプレイのみ）
+- Document Picture-in-Picture (PiP w/ chat) is available  
+  Document Picture-in-Picture (PiP w/ chat) が利用可能です
+- Person detection feature is available on Firefox (alpha version; not stable)  
+  Firefoxでは人物検出機能が利用可能です（アルファ版で安定的ではありません）
 
 ## Screenshots / スクリーンショット
 
