@@ -164,3 +164,7 @@ textarea {
 		--text-color: var(--color-gray-05);
 	}
 }
+
+[data-browser="chrome"] .only-firefox {
+	display: none;
+}

@@ -75,6 +75,16 @@ export class ReplayActionBuffer {
 }
 
 /**
+ * @typedef ContinuationTokenContainer
+ * @prop {string} continuation
+ */
+
+/**
+ * @typedef SeekInfo
+ * @prop {number} offset
+ */
+
+/**
  * Generates the replay chat actions from the response of InnerTube API.
  * @param {AbortSignal} signal signal for aborting fetching
  * @param {string} initialContinuation initial continuation token
@@ -86,16 +96,16 @@ export async function* getReplayChatActionsAsyncIterable(signal, initialContinua
 
 	/** @type {Map<string, string>} */
 	const continuations = new Map();
-	/** @type { { continuation: string } } */
+	/** @type {ContinuationTokenContainer} */
 	let body = { continuation: initialContinuation };
 	/** @type { { actions: LiveChat.ReplayChatItemAction[] } } */
 	let contents = { actions: [] };
 
-	/** @type { { offset: number } | undefined } */
+	/** @type {SeekInfo | undefined} */
 	let seekInfo;
 	let controller = new AbortController();
 	signal.addEventListener('ytlcf-seek', e => {
-		seekInfo = /** @type { { offset: number } } */ (e.detail);
+		seekInfo = /** @type {SeekInfo} */ (e.detail);
 		controller.abort();
 	}, { passive: true });
 
@@ -146,7 +156,7 @@ export async function* getLiveChatActionsAsyncIterable(signal, initialContinuati
 	const url = new URL('/youtubei/v1/live_chat/get_live_chat', location.origin);
 	url.searchParams.set('prettyPrint', 'false');
 
-	/** @type { { continuation: string } } */
+	/** @type {ContinuationTokenContainer} */
 	let body = { continuation: initialContinuation };
 	/** @type { { actions: LiveChat.LiveChatItemAction[] } } */
 	let contents = { actions: [] };
@@ -161,7 +171,7 @@ export async function* getLiveChatActionsAsyncIterable(signal, initialContinuati
 /**
  * Fetches the livechat contents object from the given URL and continuation token.
  * @param {URL} url URL
- * @param { { continuation: string } } body continuation token container
+ * @param {ContinuationTokenContainer} body continuation token container
  * @returns {Promise<any>} livechat contents object
  */
 async function getContentsAsync(url, body) {
@@ -183,7 +193,7 @@ async function getContentsAsync(url, body) {
  * @param {any} contents livechat contents object
  * @param {boolean} isReplay if is replay
  * @param {number} [offset] player offset (milliseconds)
- * @returns { { continuation: string, currentPlayerState?: { playerOffsetMs: string } } } continuation token
+ * @returns { ContinuationTokenContainer & { currentPlayerState?: { playerOffsetMs: string } } } continuation token
  */
 function getContinuation(contents, isReplay, offset) {
 	const c = contents?.continuations?.at(offset ? -1 : 0);

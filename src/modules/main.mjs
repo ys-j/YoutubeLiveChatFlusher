@@ -3,7 +3,6 @@ import { isNotPip } from './utils.mjs';
 
 import { LiveChatController } from './chat_controller.mjs';
 import { ReplayActionBuffer, getReplayChatActionsAsyncIterable, getLiveChatActionsAsyncIterable } from './chat_actions.mjs';
-import { initPipMenu } from './pip.mjs';
 
 const state = {
 	isLive: false,
@@ -44,7 +43,15 @@ export async function initialize(e) {
 	state.controller = new LiveChatController(player);
 	await state.controller.start().then(() => {
 		self.dispatchEvent(new CustomEvent('ytlcf-ready'));
-		initPipMenu();
+		
+		// Initilize document picture-in-picture
+		const script = document.createElement('script');
+		script.id = 'yt-lcf-pip-script';
+		script.src = browser.runtime.getURL('/injections/pip.js');
+		script.dataset.paramCssUrl = browser.runtime.getURL('/styles/content.css');
+		script.dataset.paramPipMarkerText = browser.i18n.getMessage('pip_marker');
+		document.body.append(script);
+		
 		state.succeeded = true;
 	}).catch(reason => {
 		console.warn(reason);

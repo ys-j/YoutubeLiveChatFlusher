@@ -106,7 +106,7 @@ class TranslationCache {
 
 
 export class TranslatorController {
-	/** @type {Map<string, Translator | ExternalTranslatorSession>} */
+	/** @type {Map<string, Translator | ExternalTranslator>} */
 	#translators = new Map();
 	/** @type {TranslationCache} */
 	#cache;
@@ -121,7 +121,7 @@ export class TranslatorController {
 	 */
 	constructor(mode, url, options) {
 		this.mode = mode;
-		this.url = url ?? ExternalTranslatorSession.DEFAULT_URL;
+		this.url = url ?? ExternalTranslator.DEFAULT_URL;
 		this.options = Object.assign({
 			cache: { capacity: 100, maxLength: 10 },
 		}, options);
@@ -167,12 +167,12 @@ export class TranslatorController {
 				if (availability === 'downloading') skip = true;
 			}
 		}
-		translator = new ExternalTranslatorSession({ url: this.url, ...options });
+		translator = new ExternalTranslator({ url: this.url, ...options });
 		if (!skip) this.#translators.set(key, translator);
 
 		/** @type {Promise<TranslationResult>} */
 		const req = translator.translate(text)
-		.then(sentence => ({ sentence, src: /** @type {ExternalTranslatorSession} */ (translator).lastSrc }))
+		.then(sentence => ({ sentence, src: /** @type {ExternalTranslator} */ (translator).lastSrc }))
 		.catch(reason => {
 			this.#cache.delete(tl, text);
 			throw reason;
@@ -198,7 +198,7 @@ export class TranslatorController {
 }
 
 
-class ExternalTranslatorSession {
+class ExternalTranslator {
 	static DEFAULT_URL = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=$sl&tl=$tl&dt=t&dt=bd&dj=1&q=$q';
 
 	/** @type {?string} */ #q = null;
@@ -215,7 +215,7 @@ class ExternalTranslatorSession {
 				throw `Translator URL has no $q token: ${options.url}`;
 			}
 		} catch {
-			this.url = new URL(ExternalTranslatorSession.DEFAULT_URL);
+			this.url = new URL(ExternalTranslator.DEFAULT_URL);
 			this.#setParams(options);
 		}
 	}

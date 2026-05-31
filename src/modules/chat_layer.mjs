@@ -1,10 +1,11 @@
 import { store as s } from './store.mjs';
 
 export class LiveChatLayer {
-	/**
-	 * @type {import("./chat_controller.mjs").LiveChatController}
-	 */
+	/** @type {import("./chat_controller.mjs").LiveChatController} */
 	#controller;
+
+	/** @type {number} */
+	#initialElemCount;
 
 	/**
 	 * Container element of the layer
@@ -42,6 +43,12 @@ export class LiveChatLayer {
 			const inputElem = /** @type {HTMLInputElement | undefined} */ (this.#controller.panel.form?.elements.namedItem('animation_duration'));
 			this.resetAnimationDuration(inputElem);
 			this.resetFontSize();
+
+			const video = this.element.parentElement?.querySelector('video');
+			if (video) {
+				this.element.style.maskPosition = `0px 0px, ${video.style.left} ${video.style.top}`;
+				this.element.style.maskSize = `100% 100%, ${video.style.width} ${video.style.height}`;
+			}
 		});
 		resizeObserver.observe(this.element);
 		this.root = this.element.attachShadow({ mode: 'closed' });
@@ -54,13 +61,21 @@ export class LiveChatLayer {
 			return element;
 		});
 		this.root.append(link, ...styles);
+		this.#initialElemCount = this.root.childElementCount;
+		
 		const mutationObserver = new MutationObserver(() => {
 			const over = this.root.childElementCount - (this.limit || Infinity);
-			let i = 4; // link + styles(3)
-			while (i++ < over) this.root.children[4]?.remove();
+			let i = this.#initialElemCount;
+			while (i++ < over) {
+				this.root.children[this.#initialElemCount]?.remove();
+			}
 		});
 		mutationObserver.observe(this.root, { childList: true });
 		this.clear();
+	}
+
+	get count() {
+		return this.root.childElementCount - this.#initialElemCount;
 	}
 
 	/**
@@ -151,5 +166,111 @@ export class LiveChatLayer {
 	move(x, y) {
 		this.element.style.left = `${x}px`;
 		this.element.style.top = `${y}px`;
+	}
+}
+
+/**
+ * @typedef MLEngineResult
+ * @prop {object} metrics
+ * @prop {number} metrics.decodingTime
+ * @prop {number} metrics.inferenceTime
+ * @prop {number} metrics.inputTokens
+ * @prop {number} metrics.outputTokens
+ * @prop {number} metrics.preprocessingTime
+ * @prop {Array<{ name: string, when: number }>} metrics.runTimestamps
+ * @prop {number} metrics.timePerOutputToken
+ * @prop {?number} metrics.timeToFirstToken
+ * @prop {number} metrics.tokenizingTime
+ * @prop {number} metrics.tokensPerSecond
+ * @prop { { cpuTime: number, memory: number } } resourcesAfter
+ * @prop { { cpuTime: number, memory: number } } resourcesBefore
+ */
+
+/**
+ * @typedef SegmentInfo
+ * @prop {?string} label
+ * @prop {?number} score
+ * @prop {object} mask
+ * @prop {Uint8ClampedArray} mask.data
+ * @prop {number} mask.width
+ * @prop {number} mask.height
+ * @prop {number} mask.channel
+ */
+
+/**
+ * @typedef {(result: MLEngineResult & SegmentInfo[]) => void} SegmentationCallback
+ */
+
+export class VideoSegmentationExecutor {
+	/** @type {[number, number]} */
+	static TARGET_SIZE = [256, 256];
+
+	/** @type {SegmentationCallback} */ #callback;
+	/** @type {AbortController} */ #abortController;
+	/** @type {number} */ #callbackId = 0;
+
+	/**
+	 * @param {SegmentationCallback} callback
+	 */
+	constructor(callback) {
+		this.#callback = callback;
+		this.#abortController = new AbortController();
+		this.offscreen = new OffscreenCanvas(...VideoSegmentationExecutor.TARGET_SIZE);
+		this.context = this.offscreen.getContext('2d');
+		this.frameInterval = 4;
+	}
+
+	/**
+	 * @param {HTMLVideoElement} video
+	 */
+	async #sendFrame(video) {
+		const [width, height] = VideoSegmentationExecutor.TARGET_SIZE;
+		try {
+			this.context?.drawImage(video, 0, 0, width, height);
+			const imageData = this.context?.getImageData(0, 0, width, height);
+			return await browser.runtime.sendMessage({ mask: imageData?.data.buffer, width, height });
+		} catch (reason) {
+			console.warn('Failed to send a video frame to the person detector:', reason);
+		}
+	}
+
+	/**
+	 * @param {HTMLVideoElement} video
+	 * @param {LiveChatLayer} layer
+	 */
+	observe(video, layer) {
+		let inProgress = false;
+		/** @type {VideoFrameRequestCallback} */
+		const frame = (now, metadata) => {
+			if (this.#abortController.signal.aborted) {
+				this.#abortController = new AbortController();
+				return;
+			} else if (
+				!inProgress
+				&& document.visibilityState === 'visible'
+				&& layer.count > 0
+				&& !video.paused
+				&& !video.ended
+				&& metadata.presentedFrames % this.frameInterval === 0
+				&& !video.closest('#movie_player')?.classList.contains('ad-showing')
+			) {
+				inProgress = true;
+				this.#sendFrame(video).then(r => {
+					// @ts-expect-error
+					this.#callback(r);
+					inProgress = false;
+				});
+			}
+			this.#callbackId = video.requestVideoFrameCallback(frame);
+		};
+		this.#callbackId = video.requestVideoFrameCallback(frame);
+	}
+
+	/**
+	 * @param {HTMLVideoElement} [video] 
+	 */
+	disconnect(video = undefined) {
+		this.#abortController.abort();
+		if (this.#callbackId) video?.cancelVideoFrameCallback(this.#callbackId);
 	}
 }
