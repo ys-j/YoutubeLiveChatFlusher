@@ -1,7 +1,7 @@
 import { LanguageDetectionController, TranslatorController } from './modules/translator.mjs';
 import { MLEngineManager } from './modules/ml_engine.mjs';
 
-//@ts-expect-error
+// @ts-expect-error
 self.browser ??= chrome;
 
 const manifest = browser.runtime.getManifest();

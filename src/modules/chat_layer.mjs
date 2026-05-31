@@ -132,7 +132,6 @@ export class LiveChatLayer {
 		if (!rect.height) return;
 		const lh = Number.parseFloat(s.styles.line_height) || 1.4;
 		if (numOfLines > 0) {
-			const lh = Number.parseFloat(s.styles.line_height) || 1.4;
 			const sizeByLines = (rect.height / lh / numOfLines) | 0;
 			this.element.style.setProperty('--yt-lcf-font-size', [
 				`${sizeByLines}px`,

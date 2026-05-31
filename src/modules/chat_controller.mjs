@@ -201,7 +201,6 @@ export class LiveChatController {
 	 */
 	#applySettingsToControls(form) {
 		const le = this.layer.element;
-		const rect = le.getBoundingClientRect();
 		const ctrls = form.elements;
 		for (const select of form.querySelectorAll('select')) {
 			if (select.name in s.others) {
@@ -237,31 +236,32 @@ export class LiveChatController {
 				else input.value = value;
 			}
 		}
-		// number
-		/** @type {HTMLInputElement} */ (ctrls.px_per_sec).valueAsNumber = /** @type {HTMLInputElement} */ (ctrls.speed).checked
-			? s.others.px_per_sec
-			: Math.round(rect.width / /** @type {HTMLInputElement} */ (ctrls.animation_duration).valueAsNumber);
+
+		const rect = le.getBoundingClientRect();
+		if (/** @type {HTMLInputElement} */ (ctrls.speed).checked) {
+			/** @type {HTMLInputElement} */ (ctrls.px_per_sec).valueAsNumber = s.others.px_per_sec;
+		} else if (rect.width > 0) {
+			const dur = /** @type {HTMLInputElement} */ (ctrls.animation_duration).valueAsNumber;
+			/** @type {HTMLInputElement} */ (ctrls.px_per_sec).valueAsNumber = Math.round(rect.width / dur);
+		}
 		/** @type {HTMLInputElement} */ (ctrls.limit_number).valueAsNumber = s.others.limit || 100;
 		/** @type {HTMLInputElement} */ (ctrls.container_limit_number).valueAsNumber = s.others.container_limit || 20;
 
 		const lines = s.others.number_of_lines;
-		const inputFontSize = /** @type {HTMLInputElement} */ (ctrls.font_size);
 		const inputLineNum = /** @type {HTMLInputElement} */ (ctrls.number_of_lines);
-		if (lines > 0) {
-			const sizeByLines = (rect.height / lines / Number.parseFloat(s.styles.line_height)) | 0;
-			if (s.others.type_of_lines > 0) {
-				le.style.setProperty('--yt-lcf-font-size', `max(${s.styles.font_size}, ${sizeByLines}px)`);
-				inputFontSize.valueAsNumber = sizeByLines;
+		if (rect.height > 0) {
+			if (lines > 0) {
+				const sizeByLines = (rect.height / lines / Number.parseFloat(s.styles.line_height)) | 0;
+				const fsVal = s.others.type_of_lines > 0 ? `max(${s.styles.font_size}, ${sizeByLines}px)` : `${sizeByLines}px`;
+				le.style.setProperty('--yt-lcf-font-size', fsVal);
+				inputLineNum.valueAsNumber = lines;
+				this.layoutCache.resize(lines);
 			} else {
-				le.style.setProperty('--yt-lcf-font-size', `${sizeByLines}px`);
+				const linesBySize = (rect.height / Number.parseFloat(s.styles.font_size) / Number.parseFloat(s.styles.line_height)) | 0;
+				le.style.setProperty('--yt-lcf-font-size', s.styles.font_size);
+				inputLineNum.valueAsNumber = linesBySize;
+				this.layoutCache.resize(linesBySize);
 			}
-			inputLineNum.valueAsNumber = lines;
-			this.layoutCache.resize(lines);
-		} else {
-			const linesBySize = (rect.height / Number.parseFloat(s.styles.font_size) / Number.parseFloat(s.styles.line_height)) | 0;
-			le.style.setProperty('--yt-lcf-font-size', s.styles.font_size);
-			inputLineNum.valueAsNumber = linesBySize;
-			this.layoutCache.resize(linesBySize);
 		}
 
 		/** @type {HTMLInputElement} */ (ctrls.time_shift).valueAsNumber = s.others.time_shift || 0;
