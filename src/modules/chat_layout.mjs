@@ -93,15 +93,13 @@ export function layoutChatItem(el, cache, mode = 'dense') {
 	el.style.setProperty('--yt-lcf-translate-x', `-${hw + cw}px`);
 
 	const body = /** @type {?HTMLElement} */ (el.lastElementChild);
-	if (body) {
-		const content = body.textContent;
-		if (content) {
-			browser.i18n.detectLanguage(content).then(result => {
-				if (result.isReliable) {
-					body.lang = result.languages[0].language;
-				}
-			});
-		}
+	const content = body?.textContent;
+	if (content) {
+		browser.i18n.detectLanguage(content).then(res => {
+			if (res.isReliable) {
+				body.lang = res.languages[0].language;
+			}
+		});
 	}
 
 	const dir = s.others.direction & 1 ? 'bottom' : 'top';
@@ -141,7 +139,7 @@ function placeChatItemDensely(el, cache) {
 		el.style[dir] = `${y * lhf}em`;
 		el.setAttribute('data-line', `${y}`);
 		layout = new ChatLayoutInfo(el, y);
-		if (layout.isOverflow(parentRect)) continue;
+		if (layout.isOverflow(parentRect)) break;
 		if (cache.anyCollides(layout, reversed)) continue;
 		el.style.visibility = '';
 		cache.set(el.id, layout);
@@ -153,7 +151,7 @@ function placeChatItemDensely(el, cache) {
 	const o = st & 0b01 ? .8 : 1;
 	const dy = st & 0b10 ? .5 : 0;
 
-	y = cache.maps.reduce((pi, cv, ci, arr) => cv.size < arr[pi].size ? ci : pi, 0);
+	y = cache.maps.slice(0, y).reduce((pi, cv, ci, arr) => cv.size < arr[pi].size ? ci : pi, 0);
 	el.setAttribute('data-line', `${y}`);
 	layout = new ChatLayoutInfo(el, y);
 	const len = cache.maps[y].values().filter(other => layout.isCollidable(other, reversed)).toArray().length || 1;

@@ -198,7 +198,7 @@ export class LiveChatLayer {
  */
 
 /**
- * @typedef {(result: MLEngineResult & SegmentInfo[]) => void} SegmentationCallback
+ * @typedef {(result: SegmentInfo[] | undefined) => void} SegmentationCallback
  */
 
 export class VideoSegmentationExecutor {
@@ -227,8 +227,8 @@ export class VideoSegmentationExecutor {
 		const [width, height] = VideoSegmentationExecutor.TARGET_SIZE;
 		try {
 			this.context?.drawImage(video, 0, 0, width, height);
-			const imageData = this.context?.getImageData(0, 0, width, height);
-			return await browser.runtime.sendMessage({ mask: imageData?.data.buffer, width, height });
+			const mask = await this.offscreen.convertToBlob({ type: 'image/webp', quality: .3 });
+			return await browser.runtime.sendMessage({ mask });
 		} catch (reason) {
 			console.warn('Failed to send a video frame to the person detector:', reason);
 		}

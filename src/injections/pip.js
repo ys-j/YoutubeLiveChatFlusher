@@ -66,21 +66,28 @@ async function openPip(element, params) {
 	#yt-lcf-pp{display:none!important}\
 	`;
 
-	const linkOrStyles = Array.from(element.ownerDocument.styleSheets, sheet => {
+	/** @type {(HTMLLinkElement | HTMLStyleElement)[]} */
+	const copiedStyles = [];
+	for (const sheet of element.ownerDocument.styleSheets) {
 		if (sheet.href) {
 			const link = document.createElement('link');
 			link.rel = 'stylesheet';
 			link.type = sheet.type;
 			link.media = Array.from(sheet.media).join();
 			link.href = sheet.href;
-			return link;
+			copiedStyles.push(link);
 		} else {
-			const style = document.createElement('style');
-			style.textContent = Array.from(sheet.cssRules, rule => rule.cssText).join('');
-			return style;
+			try {
+				const rules = sheet.cssRules;
+				const style = document.createElement('style');
+				style.textContent = Array.from(rules, rule => rule.cssText).join('');
+				copiedStyles.push(style);
+			} catch (err) {
+				console.warn(err, sheet.ownerNode);
+			}
 		}
-	});
-	pipWindow.document.head.append(pipMetaCharset, pipTitle, ...linkOrStyles, pipLink, pipStyle);
+	}
+	pipWindow.document.head.append(pipMetaCharset, pipTitle, ...copiedStyles, pipLink, pipStyle);
 
 	const pipMarker = document.createElement('span');
 	pipMarker.id = 'yt-lcf-pip-marker';

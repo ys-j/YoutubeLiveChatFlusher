@@ -90,57 +90,20 @@ browser.runtime.onMessage.addListener((_message, _sender, respond) => {
 		.then(sl => translationController?.translate(text, tl, sl))
 		.then(respond);
 	} else if ('mask' in msg && personDetectionEngine) {
-		const { mask, width, height } = msg;
-		const blob = new Blob([ createBmpHeader(width, height), mask ], { type: 'image/bmp' });
-		personDetectionEngine.run({ args: [ blob ] })
+		const { mask, width = 256, height = 256 } = msg;
+		personDetectionEngine?.run({ args: [ mask ] })
 		.then(respond, err => {
 			console.warn(err?.message ?? err);
-			respond({
-				label: null,
-				score: null,
-				mask: [
-					{ data: new Uint8ClampedArray(width * height), width, height, channel: 1 },
-				],
-			});
+			respond([
+				{
+					label: null,
+					score: null,
+					mask: { data: new Uint8ClampedArray(width * height), width, height, channel: 1 },
+				}
+			]);
 		});
 	} else if ('fire' in msg) {
 		events[msg.fire]?.()?.then(respond);
 	}
 	return true;
 });
-
-/**
- * @param {number} width pixels of width
- * @param {number} height pixels of height
- */
-function createBmpHeader(width, height) {
-	const headerSize = 66;
-	const bodySize = width * height * 4;
-	const resolution = Math.ceil(72 / .0254);
-	const buffer = new ArrayBuffer(headerSize);
-	const view = new DataView(buffer);
-
-	view.setUint8(0, 0x42);
-	view.setUint8(1, 0x4D);
-	view.setUint32(2, headerSize + bodySize, true);
-	view.setUint32(6, 0, true);
-	view.setUint32(10, headerSize, true);
-
-	view.setUint32(14, 40, true);
-	view.setInt32(18, width, true);
-	view.setInt32(22, -height, true);
-	view.setUint16(26, 1, true);
-	view.setUint16(28, 32, true);
-	view.setUint32(30, 3, true);
-	view.setUint32(34, bodySize, true);
-	view.setInt32(38, resolution, true);
-	view.setInt32(42, resolution, true);
-	view.setUint32(46, 0, true);
-	view.setUint32(50, 0, true);
-
-	view.setUint32(54, 0x000000FF, true);
-	view.setUint32(58, 0x0000FF00, true);
-	view.setUint32(62, 0x00FF0000, true);
-
-	return buffer;
-}
