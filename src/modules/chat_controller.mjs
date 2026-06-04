@@ -452,7 +452,7 @@ export class LiveChatController {
 		let prevRecv = null;
 
 		this.segmenter = new VideoSegmentationExecutor(async res => {
-			const data = res.at(0)?.mask?.data;
+			const data = res?.at(0)?.mask?.data;
 			if (!data) return;
 			if (!prevRecv || prevRecv.length !== data.length) {
 				prevRecv = new Uint8ClampedArray(data.length);

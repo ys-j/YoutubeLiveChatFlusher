@@ -198,7 +198,7 @@ export class LiveChatLayer {
  */
 
 /**
- * @typedef {(result: SegmentInfo[]) => void} SegmentationCallback
+ * @typedef {(result: SegmentInfo[] | undefined) => void} SegmentationCallback
  */
 
 export class VideoSegmentationExecutor {
