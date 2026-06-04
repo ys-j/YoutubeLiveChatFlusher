@@ -558,6 +558,7 @@ function getChatMessage(message, options = {}) {
 					}
 				} else {
 					node = document.createElement('span');
+					node.textContent = filtered.value;
 				}
 				if (r.bold) node.classList.add('b');
 				if (r.italics) node.classList.add('i');
