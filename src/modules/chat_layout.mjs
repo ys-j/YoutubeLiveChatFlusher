@@ -155,7 +155,7 @@ function placeChatItemDensely(el, cache) {
 	el.setAttribute('data-line', `${y}`);
 	layout = new ChatLayoutInfo(el, y);
 	const len = cache.maps[y].values().filter(other => layout.isCollidable(other, reversed)).toArray().length || 1;
-	el.style.top = `${(y + dy) * lhf}em`;
+	el.style[dir] = `${(y + dy) * lhf}em`;
 	el.style.opacity = `${Math.max(.5, o ** len)}`;
 	el.style.zIndex = `-${len}`;
 	el.style.visibility = '';
@@ -233,16 +233,16 @@ class ChatLayoutInfo {
 	}
 
 	get width() {
-		return this.#rect.width;
+		return this.#rect.width | 0;
 	}
 	get height() {
-		return this.#rect.height;
+		return this.#rect.height | 0;
 	}
 	get top() {
-		return this.#rect.top;
+		return this.#rect.top | 0;
 	}
 	get bottom() {
-		return this.#rect.bottom;
+		return this.#rect.bottom | 0;
 	}
 
 	getLeft(factor = 1) {
