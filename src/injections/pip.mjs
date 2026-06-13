@@ -1,3 +1,5 @@
+import { logger } from '../modules/logging.mjs';
+
 /**
  * Initializes the PiP-mode menu.
  */
@@ -38,9 +40,8 @@ async function openPip(element, params) {
 	try {
 		void pipWindow.origin;
 	} catch {
-		console.error('Access to document picture-in-picture window was denied.');
 		pipWindow.close();
-		return self;
+		throw new Error('Access to document picture-in-picture window was denied.');
 	}
 
 	top?.addEventListener('keydown', disableKeyboardShortcutOnParentWindow, true);
@@ -83,7 +84,7 @@ async function openPip(element, params) {
 				style.textContent = Array.from(rules, rule => rule.cssText).join('');
 				copiedStyles.push(style);
 			} catch (err) {
-				console.warn(err, sheet.ownerNode);
+				logger.warn(err, sheet.ownerNode);
 			}
 		}
 	}
@@ -139,6 +140,8 @@ async function openPip(element, params) {
 		pipWindow.removeEventListener('keydown', enableKeyboardShortcutOnChildWindow, true);
 		top?.removeEventListener('yt-navigate-finish', onYtNavigateFinishDispatchPip);
 	}, { passive: true });
+
+	logger.info('PiP /w chat window is created successfully.');
 	return pipWindow;
 
 	function onYtNavigateFinishDispatchPip() {

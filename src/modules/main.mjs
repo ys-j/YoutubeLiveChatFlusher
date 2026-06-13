@@ -1,5 +1,5 @@
+import { logger } from './logging.mjs';
 import { store } from './store.mjs';
-import { isNotPip } from './utils.mjs';
 
 import { LiveChatController } from './chat_controller.mjs';
 import { ReplayActionBuffer, getReplayChatActionsAsyncIterable, getLiveChatActionsAsyncIterable } from './chat_actions.mjs';
@@ -47,14 +47,15 @@ export async function initialize(e) {
 		// Initilize document picture-in-picture
 		const script = document.createElement('script');
 		script.id = 'yt-lcf-pip-script';
-		script.src = browser.runtime.getURL('/injections/pip.js');
+		script.src = browser.runtime.getURL('/injections/pip.mjs');
+		script.type = 'module';
 		script.dataset.paramCssUrl = browser.runtime.getURL('/styles/content.css');
 		script.dataset.paramPipMarkerText = browser.i18n.getMessage('pip_marker');
 		document.body.append(script);
 		
 		state.succeeded = true;
 	}).catch(reason => {
-		console.warn(reason);
+		logger.warn(reason);
 		state.succeeded = false;
 	});
 	if (state.succeeded) {
@@ -102,7 +103,7 @@ async function onYtNavigateFinish(e) {
 	toggle?.setAttribute('aria-disabled', 'true');
 
 	/** @type {?HTMLVideoElement | undefined} */
-	const video = (isNotPip() ? self : self.documentPictureInPicture?.window)?.document.querySelector('#movie_player video');
+	const video = (self.documentPictureInPicture?.window || self)?.document.querySelector('#movie_player video');
 	const videoContainer = video?.parentElement;
 	if (!videoContainer) return;
 	const parent = videoContainer.parentElement;
@@ -159,7 +160,7 @@ async function onYtNavigateFinish(e) {
 				}
 			} else {
 				const message = `This video has no chat: ${videoDetails?.videoId || '[failed to get video id]'}`;
-				console.warn(message);
+				logger.warn(message);
 			}
 			clearInterval(timer);
 			break;

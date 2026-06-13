@@ -1,63 +1,78 @@
-// @ts-expect-error
-self.browser ??= chrome;
-
-const isNotPip = () => !self.documentPictureInPicture?.window;
-
-const manifest = browser.runtime.getManifest();
-document.body.dataset.browser = 'browser_specific_settings' in manifest ? 'firefox' : 'chrome';
-
-// inject script
-self.addEventListener('ytlcf-message', e => {
-	if (!e.detail) return;
-	const { ytInitialData, ytcfg } = e.detail;
-	if (ytInitialData) sessionStorage.setItem('ytlcf-initial-data', ytInitialData);
-	if (ytcfg) sessionStorage.setItem('ytlcf-cfg', ytcfg);
-	const path = location.pathname.split('/').find(Boolean);
-	const detail = {
-		pageType: path === 'watch' || path === 'live' ? 'watch' : 'browse',
-		response: JSON.parse(ytInitialData),
-	};
-	const timer = setInterval(() => {
-		const target = document.querySelector('ytd-app') || document.getElementById('player-container-id');
-		if (target) {
-			const url = browser.runtime.getURL('./modules/main.mjs');
-			import(url).then(module => {
-				module.initialize({ target, detail });
-			}).finally(() => {
-				clearInterval(timer);
-			});
-		}
-	}, 1000);
-}, { passive: true });
-
-self.addEventListener('ytlcf-ready', e => {
-	e.stopImmediatePropagation();
-	console.info(`${manifest.name} is ready!`);
-}, { passive: true });
-
-document.addEventListener('yt-action', e => {
-	const name = e.detail?.actionName;
-	switch (name) {
-		case 'ytd-watch-player-data-changed': {
-			const ev = new CustomEvent(name);
-			if (!isNotPip()) self.documentPictureInPicture?.window?.dispatchEvent(ev);
-			checkAutoStart();
-		}
-	}
-}, { passive: true });
-
-async function checkAutoStart() {
-	const store = await browser.storage.local.get('others');
+const loggingUrl = browser.runtime.getURL('./modules/logging.mjs');
+import(loggingUrl).then((/** @type {typeof import("./modules/logging.mjs")} */ { logger }) => {
 	// @ts-expect-error
-	const enabled = store?.others?.autostart;
-	if (!enabled) return false;
+	self.browser ??= chrome;
 
-	const container = document.getElementById('show-hide-button');
-	if (!container || container.hidden) return false;
+	const manifest = browser.runtime.getManifest();
+	document.body.dataset.browser = 'browser_specific_settings' in manifest ? 'firefox' : 'chrome';
 
-	const button = container.querySelector('button');
-	if (button?.closest('#close-button')) return false;
+	self.addEventListener('ytlcf-message', e => {
+		const { ytInitialData, ytcfg } = e.detail ?? {};
+		if (!ytInitialData || !ytcfg) {
+			logger.error('Failed to get a message from the injected script.');
+			return;
+		}
+		logger.debug('Getting initialization message from the injected script.');
+		sessionStorage.setItem('ytlcf-initial-data', ytInitialData);
+		sessionStorage.setItem('ytlcf-cfg', ytcfg);
 
-	button?.click();
-	return true;
-}
+		const path = location.pathname.split('/').find(Boolean);
+		const detail = {
+			pageType: path === 'watch' || path === 'live' ? 'watch' : 'browse',
+			response: JSON.parse(ytInitialData),
+		};
+		const timer = setInterval(async () => {
+			const target = document.querySelector('ytd-app') || document.getElementById('player-container-id');
+			if (!target) {
+				logger.debug('Waiting for <ytd-app> element.');
+				return;
+			}
+			try {
+				/** @type {typeof import("./modules/main.mjs")} */
+				const { initialize } = await import(browser.runtime.getURL('./modules/main.mjs'));
+				initialize({ target, detail });
+			} catch (e) {
+				logger.error('Failed to start up.', e);
+			} finally {
+				clearInterval(timer);
+			}
+		}, 1000);
+	}, { passive: true });
+
+	self.addEventListener('ytlcf-ready', e => {
+		e.stopImmediatePropagation();
+		logger.info(`${manifest.name} is ready!`);
+	}, { passive: true });
+
+	document.addEventListener('yt-action', e => {
+		const name = e.detail?.actionName;
+		switch (name) {
+			case 'ytd-watch-player-data-changed': {
+				const ev = new CustomEvent(name);
+				self.documentPictureInPicture?.window?.dispatchEvent(ev);
+				checkAutoStart();
+			}
+		}
+	}, { passive: true });
+
+	async function checkAutoStart() {
+		const store = await browser.storage.local.get('others');
+		// @ts-expect-error
+		const enabled = store?.others?.autostart;
+		if (!enabled) return false;
+
+		const container = document.getElementById('show-hide-button');
+		if (!container || container.hidden) return false;
+
+		const button = container.querySelector('button');
+		if (button?.closest('#close-button')) return false;
+
+		button?.click();
+		return true;
+	}
+
+	const script = document.createElement('script');
+	script.src = browser.runtime.getURL('./injections/init.mjs');
+	script.type = 'module';
+	document.body.appendChild(script);
+}).catch(console.error);

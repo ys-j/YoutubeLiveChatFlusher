@@ -1,3 +1,4 @@
+import { logger } from './logging.mjs';
 import { store as s } from './store.mjs';
 import { isNotPip, loadTemplateDocument, getColorRGB } from './utils.mjs';
 
@@ -437,7 +438,7 @@ export class LiveChatController {
 		const canvas = document.createElement('canvas');
 		const ctx = canvas.getContext('bitmaprenderer');
 		if (!ctx) {
-			console.warn('ImageBitmapRenderingContext is not supported.');
+			logger.warn('ImageBitmapRenderingContext is not supported.');
 			return;
 		}
 		canvas.id = 'yt-lcf-mask-canvas';
@@ -557,7 +558,7 @@ export class LiveChatController {
 	#addChatItem(action, callback) {
 		const item = action.addChatItemAction?.item;
 		if (!item) {
-			console.warn('Failed to add message.');
+			logger.warn('Failed to add message.');
 			return;
 		}
 		return renderChatItem(item, this.itemFactory).then(el => {
@@ -565,7 +566,7 @@ export class LiveChatController {
 			const text = el.getAttribute('data-text');
 			callback(el);
 			if (root.getElementById(el.id)) {
-				console.debug(`Message duplication #${el.id}: ${text || el.lastElementChild?.textContent}`);
+				logger.debug(`Message duplication #${el.id}: ${text || el.lastElementChild?.textContent}`);
 			} else {
 				/** @type { ["dense", "random"] } */
 				const modeOptions = ['dense', 'random'];
@@ -584,7 +585,7 @@ export class LiveChatController {
 			const target = this.layer.root.getElementById(id);
 			target?.remove();
 		} else {
-			console.warn('Failed to delete message: #' + id);
+			logger.warn(`Failed to delete message: #${id}`);
 		}
 	}
 
@@ -610,9 +611,9 @@ export class LiveChatController {
 		const target = this.layer.root.getElementById(id);
 		const item = action.replaceChatItemAction?.replacementItem;
 		if (target && item) {
-			renderChatItem(item, this.itemFactory).then(target.replaceWith, console.warn);
+			renderChatItem(item, this.itemFactory).then(target.replaceWith, logger.warn);
 		} else {
-			console.warn('Failed to replace message: #' + id);
+			logger.warn(`Failed to replace message: #${id}`);
 		}
 	}
 

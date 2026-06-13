@@ -87,3 +87,20 @@ export function getColorRGB(long) {
 	const separated = long.toString(16).match(/[0-9a-f]{2}/g) || [];
 	return separated.map(hex => Number.parseInt(hex, 16)).slice(1);
 }
+
+/**
+ * Formats milliseconds number to "h:mm:ss.fff"-style.
+ * @param {number} ms milliseconds
+ */
+export function formatMilliseconds(ms) {
+	const SECOND = 1000;
+	const MINUTE = 60 * SECOND;
+	const HOUR = 60 * MINUTE;
+	/** @type {(f: number, digits?: number) => string} */
+	const zfill = (f, digits = 2) => `${Math.floor(f)}`.padStart(digits, '0');
+	const h = Math.floor(ms / HOUR);
+	const mm = zfill((ms % HOUR) / MINUTE);
+	const ss = zfill((ms % MINUTE) / SECOND);
+	const fff = zfill(ms % SECOND, 3);
+	return (h > 0 ? `${h}:` : '') + `${mm}:${ss}.${fff}`;
+}

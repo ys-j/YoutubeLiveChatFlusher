@@ -1,3 +1,4 @@
+import { logger } from '../modules/logging.mjs';
 import { store as s } from '../modules/store.mjs';
 
 // @ts-expect-error
@@ -49,12 +50,12 @@ importBtn?.addEventListener('click', async () => {
 	input.type = 'file';
 	input.accept = 'application/json';
 	input.addEventListener('cancel', () => {
-		console.debug('Config file import is canceled.');
+		logger.debug('Config file import is canceled.');
 	}, { passive: true });
 	input.addEventListener('change', () => {
 		const files = input.files;
 		if (files && files.length > 0) {
-			console.debug('Config file selected: ' + files[0].name);
+			logger.debug('Config file selected:', files[0].name);
 			const reader = new FileReader();
 			reader.onload = async e => {
 				const json = JSON.parse(/** @type {string} */ (e.target?.result));
