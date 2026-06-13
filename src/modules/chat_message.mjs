@@ -233,7 +233,9 @@ async function fetchAuthorInfo(renderer, type) {
  */
 export async function renderChatItem(item, factory) {
 	const key = Object.keys(item)[0];
-	if (RENDERING_SKIP_KEYS.includes(key)) throw 'Skipped rendering.';
+	if (RENDERING_SKIP_KEYS.includes(key)) {
+		throw `Skipped rendering chat item (excluded chat item type): ${key}`;
+	}
 
 	/** @type {LiveChat.RendererContent} */
 	const renderer = item[key];

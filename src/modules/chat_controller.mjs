@@ -73,7 +73,7 @@ export class LiveChatController {
 		const video = this.player.querySelector('#movie_player video');
 		const videoContainer = video?.parentElement;
 		if (!video || !videoContainer) {
-			return Promise.reject('No video container element.');
+			return Promise.reject('No video container element found.');
 		}
 
 		document.getElementById('ytlcf-panel')?.remove();
@@ -562,17 +562,15 @@ export class LiveChatController {
 			return;
 		}
 		return renderChatItem(item, this.itemFactory).then(el => {
-			const root = this.layer.root;
-			const text = el.getAttribute('data-text');
 			callback(el);
-			if (root.getElementById(el.id)) {
-				logger.debug(`Message duplication #${el.id}: ${text || el.lastElementChild?.textContent}`);
+			if (this.layer.root.getElementById(el.id)) {
+				logger.debug('Skipped rendering chat item (already exists on the layer):', `#${el.id}`);
 			} else {
 				/** @type { ["dense", "random"] } */
 				const modeOptions = ['dense', 'random'];
 				layoutChatItem(el, this.layoutCache, modeOptions[s.others.density]);
 			}
-		}).catch(_ => {});
+		}).catch(logger.warn);
 	}
 
 	/**

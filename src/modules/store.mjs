@@ -1,3 +1,5 @@
+import { logger } from './logging.mjs';
+
 export const DEFAULT_CONFIG = Object.freeze({
 	styles: {
 		animation_duration: '8s',
@@ -105,7 +107,10 @@ class ConfigHandler {
 	set(target, prop, val, _recv) {
 		if (prop in target) {
 			target[prop] = val;
-			browser.storage.local.set({ [this.#name]: target });
+			browser.storage.local.set({ [this.#name]: target }).then(() => {
+				const dispVal = typeof val === 'string' ? `"${val}"` : val;
+				logger.info(`Successfully saved config:`, `${this.#name}["${prop}"] =`, dispVal);
+			});
 			return true;
 		}
 		return false;

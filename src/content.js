@@ -32,7 +32,7 @@ import(loggingUrl).then((/** @type {typeof import("./modules/logging.mjs")} */ {
 				const { initialize } = await import(browser.runtime.getURL('./modules/main.mjs'));
 				initialize({ target, detail });
 			} catch (e) {
-				logger.error('Failed to start up.', e);
+				logger.error('Failed to startup:', e);
 			} finally {
 				clearInterval(timer);
 			}

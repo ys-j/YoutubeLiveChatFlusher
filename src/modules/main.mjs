@@ -1,12 +1,12 @@
 import { logger } from './logging.mjs';
 import { store } from './store.mjs';
+import { getText } from './utils.mjs';
 
 import { LiveChatController } from './chat_controller.mjs';
 import { ReplayActionBuffer, getReplayChatActionsAsyncIterable, getLiveChatActionsAsyncIterable } from './chat_actions.mjs';
 
 const state = {
 	isLive: false,
-	succeeded: true,
 	action: new ReplayActionBuffer(),
 	abortController: new AbortController(),
 	/** @type {?LiveChatController} */
@@ -33,6 +33,8 @@ const FetchingModeEnum = Object.freeze({
  * @prop {any} response.response
  * @prop {any} response.playerResponse
  * @prop {any} [response.contents]
+ * @prop {any} [response.currentVideoEndpoint]
+ * @prop {any} [response.playerOverlays]
  */
 
 /**
@@ -41,7 +43,8 @@ const FetchingModeEnum = Object.freeze({
 export async function initialize(e) {
 	const player = /** @type {HTMLElement} */ (e.target);
 	state.controller = new LiveChatController(player);
-	await state.controller.start().then(() => {
+	try {
+		await state.controller.start();
 		self.dispatchEvent(new CustomEvent('ytlcf-ready'));
 		
 		// Initilize document picture-in-picture
@@ -53,15 +56,10 @@ export async function initialize(e) {
 		script.dataset.paramPipMarkerText = browser.i18n.getMessage('pip_marker');
 		document.body.append(script);
 		
-		state.succeeded = true;
-	}).catch(reason => {
-		logger.warn(reason);
-		state.succeeded = false;
-	});
-	if (state.succeeded) {
 		self.addEventListener('yt-navigate-finish', onYtNavigateFinish, { passive: true });
 		onYtNavigateFinish(e);
-	} else {
+	} catch (reason) {
+		logger.warn(`Waiting for next navigation due to setup failure:`, reason);
 		self.addEventListener('yt-navigate-finish', initialize, { once: true, passive: true });
 		return;
 	}
@@ -115,13 +113,18 @@ async function onYtNavigateFinish(e) {
 	if (!response) return;
 	const videoDetails = mainResponse?.playerResponse?.videoDetails
 		|| mainResponse.contents?.twoColumnWatchNextResults?.results?.results?.contents?.at(0)?.videoPrimaryInfoRenderer?.viewCount?.videoViewCountRenderer;
+	const info = {
+		videoId: videoDetails.videoId || mainResponse.currentVideoEndpoint?.watchEndpoint?.videoId,
+		title: videoDetails.title || getText(mainResponse.playerOverlays?.playerOverlayRenderer?.videoDetails?.playerOverlayVideoDetailsRenderer?.title),
+	};
 	state.isLive = videoDetails?.isLive || videoDetails?.isUpcoming || false;
 
-	const modeName = state.isLive ? 'mode_livestream' : 'mode_replay';
-	const modeValue = store.others?.[modeName] ?? FetchingModeEnum.INDEPENDENT;
+	const videoType = state.isLive ? 'livestream' : 'replay';
+	const modeValue = store.others?.[`mode_${videoType}`] ?? FetchingModeEnum.INDEPENDENT;
 
 	switch (modeValue) {
 		case FetchingModeEnum.DEPENDENT:
+			logger.info(`Running in dependent mode for ${videoType} (${info.videoId}):`, info.title);
 			document.addEventListener('ytlcf-start', () => {
 				state.controller?.listen();
 				toggle?.removeAttribute('aria-disabled');
@@ -143,6 +146,7 @@ async function onYtNavigateFinish(e) {
 			/** @type {?string} */
 			const initialContinuation = liveChatRenderer?.continuations?.at(0)?.reloadContinuationData?.continuation;
 			if (initialContinuation) {
+				logger.info(`Running in independent mode for ${videoType} (${info.videoId}):`, info.title);
 				state.controller?.listen();
 				toggle?.removeAttribute('aria-disabled');
 				if (state.isLive) {
@@ -159,8 +163,7 @@ async function onYtNavigateFinish(e) {
 					}
 				}
 			} else {
-				const message = `This video has no chat: ${videoDetails?.videoId || '[failed to get video id]'}`;
-				logger.warn(message);
+				logger.warn('Failed to fetch the chats in independent mode (this video has no chat):', info);
 			}
 			clearInterval(timer);
 			break;
