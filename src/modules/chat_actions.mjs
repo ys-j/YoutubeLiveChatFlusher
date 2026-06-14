@@ -1,4 +1,6 @@
+import { logger } from './logging.mjs';
 import { fetchInnerTube } from './innertube.mjs';
+import { formatMilliseconds } from './utils.mjs';
 
 export class ReplayActionBuffer {
 	/** @type {Map<number, Set<LiveChat.LiveChatItemAction>>} */
@@ -106,6 +108,7 @@ export async function* getReplayChatActionsAsyncIterable(signal, initialContinua
 	let controller = new AbortController();
 	signal.addEventListener('ytlcf-seek', e => {
 		seekInfo = /** @type {SeekInfo} */ (e.detail);
+		logger.debug(`Reference offset was set to ${formatMilliseconds(seekInfo.offset)}`);
 		controller.abort();
 	}, { passive: true });
 
@@ -135,9 +138,14 @@ export async function* getReplayChatActionsAsyncIterable(signal, initialContinua
 				const offsetDiff = (offset - prevOffset) / Number.parseFloat(playbackRate) - 250 | 0;
 				sleepMs = Math.max(250, offsetDiff);
 				prevOffset = offset;
+				logger.debug(
+					`Fetched ${contents.actions?.length || 'no'} chat actions up to ${formatMilliseconds(offset)}.`,
+					`Next request will be sent ${(sleepMs / 1000).toFixed(3)} sec after.`
+				);
 			} else {
 				sleepMs = Infinity;
 				continuations.clear();
+				logger.debug(`Fetched ${contents.actions?.length || 'no'} chat actions.`);
 			}
 		}
 		prev = body.continuation;
@@ -179,7 +187,7 @@ async function getContentsAsync(url, body) {
 		const json = await fetchInnerTube(url, body, { auth: true });
 		return json.continuationContents?.liveChatContinuation;
 	} catch (reason) {
-		console.error(reason);
+		logger.error('Failed to fetch continuation contents.', reason);
 		const c = {
 			liveChatReplayContinuationData: body,
 			invalidationContinuationData: body,

@@ -1,3 +1,5 @@
+import { logger } from "./logging.mjs";
+
 /**
  * @typedef MLEngingCreateEngineRequest
  * @prop {string} taskName
@@ -39,16 +41,16 @@ export class MLEngineManager {
 		try {
 			if (!browser.trial?.ml) throw new Error('WebExtensions AI API is not supported yet.');
 			await browser.trial.ml.createEngine(this.#req);
-			console.info(`Successfully created the MLEngine[${this.#req.taskName}]:`, this.#req);
+			logger.info(`Successfully created the MLEngine[${this.#req.taskName}]:`, this.#req);
 			this.isReady = true;
 		} catch (err) {
 			const errMsg = /** @type {?Error} */ (err)?.message;
 			if (errMsg?.includes('already created')) {
-				console.warn(errMsg.replace('Engine', `MLEngine[${this.#req.taskName}]`));
+				logger.warn(errMsg.replace('Engine', `MLEngine[${this.#req.taskName}]`));
 				this.isReady = true;
 			} else {
 				this.#disabledError = new Error(`MLEngine [${this.#req.taskName}] has been disabled due to previous failure.`, { cause: err });
-				console.error(`An error occurred while initilizing MLEngine [${this.#req.taskName}]:`, err);
+				logger.error(`An error occurred while initilizing MLEngine [${this.#req.taskName}]:`, err);
 				this.isReady = false;
 				throw err;
 			}

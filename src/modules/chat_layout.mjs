@@ -81,7 +81,6 @@ export class LiveChatLayoutCache {
  * @return renderer/element id
  */
 export function layoutChatItem(el, cache, mode = 'dense') {
-	el.style.visibility = 'hidden';
 	cache.dom.appendChild(el);
 
 	const hh = cache.dom.host.clientHeight, hw = cache.dom.host.clientWidth;
@@ -106,7 +105,6 @@ export function layoutChatItem(el, cache, mode = 'dense') {
 	if (ch >= hh) {
 		el.style[dir] = '0px';
 		el.setAttribute('data-line', '0');
-		el.style.visibility = '';
 		const layout = new ChatLayoutInfo(el, 0);
 		cache.set(el.id, layout);
 		return el.id;
@@ -141,7 +139,6 @@ function placeChatItemDensely(el, cache) {
 		layout = new ChatLayoutInfo(el, y);
 		if (layout.isOverflow(parentRect)) break;
 		if (cache.anyCollides(layout, reversed)) continue;
-		el.style.visibility = '';
 		cache.set(el.id, layout);
 		return el.id;
 	} while (++y <= overline);
@@ -155,10 +152,9 @@ function placeChatItemDensely(el, cache) {
 	el.setAttribute('data-line', `${y}`);
 	layout = new ChatLayoutInfo(el, y);
 	const len = cache.maps[y].values().filter(other => layout.isCollidable(other, reversed)).toArray().length || 1;
-	el.style.top = `${(y + dy) * lhf}em`;
+	el.style[dir] = `${(y + dy) * lhf}em`;
 	el.style.opacity = `${Math.max(.5, o ** len)}`;
 	el.style.zIndex = `-${len}`;
-	el.style.visibility = '';
 	cache.set(el.id, layout);
 	return el.id;
 }
@@ -194,7 +190,6 @@ function placeChatItemRandomly(el, cache) {
 		}
 		break;
 	} while (calculatedLine.size > 0);
-	el.style.visibility = '';
 	cache.set(el.id, layout);
 	return el.id;
 }
@@ -233,16 +228,16 @@ class ChatLayoutInfo {
 	}
 
 	get width() {
-		return this.#rect.width;
+		return this.#rect.width | 0;
 	}
 	get height() {
-		return this.#rect.height;
+		return this.#rect.height | 0;
 	}
 	get top() {
-		return this.#rect.top;
+		return this.#rect.top | 0;
 	}
 	get bottom() {
-		return this.#rect.bottom;
+		return this.#rect.bottom | 0;
 	}
 
 	getLeft(factor = 1) {

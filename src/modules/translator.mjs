@@ -1,3 +1,4 @@
+import { logger } from './logging.mjs';
 import { LRUCache } from './lrucache.mjs';
 
 /**
@@ -163,7 +164,7 @@ export class TranslatorController {
 					src: sl,
 				};
 			} else {
-				console.warn(`Built-in translator is fallbacked to external one because language model [${sl} to ${tl}] is not enabled yet (${availability} now).`);
+				logger.warn(`Built-in translator is fallbacked to external one because language model [${sl} to ${tl}] is not enabled yet (${availability} now).`);
 				if (availability === 'downloading') skip = true;
 			}
 		}
@@ -239,7 +240,7 @@ class ExternalTranslator {
 		const p = this.url.searchParams;
 		if (this.#q) p.set(this.#q, text);
 		/** @type { { sentences: { trans: string }[], src: string }? } */
-		const json = await fetch(this.url).then(res => res.json()).catch(console.warn);
+		const json = await fetch(this.url).then(res => res.json()).catch(logger.warn);
 		this.lastSrc = json?.src || 'und';
 		return json?.sentences.map(s => s.trans).join('') || text;
 	}

@@ -1,3 +1,4 @@
+import { logger } from './logging.mjs';
 import { store as s } from './store.mjs';
 
 export class LiveChatLayer {
@@ -230,7 +231,7 @@ export class VideoSegmentationExecutor {
 			const mask = await this.offscreen.convertToBlob({ type: 'image/webp', quality: .3 });
 			return await browser.runtime.sendMessage({ mask });
 		} catch (reason) {
-			console.warn('Failed to send a video frame to the person detector:', reason);
+			logger.error('Failed to send a video frame to the person detector.', reason);
 		}
 	}
 

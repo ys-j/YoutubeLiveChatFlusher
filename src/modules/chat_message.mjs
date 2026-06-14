@@ -1,3 +1,4 @@
+import { logger } from './logging.mjs';
 import { fetchInnerTube } from './innertube.mjs';
 import { store as s } from './store.mjs';
 import { getColorRGB, getText, loadTemplateDocument, refreshWordsList } from './utils.mjs';
@@ -215,7 +216,7 @@ async function fetchAuthorInfo(renderer, type) {
 					name = pageTitle;
 				}
 			} catch (reason) {
-				console.error(reason);
+				logger.error(`Failed to fetch the author info: #${id}`, reason);
 			}
 		}
 	}
@@ -232,7 +233,9 @@ async function fetchAuthorInfo(renderer, type) {
  */
 export async function renderChatItem(item, factory) {
 	const key = Object.keys(item)[0];
-	if (RENDERING_SKIP_KEYS.includes(key)) throw 'Skipped rendering.';
+	if (RENDERING_SKIP_KEYS.includes(key)) {
+		throw `Skipped rendering chat item (excluded chat item type): ${key}`;
+	}
 
 	/** @type {LiveChat.RendererContent} */
 	const renderer = item[key];
@@ -341,7 +344,7 @@ export async function renderChatItem(item, factory) {
 				case 'YOUTUBE_ROUND':
 					break;
 				default:
-					console.debug(renderer);
+					logger.debug('Unsupported message:', renderer);
 			}
 		}
 	}
@@ -388,7 +391,7 @@ function translateNodesAsync(nodes, target, exceptionLangs) {
 			};
 			return browser.runtime.sendMessage({ translation });
 		} catch (reason) {
-			console.warn(reason, text);
+			logger.error(`Failed to translate the message: "${text}"`, reason);
 			return null;
 		}
 	}));

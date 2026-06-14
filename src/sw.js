@@ -1,3 +1,4 @@
+import { logger } from './modules/logging.mjs';
 import { LanguageDetectionController, TranslatorController } from './modules/translator.mjs';
 import { MLEngineManager } from './modules/ml_engine.mjs';
 
@@ -66,7 +67,7 @@ browser.storage.local.get(['translation', 'others']).then(async s => {
 			});
 			await personDetectionEngine.ensureReady();
 		} else {
-			console.warn('Permission "trialML" was rejected.');
+			logger.warn('Permission "trialML" was rejected.');
 		}
 	}
 });
@@ -93,7 +94,7 @@ browser.runtime.onMessage.addListener((_message, _sender, respond) => {
 		const { mask, width = 256, height = 256 } = msg;
 		personDetectionEngine?.run({ args: [ mask ] })
 		.then(respond, err => {
-			console.warn(err?.message ?? err);
+			logger.warn(err?.message ?? err);
 			respond([
 				{
 					label: null,
