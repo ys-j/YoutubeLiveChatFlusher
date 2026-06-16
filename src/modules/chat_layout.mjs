@@ -40,7 +40,8 @@ export class LiveChatLayoutCache {
 	 * @param {ChatLayoutInfo} layout layout info
 	 */
 	set(id, layout) {
-		for (let i = layout.lineStart; i < layout.lineEnd; i++) {
+		const len = Math.min(this.maps.length, layout.lineEnd);
+		for (let i = layout.lineStart; i < len; i++) {
 			this.maps[i].set(id, layout);
 		}
 	}
@@ -63,7 +64,8 @@ export class LiveChatLayoutCache {
 	 * @returns {boolean} if this message collides against any preceding layout
 	 */
 	anyCollides(target, reversed = false) {
-		for (let i = target.lineStart; i < target.lineEnd; i++) {
+		const len = Math.min(this.maps.length, target.lineEnd);
+		for (let i = target.lineStart; i < len; i++) {
 			for (const preceding of this.maps[i].values()) {
 				const collides = target.isCollidable(preceding, reversed);
 				if (collides) return true;

@@ -430,7 +430,7 @@ export class LiveChatController {
 	}
 
 	/**
-	 * @param {HTMLVideoElement} video 
+	 * @param {HTMLVideoElement} video
 	 */
 	#startSendingFrame(video) {
 		if (!s.others.person_detection) return;

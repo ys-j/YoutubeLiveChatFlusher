@@ -8,7 +8,7 @@
 			"chrome",
 			"dom-chromium-ai",
 			"web",
-			"webextension-polyfill",
+			"webextension-polyfill"
 		]
 	},
 	"include": ["src/**/*", "types/*"]
