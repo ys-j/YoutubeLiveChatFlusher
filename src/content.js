@@ -32,7 +32,7 @@ import(loggingUrl).then((/** @type {typeof import("./modules/logging.mjs")} */ {
 				const { initialize } = await import(browser.runtime.getURL('./modules/main.mjs'));
 				initialize({ target, detail });
 			} catch (e) {
-				logger.error('Failed to startup:', e);
+				logger.error('Failed to startup.\nCaused by:', e);
 			} finally {
 				clearInterval(timer);
 			}
@@ -56,9 +56,9 @@ import(loggingUrl).then((/** @type {typeof import("./modules/logging.mjs")} */ {
 	}, { passive: true });
 
 	async function checkAutoStart() {
-		const store = await browser.storage.local.get('others');
-		// @ts-expect-error
-		const enabled = store?.others?.autostart;
+		const storeUrl = browser.runtime.getURL('./modules/store.mjs');
+		const s = await import(storeUrl).then((/** @type {typeof import("./modules/store.mjs")} */ { store }) => store.load());
+		const enabled = [ false, s?.others?.mode_replay !== 1, true ].at(s?.others?.autostart ?? 0);
 		if (!enabled) return false;
 
 		const container = document.getElementById('show-hide-button');

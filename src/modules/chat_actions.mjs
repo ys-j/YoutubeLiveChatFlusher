@@ -186,8 +186,8 @@ async function getContentsAsync(url, body) {
 	try {
 		const json = await fetchInnerTube(url, body, { auth: true });
 		return json.continuationContents?.liveChatContinuation;
-	} catch (reason) {
-		logger.error('Failed to fetch continuation contents.', reason);
+	} catch (cause) {
+		logger.error('Failed to fetch continuation contents.\nCaused by:', cause);
 		const c = {
 			liveChatReplayContinuationData: body,
 			invalidationContinuationData: body,

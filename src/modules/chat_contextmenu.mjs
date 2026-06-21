@@ -104,10 +104,9 @@ export class LiveChatContextMenu {
 		this.#element.style.top = `${event.y}px`;
 		this.#element.onclick = e => {
 			for (const el of e.composedPath()) {
-				/** @type {keyof typeof menuFns | null} */ // @ts-expect-error
-				const name = el.getAttribute('data-menu');
+				const name = el instanceof Element ? el.getAttribute('data-menu') : null;
 				if (name && name in menuFns) {
-					menuFns[name](target, panel);
+					menuFns[/** @type {keyof typeof menuFns} */ (name)](target, panel);
 					this.hide();
 					return;
 				}

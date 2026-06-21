@@ -485,7 +485,7 @@ export class LiveChatPanel {
 					}
 				}
 			} else if (name === 'muted_words_mode') {
-				const mode = Number.parseInt(elem.value, 10);
+				const mode = /** @type {MutedWordModeEnum} */ (Number.parseInt(elem.value, 10));
 				s.mutedWords.mode = mode;
 				const replacement = /** @type {HTMLInputElement} */ (ctrls.muted_words_replacement);
 				replacement.title = mode === MutedWordModeEnum.CHAR ? browser.i18n.getMessage('tooltip_mutedWordsReplacement') : '';

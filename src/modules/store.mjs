@@ -25,6 +25,7 @@ export const DEFAULT_CONFIG = Object.freeze({
 		limit: 0,
 		container_limit: 0,
 		simultaneous: 2,
+		/** @type {import("./chat_message.mjs").EmojiModeEnum} */
 		emoji: 1,
 		density: 0,
 		overlapping: 0,
@@ -71,6 +72,7 @@ export const DEFAULT_CONFIG = Object.freeze({
 		panel: '',
 	},
 	mutedWords: {
+		/** @type {import("./chat_message.mjs").MutedWordModeEnum} */
 		mode: 0,
 		replacement: '',
 		regexp: false,

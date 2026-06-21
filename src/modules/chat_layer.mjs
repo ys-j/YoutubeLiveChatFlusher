@@ -63,7 +63,7 @@ export class LiveChatLayer {
 		});
 		this.root.append(link, ...styles);
 		this.#initialElemCount = this.root.childElementCount;
-		
+
 		const mutationObserver = new MutationObserver(() => {
 			const over = this.root.childElementCount - (this.limit || Infinity);
 			let i = this.#initialElemCount;
@@ -230,8 +230,8 @@ export class VideoSegmentationExecutor {
 			this.context?.drawImage(video, 0, 0, width, height);
 			const mask = await this.offscreen.convertToBlob({ type: 'image/webp', quality: .3 });
 			return await browser.runtime.sendMessage({ mask });
-		} catch (reason) {
-			logger.error('Failed to send a video frame to the person detector.', reason);
+		} catch (cause) {
+			logger.error('Failed to send a video frame to the person detector.\nCaused by:', cause);
 		}
 	}
 
@@ -268,7 +268,7 @@ export class VideoSegmentationExecutor {
 	}
 
 	/**
-	 * @param {HTMLVideoElement} [video] 
+	 * @param {HTMLVideoElement} [video]
 	 */
 	disconnect(video = undefined) {
 		this.#abortController.abort();
