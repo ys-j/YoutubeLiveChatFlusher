@@ -20,11 +20,11 @@ const state = {
 	},
 };
 
-/** @enum {number} */
 const FetchingModeEnum = Object.freeze({
 	DEPENDENT: 0,
 	INDEPENDENT: 1,
 });
+/** @typedef {typeof FetchingModeEnum[keyof typeof FetchingModeEnum]} FetchingModeEnum */
 
 /**
  * @typedef NavigateFinishEventDetail
@@ -46,7 +46,9 @@ export async function initialize(e) {
 	try {
 		await state.controller.start();
 		self.dispatchEvent(new CustomEvent('ytlcf-ready'));
-		
+		onYtNavigateFinish(e);
+		self.addEventListener('yt-navigate-finish', onYtNavigateFinish, { passive: true });
+
 		// Initilize document picture-in-picture
 		const script = document.createElement('script');
 		script.id = 'yt-lcf-pip-script';
@@ -55,11 +57,8 @@ export async function initialize(e) {
 		script.dataset.paramCssUrl = browser.runtime.getURL('/styles/content.css');
 		script.dataset.paramPipMarkerText = browser.i18n.getMessage('pip_marker');
 		document.body.append(script);
-		
-		self.addEventListener('yt-navigate-finish', onYtNavigateFinish, { passive: true });
-		onYtNavigateFinish(e);
-	} catch (reason) {
-		logger.warn(`Waiting for next navigation due to setup failure:`, reason);
+	} catch (cause) {
+		logger.warn(`Waiting for next navigation due to setup failure:`, cause);
 		self.addEventListener('yt-navigate-finish', initialize, { once: true, passive: true });
 		return;
 	}

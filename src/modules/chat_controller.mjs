@@ -76,14 +76,14 @@ export class LiveChatController {
 			return Promise.reject('No video container element found.');
 		}
 
-		document.getElementById('ytlcf-panel')?.remove();
+		document.getElementById(this.panel.element.id)?.remove();
 
 		// get storage data
 		await s.load();
 		// create form
 		await this.panel.createForm();
 
-		document.getElementById('ytlcf-layer')?.remove();
+		document.getElementById(this.layer.element.id)?.remove();
 		if (s.others.disabled) this.layer.hide();
 		videoContainer.after(this.layer.element);
 

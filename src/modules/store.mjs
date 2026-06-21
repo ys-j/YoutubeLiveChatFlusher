@@ -36,7 +36,9 @@ export const DEFAULT_CONFIG = Object.freeze({
 		translation_timing: 0,
 		suffix_original: 0,
 		time_shift: 0,
+		/** @type {import("./main.mjs").FetchingModeEnum} */
 		mode_livestream: 0,
+		/** @type {import("./main.mjs").FetchingModeEnum} */
 		mode_replay: 1,
 		autostart: 0,
 		message_pause: 1,

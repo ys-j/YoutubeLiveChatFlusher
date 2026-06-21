@@ -4,14 +4,24 @@ self.browser ??= chrome;
 const isLive = location.pathname === '/live_chat';
 const modeName = isLive ? 'mode_livestream' : 'mode_replay';
 
-const url = browser.runtime.getURL('./modules/store.mjs');
-import(url)
-.then((/** @type {typeof import('./modules/store.mjs')} */ module) => module.store.load())
-.then(s => {
-	const mode = s.others[modeName] ?? 1;
+Promise.all([
+	import(browser.runtime.getURL('./modules/store.mjs')).then((/** @type {typeof import('./modules/store.mjs')} */ { store }) => store.load()),
+	import(browser.runtime.getURL('./modules/logging.mjs')).then((/** @type {typeof import('./modules/logging.mjs')} */ { logger }) => logger),
+]).then(([store, logger]) => {
+	const mode = store.others[modeName] ?? 1;
+	logger.info('Loaded chat frame script:', `${modeName} =`, mode);
 	if (mode) return;
 	const ev = new CustomEvent('ytlcf-start');
-	top?.document.dispatchEvent(ev);
+	const timer = setInterval(() => {
+		const layer = top?.document.getElementById('yt-lcf-layer');
+		if (layer) {
+			top?.document.dispatchEvent(ev);
+			logger.info('Initialized layer found, dispatched start event.');
+			clearInterval(timer);
+		} else {
+			logger.debug('No initialized layer found, waiting...');
+		}
+	}, 1000);
 	document.addEventListener('yt-action', onAction, { passive: true });
 });
 
