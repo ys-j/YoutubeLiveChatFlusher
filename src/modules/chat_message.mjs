@@ -3,7 +3,6 @@ import { fetchInnerTube } from './innertube.mjs';
 import { store as s } from './store.mjs';
 import { getColorRGB, getText, loadTemplateDocument, refreshWordsList } from './utils.mjs';
 
-/** @enum {string} */
 const AuthorType = Object.freeze({
 	NORMAL: 'normal',
 	MEMBER: 'member',
@@ -11,22 +10,23 @@ const AuthorType = Object.freeze({
 	OWNER: 'owner',
 	VERIFIED: 'verified',
 });
+/** @typedef {typeof AuthorType[keyof typeof AuthorType]} AuthorType */
 
-/** @enum {number} */
 export const EmojiModeEnum = Object.freeze({
 	NONE: 0,
 	ALL: 1,
 	LABEL: 2,
 	SHORTCUT: 3,
 });
+/** @typedef {typeof EmojiModeEnum[keyof typeof EmojiModeEnum]} EmojiModeEnum */
 
-/** @enum {number} */
 export const MutedWordModeEnum = Object.freeze({
 	NONE: 0,
 	ALL: 1,
 	WORD: 2,
 	CHAR: 3,
 });
+/** @typedef {typeof MutedWordModeEnum[keyof typeof MutedWordModeEnum]} MutedWordModeEnum */
 
 const RENDERING_SKIP_KEYS = Object.freeze([
 	'liveChatPlaceholderItemRenderer',
@@ -215,8 +215,8 @@ async function fetchAuthorInfo(renderer, type) {
 					authorNameCache.set(id, pageTitle);
 					name = pageTitle;
 				}
-			} catch (reason) {
-				logger.error(`Failed to fetch the author info: #${id}`, reason);
+			} catch (cause) {
+				logger.error(`Failed to fetch the author info: #${id}\nCaused by:`, cause);
 			}
 		}
 	}
@@ -234,7 +234,7 @@ async function fetchAuthorInfo(renderer, type) {
 export async function renderChatItem(item, factory) {
 	const key = Object.keys(item)[0];
 	if (RENDERING_SKIP_KEYS.includes(key)) {
-		throw `Skipped rendering chat item (excluded chat item type): ${key}`;
+		return logger.debug('Skipped rendering chat item (excluded chat item type):', key);
 	}
 
 	/** @type {LiveChat.RendererContent} */
@@ -245,20 +245,21 @@ export async function renderChatItem(item, factory) {
 	if (targetLangIndex && !tlExclusionList.some(rule => rule.test(body.message))) {
 		const suffix = s.others.suffix_original;
 		const tl = navigator.languages[Math.abs(targetLangIndex) - 1];
-		/** @type {"lazy" | "eager"} */ // @ts-expect-error
-		const mode = ['eager', 'lazy'].at(s.others.translation_timing) ?? 'eager';
+		const mode = /** @type {const} */ (['eager', 'lazy']).at(s.others.translation_timing) ?? 'eager';
 		await body.translate(mode, tl, Boolean(suffix));
 	}
 
 	/** @type {(type: keyof typeof s.parts) => boolean} */
 	const allHidden = type => !Object.values(s.parts[type]).includes(true);
+	let skipped = false;
 
 	/** @type {?HTMLElement} */
 	let element = null;
 	switch (key) {
 		case 'liveChatTextMessageRenderer': {
 			const subtype = getAuthorType(renderer);
-			if (allHidden(subtype)) break;
+			skipped = allHidden(subtype);
+			if (skipped) break;
 			element = factory.new({
 				type: 'text',
 				subtype,
@@ -269,8 +270,9 @@ export async function renderChatItem(item, factory) {
 			break;
 		}
 		case 'liveChatMembershipItemRenderer': {
-			const subtype = 'headerPrimaryText' in renderer ? 'milestone': 'membership';
-			if (allHidden(subtype)) break;
+			const subtype = 'headerPrimaryText' in renderer ? 'milestone' : 'membership';
+			skipped = allHidden(subtype);
+			if (skipped) break;
 			const {
 				headerPrimaryText: primary,
 				headerSubtext: sub,
@@ -279,7 +281,7 @@ export async function renderChatItem(item, factory) {
 				type: 'membership',
 				subtype,
 				author: await fetchAuthorInfo(renderer, subtype),
-				months: getChatMessage(primary || sub, { start: primary ? 1 : 0, filterMode: 0 }),
+				months: getChatMessage(primary || sub, { start: primary ? 1 : 0, filterMode: EmojiModeEnum.NONE }),
 				body,
 				background: { header: 0xff0f9d58, body: 0xff0a8043 },
 			});
@@ -287,7 +289,8 @@ export async function renderChatItem(item, factory) {
 		}
 		case 'liveChatPaidMessageRenderer': {
 			const type = 'paid_message';
-			if (allHidden(type)) break;
+			skipped = allHidden(type);
+			if (skipped) break;
 			const {
 				headerBackgroundColor,
 				purchaseAmountText,
@@ -304,7 +307,8 @@ export async function renderChatItem(item, factory) {
 		}
 		case 'liveChatPaidStickerRenderer': {
 			const type = 'paid_sticker';
-			if (allHidden(type)) break;
+			skipped = allHidden(type);
+			if (skipped) break;
 			const {
 				backgroundColor,
 				purchaseAmountText,
@@ -322,7 +326,8 @@ export async function renderChatItem(item, factory) {
 		}
 		case 'liveChatSponsorshipsGiftPurchaseAnnouncementRenderer': {
 			const subtype = 'membership';
-			if (allHidden(subtype)) break;
+			skipped = allHidden(subtype);
+			if (skipped) break;
 			// @ts-expect-error
 			const headerRenderer = /** @type {LiveChat.SponsorshipsHeaderRenderer} */(renderer.header).liveChatSponsorshipsHeaderRenderer;
 			const count = headerRenderer.primaryText?.runs?.filter(r => !Number.isNaN(Number.parseInt(r.text, 10)))[0]?.text;
@@ -337,11 +342,12 @@ export async function renderChatItem(item, factory) {
 		}
 		case 'liveChatViewerEngagementMessageRenderer': {
 			// @ts-expect-error
-			switch (renderer.icon.iconType) {
+			switch (renderer.icon?.iconType) {
 				case 'POLL':
 					element = factory.new({ type: 'poll', body });
 					break;
 				case 'YOUTUBE_ROUND':
+					skipped = true;
 					break;
 				default:
 					logger.debug('Unsupported message:', renderer);
@@ -352,7 +358,10 @@ export async function renderChatItem(item, factory) {
 		element.id = renderer.id;
 		return element;
 	} else {
-		throw 'Failed to render a chat item element.';
+		const [level, message] = skipped
+			? /** @type {const} */ (['debug', 'Skipped rendering chat item element:'])
+			: /** @type {const} */ (['warn', 'Failed to render chat item element:']);
+		logger[level](message, { [key]: renderer });
 	}
 }
 
@@ -390,8 +399,8 @@ function translateNodesAsync(nodes, target, exceptionLangs) {
 				target,
 			};
 			return browser.runtime.sendMessage({ translation });
-		} catch (reason) {
-			logger.error(`Failed to translate the message: "${text}"`, reason);
+		} catch (cause) {
+			logger.error(`Failed to translate the message: "${text}"\nCaused by:`, cause);
 			return null;
 		}
 	}));
@@ -405,7 +414,7 @@ export class ChatMessageContainer {
 	#rawText = null;
 	/** @type {?Promise<?(TranslationResult & { suffix?: string })>} */
 	translating = null;
-	
+
 	lazy = false;
 
 	/** @type {HTMLElement} */
@@ -524,7 +533,7 @@ function getChatMessage(message, options = {}) {
 
 	const { start, end, filterMode } = options;
 	const filterOptions = {
-		mode: filterMode || s.mutedWords.mode,
+		mode: filterMode ?? s.mutedWords.mode,
 		rules: mutedWordsList,
 		replacement: s.mutedWords.replacement,
 	};

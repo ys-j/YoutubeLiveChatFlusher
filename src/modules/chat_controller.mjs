@@ -76,14 +76,14 @@ export class LiveChatController {
 			return Promise.reject('No video container element found.');
 		}
 
-		document.getElementById('ytlcf-panel')?.remove();
+		document.getElementById(this.panel.element.id)?.remove();
 
 		// get storage data
 		await s.load();
 		// create form
 		await this.panel.createForm();
 
-		document.getElementById('ytlcf-layer')?.remove();
+		document.getElementById(this.layer.element.id)?.remove();
 		if (s.others.disabled) this.layer.hide();
 		videoContainer.after(this.layer.element);
 
@@ -430,7 +430,7 @@ export class LiveChatController {
 	}
 
 	/**
-	 * @param {HTMLVideoElement} video 
+	 * @param {HTMLVideoElement} video
 	 */
 	#startSendingFrame(video) {
 		if (!s.others.person_detection) return;
@@ -446,30 +446,41 @@ export class LiveChatController {
 		canvas.style.position = 'absolute';
 		canvas.style.visibility = 'hidden';
 
-		[canvas.width, canvas.height] = VideoSegmentationExecutor.TARGET_SIZE;
-		let imageData = new ImageData(canvas.width, canvas.height);
-		let u32data = new Uint32Array(imageData.data.buffer);
-		/** @type {?Uint8ClampedArray} */
-		let prevRecv = null;
+		const [w, h] = VideoSegmentationExecutor.TARGET_SIZE;
+		[canvas.width, canvas.height] = [w, h];
+		const imageData = new ImageData(w, h);
+		const u32data = new Uint32Array(imageData.data.buffer);
+		const prevRecv = new Uint8ClampedArray(w * h);
+		const localBuffer = new Uint8ClampedArray(w * h);
+		let hasNew = false;
 
 		this.segmenter = new VideoSegmentationExecutor(async res => {
 			const data = res?.at(0)?.mask?.data;
 			if (!data) return;
-			if (!prevRecv || prevRecv.length !== data.length) {
-				prevRecv = new Uint8ClampedArray(data.length);
-			}
-			const ALPHA_MASK = 0xFF000000 >>> 0;
-			const THRESHOLD = 128;
-			for (let i = 0, l = data.length; i < l; i++) {
-				const b = prevRecv[i] * .5 + data[i] * .5 < THRESHOLD ? 0 : 255;
-				u32data[i] = (ALPHA_MASK | (b << 16) | (b << 8) | b) >>> 0;
-				prevRecv[i] = data[i];
-			}
-			const bitmap = await createImageBitmap(imageData);
-			ctx.transferFromImageBitmap(bitmap);
-			bitmap.close();
+			localBuffer.set(data);
+			hasNew = true;
 		});
 		this.segmenter.observe(video, this.layer);
+
+		(async function renderLoop() {
+			if (hasNew) {
+				hasNew = false;
+				const ALPHA_MASK = 0xFF000000 >>> 0;
+				const UPPER_THRESHOLD = 160;
+				const LOWER_THRESHOLD = 96;
+				for (let i = 0, l = localBuffer.length; i < l; i++) {
+					const curentVal = (prevRecv[i] + localBuffer[i]) >> 1;
+					const prevVal = u32data[i] & 0xFF;
+					const b = curentVal < LOWER_THRESHOLD ? 0 : curentVal > UPPER_THRESHOLD ? 255 : prevVal;
+					u32data[i] = (ALPHA_MASK | (b << 16) | (b << 8) | b) >>> 0;
+					prevRecv[i] = localBuffer[i];
+				}
+				const bitmap = await createImageBitmap(imageData);
+				ctx.transferFromImageBitmap(bitmap);
+				bitmap.close();
+			}
+			requestAnimationFrame(renderLoop);
+		})();
 
 		const le = this.layer.element;
 		le.style.maskImage = `linear-gradient(#fff, #fff), -moz-element(#${canvas.id})`;
@@ -562,6 +573,7 @@ export class LiveChatController {
 			return;
 		}
 		return renderChatItem(item, this.itemFactory).then(el => {
+			if (!el) return;
 			callback(el);
 			if (this.layer.root.getElementById(el.id)) {
 				logger.debug('Skipped rendering chat item (already exists on the layer):', `#${el.id}`);
@@ -609,7 +621,10 @@ export class LiveChatController {
 		const target = this.layer.root.getElementById(id);
 		const item = action.replaceChatItemAction?.replacementItem;
 		if (target && item) {
-			renderChatItem(item, this.itemFactory).then(target.replaceWith, logger.warn);
+			renderChatItem(item, this.itemFactory).then(el => {
+				if (!el) return;
+				target.replaceWith(el);
+			}).catch(logger.warn);
 		} else {
 			logger.warn(`Failed to replace message: #${id}`);
 		}

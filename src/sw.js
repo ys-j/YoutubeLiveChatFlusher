@@ -10,7 +10,7 @@ const manifest = browser.runtime.getManifest();
 /** @type {Record<string, Function>} */
 const events = {
 	/**
-	 * @param {number} tabId 
+	 * @param {number} tabId
 	 * @param {string} url
 	 */
 	async toggleAction(tabId, url) {
@@ -49,7 +49,7 @@ let personDetectionEngine = null;
 browser.storage.local.get(['translation', 'others']).then(async s => {
 	const { translator, url } = /** @type {typeof import("./modules/store.mjs").DEFAULT_CONFIG.translation} */ (s.translation);
 	translationController = new TranslatorController(translator ?? 'internal', url);
-	
+
 	const { person_detection } = /** @type {typeof import("./modules/store.mjs").DEFAULT_CONFIG.others} */ (s.others);
 	const engineOption = /** @type {const} */ ([
 		undefined,
@@ -75,7 +75,7 @@ browser.storage.local.get(['translation', 'others']).then(async s => {
 browser.runtime.onMessage.addListener((_message, _sender, respond) => {
 	const msg = /** @type {Record<string, any>} */ (_message);
 	if ('detection' in msg) {
-		/** @type {Record<string, string>} */ 
+		/** @type {Record<string, string>} */
 		const { text } = msg.detection;
 		(detector.isReady ? Promise.resolve() : detector.ready())
 		.then(() => detector.detect(text))
@@ -91,18 +91,15 @@ browser.runtime.onMessage.addListener((_message, _sender, respond) => {
 		.then(sl => translationController?.translate(text, tl, sl))
 		.then(respond);
 	} else if ('mask' in msg && personDetectionEngine) {
-		const { mask, width = 256, height = 256 } = msg;
-		personDetectionEngine?.run({ args: [ mask ] })
+		const { mask: blob, width = 256, height = 256 } = msg;
+		console.time('personDetectionEngine.run');
+		personDetectionEngine?.run({ args: [ blob ] })
 		.then(respond, err => {
 			logger.warn(err?.message ?? err);
-			respond([
-				{
-					label: null,
-					score: null,
-					mask: { data: new Uint8ClampedArray(width * height), width, height, channel: 1 },
-				}
-			]);
-		});
+			const mask = { data: new Uint8ClampedArray(width * height), width, height, channel: 1 };
+			respond([ { label: null, score: null, mask } ]);
+		})
+		.finally(() => console.timeEnd('personDetectionEngine.run'));
 	} else if ('fire' in msg) {
 		events[msg.fire]?.()?.then(respond);
 	}

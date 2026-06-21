@@ -21,7 +21,7 @@ export class MLEngineManager {
 	#loading = null;
 	/** @type {?Error} */
 	#disabledError = null;
-	
+
 	/**
 	 * @param {MLEngingCreateEngineRequest} req
 	 */
@@ -43,16 +43,15 @@ export class MLEngineManager {
 			await browser.trial.ml.createEngine(this.#req);
 			logger.info(`Successfully created the MLEngine[${this.#req.taskName}]:`, this.#req);
 			this.isReady = true;
-		} catch (err) {
-			const errMsg = /** @type {?Error} */ (err)?.message;
+		} catch (cause) {
+			const errMsg = cause instanceof Error ? cause.message : null;
 			if (errMsg?.includes('already created')) {
 				logger.warn(errMsg.replace('Engine', `MLEngine[${this.#req.taskName}]`));
 				this.isReady = true;
 			} else {
-				this.#disabledError = new Error(`MLEngine [${this.#req.taskName}] has been disabled due to previous failure.`, { cause: err });
-				logger.error(`An error occurred while initilizing MLEngine [${this.#req.taskName}]:`, err);
+				this.#disabledError = new Error(`MLEngine [${this.#req.taskName}] has been disabled due to previous failure.`, { cause });
+				logger.error(`An error occurred while initilizing MLEngine [${this.#req.taskName}].\nCaused by:`, cause);
 				this.isReady = false;
-				throw err;
 			}
 		} finally {
 			this.#loading = null;
@@ -61,7 +60,7 @@ export class MLEngineManager {
 
 	/**
 	 * @param {object} req
-	 * @param {any[]} req.args 
+	 * @param {any[]} req.args
 	 */
 	async run(req) {
 		await this.ensureReady();

@@ -39,9 +39,9 @@ async function openPip(element, params) {
 
 	try {
 		void pipWindow.origin;
-	} catch {
+	} catch (cause) {
 		pipWindow.close();
-		throw new Error('Access to document picture-in-picture window was denied.');
+		throw new Error('Access to document picture-in-picture window was denied.', { cause });
 	}
 
 	top?.addEventListener('keydown', disableKeyboardShortcutOnParentWindow, true);
