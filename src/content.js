@@ -3,8 +3,15 @@ self.browser ??= chrome;
 
 const manifest = browser.runtime.getManifest();
 
-import(browser.runtime.getURL('./modules/logging.mjs'))
-.then((/** @type {typeof import("./modules/logging.mjs")} */ { logger }) => {
+Promise.all([
+	import(browser.runtime.getURL('./modules/logging.mjs')),
+	new Promise(resolve => {
+		(function check() {
+			if (document.body) resolve(document.body);
+			else requestAnimationFrame(check);
+		})();
+	}),
+]).then((/** @type {[typeof import("./modules/logging.mjs"), HTMLBodyElement]} */ [{ logger }, _body]) => {
 	try {
 		document.body.dataset.browser = 'browser_specific_settings' in manifest ? 'firefox' : 'chrome';
 
