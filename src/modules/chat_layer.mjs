@@ -204,11 +204,11 @@ export class LiveChatLayer {
 
 export class VideoSegmentationExecutor {
 	/** @type {[number, number]} */
-	static TARGET_SIZE = [256, 256];
+	static TARGET_SIZE = [256, 144];
 
 	/** @type {SegmentationCallback} */ #callback;
 	/** @type {AbortController} */ #abortController;
-	/** @type {number} */ #callbackId = 0;
+	/** @type {number} */ #reqId = 0;
 
 	/**
 	 * @param {SegmentationCallback} callback
@@ -218,7 +218,6 @@ export class VideoSegmentationExecutor {
 		this.#abortController = new AbortController();
 		this.offscreen = new OffscreenCanvas(...VideoSegmentationExecutor.TARGET_SIZE);
 		this.context = this.offscreen.getContext('2d');
-		this.frameInterval = 4;
 	}
 
 	/**
@@ -241,30 +240,31 @@ export class VideoSegmentationExecutor {
 	 */
 	observe(video, layer) {
 		let inProgress = false;
-		/** @type {VideoFrameRequestCallback} */
-		const frame = (now, metadata) => {
-			if (this.#abortController.signal.aborted) {
-				this.#abortController = new AbortController();
-				return;
-			} else if (
+		const canProcess = () => {
+			return (
 				!inProgress
 				&& document.visibilityState === 'visible'
 				&& layer.count > 0
 				&& !video.paused
 				&& !video.ended
-				&& metadata.presentedFrames % this.frameInterval === 0
 				&& !video.closest('#movie_player')?.classList.contains('ad-showing')
-			) {
-				inProgress = true;
-				this.#sendFrame(video).then(r => {
-					// @ts-expect-error
-					this.#callback(r);
-					inProgress = false;
-				});
-			}
-			this.#callbackId = video.requestVideoFrameCallback(frame);
+			);
 		};
-		this.#callbackId = video.requestVideoFrameCallback(frame);
+		/** @type {VideoFrameRequestCallback} */
+		const frame = async (_now, _metadata) => {
+			if (this.#abortController.signal.aborted) {
+				this.#abortController = new AbortController();
+				return;
+			} else if (canProcess()) {
+				inProgress = true;
+				const result = await this.#sendFrame(video);
+				// @ts-expect-error
+				this.#callback(result);
+				inProgress = false;
+			}
+			this.#reqId = video.requestVideoFrameCallback(frame);
+		};
+		this.#reqId = video.requestVideoFrameCallback(frame);
 	}
 
 	/**
@@ -272,6 +272,6 @@ export class VideoSegmentationExecutor {
 	 */
 	disconnect(video = undefined) {
 		this.#abortController.abort();
-		if (this.#callbackId) video?.cancelVideoFrameCallback(this.#callbackId);
+		if (this.#reqId) video?.cancelVideoFrameCallback(this.#reqId);
 	}
 }

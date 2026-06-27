@@ -62,7 +62,7 @@ browser.storage.local.get(['translation', 'others']).then(async s => {
 			personDetectionEngine = new MLEngineManager({
 				modelHub: 'huggingface',
 				taskName: 'image-segmentation',
-				modelId: 'onnx-community/mediapipe_selfie_segmentation',
+				modelId: 'onnx-community/mediapipe_selfie_segmentation_landscape',
 				...engineOption,
 			});
 			await personDetectionEngine.ensureReady();
@@ -91,7 +91,7 @@ browser.runtime.onMessage.addListener((_message, _sender, respond) => {
 		.then(sl => translationController?.translate(text, tl, sl))
 		.then(respond);
 	} else if ('mask' in msg && personDetectionEngine) {
-		const { mask: blob, width = 256, height = 256 } = msg;
+		const { mask: blob, width = 256, height = 144 } = msg;
 		console.time('personDetectionEngine.run');
 		personDetectionEngine?.run({ args: [ blob ] })
 		.then(respond, err => {
