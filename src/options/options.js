@@ -72,7 +72,7 @@ importBtn?.addEventListener('click', async () => {
 const initBtn = document.getElementById('btn-init');
 initBtn?.addEventListener('click', async () => {
 	await s.reset();
-	browser.runtime.sendMessage({ fire: 'reload' });
+	await browser.runtime.sendMessage({ fire: 'reload' });
 	location.reload();
 }, { passive: true });
 
@@ -80,21 +80,26 @@ const saveBtn = /** @type {?HTMLButtonElement} */ (document.getElementById('btn-
 
 const form = document.forms[0];
 
-/** @type {Record<string, HTMLInputElement | HTMLSelectElement | RadioNodeList>} */
+/** @type {Record<string, RadioNodeList>} */
+// @ts-expect-error
+const { mode_livestream, mode_replay, autostart, message_pause, person_detection } = form.elements;
+
+/** @type {Record<string, HTMLInputElement>} */
 // @ts-expect-error
 const {
-	mode_livestream,
-	mode_replay,
-	hotkey_layer,
-	hotkey_panel,
-	autostart,
-	message_pause,
-	person_detection,
+	hotkey_layer_key, hotkey_layer_alt,
+	hotkey_panel_key, hotkey_panel_alt,
+	hotkey_pip_key, hotkey_pip_alt,
 	translation_blacklist_regexp,
-	translation_blacklist,
-	translation_translator,
 	translation_url
 } = form.elements;
+
+/** @type {Record<string, HTMLTextAreaElement>} */
+// @ts-expect-error
+const { translation_blacklist } = form.elements;
+/** @type {Record<string, HTMLTextAreaElement>} */
+// @ts-expect-error
+const { translation_translator } = form.elements;
 
 s.load().then(() => {
 	// mode
@@ -105,8 +110,12 @@ s.load().then(() => {
 	autostart.value = s.others.autostart.toString();
 
 	// hotkeys
-	hotkey_layer.value = s.hotkeys.layer;
-	hotkey_panel.value = s.hotkeys.panel;
+	hotkey_layer_key.value = s.hotkeys.layer.key ?? s.hotkeys.layer;
+	hotkey_layer_alt.checked = s.hotkeys.layer.alt;
+	hotkey_panel_key.value = s.hotkeys.panel.key ?? s.hotkeys.panel;
+	hotkey_panel_alt.checked = s.hotkeys.panel.alt;
+	hotkey_pip_key.value = s.hotkeys.pip.key;
+	hotkey_pip_alt.checked = s.hotkeys.pip.alt;
 
 	// message pause
 	message_pause.value = s.others.message_pause.toString();
@@ -148,8 +157,9 @@ form.addEventListener('submit', async e => {
 		},
 		/** @type {Partial<typeof s.data.hotkeys>} */
 		hotkeys: {
-			layer: hotkey_layer.value,
-			panel: hotkey_panel.value,
+			layer: { key: hotkey_layer_key.value, alt: hotkey_layer_alt.checked },
+			panel: { key: hotkey_panel_key.value, alt: hotkey_panel_alt.checked },
+			pip: { key: hotkey_pip_key.value, alt: hotkey_pip_alt.checked },
 		},
 		/** @type {Partial<typeof s.data.translation>} */
 		translation: {

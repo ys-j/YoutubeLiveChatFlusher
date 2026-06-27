@@ -5,6 +5,12 @@
 	"manifestDescription": {
 		"message": "Provides bullet chatting (danmaku) on YouTube Live, like niconico or bilibili."
 	},
+	"notification_title_onInstall": {
+		"message": "Thank you for installing!\nClick to refresh YouTube tabs."
+	},
+	"notification_title_onUpdate": {
+		"message": "Updated to version $1.\nClick to refresh YouTube tabs."
+	},
 	"ytp_menuitem_label_switch": {
 		"message": "Flush LiveChat"
 	},
@@ -451,6 +457,12 @@
 	},
 	"hotkey_panel": {
 		"message": "Config Panel"
+	},
+	"hotkey_pip": {
+		"message": "PiP"
+	},
+	"hotkey_alt": {
+		"message": "with Alt/Option key"
 	},
 	"message_pause": {
 		"message": "Animation pausing by right-clicking a message"

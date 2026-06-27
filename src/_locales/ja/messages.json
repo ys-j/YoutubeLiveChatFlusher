@@ -5,6 +5,12 @@
 	"manifestDescription": {
 		"message": "YouTube Liveのチャットをニコニコ動画・ビリビリ動画のように弾幕風に流します"
 	},
+	"notification_title_onInstall": {
+		"message": "インストールありがとうございます\nクリックするとYouTubeタブを再読み込みします"
+	},
+	"notification_title_onUpdate": {
+		"message": "バージョン$1に更新されました\nクリックするとYouTubeタブを再読み込みします"
+	},
 	"ytp_menuitem_label_switch": {
 		"message": "チャットを流す"
 	},
@@ -451,6 +457,12 @@
 	},
 	"hotkey_panel": {
 		"message": "設定パネル"
+	},
+	"hotkey_pip": {
+		"message": "PiP"
+	},
+	"hotkey_alt": {
+		"message": "Alt/Optionキーと同時押し"
 	},
 	"message_pause": {
 		"message": "右クリックでメッセージを一時停止"

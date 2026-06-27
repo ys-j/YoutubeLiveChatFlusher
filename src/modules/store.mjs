@@ -70,8 +70,9 @@ export const DEFAULT_CONFIG = Object.freeze({
 		'': '',
 	},
 	hotkeys: {
-		layer: '',
-		panel: '',
+		layer: { key: '', alt: false },
+		panel: { key: '', alt: false },
+		pip: { key: '', alt: false },
 	},
 	mutedWords: {
 		/** @type {import("./chat_message.mjs").MutedWordModeEnum} */
@@ -150,12 +151,14 @@ class ConfigStore {
 		const stored = json ?? await browser.storage.local.get(null);
 		Object.assign(this.data.styles, stored.styles);
 		Object.assign(this.data.others, stored.others);
-		for (const k of Object.keys(stored.parts ?? {})) {
-			// @ts-expect-error
-			Object.assign(this.data.parts[k], stored.parts[k] || {});
+		for (const [k, v] of Object.entries(stored.parts ?? {})) {
+			Object.assign(this.data.parts[k], v ?? {});
 		}
 		Object.assign(this.data.cssTexts, stored.cssTexts);
-		Object.assign(this.data.hotkeys, stored.hotkeys);
+		for (const [k, v] of Object.entries(stored.hotkeys ?? {})) {
+			const source = typeof v === 'string' ? { key: v, alt: false } : v ?? {};
+			Object.assign(this.data.hotkeys[k], source);
+		}
 		Object.assign(this.data.mutedWords, stored.mutedWords);
 		Object.assign(this.data.translation, stored.translation);
 		this.isLoaded = true;
