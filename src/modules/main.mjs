@@ -56,6 +56,7 @@ export async function initialize(e) {
 		script.type = 'module';
 		script.dataset.paramCssUrl = browser.runtime.getURL('/styles/content.css');
 		script.dataset.paramPipMarkerText = browser.i18n.getMessage('pip_marker');
+		script.dataset.paramHotkeys = JSON.stringify(store.hotkeys);
 		document.body.append(script);
 	} catch (cause) {
 		logger.warn(`Waiting for next navigation due to setup failure:`, cause);
@@ -69,18 +70,26 @@ export async function initialize(e) {
 
 	document.body.addEventListener('keydown', e => {
 		if (e.repeat) return;
-		if (e.altKey || e.ctrlKey || e.metaKey) return;
+		if (e.ctrlKey || e.metaKey) return;
 		switch (e.key) {
-			case store.hotkeys.layer: {
-				const checkbox = /** @type {?HTMLElement} */ (player.querySelector('#yt-lcf-cb'));
-				checkbox?.click();
+			case store.hotkeys.layer.key:
+				if (e.altKey === store.hotkeys.layer.alt) {
+					const checkbox = /** @type {?HTMLElement} */ (player.querySelector('#yt-lcf-cb'));
+					checkbox?.click();
+				}
 				break;
-			}
-			case store.hotkeys.panel: {
-				const popupmenu = /** @type {?HTMLElement} */ (player.querySelector('#yt-lcf-pm'));
-				popupmenu?.click();
+			case store.hotkeys.panel.key:
+				if (e.altKey === store.hotkeys.panel.alt) {
+					const popupmenu = /** @type {?HTMLElement} */ (player.querySelector('#yt-lcf-pm'));
+					popupmenu?.click();
+				}
 				break;
-			}
+			case store.hotkeys.pip.key:
+				if (e.altKey === store.hotkeys.pip.alt) {
+					const pipmenu = /** @type {?HTMLElement} */ (player.querySelector('#yt-lcf-pp'));
+					pipmenu?.click();
+				}
+				break;
 		}
 	}, { passive: true });
 

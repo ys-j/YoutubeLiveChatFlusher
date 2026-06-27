@@ -45,6 +45,12 @@ a {
 	color: inherit;
 	pointer-events: auto;
 }
+strong, b, .b {
+	font-weight: bolder;
+}
+em, i, .i {
+	font-style: italic;
+}
 .header, .body, a > * {
 	pointer-events: none;
 }
@@ -70,7 +76,7 @@ a {
 		-webkit-text-stroke-color: var(--yt-lcf-normal-stroke-color, var(--yt-lcf-stroke-color));
 	}
 	:host(.has-normal-name) > & {
-		background-color: var(--yt-live-chat-normal-message-background-color); 
+		background-color: var(--yt-live-chat-normal-message-background-color);
 		border-radius: .5em;
 		padding: 0 .25em;
 	}
