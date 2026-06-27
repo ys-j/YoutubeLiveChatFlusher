@@ -1,7 +1,7 @@
-import type Browser from "webextension-polyfill";
+import type { Browser } from "webextension-polyfill";
 
 declare global {
-	const browser: Browser.Browser;
+	const browser: Browser;
 
 	interface ObjectConstructor {
 		keys<T extends Record>(o: T): Array<keyof T>;
@@ -9,6 +9,7 @@ declare global {
 	}
 
 	interface Window {
+		documentPictureInPicture?: DocumentPictureInPicture;
 		queryLocalFonts?(options?: { postscriptNames: string[] }): Promise<FontData[]>;
 	}
 
@@ -54,7 +55,6 @@ type DocumentPictureInPictureOptions = {
 /*
  * Interface Definitions
  */
-
 interface DocumentPictureInPictureEvent extends Event {
 	window: Window;
 }
