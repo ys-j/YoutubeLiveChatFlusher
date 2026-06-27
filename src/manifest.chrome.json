@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "__MSG_manifestName__",
-	"version": "0.15.3",
+	"version": "0.15.4",
 	"author": "_y_s",
 	"action": {
 		"default_state": "disabled"
@@ -36,7 +36,7 @@
 	"options_ui": {
 		"page": "options/options.html"
 	},
-	"permissions": ["storage"],
+	"permissions": ["storage", "notifications"],
 	"web_accessible_resources": [
 		{
 			"resources": ["modules/*", "injections/*", "styles/*", "templates/*", "images/*"],

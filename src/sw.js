@@ -6,21 +6,16 @@ import { MLEngineManager } from './modules/ml_engine.mjs';
 self.browser ??= chrome;
 
 const manifest = browser.runtime.getManifest();
+const hosts = manifest.host_permissions;
 
 /** @type {Record<string, Function>} */
 const events = {
-	/**
-	 * @param {number} tabId
-	 * @param {string} url
-	 */
-	async toggleAction(tabId, url) {
-		const urlObj = new URL(url);
-		const hosts = manifest.host_permissions;
-		const isHostMatch = hosts?.some(url => url.match(/:\/\/([^/]*)/)?.[1] === urlObj.hostname);
-		return browser.action[isHostMatch ? 'enable' : 'disable'](tabId);
-	},
 	async reload() {
 		browser.runtime.reload();
+	},
+	async reloadTabs() {
+		const tabs = await browser.tabs.query({ url: hosts });
+		await Promise.all(tabs.map(tab => browser.tabs.reload(tab.id)));
 	},
 	async openOptions() {
 		return browser.runtime.openOptionsPage();
@@ -31,11 +26,29 @@ browser.action.onClicked.addListener(() => {
 	events.openOptions();
 });
 
-browser.tabs.onUpdated.addListener((tabId, info, _tab) => {
-	if (info.url) events.toggleAction(tabId, info.url);
+browser.tabs.onActivated.addListener(async ({ tabId }) => {
+	const tab = await browser.tabs.get(tabId);
+	await browser.action[tab.url ? 'enable' : 'disable'](tabId);
 });
-browser.tabs.onCreated.addListener(tab => {
-	if (tab.url) events.toggleAction(tab.id, tab.url);
+browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+	if (changeInfo.status !== 'complete') return;
+	await browser.action[tab.active && tab.url ? 'enable' : 'disable'](tabId);
+});
+
+browser.runtime.onInstalled.addListener(async ({ reason, previousVersion }) => {
+	if (reason === 'browser_update') return;
+	if (previousVersion === manifest.version) return;
+	/** @type {(str: string) => string} */
+	const toUpperCamel = str => str.toLowerCase().replace(/(?:^|_+)(\w)/g, (_, m) => m.toUpperCase());
+	const id = await browser.notifications.create({
+		type: 'basic',
+		title: manifest.name,
+		iconUrl: manifest.icons?.['128'],
+		message: browser.i18n.getMessage(`notification_title_on${toUpperCamel(reason)}`, [manifest.version]),
+	});
+	browser.notifications.onClicked.addListener((notificationId) => {
+		if (notificationId === id) events.reloadTabs();
+	});
 });
 
 const detector = new LanguageDetectionController();
