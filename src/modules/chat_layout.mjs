@@ -197,6 +197,7 @@ function placeChatItemRandomly(el, cache) {
 }
 
 class ChatLayoutInfo {
+	/** @type {HTMLElement} */ #elem;
 	/** @type {DOMRect} */ #rect;
 	/** @type {number} */ #line;
 	/** @type {number} */ #range;
@@ -206,6 +207,7 @@ class ChatLayoutInfo {
 	 * @param {number} line
 	 */
 	constructor(elem, line) {
+		this.#elem = elem;
 		this.#rect = elem.getBoundingClientRect();
 		this.#line = line;
 
@@ -230,16 +232,36 @@ class ChatLayoutInfo {
 	}
 
 	get width() {
-		return this.#rect.width | 0;
+		try {
+			return this.#rect.width | 0;
+		} catch {
+			this.#rect = this.#elem.getBoundingClientRect();
+			return this.#rect.width | 0;
+		}
 	}
 	get height() {
-		return this.#rect.height | 0;
+		try {
+			return this.#rect.height | 0;
+		} catch {
+			this.#rect = this.#elem.getBoundingClientRect();
+			return this.#rect.height | 0;
+		}
 	}
 	get top() {
-		return this.#rect.top | 0;
+		try {
+			return this.#rect.top | 0;
+		} catch {
+			this.#rect = this.#elem.getBoundingClientRect();
+			return this.#rect.top | 0;
+		}
 	}
 	get bottom() {
-		return this.#rect.bottom | 0;
+		try {
+			return this.#rect.bottom | 0;
+		} catch {
+			this.#rect = this.#elem.getBoundingClientRect();
+			return this.#rect.bottom | 0;
+		}
 	}
 
 	getLeft(factor = 1) {
