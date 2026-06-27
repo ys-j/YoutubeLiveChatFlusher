@@ -5,7 +5,7 @@ import { logger } from '../modules/logging.mjs';
  */
 (function initPipMenu() {
 	const pipmenuTop = document.getElementById('yt-lcf-pp');
-	if ('documentPictureInPicture' in window) {
+	if (window.documentPictureInPicture) {
 		const pipmenu = pipmenuTop || self.documentPictureInPicture?.window?.document.getElementById('yt-lcf-pp');
 		pipmenu?.addEventListener('click',  async () => {
 			const pipWindow = self.documentPictureInPicture?.window;
@@ -13,8 +13,8 @@ import { logger } from '../modules/logging.mjs';
 				pipWindow.close();
 			} else {
 				const player = document.getElementById('yt-lcf-layer')?.closest('#player-container');
-				const params = document.getElementById('yt-lcf-pip-script')?.dataset;
-				if (player && params) await openPip(player, params);
+				const dataset = document.getElementById('yt-lcf-pip-script')?.dataset;
+				if (player && dataset) await openPip(player, dataset);
 			}
 		}, { passive: true });
 	} else {
@@ -25,10 +25,10 @@ import { logger } from '../modules/logging.mjs';
 /**
  * Creates and opens document picture-in-picture window of the video player container.
  * @param {Element} element element of video player container
- * @param {DOMStringMap} params dataset of injected `<script>` (self)
+ * @param {DOMStringMap} dataset dataset of injected `<script>` (self)
  * @returns {Promise<Window>} document picture-in-picture window
  */
-async function openPip(element, params) {
+async function openPip(element, dataset) {
 	const parent = element.parentElement;
 	if (!parent) throw new Error('No parent element.');
 	const pipWindow = await top?.documentPictureInPicture?.requestWindow({
@@ -44,9 +44,12 @@ async function openPip(element, params) {
 		throw new Error('Access to document picture-in-picture window was denied.', { cause });
 	}
 
-	top?.addEventListener('keydown', disableKeyboardShortcutOnParentWindow, true);
-	pipWindow?.addEventListener('keydown', enableKeyboardShortcutOnChildWindow, true);
-
+	/** @type {Record<string, { key: string, alt: boolean }>} */
+	const userDefinedHotkeys = JSON.parse(dataset.paramHotkeys ?? '{}');
+	const disableHotkeys = disableKeyboardShortcutOnParentWindow.bind(userDefinedHotkeys);
+	const enableHotkeys = enableKeyboardShortcutOnChildWindow.bind(userDefinedHotkeys);
+	top?.addEventListener('keydown', disableHotkeys, true);
+	pipWindow?.addEventListener('keydown', enableHotkeys, true);
 	top?.addEventListener('yt-navigate-finish', onYtNavigateFinishDispatchPip, { passive: true });
 
 	for (const attr of document.documentElement.attributes) {
@@ -59,7 +62,7 @@ async function openPip(element, params) {
 	const pipLink = document.createElement('link');
 	pipLink.rel = 'stylesheet';
 	pipLink.type = 'text/css';
-	pipLink.href = params.paramCssUrl || '';
+	pipLink.href = dataset.paramCssUrl || '';
 	const pipStyle = document.createElement('style');
 	pipStyle.textContent = `\
 	:root,body,body>*{height:100%;overflow:hidden}\
@@ -92,16 +95,20 @@ async function openPip(element, params) {
 
 	const pipMarker = document.createElement('span');
 	pipMarker.id = 'yt-lcf-pip-marker';
-	pipMarker.textContent = params.paramPipMarkerText || '';
+	pipMarker.textContent = dataset.paramPipMarkerText || '';
 	element.before(pipMarker);
 	pipWindow.document.body.appendChild(element);
 	pipWindow.document.body.dataset.browser = document.body.dataset.browser;
 
-	const video = pipWindow.document.querySelector('video');
-	video?.addEventListener('ytlcf-resize', onResizeVideo, { passive: true });
-	video?.addEventListener('loadeddata', () => {
-		video.dispatchEvent(new CustomEvent('ytlcf-resize', { detail: pipWindow }));
-	}, { passive: true });
+	const player = pipWindow.document.querySelector('ytd-player');
+	const video = player?.querySelector('video');
+	/** @type {?HTMLElement | undefined} */
+	const overlay = player?.querySelector('.ytp-iv-video-content');
+
+	video?.addEventListener('ytlcf-resize', onResizeVideo);
+	video?.addEventListener('loadeddata', dispatchResizeVideo, { passive: true });
+	if (video) video.style.pointerEvents = 'none';
+	if (overlay) overlay.style.pointerEvents = 'none';
 
 	pipWindow.addEventListener('ytlcf-pip-update', () => {
 		const pipTitle = pipWindow.document.getElementsByTagName('title')[0];
@@ -109,7 +116,7 @@ async function openPip(element, params) {
 			const title = document.querySelector('h1.ytd-watch-metadata')?.textContent;
 			pipTitle.textContent = title || 'YouTube';
 		}
-	}, { passive: true });
+	});
 	pipWindow.dispatchEvent(new CustomEvent('ytlcf-pip-update'));
 
 	pipWindow.addEventListener('resize', () => {
@@ -120,32 +127,43 @@ async function openPip(element, params) {
 	pipWindow.addEventListener('pagehide', () => {
 		const parent = pipMarker.parentElement || top?.document.getElementById('player-container-inner');
 		parent?.append(element);
-		if (parent) {
-			const v = parent.querySelector('video');
-			if (v) {
-				v.style.width = `${parent.clientWidth|0}px`;
-				v.style.height = 'auto';
-				v.style.top = v.style.left = '0px';
-				/** @type {?HTMLElement} */
-				const b = parent.querySelector('.ytp-chrome-bottom');
-				if (b) {
-					const left = Number.parseInt(b.style.left, 10);
-					b.style.width = `${v.clientWidth - left * 2}px`;
-				}
-				v.removeEventListener('ytlcf-resize', onResizeVideo);
+		if (parent && video) {
+			video.style.width = `${parent.clientWidth | 0}px`;
+			video.style.height = 'auto';
+			video.style.top = video.style.left = '0px';
+			/** @type {?HTMLElement} */
+			const b = parent.querySelector('.ytp-chrome-bottom');
+			if (b) {
+				const left = Number.parseInt(b.style.left, 10);
+				b.style.width = `${video.clientWidth - left * 2}px`;
 			}
+			video.removeEventListener('ytlcf-resize', onResizeVideo);
+			video.removeEventListener('loadeddata', dispatchResizeVideo);
+			video.style.pointerEvents = '';
+			if (overlay) overlay.style.pointerEvents = '';
 		}
 		if (top?.document.contains(pipMarker)) pipMarker.remove();
-		top?.removeEventListener('keydown', disableKeyboardShortcutOnParentWindow, true);
-		pipWindow.removeEventListener('keydown', enableKeyboardShortcutOnChildWindow, true);
+		top?.removeEventListener('keydown', disableHotkeys, true);
+		pipWindow.removeEventListener('keydown', enableHotkeys, true);
 		top?.removeEventListener('yt-navigate-finish', onYtNavigateFinishDispatchPip);
 	}, { passive: true });
+
+	if (video) {
+		const le = document.getElementById('yt-lcf-layer');
+		if (le?.style.maskPosition) le.style.maskPosition = `0px 0px, ${video.style.left} ${video.style.top}`;
+		if (le?.style.maskSize) le.style.maskSize = `100% 100%, ${video.style.width} ${video.style.height}`;
+	}
 
 	logger.info('PiP /w chat window is created successfully.');
 	return pipWindow;
 
 	function onYtNavigateFinishDispatchPip() {
 		pipWindow?.dispatchEvent(new CustomEvent('ytlcf-pip-update'));
+	}
+
+	/** @this {HTMLVideoElement} */
+	function dispatchResizeVideo() {
+		this.dispatchEvent(new CustomEvent('ytlcf-resize', { detail: pipWindow }));
 	}
 }
 
@@ -189,29 +207,55 @@ function onResizeVideo(e) {
 	const { videoWidth: vw, videoHeight: vh } = this;
 	if (!vw || !vh) return;
 	const aspect = vw / vh;
-	const w = Math.min(ww, (wh * aspect)|0);
-	this.style.height = `${Math.min(wh, (w / aspect)|0)}px`;
+	const w = Math.min(ww, (wh * aspect) | 0);
+	this.style.height = `${Math.min(wh, (w / aspect) | 0)}px`;
 	this.style.width = `${w}px`;
 	this.style.left = `${Math.max(ww - w, 0) * .5}px`;
 	updateProgressBarSize(e.detail);
 }
 
-const shortcutKeys = ['f', 'i', 't'];
-
 /**
+ * @this {Record<string, { key: string, alt: boolean }>}
  * @param {KeyboardEvent} e
  */
 function disableKeyboardShortcutOnParentWindow(e) {
-	if (shortcutKeys.includes(e.key)) {
-		e.stopImmediatePropagation();
+	if (['f', 'i', 't', 'escape'].includes(e.key.toLowerCase())) {
+		e.stopPropagation();
+	} else if (Object.values(this).some(h => h.key === e.key && h.alt === e.altKey)) {
+		// transfer keyboard event to pip window
+		top?.documentPictureInPicture?.window?.dispatchEvent(new KeyboardEvent('keydown', e));
 	}
 }
 
 /**
+ * @this {Record<string, { key: string, alt: boolean }>}
  * @param {KeyboardEvent} e
  */
 function enableKeyboardShortcutOnChildWindow(e) {
-	if (!shortcutKeys.includes(e.key)) {
-		top?.dispatchEvent(new KeyboardEvent('keydown', e));
+	if (['f', 'i', 't', 'escape', 'k'].includes(e.key.toLowerCase())) return;
+	if (!e.ctrlKey && !e.metaKey) {
+		const document = top?.documentPictureInPicture?.window?.document;
+		switch (e.key) {
+			case this.layer.key:
+				if (!e.repeat && e.altKey === this.layer.alt) {
+					const checkbox = /** @type {?HTMLElement} */ (document?.querySelector('#yt-lcf-cb'));
+					return checkbox?.click();
+				}
+				break;
+			case this.panel.key:
+				if (!e.repeat && e.altKey === this.panel.alt) {
+					const popupmenu = /** @type {?HTMLElement} */ (document?.querySelector('#yt-lcf-pm'));
+					return popupmenu?.click();
+				}
+				break;
+			case this.pip.key:
+				if (!e.repeat && e.altKey === this.pip.alt) {
+					const pipmenu = /** @type {?HTMLElement} */ (document?.querySelector('#yt-lcf-pp'));
+					return pipmenu?.click();
+				}
+				break;
+		}
 	}
+	// transfer keyboard event to parent window
+	top?.document.dispatchEvent(new KeyboardEvent('keydown', e));
 }
