@@ -1,6 +1,6 @@
 import { logger } from './logging.mjs';
 import { store } from './store.mjs';
-import { getText } from './utils.mjs';
+import { isAdShowing, getText } from './utils.mjs';
 
 import { LiveChatController } from './chat_controller.mjs';
 import { ReplayActionBuffer, getReplayChatActionsAsyncIterable, getLiveChatActionsAsyncIterable } from './chat_actions.mjs';
@@ -12,6 +12,7 @@ const state = {
 	/** @type {?LiveChatController} */
 	controller: null,
 
+	/** Resets the internal state for the next navigation. */
 	reset() {
 		this.abortController.abort();
 		this.abortController = new AbortController();
@@ -47,7 +48,7 @@ export async function initialize(e) {
 		await state.controller.start();
 		self.dispatchEvent(new CustomEvent('ytlcf-ready'));
 		onYtNavigateFinish(e);
-		self.addEventListener('yt-navigate-finish', onYtNavigateFinish, { passive: true });
+		self.addEventListener('yt-navigate-finish', onYtNavigateFinish);
 
 		// Initilize document picture-in-picture
 		const script = document.createElement('script');
@@ -60,13 +61,13 @@ export async function initialize(e) {
 		document.body.append(script);
 	} catch (cause) {
 		logger.warn(`Waiting for next navigation due to setup failure:`, cause);
-		self.addEventListener('yt-navigate-finish', initialize, { once: true, passive: true });
+		self.addEventListener('yt-navigate-finish', initialize, { once: true });
 		return;
 	}
 
 	self.addEventListener('yt-navigate-start', () => {
 		state.reset();
-	}, { passive: true });
+	});
 
 	document.body.addEventListener('keydown', e => {
 		if (e.repeat) return;
@@ -136,7 +137,7 @@ async function onYtNavigateFinish(e) {
 			document.addEventListener('ytlcf-start', () => {
 				state.controller?.listen();
 				toggle?.removeAttribute('aria-disabled');
-			}, { passive: true });
+			});
 			break;
 		case FetchingModeEnum.INDEPENDENT: {
 			const timer = setInterval(() => {
@@ -196,10 +197,7 @@ function onSeeking() {
 function onTimeUpdate() {
 	const shiftSec = !state.isLive && store.others.time_shift || 0;
 	const player = state.controller?.layer.element.parentElement;
-	if (player) {
-		const isAdShowing = ['ad-showing', 'ad-interrupting'].map(c => player.classList.contains(c)).includes(true);
-		if (isAdShowing) return;
-	}
+	if (player && isAdShowing(player)) return;
 	const currentOffset = (this.currentTime - shiftSec) * 1000 | 0;
 	const pendingActions = state.action.getPendingActions(currentOffset);
 	if (pendingActions.length > 0) {

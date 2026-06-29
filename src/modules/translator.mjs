@@ -237,10 +237,13 @@ class ExternalTranslator {
 	 * @param {string} text source message
 	 */
 	async translate(text) {
-		const p = this.url.searchParams;
+		const p = new URL(this.url).searchParams;
 		if (this.#q) p.set(this.#q, text);
 		/** @type { { sentences: { trans: string }[], src: string }? } */
-		const json = await fetch(this.url).then(res => res.json()).catch(logger.warn);
+		const json = await fetch(this.url).then(res => {
+			if (res.ok) return res.json();
+			else throw new Error(`Fetch Error: ${res.status} ${res.statusText}`);
+		}).catch(logger.warn);
 		this.lastSrc = json?.src || 'und';
 		return json?.sentences.map(s => s.trans).join('') || text;
 	}

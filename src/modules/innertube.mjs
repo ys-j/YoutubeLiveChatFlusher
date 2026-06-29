@@ -1,5 +1,3 @@
-/** biome-ignore-all lint/complexity/useLiteralKeys: To recognize innertube config data */
-
 const defaultClient = {
 	clientName: 'WEB',
 	clientVersion: '2.20251022.01.00',
@@ -35,9 +33,8 @@ export async function fetchInnerTube(url, body, options = {}) {
 			...body,
 		}),
 	});
-	const json = res.ok ? await res.json() : null;
-	if (!json) throw 'Request failed.';
-	return json;
+	if (res.ok) return res.json();
+	else throw new Error(`Request failed: ${res.status} ${res.statusText}`);
 }
 
 /**

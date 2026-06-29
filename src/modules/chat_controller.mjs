@@ -17,10 +17,19 @@ export const SimultaneousModeEnum = Object.freeze({
 });
 
 export class LiveChatController {
+	/** @type {boolean} */
 	#skip = false;
 
 	/** @type {?VideoSegmentationExecutor} */
 	segmenter = null;
+
+	/** @type {HTMLElement} */ player;
+	/** @type {LiveChatLayer} */ layer;
+	/** @type {LiveChatLayoutCache} */ layoutCache;
+	/** @type {LiveChatItemFactory} */ itemFactory;
+	/** @type {LiveChatPanel} */ panel;
+	/** @type {LiveChatContextMenu} */ contextmenu;
+	/** @type {AbortController} */ abortController;
 
 	/**
 	 * @param {HTMLElement} player YouTube player element
@@ -34,8 +43,8 @@ export class LiveChatController {
 		this.itemFactory = new LiveChatItemFactory();
 
 		root.addEventListener('contextmenu', e => {
-			/** @type {?HTMLElement} */
-			const origin = /** @type {HTMLElement} */ (e.target).closest('[id]');
+			/** @type {?HTMLElement | undefined} */
+			const origin = /** @type {?HTMLElement} */ (e.target)?.closest('[id]');
 			if (origin && s.others.message_pause) {
 				e.preventDefault();
 				e.stopPropagation();
@@ -47,12 +56,12 @@ export class LiveChatController {
 			}
 		}, { passive: false });
 		root.addEventListener('click', e => {
-			const origin = /** @type {HTMLElement} */ (e.target);
+			const origin = /** @type {?HTMLElement} */ (e.target);
 			const interactiveTags = ['A', 'BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'];
 			if (interactiveTags.includes(origin?.tagName || 'BODY')) {
 				e.stopPropagation();
 			} else {
-				/** @type {?HTMLElement} */ (e.target)?.parentElement?.click();
+				origin?.parentElement?.click();
 			}
 		}, { passive: true });
 		root.addEventListener('animationend', e => {
