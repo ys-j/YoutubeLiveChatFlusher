@@ -491,8 +491,53 @@
 	"translator_fallbackNote": {
 		"message": "ローカル翻訳ができない場合は常に外部サービスへフォールバックされます。"
 	},
-	"translationUrl": {
-		"message": "翻訳URL (GET)"
+	"translation_request": {
+		"message": "リクエスト設定"
+	},
+	"translation_request_method": {
+		"message": "メソッド"
+	},
+	"translation_request_url": {
+		"message": "URL"
+	},
+	"translation_request_bodyType": {
+		"message": "APIタイプ"
+	},
+	"translation_request_bodyType_OpenAICompatible": {
+		"message": "OpenAI互換"
+	},
+	"translation_request_bodyType_custom": {
+		"message": "カスタム"
+	},
+	"translation_request_apiKey": {
+		"message": "APIキー"
+	},
+	"translation_request_modelName": {
+		"message": "モデル名"
+	},
+	"translation_request_body": {
+		"message": "リクエストボディ"
+	},
+	"translation_invalidRequestBody": {
+		"message": "有効なJSONではありません"
+	},
+	"translation_response": {
+		"message": "レスポンス設定"
+	},
+	"translation_response_style": {
+		"message": "スタイル"
+	},
+	"translation_response_style_Google": {
+		"message": "Google翻訳"
+	},
+	"translation_response_style_OpenAI": {
+		"message": "OpenAI"
+	},
+	"placeholder_test_translation_text": {
+		"message": "テスト翻訳テキストを入力"
+	},
+	"test_translation": {
+		"message": "翻訳テスト"
 	},
 	"save": {
 		"message": "保存"

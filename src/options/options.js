@@ -1,6 +1,8 @@
 import { logger } from '../modules/logging.mjs';
 import { store as s } from '../modules/store.mjs';
 
+import { TranslatorController } from '../modules/translator.mjs';
+
 // @ts-expect-error
 self.browser ??= chrome;
 
@@ -78,11 +80,19 @@ initBtn?.addEventListener('click', async () => {
 
 const saveBtn = /** @type {?HTMLButtonElement} */ (document.getElementById('btn-save'));
 
-const form = document.forms[0];
+const [form, tester] = document.forms;
 
 /** @type {Record<string, RadioNodeList>} */
 // @ts-expect-error
-const { mode_livestream, mode_replay, autostart, message_pause, person_detection } = form.elements;
+const {
+	mode_livestream, mode_replay,
+	autostart,
+	message_pause,
+	person_detection,
+	translation_method,
+	translation_bodyType,
+	translation_responseStyle,
+} = form.elements;
 
 /** @type {Record<string, HTMLInputElement>} */
 // @ts-expect-error
@@ -91,15 +101,19 @@ const {
 	hotkey_panel_key, hotkey_panel_alt,
 	hotkey_pip_key, hotkey_pip_alt,
 	translation_blacklist_regexp,
-	translation_url
+	translation_url, translation_apiKey, translation_modelName,
 } = form.elements;
+
+/** @type {Record<string, HTMLSelectElement>} */
+// @ts-expect-error
+const { translation_translator } = form.elements;
 
 /** @type {Record<string, HTMLTextAreaElement>} */
 // @ts-expect-error
-const { translation_blacklist } = form.elements;
-/** @type {Record<string, HTMLTextAreaElement>} */
-// @ts-expect-error
-const { translation_translator } = form.elements;
+const {
+	translation_blacklist,
+	translation_bodyContent,
+} = form.elements;
 
 s.load().then(() => {
 	// mode
@@ -128,13 +142,40 @@ s.load().then(() => {
 	(translation_blacklist_regexp).checked = s.translation.regexp;
 	translation_blacklist.value = s.translation.plainList.join('\n');
 	translation_translator.value = s.translation.translator;
+	translation_method.value = s.translation.method;
 	translation_url.value = s.translation.url;
+	translation_bodyType.value = s.translation.bodyType;
+	translation_apiKey.value = s.translation.apiKey;
+	translation_modelName.value = s.translation.modelName;
+	translation_apiKey.required = translation_bodyContent.disabled = translation_bodyContent.hidden = s.translation.bodyType !== 'custom';
+	translation_bodyContent.value = s.translation.bodyContent;
+	translation_responseStyle.value = s.translation.responseStyle;
+
+	for (const el of form.querySelectorAll('[data-when-method="POST"]')) {
+		/** @type {HTMLElement} */ (el).hidden = s.translation.method !== 'POST';
+	}
 });
 
 const status = document.getElementById('status');
-form.addEventListener('change', () => {
+form.addEventListener('change', e => {
+	if (/** @type {HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement} */ (e.target).form !== form) return;
 	if (saveBtn) saveBtn.disabled = false;
 	if (status) status.hidden = false;
+	translation_apiKey.required = translation_bodyContent.disabled = translation_bodyContent.hidden = translation_bodyType.value !== 'custom';
+	if (!translation_bodyContent.disabled) {
+		translation_bodyContent.setCustomValidity((v => {
+			try {
+				const json = JSON.parse(v || '{}');
+				if (typeof json !== 'object' || json === null) throw json;
+				else return '';
+			} catch {
+				return browser.i18n.getMessage('translation_invalidRequestBody');
+			}
+		})(translation_bodyContent.value));
+	}
+	for (const el of form.querySelectorAll('[data-when-method="POST"]')) {
+		/** @type {HTMLElement} */ (el).hidden = translation_method.value !== 'POST';
+	}
 });
 
 form.addEventListener('submit', async e => {
@@ -168,11 +209,62 @@ form.addEventListener('submit', async e => {
 			regexp: /** @type {HTMLInputElement} */ (translation_blacklist_regexp).checked,
 			plainList: translation_blacklist.value.split(/\n+/).filter(s => s.length > 0),
 			translator: /** @type {"external" | "internal"} */ (translation_translator.value),
+			method: /** @type {"GET" | "POST"} */ (translation_method.value),
 			url: translation_url.value,
+			bodyType: /** @type {typeof s.translation.bodyType} */ (translation_bodyType.value),
+			apiKey: translation_apiKey.value,
+			modelName: translation_modelName.value,
+			bodyContent: translation_bodyContent.value,
+			responseStyle: /** @type {typeof s.translation.responseStyle} */ (translation_responseStyle.value),
 		},
 	};
 	await s.load(config);
 	await browser.storage.local.set(s.data);
 	if (status) status.hidden = true;
 	await browser.runtime.sendMessage({ fire: 'reload' });
+});
+
+tester.addEventListener('submit', e => {
+	e.preventDefault();
+	const test_translation_text = /** @type {HTMLInputElement} */ (tester.elements.test_translation_text);
+	if (!test_translation_text.value.trim()) return;
+
+	const test_translation_output = /** @type {HTMLOutputElement} */ (tester.elements.test_translation_output);
+	const btn = /** @type {?HTMLButtonElement} */ (document.getElementById('btn-test-translation'));
+
+	const mode = /** @type {typeof s.data.translation.translator} */ (translation_translator.value);
+	const config = /** @type {typeof s.data.translation.method} */ (translation_method.value) === 'GET'
+		? {
+			url: translation_url.value,
+			method: /** @type {const} */ ('GET'),
+			responseStyle: /** @type {typeof s.data.translation.responseStyle} */ (translation_responseStyle.value),
+		} : {
+			url: translation_url.value,
+			method: /** @type {const} */ ('POST'),
+			responseStyle: /** @type {typeof s.data.translation.responseStyle} */ (translation_responseStyle.value),
+			apiKey: translation_apiKey.value,
+			modelName: translation_modelName.value,
+			json: translation_bodyType.value === 'OpenAI' ? undefined : translation_bodyContent.value,
+		};
+
+	const controller = new TranslatorController(mode, config);
+
+	test_translation_output.value = '';
+	const timer = setInterval(() => {
+		test_translation_output.value += '.';
+	}, 1000);
+	if (btn) btn.disabled = true;
+
+	controller.translate(test_translation_text.value, navigator.language)
+	.then(res => {
+		test_translation_output.value = JSON.stringify(res);
+	})
+	.catch(err => {
+		logger.error(err);
+		test_translation_output.value = Error.isError(err) && err.stack || String(err);
+	})
+	.finally(() => {
+		clearInterval(timer);
+		if (btn) btn.disabled = false;
+	});
 });

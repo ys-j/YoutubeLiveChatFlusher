@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<meta charset=utf-8>
-<title>browser_action</title>
+<meta name=viewport content="width=device-width, initial-scale=1">
+<title>YouTube LiveChat Flusher: Options</title>
 <link rel=stylesheet href=options.css>
-<form id=form name=form>
+<form id=form>
 	<section>
 		<h1 data-i18n=manifestName>YouTube LiveChat Flusher</h1>
 		<table>
@@ -155,13 +155,78 @@
 					<option data-i18n=translator_external value=external>
 				</select>
 				<div><small data-i18n=translator_fallbackNote></small></div>
-			<dt data-i18n=translationUrl>
-			<dd><input type=url name=translation_url required>
+			<dt data-i18n=translation_request>
+			<dd>
+				<table>
+					<col>
+					<col class=max>
+					<tr>
+						<th data-i18n=translation_request_method>
+						<td>
+							<label>
+								<input type=radio name=translation_method value=GET>GET
+							</label>
+							<label>
+								<input type=radio name=translation_method value=POST>POST
+							</label>
+					<tr>
+						<th>
+							<label for=translation_url data-i18n=translation_request_url></label>
+						<td>
+							<input type=url id=translation_url name=translation_url required>
+					<tr data-when-method=POST>
+						<th data-i18n=translation_request_bodyType>
+						<td>
+							<label>
+								<input type=radio name=translation_bodyType value=OpenAI>
+								<span data-i18n=translation_request_bodyType_OpenAICompatible></span>
+							</label>
+							<label>
+								<input type=radio name=translation_bodyType value=custom>
+								<span data-i18n=translation_request_bodyType_custom></span>
+							</label>
+					<tr data-when-method=POST>
+						<th>
+							<label for=translation_apiKey data-i18n=translation_request_apiKey></label>
+						<td>
+							<input id=translation_apiKey name=translation_apiKey>
+					<tr data-when-method=POST>
+						<th>
+							<label for=translation_modelName data-i18n=translation_request_modelName></label>
+						<td>
+							<input id=translation_modelName name=translation_modelName required>
+				</table>
+				<textarea name=translation_bodyContent rows=10 data-when-method=POST data-i18n-placeholder=translation_request_body></textarea>
+			<dt data-i18n=translation_response>
+			<dd>
+				<table>
+					<col>
+					<col class=max>
+					<tr>
+						<th data-i18n=translation_response_style>
+						<td>
+							<label>
+								<input type=radio name=translation_responseStyle value=Google>
+								<span data-i18n=translation_response_style_Google></span>
+							</label>
+							<label>
+								<input type=radio name=translation_responseStyle value=OpenAI>
+								<span data-i18n=translation_response_style_OpenAI></span>
+							</label>
+				</table>
 		</dl>
+		<div>
+			<div class=flex>
+				<input type=search name=test_translation_text form=translation_test data-i18n-placeholder=placeholder_test_translation_text>
+				<button id=btn-test-translation form=translation_test data-i18n=test_translation></button>
+			</div>
+			<pre><output name=test_translation_output form=translation_test></output></pre>
+		</div>
 	</section>
 	<section>
 		<button class=primary id=btn-save disabled data-i18n=save></button>
 		<div><small id=status hidden data-i18n=warn_notSaved></small></div>
 	</section>
 </form>
+<form id=translation_test></form>
 <script src=options.js type=module></script>

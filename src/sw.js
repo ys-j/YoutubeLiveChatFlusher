@@ -60,8 +60,15 @@ let translationController = null;
 let personDetectionEngine = null;
 
 browser.storage.local.get(['translation', 'others']).then(async s => {
-	const { translator, url } = /** @type {typeof import("./modules/store.mjs").DEFAULT_CONFIG.translation} */ (s.translation);
-	translationController = new TranslatorController(translator ?? 'internal', url);
+	const {
+		translator, url, method, responseStyle,
+		apiKey, modelName, bodyType, bodyContent,
+	} = /** @type {typeof import("./modules/store.mjs").DEFAULT_CONFIG.translation} */ (s.translation);
+	const config = method === 'GET'
+		? { url, method, responseStyle }
+		: { url, method, responseStyle, apiKey, modelName, json: bodyType === 'OpenAI' ? undefined : bodyContent };
+
+	translationController = new TranslatorController(translator ?? 'internal', config);
 
 	const { person_detection } = /** @type {typeof import("./modules/store.mjs").DEFAULT_CONFIG.others} */ (s.others);
 	const engineOption = /** @type {const} */ ([
