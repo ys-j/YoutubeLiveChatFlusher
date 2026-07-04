@@ -528,8 +528,8 @@ export class LiveChatController {
 		const last = sv === SimultaneousModeEnum.LAST_MERGE ? /** @type {?HTMLElement} */ (root.lastElementChild) : null;
 		const bodies = last ? [ `<!-- ${last.className} -->` + (last.getAttribute('data-text') || '') ] : [];
 		const ids = last ? [last.id] : [];
-		/** @type {(el: HTMLElement) => void} */
-		let merge = el => void el;
+		/** @type {(el: HTMLElement) => boolean | void} */
+		let merge = _el => true;
 		switch (s.others.simultaneous) {
 			case SimultaneousModeEnum.FIRST: {
 				// @ts-expect-error
@@ -543,24 +543,32 @@ export class LiveChatController {
 					const text = el.getAttribute('data-text');
 					const body = text ? `<!-- ${el.className} -->${text}` : '';
 					if (!body) return;
+
 					const index = bodies.indexOf(body);
 					if (index < 0) {
 						bodies.push(body);
 						ids.push(el.id);
-					} else {
-						const earlier = root.getElementById(ids[index]);
-						/** @type {?HTMLElement | undefined} */
-						const _name = earlier?.querySelector('.name');
-						/** @type {?HTMLSpanElement} */
-						const _photo = el.querySelector('.photo');
-						if (earlier && _name && _photo) {
-							const parent = _photo.parentElement;
-							if (parent) _name.insertAdjacentElement('beforebegin', parent);
-							if (!_name.textContent)  _name.textContent = '';
-							this.updateCurrentItem(earlier);
-							return;
-						}
+						return true;
 					}
+
+					const earlierId = ids[index];
+					if (earlierId === el.id) return;
+					const earlier = root.getElementById(earlierId);
+					if (!earlier) return;
+
+					const earlierName = earlier?.querySelector('.name');
+					const recentPhoto = el.querySelector('.photo');
+					if (!earlierName || !recentPhoto) return;
+
+					const parent = recentPhoto.parentElement;
+					if (parent) {
+						const duplicatedAnchor = `a[href="${parent.getAttribute('href')}"]`;
+						if (earlier.querySelector(duplicatedAnchor)) return;
+						earlierName.insertAdjacentElement('beforebegin', parent);
+					}
+					earlierName.replaceChildren();
+					this.updateCurrentItem(earlier);
+					return;
 				};
 				break;
 			}
@@ -573,7 +581,7 @@ export class LiveChatController {
 
 	/**
 	 * @param {LiveChat.LiveChatItemAction} action add chat item action object
-	 * @param {(el: HTMLElement) => void} callback
+	 * @param {(el: HTMLElement) => boolean | void} callback
 	 */
 	#addChatItem(action, callback) {
 		const item = action.addChatItemAction?.item;
@@ -583,7 +591,8 @@ export class LiveChatController {
 		}
 		return renderChatItem(item, this.itemFactory).then(el => {
 			if (!el) return;
-			callback(el);
+			const shouldRender = callback(el);
+			if (!shouldRender) return;
 			if (this.layer.root.getElementById(el.id)) {
 				logger.debug('Skipped rendering chat item (already exists on the layer):', `#${el.id}`);
 			} else {

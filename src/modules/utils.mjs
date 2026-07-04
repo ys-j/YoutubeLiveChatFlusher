@@ -40,7 +40,7 @@ export async function loadTemplateDocument(path, i18nAttrs = []) {
  * @returns {boolean} whether thr player is showing ads
  */
 export function isAdShowing(player) {
-	return ['ad-showing', 'ad-interrupting'].findIndex(c => player.classList.contains(c)) >= 0;
+	return ['ad-showing', 'ad-interrupting'].some(c => player.classList.contains(c));
 }
 
 /**
