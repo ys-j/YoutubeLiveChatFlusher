@@ -47,6 +47,9 @@ a {
 a:hover {
 	color: var(--accent-color-hover);
 }
+col.max {
+	width: 100%;
+}
 th {
 	color: var(--text-color);
 	font-weight: normal;
@@ -59,7 +62,7 @@ th {
 td {
 	color: var(--text-color-deemphasized);
 }
-dl.note {
+dl.note, pre {
 	background-color: color-mix(in srgb, var(--text-color) 3.5%, transparent);
 	border-radius: 8px;
 	margin: .75em 0 .75em -1em;
@@ -133,7 +136,7 @@ input[type="radio"] {
 input:checked + span {
 	color: var(--text-color);
 }
-input:is(:not([type]), [type="text"], [type="url"]),
+input:is(:not([type]), [type="search"], [type="text"], [type="url"]),
 textarea {
 	background-color: transparent;
 	border: 1px solid currentColor;
@@ -147,6 +150,9 @@ textarea {
 	&[name^="hotkey"] {
 		text-align: center;
 	}
+}
+.flex {
+	display: flex;
 }
 
 @media (prefers-color-scheme: dark) {

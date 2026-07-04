@@ -7,6 +7,24 @@ import { LRUCache } from './lrucache.mjs';
  * @prop {boolean} isReliable
  */
 
+ /**
+  * @typedef ExternalTranslatorGetConfig
+  * @prop {string} url
+  * @prop {"GET"} method
+  * @prop {"Google" | "OpenAI"} responseStyle
+  */
+
+ /**
+  * @typedef ExternalTranslatorPostConfig
+  * @prop {string} url
+  * @prop {"POST"} method
+  * @prop {string} apiKey
+  * @prop {string} modelName
+  * @prop {string} [json]
+  * @prop {"Google" | "OpenAI"} responseStyle
+  */
+
+
 export class LanguageDetectionController {
 	/** @readonly */
 	static SCRIPT_MAP = Object.freeze({
@@ -114,19 +132,25 @@ export class TranslatorController {
 
 	/**
 	 * @param {"internal" | "external"} mode translator mode
-	 * @param {string} [url] external URL
+	 * @param {ExternalTranslatorGetConfig | ExternalTranslatorPostConfig} [externalConfig] external config
 	 * @param {object} [options]
 	 * @param {object} [options.cache]
 	 * @param {number} options.cache.capacity
 	 * @param {number} options.cache.maxLength
 	 */
-	constructor(mode, url, options) {
+	constructor(
+		mode,
+		externalConfig = {
+			url: ExternalTranslator.DEFAULT_URL,
+			method: ExternalTranslator.DEFAULT_METHOD,
+			responseStyle: ExternalTranslator.DEFAULT_RESPONSE_STYLE,
+		},
+		{ cache = { capacity: 100, maxLength: 10 } } = {}
+	) {
 		this.mode = mode;
-		this.url = url ?? ExternalTranslator.DEFAULT_URL;
-		this.options = Object.assign({
-			cache: { capacity: 100, maxLength: 10 },
-		}, options);
-		this.#cache = new TranslationCache(this.options.cache.capacity);
+		this.externalConfig = externalConfig;
+		this.#cache = new TranslationCache(cache.capacity);
+		this.options = { cache };
 	}
 
 	/**
@@ -134,7 +158,7 @@ export class TranslatorController {
 	 * @param {string} text text to be translated
 	 * @param {string} tl target language
 	 * @param {string} sl source language
-	 * @returns {Promise<TranslationResult>} promise of transtion result
+	 * @returns {Promise<TranslationResult>} promise of translation result
 	 */
 	async translate(text, tl, sl = 'auto') {
 		const cache = this.#cache.get(tl, text);
@@ -168,7 +192,7 @@ export class TranslatorController {
 				if (availability === 'downloading') skip = true;
 			}
 		}
-		translator = new ExternalTranslator({ url: this.url, ...options });
+		translator = new ExternalTranslator(this.externalConfig, options);
 		if (!skip) this.#translators.set(key, translator);
 
 		/** @type {Promise<TranslationResult>} */
@@ -199,50 +223,137 @@ export class TranslatorController {
 }
 
 
-class ExternalTranslator {
+export class ExternalTranslator {
+	/** @readonly */
 	static DEFAULT_URL = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=$sl&tl=$tl&dt=t&dt=bd&dj=1&q=$q';
+	/** @readonly */
+	static DEFAULT_METHOD = 'GET';
+	/** @readonly */
+	static DEFAULT_RESPONSE_STYLE = 'Google';
+	static DEFAULT_SYSTEM_PROMPT = [
+		'You are a translation API. Translate the input text into $tl and return ONLY a single JSON object.',
+		'Do not include any markdown formatting, backticks, or explanations.',
+		'Expected format:',
+		'{ "sentence": "translated text", "src": "source language code (ISO 639-1)" }',
+	].join('\n');
+	static languageNames = new Intl.DisplayNames(['en'], { type: 'language', fallback: 'none' });
 
-	/** @type {?string} */ #q = null;
+	/** @type {URL} */ url;
+	/** @type {RequestInit} */ reqInit;
+	/** @type {string} */ responseStyle;
+	/** @type {?string} */ #query = null;
+	/** @type {?string} */ #json = null;
 	/** @type {string} */ lastSrc = 'und';
 
 	/**
-	 * @param {TranslatorCreateCoreOptions & { url: string }} options
+	 * @param {ExternalTranslatorGetConfig | ExternalTranslatorPostConfig} config
+	 * @param {TranslatorCreateCoreOptions} options
 	 */
-	constructor(options) {
-		try {
-			this.url = new URL(options.url);
-			this.#setParams(options);
-			if (!this.#q) {
-				throw `Translator URL has no $q token: ${options.url}`;
-			}
-		} catch {
-			this.url = new URL(ExternalTranslator.DEFAULT_URL);
-			this.#setParams(options);
+	constructor(config, options) {
+		const { url, method, responseStyle } = config;
+		this.reqInit = { method };
+		this.responseStyle = responseStyle;
+		switch (method) {
+			case 'GET':
+				try {
+					this.url = this.#initGet({ url }, options);
+					if (!this.#query) throw `Translator URL has no $q token: ${url}`;
+				} catch (cause) {
+					logger.error(cause);
+					this.url = this.#initGet({ url: ExternalTranslator.DEFAULT_URL }, options);
+				}
+				break;
+			case 'POST':
+				this.url = this.#initPost(config, options);
+				break;
 		}
 	}
 
 	/**
+	 * @param {Omit<ExternalTranslatorGetConfig, "method" | "responseStyle">} req
 	 * @param {TranslatorCreateCoreOptions} options
 	 */
-	#setParams({ sourceLanguage: sl, targetLanguage: tl }) {
-		const p = this.url.searchParams;
+	#initGet(req, { sourceLanguage: sl, targetLanguage: tl }) {
+		const url = new URL(req.url);
+		const p = url.searchParams;
 		for (const [k, v] of p) {
 			if (v === '$sl') p.set(k, sl);
 			else if (v === '$tl') p.set(k, tl);
-			else if (v === '$q') this.#q = k;
+			else if (v === '$q') this.#query = k;
 		}
+		return url;
+	}
+
+	/**
+	 * @param {Omit<ExternalTranslatorPostConfig, "method" | "responseStyle">} req
+	 * @param {TranslatorCreateCoreOptions} options
+	 */
+	#initPost(req, { sourceLanguage, targetLanguage }) {
+		this.reqInit.headers = new Headers();
+		if (req.apiKey) this.reqInit.headers.set('Authorization', `Bearer ${req.apiKey}`);
+		this.reqInit.headers.set('Content-Type', 'application/json');
+
+		const [sl, tl] = [sourceLanguage, targetLanguage].map(v => {
+			try {
+				return ExternalTranslator.languageNames.of(v);
+			} catch {
+				return null;
+			}
+		});
+		if (!tl) throw new Error(`Failed to determine target language: ${targetLanguage}`);
+		this.#json = (req.json ?? JSON.stringify({
+			model: req.modelName,
+			messages: [
+				{ role: 'system', content: ExternalTranslator.DEFAULT_SYSTEM_PROMPT },
+				{ role: 'user', content: '$q' },
+			],
+			reasoning: { effort: 'none' },
+			response_format: { type: 'json_object' },
+			temperature: 0,
+		})).replace(/\$sl/g, sl ?? 'undetermined language').replace(/\$tl/g, tl);
+		return new URL(req.url);
 	}
 
 	/**
 	 * @param {string} text source message
 	 */
 	async translate(text) {
-		const p = this.url.searchParams;
-		if (this.#q) p.set(this.#q, text);
-		/** @type { { sentences: { trans: string }[], src: string }? } */
-		const json = await fetch(this.url).then(res => res.json()).catch(logger.warn);
-		this.lastSrc = json?.src || 'und';
-		return json?.sentences.map(s => s.trans).join('') || text;
+		/** @type {Request} */
+		let req;
+		if (this.#json) {
+			this.reqInit.body = this.#json.replace(/\$q/g, text);
+			req = new Request(this.url, this.reqInit);
+		} else {
+			const url = new URL(this.url);
+			if (this.#query) url.searchParams.set(this.#query, text);
+			req = new Request(url);
+		}
+		const res = await fetch(req).then(res => {
+			if (res.ok) return res.json();
+			else throw new Error(`Fetch Error: ${res.status} ${res.statusText}`);
+		}).catch(logger.warn);
+
+		/** @type {string | undefined} */
+		let result;
+		switch (this.responseStyle) {
+			case 'Google': {
+				/** @type { { sentences?: { trans?: string }[], src?: string }? } */
+				const json = res;
+				this.lastSrc = json?.src || 'und';
+				result = json?.sentences?.map?.(s => s.trans)?.join('');
+				break;
+			}
+			case 'OpenAI': {
+				/** @type { { choices?: { message?: { content?: string } }[] }? } */
+				const json = res;
+				const content = JSON.parse(json?.choices?.at?.(0)?.message?.content ?? '{}');
+				this.lastSrc = content?.src || 'und';
+				result = content?.sentence;
+				break;
+			}
+		}
+		if (!result) logger.warn(`No result from translator:`, this.url.href, res);
+		return result || text;
 	}
 
 	destroy() {}

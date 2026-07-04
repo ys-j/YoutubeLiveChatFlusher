@@ -83,12 +83,21 @@ export const DEFAULT_CONFIG = Object.freeze({
 		plainList: [],
 	},
 	translation: {
-		/** @type {"internal" | "external"} */
-		translator: 'internal',
-		url: 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=$sl&tl=$tl&dt=t&dt=bd&dj=1&q=$q',
 		regexp: false,
 		/** @type {string[]} */
 		plainList: [],
+		/** @type {"internal" | "external"} */
+		translator: 'internal',
+		/** @type {"GET" | "POST"} */
+		method: 'GET',
+		/** @type {"Google" | "OpenAI"} */
+		responseStyle: 'Google',
+		url: 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=$sl&tl=$tl&dt=t&dt=bd&dj=1&q=$q',
+		apiKey: '',
+		modelName: '',
+		/** @type {"OpenAI" | "custom"} */
+		bodyType: 'OpenAI',
+		bodyContent: '',
 	},
 });
 

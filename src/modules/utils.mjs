@@ -35,6 +35,15 @@ export async function loadTemplateDocument(path, i18nAttrs = []) {
 }
 
 /**
+ * Checks whether the player is showing ads or not.
+ * @param {HTMLElement} player player element
+ * @returns {boolean} whether thr player is showing ads
+ */
+export function isAdShowing(player) {
+	return ['ad-showing', 'ad-interrupting'].some(c => player.classList.contains(c));
+}
+
+/**
  * Gets string from a message object.
  * @param { LiveChat.Runs | LiveChat.SimpleText | undefined } message message object: Runs or SimpleText
  * @returns {string} message string

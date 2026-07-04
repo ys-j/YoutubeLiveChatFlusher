@@ -1,5 +1,6 @@
 import { logger } from './logging.mjs';
 import { store as s } from './store.mjs';
+import { isAdShowing } from './utils.mjs';
 
 export class LiveChatLayer {
 	/** @type {import("./chat_controller.mjs").LiveChatController} */
@@ -241,13 +242,14 @@ export class VideoSegmentationExecutor {
 	observe(video, layer) {
 		let inProgress = false;
 		const canProcess = () => {
+			const player = /** @type {?HTMLElement} */ (video.closest('#movie_player'));
 			return (
 				!inProgress
 				&& document.visibilityState === 'visible'
 				&& layer.count > 0
 				&& !video.paused
 				&& !video.ended
-				&& !video.closest('#movie_player')?.classList.contains('ad-showing')
+				&& (player ? !isAdShowing(player) : false)
 			);
 		};
 		/** @type {VideoFrameRequestCallback} */
