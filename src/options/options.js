@@ -1,5 +1,5 @@
 import { logger } from '../modules/logging.mjs';
-import { store as s } from '../modules/store.mjs';
+import { DEFAULT_CONFIG, store as s } from '../modules/store.mjs';
 
 import { TranslatorController } from '../modules/translator.mjs';
 
@@ -115,6 +115,14 @@ const {
 	translation_bodyContent,
 } = form.elements;
 
+function updateTranslationControls() {
+	const isPostMethod = translation_method.value === 'POST';
+	const isCustomBody = translation_bodyType.value === 'custom';
+	translation_apiKey.disabled = translation_modelName.disabled = !isPostMethod;
+	translation_apiKey.required = translation_modelName.required = !isCustomBody;
+	translation_bodyContent.disabled = translation_bodyContent.hidden = !isPostMethod || !isCustomBody;
+}
+
 s.load().then(() => {
 	// mode
 	mode_livestream.value = s.others.mode_livestream.toString();
@@ -147,7 +155,7 @@ s.load().then(() => {
 	translation_bodyType.value = s.translation.bodyType;
 	translation_apiKey.value = s.translation.apiKey;
 	translation_modelName.value = s.translation.modelName;
-	translation_apiKey.required = translation_bodyContent.disabled = translation_bodyContent.hidden = s.translation.bodyType !== 'custom';
+	updateTranslationControls();
 	translation_bodyContent.value = s.translation.bodyContent;
 	translation_responseStyle.value = s.translation.responseStyle;
 
@@ -161,7 +169,7 @@ form.addEventListener('change', e => {
 	if (/** @type {HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement} */ (e.target).form !== form) return;
 	if (saveBtn) saveBtn.disabled = false;
 	if (status) status.hidden = false;
-	translation_apiKey.required = translation_bodyContent.disabled = translation_bodyContent.hidden = translation_bodyType.value !== 'custom';
+	updateTranslationControls();
 	if (!translation_bodyContent.disabled) {
 		translation_bodyContent.setCustomValidity((v => {
 			try {
@@ -267,4 +275,11 @@ tester.addEventListener('submit', e => {
 		clearInterval(timer);
 		if (btn) btn.disabled = false;
 	});
+});
+
+document.getElementById('btn-reset-translation')?.addEventListener('click', () => {
+	translation_method.value = DEFAULT_CONFIG.translation.method;
+	translation_url.value = DEFAULT_CONFIG.translation.url;
+	translation_responseStyle.value = DEFAULT_CONFIG.translation.responseStyle;
+	translation_url.dispatchEvent(new Event('change', { bubbles: true }));
 });

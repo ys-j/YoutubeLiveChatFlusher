@@ -173,7 +173,10 @@
 						<th>
 							<label for=translation_url data-i18n=translation_request_url></label>
 						<td>
-							<input type=url id=translation_url name=translation_url required>
+							<div class=flex style="align-items:center;">
+								<input type=url id=translation_url name=translation_url required>
+								<button type=button id=btn-reset-translation data-i18n=init></button>
+							</div>
 					<tr data-when-method=POST>
 						<th data-i18n=translation_request_bodyType>
 						<td>
@@ -194,7 +197,7 @@
 						<th>
 							<label for=translation_modelName data-i18n=translation_request_modelName></label>
 						<td>
-							<input id=translation_modelName name=translation_modelName required>
+							<input id=translation_modelName name=translation_modelName>
 				</table>
 				<textarea name=translation_bodyContent rows=10 data-when-method=POST data-i18n-placeholder=translation_request_body></textarea>
 			<dt data-i18n=translation_response>
