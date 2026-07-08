@@ -1,4 +1,6 @@
 import { logger } from './modules/logging.mjs';
+import { store as s } from './modules/store.mjs';
+
 import { LanguageDetectionController, TranslatorController } from './modules/translator.mjs';
 import { MLEngineManager } from './modules/ml_engine.mjs';
 
@@ -59,7 +61,7 @@ let translationController = null;
 /** @type {?MLEngineManager} */
 let personDetectionEngine = null;
 
-browser.storage.local.get(['translation', 'others']).then(async s => {
+s.load().then(async s => {
 	const {
 		translator, url, method, responseStyle,
 		apiKey, modelName, bodyType, bodyContent,

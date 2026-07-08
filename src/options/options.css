@@ -113,6 +113,7 @@ button.primary:hover {
 }
 label {
 	display: inline-block;
+	white-space: nowrap;
 	&:not(:last-of-type) {
 		margin-inline-end: 1em;
 	}
