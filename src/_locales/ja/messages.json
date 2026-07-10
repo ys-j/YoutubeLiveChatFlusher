@@ -416,6 +416,9 @@
 	"replay": {
 		"message": "アーカイブ"
 	},
+	"notificationOptionName": {
+		"message": "通知設定"
+	},
 	"mode_option_chatframe_dependent": {
 		"message": "チャット欄に依存"
 	},

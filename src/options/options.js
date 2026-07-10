@@ -85,6 +85,7 @@ const [form, tester] = document.forms;
 /** @type {Record<string, RadioNodeList>} */
 // @ts-expect-error
 const {
+	mode_notification,
 	mode_livestream, mode_replay,
 	autostart,
 	message_pause,
@@ -124,6 +125,7 @@ function updateTranslationControls() {
 }
 
 s.load().then(() => {
+	mode_notification.value = s.others.mode_notification.toString();
 	// mode
 	mode_livestream.value = s.others.mode_livestream.toString();
 	mode_replay.value = s.others.mode_replay.toString();
@@ -198,6 +200,7 @@ form.addEventListener('submit', async e => {
 	const config = {
 		/** @type {Partial<typeof s.data.others>} */
 		others: {
+			mode_notification: Number.parseInt(mode_notification.value, 10),
 			// @ts-expect-error
 			mode_livestream: Number.parseInt(mode_livestream.value, 10),
 			// @ts-expect-error

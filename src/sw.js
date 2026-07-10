@@ -40,6 +40,12 @@ browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 browser.runtime.onInstalled.addListener(async ({ reason, previousVersion }) => {
 	if (reason === 'browser_update') return;
 	if (previousVersion === manifest.version) return;
+	await configLoadTask;
+	if (s.others.mode_notification === 1) {
+		await displayUpdatedNotification(reason);
+	}
+});
+async function displayUpdatedNotification(reason) {
 	/** @type {(str: string) => string} */
 	const toUpperCamel = str => str.toLowerCase().replace(/(?:^|_+)(\w)/g, (_, m) => m.toUpperCase());
 	const id = await browser.notifications.create({
@@ -51,7 +57,7 @@ browser.runtime.onInstalled.addListener(async ({ reason, previousVersion }) => {
 	browser.notifications.onClicked.addListener((notificationId) => {
 		if (notificationId === id) events.reloadTabs();
 	});
-});
+}
 
 const detector = new LanguageDetectionController();
 
@@ -61,7 +67,7 @@ let translationController = null;
 /** @type {?MLEngineManager} */
 let personDetectionEngine = null;
 
-s.load().then(async s => {
+const configLoadTask = s.load().then(async s => {
 	const {
 		translator, url, method, responseStyle,
 		apiKey, modelName, bodyType, bodyContent,

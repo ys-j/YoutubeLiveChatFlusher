@@ -43,6 +43,7 @@ export const DEFAULT_CONFIG = Object.freeze({
 		autostart: 0,
 		message_pause: 1,
 		person_detection: 0,
+		mode_notification: 1,
 	},
 	parts: {
 		normal: { photo: false, name: false, message: true, color: '', strokeColor: '' },

@@ -416,6 +416,9 @@
 	"replay": {
 		"message": "Replay"
 	},
+	"notificationOptionName": {
+		"message": "Notification"
+	},
 	"mode_option_chatframe_dependent": {
 		"message": "ChatFrame Dependent Mode"
 	},
