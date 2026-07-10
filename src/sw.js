@@ -42,10 +42,10 @@ browser.runtime.onInstalled.addListener(async ({ reason, previousVersion }) => {
 	if (previousVersion === manifest.version) return;
 	await configLoadTask;
 	if (s.others.mode_notification === 1) {
-		await displayUpdatedNotification(reason);
+		await sendInstallNotification(reason);
 	}
 });
-async function displayUpdatedNotification(reason) {
+async function sendInstallNotification(reason) {
 	/** @type {(str: string) => string} */
 	const toUpperCamel = str => str.toLowerCase().replace(/(?:^|_+)(\w)/g, (_, m) => m.toUpperCase());
 	const id = await browser.notifications.create({
