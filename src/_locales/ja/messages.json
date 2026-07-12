@@ -407,6 +407,9 @@
 	"commonSettings": {
 		"message": "共通設定"
 	},
+	"notification": {
+		"message": "通知"
+	},
 	"loadingMode": {
 		"message": "チャットの読み込みモード"
 	},
@@ -415,9 +418,6 @@
 	},
 	"replay": {
 		"message": "アーカイブ"
-	},
-	"notificationOptionName": {
-		"message": "通知設定"
 	},
 	"mode_option_chatframe_dependent": {
 		"message": "チャット欄に依存"

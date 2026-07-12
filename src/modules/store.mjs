@@ -36,6 +36,7 @@ export const DEFAULT_CONFIG = Object.freeze({
 		translation_timing: 0,
 		suffix_original: 0,
 		time_shift: 0,
+		notification: 1,
 		/** @type {import("./main.mjs").FetchingModeEnum} */
 		mode_livestream: 0,
 		/** @type {import("./main.mjs").FetchingModeEnum} */
@@ -43,7 +44,6 @@ export const DEFAULT_CONFIG = Object.freeze({
 		autostart: 0,
 		message_pause: 1,
 		person_detection: 0,
-		mode_notification: 1,
 	},
 	parts: {
 		normal: { photo: false, name: false, message: true, color: '', strokeColor: '' },

@@ -1,5 +1,5 @@
 import { logger } from './modules/logging.mjs';
-import { store as s } from './modules/store.mjs';
+import { store } from './modules/store.mjs';
 
 import { LanguageDetectionController, TranslatorController } from './modules/translator.mjs';
 import { MLEngineManager } from './modules/ml_engine.mjs';
@@ -7,10 +7,11 @@ import { MLEngineManager } from './modules/ml_engine.mjs';
 // @ts-expect-error
 self.browser ??= chrome;
 
+const loadingStore = store.load();
+
 const manifest = browser.runtime.getManifest();
 const hosts = manifest.host_permissions;
 
-/** @type {Record<string, Function>} */
 const events = {
 	async reload() {
 		browser.runtime.reload();
@@ -21,6 +22,24 @@ const events = {
 	},
 	async openOptions() {
 		return browser.runtime.openOptionsPage();
+	},
+
+	/**
+	 * Sends an installation notification to the user.
+	 * @param {import("webextension-polyfill").Runtime.OnInstalledReason} reason
+	 */
+	async notify(reason) {
+		/** @type {(str: string) => string} */
+		const toUpperCamel = str => str.toLowerCase().replace(/(?:^|_+)(\w)/g, (_, m) => m.toUpperCase());
+		const id = await browser.notifications.create({
+			type: 'basic',
+			title: manifest.name,
+			iconUrl: manifest.icons?.['128'],
+			message: browser.i18n.getMessage(`notification_title_on${toUpperCamel(reason)}`, [manifest.version]),
+		});
+		browser.notifications.onClicked.addListener((notificationId) => {
+			if (notificationId === id) events.reloadTabs();
+		});
 	},
 };
 
@@ -40,24 +59,9 @@ browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 browser.runtime.onInstalled.addListener(async ({ reason, previousVersion }) => {
 	if (reason === 'browser_update') return;
 	if (previousVersion === manifest.version) return;
-	await configLoadTask;
-	if (s.others.mode_notification === 1) {
-		await sendInstallNotification(reason);
-	}
+	const s = await loadingStore;
+	if (s.others.notification) events.notify(reason);
 });
-async function sendInstallNotification(reason) {
-	/** @type {(str: string) => string} */
-	const toUpperCamel = str => str.toLowerCase().replace(/(?:^|_+)(\w)/g, (_, m) => m.toUpperCase());
-	const id = await browser.notifications.create({
-		type: 'basic',
-		title: manifest.name,
-		iconUrl: manifest.icons?.['128'],
-		message: browser.i18n.getMessage(`notification_title_on${toUpperCamel(reason)}`, [manifest.version]),
-	});
-	browser.notifications.onClicked.addListener((notificationId) => {
-		if (notificationId === id) events.reloadTabs();
-	});
-}
 
 const detector = new LanguageDetectionController();
 
@@ -67,7 +71,7 @@ let translationController = null;
 /** @type {?MLEngineManager} */
 let personDetectionEngine = null;
 
-const configLoadTask = s.load().then(async s => {
+loadingStore.then(async s => {
 	const {
 		translator, url, method, responseStyle,
 		apiKey, modelName, bodyType, bodyContent,
@@ -129,7 +133,8 @@ browser.runtime.onMessage.addListener((_message, _sender, respond) => {
 		})
 		.finally(() => console.timeEnd('personDetectionEngine.run'));
 	} else if ('fire' in msg) {
-		events[msg.fire]?.()?.then(respond);
+		const eventType = /** @type {"reload"} */ (msg.fire);
+		events[eventType]?.()?.then(respond);
 	}
 	return true;
 });

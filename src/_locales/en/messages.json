@@ -300,7 +300,7 @@
 		"message": "Use regular expression"
 	},
 	"placeholder_mutedWordsList": {
-		"message": "Multiple keywords can be prohibited in a new line."
+		"message": "Multiple keywords can be set each on a separated line."
 	},
 	"user_defined_css_shortcut": {
 		"message": "Shortcut"
@@ -407,6 +407,9 @@
 	"commonSettings": {
 		"message": "Common Settings"
 	},
+	"notification": {
+		"message": "Notification"
+	},
 	"loadingMode": {
 		"message": "Chat Loading Mode"
 	},
@@ -415,9 +418,6 @@
 	},
 	"replay": {
 		"message": "Replay"
-	},
-	"notificationOptionName": {
-		"message": "Notification"
 	},
 	"mode_option_chatframe_dependent": {
 		"message": "ChatFrame Dependent Mode"
