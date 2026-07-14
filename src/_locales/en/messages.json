@@ -408,7 +408,10 @@
 		"message": "Common Settings"
 	},
 	"notification": {
-		"message": "Notification"
+		"message": "Notifications"
+	},
+	"whenUpdated": {
+		"message": "When Updated"
 	},
 	"loadingMode": {
 		"message": "Chat Loading Mode"

@@ -410,6 +410,9 @@
 	"notification": {
 		"message": "通知"
 	},
+	"whenUpdated": {
+		"message": "更新時"
+	},
 	"loadingMode": {
 		"message": "チャットの読み込みモード"
 	},

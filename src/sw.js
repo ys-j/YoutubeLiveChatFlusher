@@ -88,19 +88,18 @@ loadingStore.then(async s => {
 		{ dtype: 'q8', device: 'wasm' },
 		{ dtype: 'fp32', device: 'gpu' },
 	]).at(person_detection);
-	if (engineOption && manifest.optional_permissions?.includes('trialML')) {
-		const granted = await browser.permissions.contains({ permissions: ['trialML'] });
-		if (granted) {
-			personDetectionEngine = new MLEngineManager({
-				modelHub: 'huggingface',
-				taskName: 'image-segmentation',
-				modelId: 'onnx-community/mediapipe_selfie_segmentation_landscape',
-				...engineOption,
-			});
-			await personDetectionEngine.ensureReady();
-		} else {
-			logger.warn('Permission "trialML" was rejected.');
-		}
+	if (!engineOption || manifest.optional_permissions?.includes('trialML')) return;
+	const granted = await browser.permissions.contains({ permissions: ['trialML'] });
+	if (granted) {
+		personDetectionEngine = new MLEngineManager({
+			modelHub: 'huggingface',
+			taskName: 'image-segmentation',
+			modelId: 'onnx-community/mediapipe_selfie_segmentation_landscape',
+			...engineOption,
+		});
+		await personDetectionEngine.ensureReady();
+	} else {
+		logger.warn('Permission "trialML" was rejected.');
 	}
 });
 
