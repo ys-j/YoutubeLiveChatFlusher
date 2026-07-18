@@ -156,6 +156,12 @@ browser.runtime.onMessage.addListener((_message, _sender, respond) => {
 	} else if ('fire' in msg) {
 		const eventType = /** @type {"reload"} */ (msg.fire);
 		events[eventType]?.()?.then(respond);
+	} else if ('request' in msg) {
+		/** @type { { url: string, options?: RequestInit } } */
+		const { url, options } = msg.request;
+		fetch(url, options)
+		.then(res => res.text())
+		.then(respond);
 	}
 	return true;
 });
