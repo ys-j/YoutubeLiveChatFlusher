@@ -216,7 +216,7 @@ export class LiveChatController {
 			if (select.name in s.others) {
 				const name = /** @type {keyof typeof s.others} */ (select.name);
 				const val = s.others[name];
-				select.selectedIndex = Math.abs(val);
+				select.selectedIndex = val;
 				if (name === 'emoji') {
 					le.setAttribute('data-emoji', Object.keys(EmojiModeEnum)[val].toLowerCase());
 				} else if (name === 'wrap') {
@@ -228,6 +228,8 @@ export class LiveChatController {
 				}
 			} else if (select.name === 'muted_words_mode') {
 				select.selectedIndex = s.mutedWords.mode;
+			} else if (select.name === 'translation') {
+				select.selectedIndex = s.translation.targetIndex;
 			}
 		}
 		const checkboxes = /** @type {NodeListOf<HTMLInputElement>} */ (form.querySelectorAll('input[type="checkbox"]'));
@@ -367,14 +369,14 @@ export class LiveChatController {
 			}
 			case 'except_lang': {
 				const val = Number.parseInt(cb.value, 10);
-				cb.checked = !!(s.others.except_lang & 1 << val);
-				const abs = Math.abs(s.others.translation);
-				cb.disabled = abs === 0 || abs === val + 1;
+				cb.checked = !!(s.translation.exceptionFlag & 1 << val);
+				const target = s.translation.targetIndex;
+				cb.disabled = target === 0 || target === val + 1;
 				break;
 			}
 			case 'prefix_lang':
 			case 'suffix_original': {
-				cb.checked = cb.name === 'prefix_lang' ? s.others.translation < 0 : s.others.suffix_original > 0;
+				cb.checked = cb.name === 'prefix_lang' ? s.translation.prefixLangCode: s.translation.suffixOriginal;
 				cb.disabled = /** @type {HTMLSelectElement} */ (ctrls.translation).selectedIndex === 0;
 				le.classList[cb.checked ? 'add' : 'remove'](cb.name);
 				break;
@@ -428,8 +430,7 @@ export class LiveChatController {
 			le.classList[dir & 1 ? 'add': 'remove']('direction-reversed-y');
 			le.classList[dir & 2 ? 'add': 'remove']('direction-reversed-x');
 		}
-		const langIndex = s.others.translation;
-		if (langIndex < 0) le.classList.add('prefix_lang');
+		if (s.translation.prefixLangCode) le.classList.add('prefix_lang');
 
 		// layer CSS
 		/** @type {HTMLInputElement} */ (ctrls.layer_css).value = s.styles.layer_css;
@@ -442,7 +443,7 @@ export class LiveChatController {
 	 * @param {HTMLVideoElement} video
 	 */
 	#startSendingFrame(video) {
-		if (!s.others.person_detection) return;
+		if (!s.personDetection.device) return;
 
 		const canvas = document.createElement('canvas');
 		const ctx = canvas.getContext('bitmaprenderer');
