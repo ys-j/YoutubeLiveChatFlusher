@@ -482,6 +482,15 @@
 	"enabled_gpu": {
 		"message": "する (GPU)"
 	},
+	"inference_backend": {
+		"message": "推論バックエンド"
+	},
+	"inference_backend_onnx": {
+		"message": "ONNX（標準）"
+	},
+	"inference_backend_onnx-native": {
+		"message": "ONNX Native（高速）"
+	},
 	"translationBlacklist": {
 		"message": "翻訳NGリスト"
 	},

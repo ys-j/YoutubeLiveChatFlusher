@@ -100,6 +100,12 @@ export const DEFAULT_CONFIG = Object.freeze({
 		bodyType: 'OpenAI',
 		bodyContent: '',
 	},
+	personDetection: {
+		/** @type {"" | "wasm" | "gpu"} */
+		device: '',
+		/** @type {"onnx" | "onnx-native"} */
+		backend: 'onnx',
+	},
 });
 
 class ConfigHandler {
@@ -171,6 +177,7 @@ class ConfigStore {
 		}
 		Object.assign(this.data.mutedWords, stored.mutedWords);
 		Object.assign(this.data.translation, stored.translation);
+		Object.assign(this.data.personDetection, stored.personDetection);
 		this.isLoaded = true;
 		return this;
 	}
@@ -182,6 +189,7 @@ class ConfigStore {
 	get mutedWords() { return this.proxies.mutedWords; }
 	get cssTexts() { return this.proxies.cssTexts; }
 	get translation() { return this.proxies.translation; }
+	get personDetection() { return this.proxies.personDetection; }
 
 	async reset() {
 		await browser.storage.local.clear();

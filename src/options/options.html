@@ -139,17 +139,26 @@
 			<dt class=only-firefox data-i18n=person_detection>
 			<dd class=only-firefox>
 				<label>
-					<input type=radio name=person_detection value=0>
+					<input type=radio name=person_detector_device value>
 					<span data-i18n=disabled></span>
 				</label>
 				<label>
-					<input type=radio name=person_detection value=1>
+					<input type=radio name=person_detector_device value=wasm>
 					<span data-i18n=enabled_wasm></span>
 				</label>
 				<label>
-					<input type=radio name=person_detection value=2>
+					<input type=radio name=person_detector_device value=gpu>
 					<span data-i18n=enabled_gpu></span>
 				</label>
+				<table>
+					<tr>
+						<th data-i18n=inference_backend>
+						<td>
+							<select name=person_detector_backend>
+								<option value=onnx data-i18n=inference_backend_onnx>
+								<option value=onnx-native data-i18n=inference_backend_onnx-native>
+							</select>
+				</table>
 		</dl>
 	</section>
 	<section>

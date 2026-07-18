@@ -482,6 +482,15 @@
 	"enabled_gpu": {
 		"message": "Enable (GPU)"
 	},
+	"inference_backend": {
+		"message": "Inference Backend"
+	},
+	"inference_backend_onnx": {
+		"message": "ONNX (Standard)"
+	},
+	"inference_backend_onnx-native": {
+		"message": "ONNX Native (Fast)"
+	},
 	"translationBlacklist": {
 		"message": "Translation Exclusion List"
 	},

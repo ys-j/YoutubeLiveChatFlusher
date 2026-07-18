@@ -89,7 +89,7 @@ const {
 	mode_livestream, mode_replay,
 	autostart,
 	message_pause,
-	person_detection,
+	person_detector_device,
 	translation_method,
 	translation_bodyType,
 	translation_responseStyle,
@@ -107,7 +107,10 @@ const {
 
 /** @type {Record<string, HTMLSelectElement>} */
 // @ts-expect-error
-const { translation_translator } = form.elements;
+const {
+	person_detector_backend,
+	translation_translator
+} = form.elements;
 
 /** @type {Record<string, HTMLTextAreaElement>} */
 // @ts-expect-error
@@ -145,7 +148,8 @@ s.load().then(() => {
 	message_pause.value = s.others.message_pause.toString();
 
 	// person detection
-	person_detection.value = s.others.person_detection.toString();
+	person_detector_device.value = s.personDetection.device;
+	person_detector_backend.value = s.personDetection.backend;
 
 	// translation
 	/** @type {HTMLInputElement} */
@@ -190,11 +194,11 @@ form.addEventListener('change', e => {
 
 form.addEventListener('submit', async e => {
 	e.preventDefault();
-	if (Number.parseInt(person_detection.value, 10) > 0) {
+	if (person_detector_device.value) {
 		/** @type { { permissions: ["trialML"] } } */
 		const permission = { permissions: ['trialML'] };
 		const granted = await browser.permissions.request(permission);
-		if (!granted) person_detection.value = '0';
+		if (!granted) person_detector_device.value = '';
 	}
 
 	const config = {
@@ -227,6 +231,11 @@ form.addEventListener('submit', async e => {
 			modelName: translation_modelName.value,
 			bodyContent: translation_bodyContent.value,
 			responseStyle: /** @type {typeof s.translation.responseStyle} */ (translation_responseStyle.value),
+		},
+		/** @type {Partial<typeof s.data.personDetection>} */
+		personDetection: {
+			device: /** @type {typeof s.personDetection.device} */ (person_detector_device.value),
+			backend: /** @type {typeof s.personDetection.backend} */ (person_detector_backend.value),
 		},
 	};
 	await s.load(config);

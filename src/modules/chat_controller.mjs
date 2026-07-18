@@ -474,15 +474,29 @@ export class LiveChatController {
 		(async function renderLoop() {
 			if (hasNew) {
 				hasNew = false;
-				const ALPHA_MASK = 0xFF000000 >>> 0;
-				const UPPER_THRESHOLD = 160;
-				const LOWER_THRESHOLD = 96;
-				for (let i = 0, l = localBuffer.length; i < l; i++) {
-					const curentVal = (prevRecv[i] + localBuffer[i]) >> 1;
-					const prevVal = u32data[i] & 0xFF;
-					const b = curentVal < LOWER_THRESHOLD ? 0 : curentVal > UPPER_THRESHOLD ? 255 : prevVal;
-					u32data[i] = (ALPHA_MASK | (b << 16) | (b << 8) | b) >>> 0;
-					prevRecv[i] = localBuffer[i];
+				const ALPHA_MASK = 0xFF000000;
+				if (localBuffer.some(b => b > 1)) {
+					const UPPER_THRESHOLD = 160;
+					const LOWER_THRESHOLD = 96;
+					for (let i = 0, l = localBuffer.length; i < l; i++) {
+						const prevVal = u32data[i] & 0xFF;
+						const curr = (prevRecv[i] + localBuffer[i]) >> 1;
+						const b = curr < LOWER_THRESHOLD ? 0 : curr > UPPER_THRESHOLD ? 255 : prevVal;
+						if (b !== prevVal) u32data[i] = ALPHA_MASK | (0x010101 * b);
+						prevRecv[i] = localBuffer[i];
+					}
+				} else {
+					for (let i = 0, l = localBuffer.length; i < l; i++) {
+						const prev = prevRecv[i];
+						const curr = localBuffer[i];
+						const sum = prev + curr;
+						if (sum !== 1) {
+							const b = sum ? 255 : 0;
+							const prevVal = u32data[i] & 0xFF;
+							if (b !== prevVal) u32data[i] = ALPHA_MASK | (0x010101 * b);
+						}
+						prevRecv[i] = curr;
+					}
 				}
 				const bitmap = await createImageBitmap(imageData);
 				ctx.transferFromImageBitmap(bitmap);
