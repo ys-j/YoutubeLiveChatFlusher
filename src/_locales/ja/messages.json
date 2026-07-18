@@ -494,7 +494,7 @@
 	"inference_backend_onnx": {
 		"message": "ONNX（標準・推奨）"
 	},
-	"inference_backend_onnx-native": {
+	"inference_backend_onnxnative": {
 		"message": "ONNX Native（低遅延）"
 	},
 	"translationBlacklist": {
@@ -563,8 +563,8 @@
 	"save": {
 		"message": "保存"
 	},
-	"warn_notSaved": {
-		"message": "保存すると拡張機能が再起動します。YouTubeを開いているタブは手動で更新が必要です。"
+	"warning_whenNotSaved": {
+		"message": "保存すると拡張機能が再起動します。YouTubeを開いているタブも自動で再読み込みされますが、場合により手動更新が必要です。"
 	},
 	"pip_marker": {
 		"message": "この動画はピクチャーインピクチャーで再生されています"

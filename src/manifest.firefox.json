@@ -37,11 +37,11 @@
 		"48": "images/icon.svg",
 		"128": "images/icon.svg"
 	},
-	"optional_permissions": ["trialML"],
+	"optional_permissions": ["notifications", "trialML"],
 	"options_ui": {
 		"page": "options/options.html"
 	},
-	"permissions": ["storage", "notifications"],
+	"permissions": ["storage"],
 	"web_accessible_resources": [
 		{
 			"resources": ["modules/*", "injections/*", "styles/*", "templates/*", "images/*"],

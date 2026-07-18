@@ -37,8 +37,11 @@ for (const el of i18nPlaceholders) {
 const manifestElems = document.querySelectorAll('[data-manifest]');
 for (const el of manifestElems) {
 	const key = el.dataset.manifest;
-	// @ts-expect-error
-	if (key && key in manifest) el.textContent = manifest[key];
+	if (key && key in manifest) {
+		const k = /** @type {keyof import("webextension-polyfill").Manifest.WebExtensionManifest} */ (key);
+		const v = manifest[k]?.toString();
+		if (v) el.textContent = v;
+	}
 }
 
 const exportBtn = document.getElementById('btn-export');
@@ -49,7 +52,7 @@ exportBtn?.addEventListener('click', () => {
 	a.download = `ytlcf-config-${Date.now()}.json`;
 	a.href = url;
 	a.click();
-}, { passive: true });
+});
 
 const importBtn = document.getElementById('btn-import');
 importBtn?.addEventListener('click', async () => {
@@ -58,30 +61,28 @@ importBtn?.addEventListener('click', async () => {
 	input.accept = 'application/json';
 	input.addEventListener('cancel', () => {
 		logger.debug('Config file import is canceled.');
-	}, { passive: true });
+	});
 	input.addEventListener('change', () => {
 		const files = input.files;
-		if (files && files.length > 0) {
-			logger.debug('Config file selected:', files[0].name);
-			const reader = new FileReader();
-			reader.onload = async e => {
-				const json = JSON.parse(/** @type {string} */ (e.target?.result));
-				await s.load(json);
-				await browser.storage.local.set(s.data);
-				browser.runtime.sendMessage({ fire: 'reload' });
-			};
-			reader.readAsText(files[0]);
-		}
-	}, { passive: true });
+		if (!files || files.length < 1) return;
+		logger.debug('Config file selected:', files[0].name);
+		const reader = new FileReader();
+		reader.onload = async e => {
+			const json = JSON.parse(/** @type {string} */ (e.target?.result));
+			await s.load(json);
+			await browser.storage.local.set(s.data);
+			browser.runtime.sendMessage({ fire: 'reload' });
+		};
+		reader.readAsText(files[0]);
+	});
 	input.click();
-}, { passive: true });
+});
 
 const initBtn = document.getElementById('btn-init');
 initBtn?.addEventListener('click', async () => {
 	await s.reset();
-	await browser.runtime.sendMessage({ fire: 'reload' });
-	location.reload();
-}, { passive: true });
+	browser.runtime.sendMessage({ fire: 'reload' });
+});
 
 const saveBtn = /** @type {?HTMLButtonElement} */ (document.getElementById('btn-save'));
 
@@ -90,7 +91,7 @@ const [form, tester] = document.forms;
 /** @type {Record<string, RadioNodeList>} */
 // @ts-expect-error
 const {
-	notification,
+	notification_whenUpdated,
 	mode_livestream, mode_replay,
 	autostart,
 	message_pause,
@@ -133,7 +134,7 @@ function updateTranslationControls() {
 }
 
 s.load().then(() => {
-	notification.value = s.others.notification.toString();
+	notification_whenUpdated.value = s.others.notification_updated.toString();
 	// mode
 	mode_livestream.value = s.others.mode_livestream.toString();
 	mode_replay.value = s.others.mode_replay.toString();
@@ -199,17 +200,19 @@ form.addEventListener('change', e => {
 
 form.addEventListener('submit', async e => {
 	e.preventDefault();
+	if (Number.parseInt(notification_whenUpdated.value, 10)) {
+		const granted = await browser.permissions.request({ permissions: ['notifications'] }).catch(() => false);
+		if (!granted) notification_whenUpdated.value = '0';
+	}
 	if (person_detector_device.value) {
-		/** @type { { permissions: ["trialML"] } } */
-		const permission = { permissions: ['trialML'] };
-		const granted = await browser.permissions.request(permission);
+		const granted = await browser.permissions.request({ permissions: ['trialML'] }).catch(() => false);
 		if (!granted) person_detector_device.value = '';
 	}
 
 	const config = {
 		/** @type {Partial<typeof s.data.others>} */
 		others: {
-			notification: Number.parseInt(notification.value, 10),
+			notification_updated: Number.parseInt(notification_whenUpdated.value, 10),
 			// @ts-expect-error
 			mode_livestream: Number.parseInt(mode_livestream.value, 10),
 			// @ts-expect-error

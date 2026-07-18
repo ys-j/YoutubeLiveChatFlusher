@@ -35,11 +35,11 @@
 						<th data-i18n=whenUpdated>
 						<td>
 							<label>
-								<input type=radio name=notification value=0>
+								<input type=radio name=notification_whenUpdated value=0>
 								<span data-i18n=disabled></span>
 							</label>
 							<label>
-								<input type=radio name=notification value=1>
+								<input type=radio name=notification_whenUpdated value=1>
 								<span data-i18n=enabled></span>
 							</label>
 				</table>
@@ -162,7 +162,7 @@
 						<td>
 							<select name=person_detector_backend>
 								<option value=onnx data-i18n=inference_backend_onnx>
-								<option value=onnx-native data-i18n=inference_backend_onnx-native>
+								<option value=onnx-native data-i18n=inference_backend_onnxnative>
 							</select>
 				</table>
 		</dl>
@@ -258,7 +258,7 @@
 	</section>
 	<section>
 		<button class=primary id=btn-save disabled data-i18n=save></button>
-		<div><small id=status hidden data-i18n=warn_notSaved></small></div>
+		<div><small id=status hidden data-i18n=warning_whenNotSaved></small></div>
 	</section>
 </form>
 <form id=translation_test></form>

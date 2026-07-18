@@ -494,7 +494,7 @@
 	"inference_backend_onnx": {
 		"message": "ONNX (Standard / Recommended)"
 	},
-	"inference_backend_onnx-native": {
+	"inference_backend_onnxnative": {
 		"message": "ONNX Native (Low Latency)"
 	},
 	"translationBlacklist": {
@@ -563,8 +563,8 @@
 	"save": {
 		"message": "Save"
 	},
-	"warn_notSaved": {
-		"message": "After save, this extension will restart. You will need to manually refresh any YouTube tabs."
+	"warning_whenNotSaved": {
+		"message": "Saving will restart the extension and automatically reload all open YouTube tabs, through a manual refresh may sometimes be required."
 	},
 	"pip_marker": {
 		"message": "Now playing in picture-in-picture mode"
