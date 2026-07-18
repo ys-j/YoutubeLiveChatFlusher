@@ -43,9 +43,11 @@ h1, h2 {
 }
 a {
 	color: var(--accent-color);
+	text-decoration: none;
 }
 a:hover {
 	color: var(--accent-color-hover);
+	text-decoration: underline;
 }
 col.max {
 	width: 100%;
@@ -172,6 +174,7 @@ textarea {
 	}
 }
 
-[data-browser="chrome"] .only-firefox {
+[data-browser="chrome"] .only-firefox,
+[data-platform="mobile"] .only-desktop {
 	display: none;
 }

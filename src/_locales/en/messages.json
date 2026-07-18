@@ -392,6 +392,9 @@
 	"version": {
 		"message": "Version"
 	},
+	"releaseNote": {
+		"message": "Release note"
+	},
 	"configFile": {
 		"message": "Config File"
 	},
@@ -430,6 +433,9 @@
 	},
 	"description_chatframe_dependent_1": {
 		"message": "Works only while the chat frame is open."
+	},
+	"description_chatframe_dependent_2": {
+		"message": "Always falls back to Independent Mode on the mobile site (m.youtube.com)."
 	},
 	"description_chatframe_independent_1": {
 		"message": "Works even when the chat frame is closed."
@@ -486,10 +492,10 @@
 		"message": "Inference Backend"
 	},
 	"inference_backend_onnx": {
-		"message": "ONNX (Standard)"
+		"message": "ONNX (Standard / Recommended)"
 	},
 	"inference_backend_onnx-native": {
-		"message": "ONNX Native (Fast)"
+		"message": "ONNX Native (Low Latency)"
 	},
 	"translationBlacklist": {
 		"message": "Translation Exclusion List"

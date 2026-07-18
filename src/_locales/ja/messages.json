@@ -392,6 +392,9 @@
 	"version": {
 		"message": "バージョン"
 	},
+	"releaseNote": {
+		"message": "リリースノート"
+	},
 	"configFile": {
 		"message": "設定ファイル"
 	},
@@ -411,7 +414,7 @@
 		"message": "通知"
 	},
 	"whenUpdated": {
-		"message": "更新時"
+		"message": "バージョン更新時"
 	},
 	"loadingMode": {
 		"message": "チャットの読み込みモード"
@@ -430,6 +433,9 @@
 	},
 	"description_chatframe_dependent_1": {
 		"message": "チャット欄を開いているときのみ動作します。"
+	},
+	"description_chatframe_dependent_2": {
+		"message": "モバイル版ページ（m.youtube.com）では常に非依存モードへフォールバックします。"
 	},
 	"description_chatframe_independent_1": {
 		"message": "チャット欄を閉じていても動作します。"
@@ -486,10 +492,10 @@
 		"message": "推論バックエンド"
 	},
 	"inference_backend_onnx": {
-		"message": "ONNX（標準）"
+		"message": "ONNX（標準・推奨）"
 	},
 	"inference_backend_onnx-native": {
-		"message": "ONNX Native（高速）"
+		"message": "ONNX Native（低遅延）"
 	},
 	"translationBlacklist": {
 		"message": "翻訳NGリスト"

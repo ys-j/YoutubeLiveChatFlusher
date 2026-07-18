@@ -9,6 +9,11 @@ self.browser ??= chrome;
 const manifest = browser.runtime.getManifest();
 document.documentElement.dataset.browser = 'browser_specific_settings' in manifest ? 'firefox' : 'chrome';
 
+browser.runtime.getPlatformInfo().then(info => {
+	const platform = ['android', 'ios'].includes(info.os) ? 'mobile' : 'desktop';
+	document.documentElement.dataset.platform = platform;
+});
+
 /** @type {NodeListOf<HTMLElement>} */
 const i18nElems = document.querySelectorAll('[data-i18n]');
 for (const el of i18nElems) {
