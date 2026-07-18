@@ -8,21 +8,19 @@ import { LiveChatContextMenu } from './chat_contextmenu.mjs';
 import { LiveChatItemFactory, EmojiModeEnum, renderChatItem, updateMutedWordsList, updateTlExclusionList } from './chat_message.mjs';
 import { LiveChatLayoutCache, layoutChatItem } from './chat_layout.mjs';
 
-/** @enum {number} */
 export const SimultaneousModeEnum = Object.freeze({
 	ALL: 0,
 	FIRST: 1,
 	MERGE: 2,
 	LAST_MERGE: 3,
 });
+/** @typedef {typeof SimultaneousModeEnum[keyof typeof SimultaneousModeEnum]} SimultaneousModeEnum */
 
 export class LiveChatController {
 	/** @type {boolean} */
 	#skip = false;
 
-	/** @type {?VideoSegmentationExecutor} */
-	segmenter = null;
-
+	/** @type {"desktop" | "mobile"} */ device;
 	/** @type {HTMLElement} */ player;
 	/** @type {LiveChatLayer} */ layer;
 	/** @type {LiveChatLayoutCache} */ layoutCache;
@@ -31,10 +29,16 @@ export class LiveChatController {
 	/** @type {LiveChatContextMenu} */ contextmenu;
 	/** @type {AbortController} */ abortController;
 
+	/** @type {boolean} */
+	listening = false;
+	/** @type {?VideoSegmentationExecutor} */
+	segmenter = null;
+
 	/**
 	 * @param {HTMLElement} player YouTube player element
 	 */
 	constructor(player) {
+		this.device = player.tagName.toLowerCase() === 'ytd-app' ? 'desktop' : 'mobile';
 		this.player = player;
 
 		this.layer = new LiveChatLayer(this);
@@ -82,7 +86,7 @@ export class LiveChatController {
 		const video = this.player.querySelector('#movie_player video');
 		const videoContainer = video?.parentElement;
 		if (!video || !videoContainer) {
-			return Promise.reject('No video container element found.');
+			throw 'No video container element found.';
 		}
 
 		document.getElementById(this.panel.element.id)?.remove();
@@ -99,7 +103,7 @@ export class LiveChatController {
 		const promises = [
 			// fetching your channel ID and set styles for you
 			this.#setupViewerStyle(),
-			this.#setupSettingMenu(),
+			this.device === 'mobile' ? this.#setupMobileSettingMenu() : this.#setupSettingMenu(),
 			this.itemFactory.load(),
 		];
 
@@ -151,29 +155,105 @@ export class LiveChatController {
 
 		const doc = await loadTemplateDocument('../templates/panel_menu.html');
 		const [checkbox, popupmenu, pipmenu] = doc.body.children;
-		checkbox.setAttribute('aria-checked', s.others.disabled ? 'false' : 'true');
+		checkbox.ariaChecked = s.others.disabled ? 'false' : 'true';
 		checkbox.addEventListener('click', e => {
 			const cb = /** @type {?HTMLElement} */ (e.currentTarget);
 			if (!cb) return;
-			const checked = cb.getAttribute('aria-checked') === 'true';
-			cb.setAttribute('aria-checked', (!checked).toString());
+			const checked = cb.ariaChecked === 'true';
+			cb.ariaChecked = (!checked).toString();
 			this.layer.clear();
 			this.layer[checked ? 'hide' : 'show']();
 			s.others.disabled = checked ? 1 : 0;
-		}, { passive: true });
+		});
 		popupmenu.addEventListener('click', () => {
-			if (!this.panel) return;
-			this.panel[this.panel.element.hidden ? 'show' : 'hide']();
-		}, { passive: true });
-		ytpPanelMenu.querySelector('#' + checkbox.id)?.remove();
-		ytpPanelMenu.querySelector('#' + popupmenu.id)?.remove();
-		ytpPanelMenu.querySelector('#' + pipmenu.id)?.remove();
+			if (this.panel.element.hidden) this.panel.show();
+			else this.panel.hide();
+		});
+		document.getElementById(checkbox.id)?.remove();
+		document.getElementById(popupmenu.id)?.remove();
+		document.getElementById(pipmenu.id)?.remove();
 		ytpPanelMenu.append(checkbox, popupmenu, pipmenu);
 	}
 
+	async #setupMobileSettingMenu() {
+		const doc = await loadTemplateDocument('../templates/panel_menu_mobile.html');
+		const [checkbox, popupmenu] = doc.body.children;
+
+		const container = checkbox.querySelector('.ytListItemViewModelContainer');
+		const switchBtn = checkbox.querySelector('.ytSwitchButtonViewModelButton');
+		const switchTrack = switchBtn?.querySelector('.ytSwitchShapeTrack');
+		const switchKnob = switchBtn?.querySelector('.ytSwitchShapeKnob');
+		if (!container || !switchBtn || !switchTrack || !switchKnob) return;
+
+		const turnOn = () => {
+			switchBtn.ariaChecked = 'true';
+			switchTrack.classList.add('ytSwitchShapeTrackActive');
+			switchKnob.classList.add('ytSwitchShapeKnobActive');
+		};
+		const turnOff = () => {
+			switchBtn.ariaChecked = 'false';
+			switchTrack.classList.remove('ytSwitchShapeTrackActive');
+			switchKnob.classList.remove('ytSwitchShapeKnobActive');
+		};
+		const enable = () => {
+			container.classList.remove('ytListItemViewModelDisabled');
+			switchTrack.classList.remove('ytSwitchShapeTrackDisabled');
+			if (s.others.disabled) turnOff();
+			else turnOn();
+		};
+		const disable = () => {
+			container.classList.add('ytListItemViewModelDisabled');
+			switchTrack.classList.add('ytSwitchShapeTrackDisabled');
+			turnOff();
+		};
+
+		checkbox.addEventListener('click', e => {
+			e.stopPropagation();
+			if (!this.listening) return;
+
+			const checked = switchBtn.ariaChecked === 'true';
+			if (checked) {
+				this.layer.hide();
+				turnOff();
+				s.others.disabled = 1;
+				this.layer.clear();
+			} else {
+				this.layer.show();
+				turnOn();
+				s.others.disabled = 0;
+			}
+		});
+
+		popupmenu.addEventListener('click', () => {
+			if (this.panel.element.hidden) this.panel.show();
+			else this.panel.hide();
+		});
+
+		const observer = new MutationObserver(records => {
+			for (const r of records) {
+				const el = /** @type {HTMLElement} */ (r.target);
+				if (el.hidden) continue;
+				document.getElementById(checkbox.id)?.remove();
+				document.getElementById(popupmenu.id)?.remove();
+
+				if (this.listening) enable();
+				else disable();
+				el.querySelector('player-settings-menu')?.append(checkbox, popupmenu);
+			}
+		});
+
+		for (const bsc of document.querySelectorAll('bottom-sheet-container')) {
+			observer.observe(bsc, { attributeFilter: ['hidden'] });
+		}
+	}
+
 	async #setupPanel() {
-		const le = this.layer.element;
-		le.after(this.panel.element);
+		if (this.device === 'desktop') {
+			this.layer.element.after(this.panel.element);
+		} else {
+			const overlay = this.player.querySelector('ytm-watch-player-controls');
+			overlay?.append(this.panel.element);
+		}
 
 		const form = this.panel.form;
 		if (!form) return;
@@ -216,7 +296,7 @@ export class LiveChatController {
 			if (select.name in s.others) {
 				const name = /** @type {keyof typeof s.others} */ (select.name);
 				const val = s.others[name];
-				select.selectedIndex = Math.abs(val);
+				select.selectedIndex = val;
 				if (name === 'emoji') {
 					le.setAttribute('data-emoji', Object.keys(EmojiModeEnum)[val].toLowerCase());
 				} else if (name === 'wrap') {
@@ -228,6 +308,8 @@ export class LiveChatController {
 				}
 			} else if (select.name === 'muted_words_mode') {
 				select.selectedIndex = s.mutedWords.mode;
+			} else if (select.name === 'translation') {
+				select.selectedIndex = s.translation.targetIndex;
 			}
 		}
 		const checkboxes = /** @type {NodeListOf<HTMLInputElement>} */ (form.querySelectorAll('input[type="checkbox"]'));
@@ -303,7 +385,6 @@ export class LiveChatController {
 				if (strokePicker) strokePicker.value = part.strokeColor || computed.getPropertyValue(strokeProp) || '#000000';
 				break;
 			}
-			// biome-ignore lint/suspicious/noFallthroughSwitchClause: To use default case
 			case 'name': {
 				const div = /** @type {HTMLDivElement} */ (cb.closest('div'));
 				if (part.name) div.classList.add('outlined');
@@ -367,14 +448,14 @@ export class LiveChatController {
 			}
 			case 'except_lang': {
 				const val = Number.parseInt(cb.value, 10);
-				cb.checked = !!(s.others.except_lang & 1 << val);
-				const abs = Math.abs(s.others.translation);
-				cb.disabled = abs === 0 || abs === val + 1;
+				cb.checked = !!(s.translation.exceptionFlag & 1 << val);
+				const target = s.translation.targetIndex;
+				cb.disabled = target === 0 || target === val + 1;
 				break;
 			}
 			case 'prefix_lang':
 			case 'suffix_original': {
-				cb.checked = cb.name === 'prefix_lang' ? s.others.translation < 0 : s.others.suffix_original > 0;
+				cb.checked = cb.name === 'prefix_lang' ? s.translation.prefixLangCode: s.translation.suffixOriginal;
 				cb.disabled = /** @type {HTMLSelectElement} */ (ctrls.translation).selectedIndex === 0;
 				le.classList[cb.checked ? 'add' : 'remove'](cb.name);
 				break;
@@ -428,8 +509,7 @@ export class LiveChatController {
 			le.classList[dir & 1 ? 'add': 'remove']('direction-reversed-y');
 			le.classList[dir & 2 ? 'add': 'remove']('direction-reversed-x');
 		}
-		const langIndex = s.others.translation;
-		if (langIndex < 0) le.classList.add('prefix_lang');
+		if (s.translation.prefixLangCode) le.classList.add('prefix_lang');
 
 		// layer CSS
 		/** @type {HTMLInputElement} */ (ctrls.layer_css).value = s.styles.layer_css;
@@ -442,7 +522,7 @@ export class LiveChatController {
 	 * @param {HTMLVideoElement} video
 	 */
 	#startSendingFrame(video) {
-		if (!s.others.person_detection) return;
+		if (!s.personDetection.device) return;
 
 		const canvas = document.createElement('canvas');
 		const ctx = canvas.getContext('bitmaprenderer');
@@ -474,15 +554,29 @@ export class LiveChatController {
 		(async function renderLoop() {
 			if (hasNew) {
 				hasNew = false;
-				const ALPHA_MASK = 0xFF000000 >>> 0;
-				const UPPER_THRESHOLD = 160;
-				const LOWER_THRESHOLD = 96;
-				for (let i = 0, l = localBuffer.length; i < l; i++) {
-					const curentVal = (prevRecv[i] + localBuffer[i]) >> 1;
-					const prevVal = u32data[i] & 0xFF;
-					const b = curentVal < LOWER_THRESHOLD ? 0 : curentVal > UPPER_THRESHOLD ? 255 : prevVal;
-					u32data[i] = (ALPHA_MASK | (b << 16) | (b << 8) | b) >>> 0;
-					prevRecv[i] = localBuffer[i];
+				const ALPHA_MASK = 0xFF000000;
+				if (localBuffer.some(b => b > 1)) {
+					const UPPER_THRESHOLD = 160;
+					const LOWER_THRESHOLD = 96;
+					for (let i = 0, l = localBuffer.length; i < l; i++) {
+						const prevVal = u32data[i] & 0xFF;
+						const curr = (prevRecv[i] + localBuffer[i]) >> 1;
+						const b = curr < LOWER_THRESHOLD ? 0 : curr > UPPER_THRESHOLD ? 255 : prevVal;
+						if (b !== prevVal) u32data[i] = ALPHA_MASK | (0x010101 * b);
+						prevRecv[i] = localBuffer[i];
+					}
+				} else {
+					for (let i = 0, l = localBuffer.length; i < l; i++) {
+						const prev = prevRecv[i];
+						const curr = localBuffer[i];
+						const sum = prev + curr;
+						if (sum !== 1) {
+							const b = sum ? 255 : 0;
+							const prevVal = u32data[i] & 0xFF;
+							if (b !== prevVal) u32data[i] = ALPHA_MASK | (0x010101 * b);
+						}
+						prevRecv[i] = curr;
+					}
 				}
 				const bitmap = await createImageBitmap(imageData);
 				ctx.transferFromImageBitmap(bitmap);
@@ -673,11 +767,13 @@ export class LiveChatController {
 				this.#onAction(e);
 			}, { passive: true, signal: this.abortController.signal });
 		}, { once: true, passive: true });
+		this.listening = true;
 	}
 
 	unlisten() {
 		this.abortController.abort();
 		this.abortController = new AbortController();
+		this.listening = false;
 	}
 
 	close() {

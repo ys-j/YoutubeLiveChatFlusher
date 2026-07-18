@@ -1,37 +1,35 @@
 const defaultClient = {
 	clientName: 'WEB',
-	clientVersion: '2.20251022.01.00',
+	clientVersion: '2.20260714.01.00',
 	mainAppWebInfo: { graftUrl: location.href },
 };
 
 /**
  * Fetches JSON via InnerTube API
- * @param {URL} url url string or url object
- * @param {Record<string, any>} body request body
+ * @param {URL} url URL object to request
+ * @param {Record<string, any>} payload request payload
  * @param {object} [options] request options
- * @param {boolean} [options.auth] if required logged in
- * @param {boolean} [options.key] if required API key
+ * @param {boolean} [options.auth] whether authentication header is required
+ * @param {boolean} [options.key] whether to include API key in request
  * @returns {Promise<Record<string, any>>} JSON object
  */
-export async function fetchInnerTube(url, body, options = {}) {
+export async function fetchInnerTube(url, payload, options = {}) {
 	const stored = sessionStorage.getItem('ytlcf-cfg');
 	const data = stored ? JSON.parse(stored) : null;
 	if (options.key && data) {
 		url.searchParams.set('key', data['INNERTUBE_API_KEY']);
 	}
-	const client = data?.['INNERTUBE_CONTEXT']?.client ?? defaultClient;
 	const headers = new Headers();
 	headers.set('Content-Type', 'application/json');
 	if (options.auth && data) {
 		headers.set('Authorization', await getAuthorication(data));
 	}
+	const client = data?.['INNERTUBE_CONTEXT']?.client;
+	const context = { client: client?.clientName === 'WEB' ? client : defaultClient };
 	const res = await fetch(url, {
 		method: 'post',
 		headers,
-		body: JSON.stringify({
-			context: { client },
-			...body,
-		}),
+		body: JSON.stringify({ context, ...payload }),
 	});
 	if (res.ok) return res.json();
 	else throw new Error(`Request failed: ${res.status} ${res.statusText}`);

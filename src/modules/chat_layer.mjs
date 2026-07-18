@@ -193,7 +193,7 @@ export class LiveChatLayer {
  * @prop {?string} label
  * @prop {?number} score
  * @prop {object} mask
- * @prop {Uint8ClampedArray} mask.data
+ * @prop {TypedArray} mask.data
  * @prop {number} mask.width
  * @prop {number} mask.height
  * @prop {number} mask.channel

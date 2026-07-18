@@ -32,11 +32,10 @@ declare global {
 	interface AbortSignalEventMap {
 		[K: string]: CustomEvent;
 	}
+
+	type TypedArray = Int8Array | Int16Array | Int32Array | Uint8Array | Uint16Array | Uint32Array | Uint8ClampedArray | Float16Array | Float32Array | Float64Array;
 }
 
-/*
- * Type Definitions
- */
 type FontData = {
 	family: string;
 	fullName: string;
@@ -52,9 +51,6 @@ type DocumentPictureInPictureOptions = {
 	preferInitialWindowPlacement?: boolean;
 }
 
-/*
- * Interface Definitions
- */
 interface DocumentPictureInPictureEvent extends Event {
 	window: Window;
 }

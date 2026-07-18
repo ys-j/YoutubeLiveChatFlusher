@@ -31,18 +31,14 @@ export const DEFAULT_CONFIG = Object.freeze({
 		overlapping: 0,
 		direction: 0,
 		show_username: 0,
-		translation: 0,
-		except_lang: 0,
-		translation_timing: 0,
-		suffix_original: 0,
 		time_shift: 0,
+		notification_updated: 0,
 		/** @type {import("./main.mjs").FetchingModeEnum} */
 		mode_livestream: 0,
 		/** @type {import("./main.mjs").FetchingModeEnum} */
 		mode_replay: 1,
 		autostart: 0,
 		message_pause: 1,
-		person_detection: 0,
 	},
 	parts: {
 		normal: { photo: false, name: false, message: true, color: '', strokeColor: '' },
@@ -83,6 +79,16 @@ export const DEFAULT_CONFIG = Object.freeze({
 		plainList: [],
 	},
 	translation: {
+		// Formerly others.translation
+		targetIndex: 0,
+		// Formerly others.except_lang
+		exceptionFlag: 0,
+		/** @type {"eager" | "lazy"} */
+		mode: 'eager',
+		// Formerly others.translation
+		prefixLangCode: false,
+		// Formerly others.suffix_original
+		suffixOriginal: false,
 		regexp: false,
 		/** @type {string[]} */
 		plainList: [],
@@ -98,6 +104,12 @@ export const DEFAULT_CONFIG = Object.freeze({
 		/** @type {"OpenAI" | "custom"} */
 		bodyType: 'OpenAI',
 		bodyContent: '',
+	},
+	personDetection: {
+		/** @type {"" | "wasm" | "gpu"} */
+		device: '',
+		/** @type {"onnx" | "onnx-native"} */
+		backend: 'onnx',
 	},
 });
 
@@ -158,6 +170,7 @@ class ConfigStore {
 	async load(json = undefined) {
 		/** @type {Partial<UnwrapReadonly<typeof this.data>>} */
 		const stored = json ?? await browser.storage.local.get(null);
+		this.migrate(stored);
 		Object.assign(this.data.styles, stored.styles);
 		Object.assign(this.data.others, stored.others);
 		for (const [k, v] of Object.entries(stored.parts ?? {})) {
@@ -170,8 +183,44 @@ class ConfigStore {
 		}
 		Object.assign(this.data.mutedWords, stored.mutedWords);
 		Object.assign(this.data.translation, stored.translation);
+		Object.assign(this.data.personDetection, stored.personDetection);
 		this.isLoaded = true;
 		return this;
+	}
+
+	/**
+	 * @typedef FormerConfigSchema
+	 * @prop {Record<string, number>} others
+	 */
+	/**
+	 * Migrates the stored data to the current schema.
+	 * @param {Partial<UnwrapReadonly<typeof this.data> & FormerConfigSchema>} stored
+	 */
+	migrate(stored) {
+		if (stored.others?.translation !== undefined) {
+			const former = stored.others.translation;
+			this.data.translation.targetIndex = Math.abs(former) | 0;
+			this.data.translation.prefixLangCode = former < 0;
+			delete stored.others.translation;
+		}
+		if (stored.others?.except_lang !== undefined) {
+			this.data.translation.exceptionFlag = stored.others.except_lang;
+			delete stored.others.except_lang;
+		}
+		if (stored.others?.suffix_original !== undefined) {
+			this.data.translation.suffixOriginal = stored.others.suffix_original > 0;
+			delete stored.others.suffix_original;
+		}
+		if (stored.others?.translation_timing !== undefined) {
+			this.data.translation.mode = stored.others.translation_timing ? 'lazy' : 'eager';
+			delete stored.others.translation_timing;
+		}
+		if (stored.others?.person_detection !== undefined) {
+			const device = /** @type {const} */ (['', 'wasm', 'gpu']).at(stored.others.person_detection);
+			this.data.personDetection.device = device ?? '';
+			delete stored.others.person_detection;
+			logger.info(this.data.personDetection);
+		}
 	}
 
 	get styles() { return this.proxies.styles; }
@@ -181,6 +230,7 @@ class ConfigStore {
 	get mutedWords() { return this.proxies.mutedWords; }
 	get cssTexts() { return this.proxies.cssTexts; }
 	get translation() { return this.proxies.translation; }
+	get personDetection() { return this.proxies.personDetection; }
 
 	async reset() {
 		await browser.storage.local.clear();

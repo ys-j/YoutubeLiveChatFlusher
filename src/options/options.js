@@ -9,6 +9,11 @@ self.browser ??= chrome;
 const manifest = browser.runtime.getManifest();
 document.documentElement.dataset.browser = 'browser_specific_settings' in manifest ? 'firefox' : 'chrome';
 
+browser.runtime.getPlatformInfo().then(info => {
+	const platform = ['android', 'ios'].includes(info.os) ? 'mobile' : 'desktop';
+	document.documentElement.dataset.platform = platform;
+});
+
 /** @type {NodeListOf<HTMLElement>} */
 const i18nElems = document.querySelectorAll('[data-i18n]');
 for (const el of i18nElems) {
@@ -32,8 +37,11 @@ for (const el of i18nPlaceholders) {
 const manifestElems = document.querySelectorAll('[data-manifest]');
 for (const el of manifestElems) {
 	const key = el.dataset.manifest;
-	// @ts-expect-error
-	if (key && key in manifest) el.textContent = manifest[key];
+	if (key && key in manifest) {
+		const k = /** @type {keyof import("webextension-polyfill").Manifest.WebExtensionManifest} */ (key);
+		const v = manifest[k]?.toString();
+		if (v) el.textContent = v;
+	}
 }
 
 const exportBtn = document.getElementById('btn-export');
@@ -44,7 +52,7 @@ exportBtn?.addEventListener('click', () => {
 	a.download = `ytlcf-config-${Date.now()}.json`;
 	a.href = url;
 	a.click();
-}, { passive: true });
+});
 
 const importBtn = document.getElementById('btn-import');
 importBtn?.addEventListener('click', async () => {
@@ -53,30 +61,28 @@ importBtn?.addEventListener('click', async () => {
 	input.accept = 'application/json';
 	input.addEventListener('cancel', () => {
 		logger.debug('Config file import is canceled.');
-	}, { passive: true });
+	});
 	input.addEventListener('change', () => {
 		const files = input.files;
-		if (files && files.length > 0) {
-			logger.debug('Config file selected:', files[0].name);
-			const reader = new FileReader();
-			reader.onload = async e => {
-				const json = JSON.parse(/** @type {string} */ (e.target?.result));
-				await s.load(json);
-				await browser.storage.local.set(s.data);
-				browser.runtime.sendMessage({ fire: 'reload' });
-			};
-			reader.readAsText(files[0]);
-		}
-	}, { passive: true });
+		if (!files || files.length < 1) return;
+		logger.debug('Config file selected:', files[0].name);
+		const reader = new FileReader();
+		reader.onload = async e => {
+			const json = JSON.parse(/** @type {string} */ (e.target?.result));
+			await s.load(json);
+			await browser.storage.local.set(s.data);
+			browser.runtime.sendMessage({ fire: 'reload' });
+		};
+		reader.readAsText(files[0]);
+	});
 	input.click();
-}, { passive: true });
+});
 
 const initBtn = document.getElementById('btn-init');
 initBtn?.addEventListener('click', async () => {
 	await s.reset();
-	await browser.runtime.sendMessage({ fire: 'reload' });
-	location.reload();
-}, { passive: true });
+	browser.runtime.sendMessage({ fire: 'reload' });
+});
 
 const saveBtn = /** @type {?HTMLButtonElement} */ (document.getElementById('btn-save'));
 
@@ -85,10 +91,11 @@ const [form, tester] = document.forms;
 /** @type {Record<string, RadioNodeList>} */
 // @ts-expect-error
 const {
+	notification_whenUpdated,
 	mode_livestream, mode_replay,
 	autostart,
 	message_pause,
-	person_detection,
+	person_detector_device,
 	translation_method,
 	translation_bodyType,
 	translation_responseStyle,
@@ -106,7 +113,10 @@ const {
 
 /** @type {Record<string, HTMLSelectElement>} */
 // @ts-expect-error
-const { translation_translator } = form.elements;
+const {
+	person_detector_backend,
+	translation_translator
+} = form.elements;
 
 /** @type {Record<string, HTMLTextAreaElement>} */
 // @ts-expect-error
@@ -124,6 +134,7 @@ function updateTranslationControls() {
 }
 
 s.load().then(() => {
+	notification_whenUpdated.value = s.others.notification_updated.toString();
 	// mode
 	mode_livestream.value = s.others.mode_livestream.toString();
 	mode_replay.value = s.others.mode_replay.toString();
@@ -143,7 +154,8 @@ s.load().then(() => {
 	message_pause.value = s.others.message_pause.toString();
 
 	// person detection
-	person_detection.value = s.others.person_detection.toString();
+	person_detector_device.value = s.personDetection.device;
+	person_detector_backend.value = s.personDetection.backend;
 
 	// translation
 	/** @type {HTMLInputElement} */
@@ -188,23 +200,25 @@ form.addEventListener('change', e => {
 
 form.addEventListener('submit', async e => {
 	e.preventDefault();
-	if (Number.parseInt(person_detection.value, 10) > 0) {
-		/** @type { { permissions: ["trialML"] } } */
-		const permission = { permissions: ['trialML'] };
-		const granted = await browser.permissions.request(permission);
-		if (!granted) person_detection.value = '0';
+	if (Number.parseInt(notification_whenUpdated.value, 10)) {
+		const granted = await browser.permissions.request({ permissions: ['notifications'] }).catch(() => false);
+		if (!granted) notification_whenUpdated.value = '0';
+	}
+	if (person_detector_device.value) {
+		const granted = await browser.permissions.request({ permissions: ['trialML'] }).catch(() => false);
+		if (!granted) person_detector_device.value = '';
 	}
 
 	const config = {
 		/** @type {Partial<typeof s.data.others>} */
 		others: {
+			notification_updated: Number.parseInt(notification_whenUpdated.value, 10),
 			// @ts-expect-error
 			mode_livestream: Number.parseInt(mode_livestream.value, 10),
 			// @ts-expect-error
 			mode_replay: Number.parseInt(mode_replay.value, 10),
 			autostart: Number.parseInt(autostart.value, 10),
 			message_pause: Number.parseInt(message_pause.value, 10),
-			person_detection: Number.parseInt(person_detection.value, 10),
 		},
 		/** @type {Partial<typeof s.data.hotkeys>} */
 		hotkeys: {
@@ -224,6 +238,11 @@ form.addEventListener('submit', async e => {
 			modelName: translation_modelName.value,
 			bodyContent: translation_bodyContent.value,
 			responseStyle: /** @type {typeof s.translation.responseStyle} */ (translation_responseStyle.value),
+		},
+		/** @type {Partial<typeof s.data.personDetection>} */
+		personDetection: {
+			device: /** @type {typeof s.personDetection.device} */ (person_detector_device.value),
+			backend: /** @type {typeof s.personDetection.backend} */ (person_detector_backend.value),
 		},
 	};
 	await s.load(config);

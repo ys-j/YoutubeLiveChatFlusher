@@ -93,7 +93,7 @@ export class ReplayActionBuffer {
  * @returns {AsyncGenerator<LiveChat.ReplayChatItemAction[]>} chat actions generator
  */
 export async function* getReplayChatActionsAsyncIterable(signal, initialContinuation) {
-	const url = new URL('/youtubei/v1/live_chat/get_live_chat_replay', location.origin);
+	const url = new URL('//www.youtube.com/youtubei/v1/live_chat/get_live_chat_replay', location.origin);
 	url.searchParams.set('prettyPrint', 'false');
 
 	/** @type {Map<string, string>} */
@@ -161,7 +161,7 @@ export async function* getReplayChatActionsAsyncIterable(signal, initialContinua
  * @returns {AsyncGenerator<LiveChat.LiveChatItemAction[]>} empty generator
  */
 export async function* getLiveChatActionsAsyncIterable(signal, initialContinuation) {
-	const url = new URL('/youtubei/v1/live_chat/get_live_chat', location.origin);
+	const url = new URL('//www.youtube.com/youtubei/v1/live_chat/get_live_chat', location.origin);
 	url.searchParams.set('prettyPrint', 'false');
 
 	/** @type {ContinuationTokenContainer} */

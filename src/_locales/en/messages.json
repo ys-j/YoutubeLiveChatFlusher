@@ -300,7 +300,7 @@
 		"message": "Use regular expression"
 	},
 	"placeholder_mutedWordsList": {
-		"message": "Multiple keywords can be prohibited in a new line."
+		"message": "Multiple keywords can be set each on a separated line."
 	},
 	"user_defined_css_shortcut": {
 		"message": "Shortcut"
@@ -392,6 +392,9 @@
 	"version": {
 		"message": "Version"
 	},
+	"releaseNote": {
+		"message": "Release note"
+	},
 	"configFile": {
 		"message": "Config File"
 	},
@@ -406,6 +409,12 @@
 	},
 	"commonSettings": {
 		"message": "Common Settings"
+	},
+	"notification": {
+		"message": "Notifications"
+	},
+	"whenUpdated": {
+		"message": "When Updated"
 	},
 	"loadingMode": {
 		"message": "Chat Loading Mode"
@@ -424,6 +433,9 @@
 	},
 	"description_chatframe_dependent_1": {
 		"message": "Works only while the chat frame is open."
+	},
+	"description_chatframe_dependent_2": {
+		"message": "Always falls back to Independent Mode on the mobile site (m.youtube.com)."
 	},
 	"description_chatframe_independent_1": {
 		"message": "Works even when the chat frame is closed."
@@ -475,6 +487,15 @@
 	},
 	"enabled_gpu": {
 		"message": "Enable (GPU)"
+	},
+	"inference_backend": {
+		"message": "Inference Backend"
+	},
+	"inference_backend_onnx": {
+		"message": "ONNX (Standard / Recommended)"
+	},
+	"inference_backend_onnxnative": {
+		"message": "ONNX Native (Low Latency)"
 	},
 	"translationBlacklist": {
 		"message": "Translation Exclusion List"
@@ -542,8 +563,8 @@
 	"save": {
 		"message": "Save"
 	},
-	"warn_notSaved": {
-		"message": "After save, this extension will restart. You will need to manually refresh any YouTube tabs."
+	"warning_whenNotSaved": {
+		"message": "Saving will restart the extension and automatically reload all open YouTube tabs, through a manual refresh may sometimes be required."
 	},
 	"pip_marker": {
 		"message": "Now playing in picture-in-picture mode"

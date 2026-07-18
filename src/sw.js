@@ -1,5 +1,5 @@
 import { logger } from './modules/logging.mjs';
-import { store as s } from './modules/store.mjs';
+import { store } from './modules/store.mjs';
 
 import { LanguageDetectionController, TranslatorController } from './modules/translator.mjs';
 import { MLEngineManager } from './modules/ml_engine.mjs';
@@ -7,20 +7,41 @@ import { MLEngineManager } from './modules/ml_engine.mjs';
 // @ts-expect-error
 self.browser ??= chrome;
 
-const manifest = browser.runtime.getManifest();
-const hosts = manifest.host_permissions;
+const loadingStore = store.load();
 
-/** @type {Record<string, Function>} */
+const manifest = browser.runtime.getManifest();
+
 const events = {
 	async reload() {
 		browser.runtime.reload();
 	},
 	async reloadTabs() {
-		const tabs = await browser.tabs.query({ url: hosts });
-		await Promise.all(tabs.map(tab => browser.tabs.reload(tab.id)));
+		const tabs = await browser.tabs.query({ url: manifest.host_permissions });
+		return Promise.allSettled(tabs.map(tab => browser.tabs.reload(tab.id, { bypassCache: true })));
 	},
 	async openOptions() {
 		return browser.runtime.openOptionsPage();
+	},
+
+	/**
+	 * Sends an installation notification to the user.
+	 * @param {import("webextension-polyfill").Runtime.OnInstalledReason} reason
+	 */
+	async notify(reason) {
+		const canNofify = await browser.permissions.contains({ permissions: ['notifications'] });
+		if (!canNofify) return;
+
+		/** @type {(str: string) => string} */
+		const toUpperCamel = str => str.toLowerCase().replace(/(?:^|_+)(\w)/g, (_, m) => m.toUpperCase());
+		const id = await browser.notifications.create({
+			type: 'basic',
+			title: manifest.name,
+			iconUrl: manifest.icons?.['128'],
+			message: browser.i18n.getMessage(`notification_title_on${toUpperCamel(reason)}`, [manifest.version]),
+		});
+		browser.notifications.onClicked.addListener((notificationId) => {
+			if (notificationId === id) events.reloadTabs();
+		});
 	},
 };
 
@@ -38,19 +59,15 @@ browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 });
 
 browser.runtime.onInstalled.addListener(async ({ reason, previousVersion }) => {
-	if (reason === 'browser_update') return;
-	if (previousVersion === manifest.version) return;
-	/** @type {(str: string) => string} */
-	const toUpperCamel = str => str.toLowerCase().replace(/(?:^|_+)(\w)/g, (_, m) => m.toUpperCase());
-	const id = await browser.notifications.create({
-		type: 'basic',
-		title: manifest.name,
-		iconUrl: manifest.icons?.['128'],
-		message: browser.i18n.getMessage(`notification_title_on${toUpperCamel(reason)}`, [manifest.version]),
-	});
-	browser.notifications.onClicked.addListener((notificationId) => {
-		if (notificationId === id) events.reloadTabs();
-	});
+	if (
+		reason !== 'browser_update'
+		&& previousVersion !== manifest.version
+		&& (await loadingStore).others.notification_updated
+	) {
+		await events.notify(reason);
+	} else {
+		await events.reloadTabs();
+	}
 });
 
 const detector = new LanguageDetectionController();
@@ -61,7 +78,30 @@ let translationController = null;
 /** @type {?MLEngineManager} */
 let personDetectionEngine = null;
 
-s.load().then(async s => {
+const performanceLogger = {
+	buffer: new Uint32Array(100),
+	offset: 0,
+	/** @param {number} v */
+	write(v) {
+		if (this.offset >= this.buffer.length) {
+			this.offset = 0;
+			logger.info('Average inference time (over 100 runs):', this.avarage(), 'ms');
+		}
+		this.buffer[this.offset++] = v;
+	},
+	avarage() {
+		let sum = 0, count = 0;
+		for (const v of this.buffer) {
+			if (v > 0) {
+				sum += v;
+				count++;
+			}
+		}
+		return sum / count;
+	},
+};
+
+loadingStore.then(async s => {
 	const {
 		translator, url, method, responseStyle,
 		apiKey, modelName, bodyType, bodyContent,
@@ -72,25 +112,23 @@ s.load().then(async s => {
 
 	translationController = new TranslatorController(translator ?? 'internal', config);
 
-	const { person_detection } = /** @type {typeof import("./modules/store.mjs").DEFAULT_CONFIG.others} */ (s.others);
-	const engineOption = /** @type {const} */ ([
-		undefined,
-		{ dtype: 'q8', device: 'wasm' },
-		{ dtype: 'fp32', device: 'gpu' },
-	]).at(person_detection);
-	if (engineOption && manifest.optional_permissions?.includes('trialML')) {
-		const granted = await browser.permissions.contains({ permissions: ['trialML'] });
-		if (granted) {
-			personDetectionEngine = new MLEngineManager({
-				modelHub: 'huggingface',
-				taskName: 'image-segmentation',
-				modelId: 'onnx-community/mediapipe_selfie_segmentation_landscape',
-				...engineOption,
-			});
-			await personDetectionEngine.ensureReady();
-		} else {
-			logger.warn('Permission "trialML" was rejected.');
-		}
+	const { device, backend } = /** @type {typeof import("./modules/store.mjs").DEFAULT_CONFIG.personDetection} */ (s.personDetection);
+	if (!device || !manifest.optional_permissions?.includes('trialML')) return;
+
+	const granted = await browser.permissions.contains({ permissions: ['trialML'] });
+	if (granted) {
+		personDetectionEngine = new MLEngineManager({
+			modelHub: 'huggingface',
+			taskName: 'image-segmentation',
+			modelId: 'onnx-community/mediapipe_selfie_segmentation_landscape',
+			device,
+			dtype: device === 'gpu' ? 'fp32' : 'q8',
+			backend,
+		});
+		await personDetectionEngine.ensureReady();
+	} else {
+		logger.warn('Permission "trialML" was rejected.');
+		s.personDetection.device = '';
 	}
 });
 
@@ -114,16 +152,23 @@ browser.runtime.onMessage.addListener((_message, _sender, respond) => {
 		.then(respond);
 	} else if ('mask' in msg && personDetectionEngine) {
 		const { mask: blob, width = 256, height = 144 } = msg;
-		console.time('personDetectionEngine.run');
+		const startTime = performance.now();
 		personDetectionEngine?.run({ args: [ blob ] })
 		.then(respond, err => {
 			logger.warn(err?.message ?? err);
-			const mask = { data: new Uint8ClampedArray(width * height), width, height, channel: 1 };
+			const mask = { data: new Uint8Array(width * height), width, height, channel: 1 };
 			respond([ { label: null, score: null, mask } ]);
 		})
-		.finally(() => console.timeEnd('personDetectionEngine.run'));
+		.finally(() => performanceLogger.write(performance.now() - startTime));
 	} else if ('fire' in msg) {
-		events[msg.fire]?.()?.then(respond);
+		const eventType = /** @type {"reload" | "reloadTabs" | "openOptions"} */ (msg.fire);
+		events[eventType]().then(respond);
+	} else if ('request' in msg) {
+		/** @type { { url: string, options?: RequestInit } } */
+		const { url, options } = msg.request;
+		fetch(url, options)
+		.then(res => res.text())
+		.then(respond);
 	}
 	return true;
 });

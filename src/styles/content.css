@@ -364,6 +364,16 @@
 		&[id|="ytlcf-config"] {
 			display: inline-flex;
 		}
+		ytm-watch-player-controls &.ytSpecButtonShapeNextMonoInverse {
+			&.ytSpecButtonShapeNextFilled {
+				background: #f1f1f1;
+				color: #0f0f0f;
+			}
+			&.ytSpecButtonShapeNextTonal {
+				background: rgba(255, 255, 255, .1);
+				color: #f1f1f1;
+			}
+		}
 	}
 }
 #yt-lcf-panel-tabpanel-1, #ytlcf-dialog-user_css_helper > form {
@@ -414,8 +424,6 @@
 /*
 	Settings button
 */
-/* .ytp-settings-menu:has(#yt-lcf-cb[aria-checked="true"]:not([aria-disabled="true"])) ~ .ytp-chrome-bottom .ytp-settings-button {
-} */
 #yt-lcf-cb[aria-checked="true"]:not([aria-disabled="true"]) {
 	> .ytp-menuitem-icon {
 		background: var(--yt-lcf-red-dot-image) no-repeat 10% 25%/8px;

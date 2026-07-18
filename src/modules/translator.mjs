@@ -7,11 +7,15 @@ import { LRUCache } from './lrucache.mjs';
  * @prop {boolean} isReliable
  */
 
+/**
+ * @typedef {typeof import("./store.mjs").DEFAULT_CONFIG.translation.responseStyle} ResponseStyle
+ */
+
  /**
   * @typedef ExternalTranslatorGetConfig
   * @prop {string} url
   * @prop {"GET"} method
-  * @prop {"Google" | "OpenAI"} responseStyle
+  * @prop {ResponseStyle} responseStyle
   */
 
  /**
@@ -21,7 +25,7 @@ import { LRUCache } from './lrucache.mjs';
   * @prop {string} apiKey
   * @prop {string} modelName
   * @prop {string} [json]
-  * @prop {"Google" | "OpenAI"} responseStyle
+  * @prop {ResponseStyle} responseStyle
   */
 
 

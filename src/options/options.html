@@ -11,7 +11,12 @@
 				<td data-manifest=version>
 			<tr>
 				<th>GitHub
-				<td><a href=https://github.com/ys-j/YoutubeLiveChatFlusher target=_blank>Home</a> / <a href=https://github.com/ys-j/YoutubeLiveChatFlusher/wiki target=_blank>Wiki</a>
+				<td>
+					<a href=https://github.com/ys-j/YoutubeLiveChatFlusher target=_blank>Home</a>
+					/
+					<a href=https://github.com/ys-j/YoutubeLiveChatFlusher/wiki target=_blank>Wiki</a>
+					/
+					<a href=https://github.com/ys-j/YoutubeLiveChatFlusher/releases target=_blank data-i18n=releaseNote></a>
 			<tr>
 				<th data-i18n=configFile>
 				<td>
@@ -23,6 +28,21 @@
 	<section>
 		<h2 data-i18n=commonSettings></h2>
 		<dl>
+			<dt data-i18n=notification>
+			<dd>
+				<table>
+					<tr>
+						<th data-i18n=whenUpdated>
+						<td>
+							<label>
+								<input type=radio name=notification_whenUpdated value=0>
+								<span data-i18n=disabled></span>
+							</label>
+							<label>
+								<input type=radio name=notification_whenUpdated value=1>
+								<span data-i18n=enabled></span>
+							</label>
+				</table>
 			<dt data-i18n=loadingMode>
 			<dd>
 				<table>
@@ -54,6 +74,7 @@
 					<dd>
 						<ul>
 							<li data-i18n=description_chatframe_dependent_1>
+							<li data-i18n=description_chatframe_dependent_2>
 						</ul>
 					<dt data-i18n=mode_option_chatframe_independent>
 					<dd>
@@ -121,20 +142,29 @@
 					<input type=radio name=message_pause value=1>
 					<span data-i18n=enabled></span>
 				</label>
-			<dt class=only-firefox data-i18n=person_detection>
-			<dd class=only-firefox>
+			<dt class="only-firefox only-desktop" data-i18n=person_detection>
+			<dd class="only-firefox only-desktop">
 				<label>
-					<input type=radio name=person_detection value=0>
+					<input type=radio name=person_detector_device value>
 					<span data-i18n=disabled></span>
 				</label>
 				<label>
-					<input type=radio name=person_detection value=1>
+					<input type=radio name=person_detector_device value=wasm>
 					<span data-i18n=enabled_wasm></span>
 				</label>
 				<label>
-					<input type=radio name=person_detection value=2>
+					<input type=radio name=person_detector_device value=gpu>
 					<span data-i18n=enabled_gpu></span>
 				</label>
+				<table>
+					<tr>
+						<th data-i18n=inference_backend>
+						<td>
+							<select name=person_detector_backend>
+								<option value=onnx data-i18n=inference_backend_onnx>
+								<option value=onnx-native data-i18n=inference_backend_onnxnative>
+							</select>
+				</table>
 		</dl>
 	</section>
 	<section>
@@ -228,7 +258,7 @@
 	</section>
 	<section>
 		<button class=primary id=btn-save disabled data-i18n=save></button>
-		<div><small id=status hidden data-i18n=warn_notSaved></small></div>
+		<div><small id=status hidden data-i18n=warning_whenNotSaved></small></div>
 	</section>
 </form>
 <form id=translation_test></form>

@@ -447,27 +447,10 @@ export class LiveChatPanel {
 		const ctrls = this.form?.elements;
 		if (!ctrls) return;
 		if (elem.tagName === 'SELECT') {
+			const val = Number.parseInt(elem.value, 10);
 			if (name in s.others) {
-				const val = Number.parseInt(elem.value, 10);
-				if (name === 'translation') {
-					const prefix = /** @type {HTMLInputElement} */ (ctrls.prefix_lang);
-					const suffix = /** @type {HTMLInputElement} */ (ctrls.suffix_original);
-					prefix.disabled = suffix.disabled = val === 0;
-					s.others[name] = val * (prefix.checked ? -1 : 1);
-					le.classList[prefix.checked ? 'add' : 'remove']('prefix_lang');
-					const cb = /** @type {NodeListOf<HTMLInputElement>} */ (ctrls.except_lang);
-					if (val) {
-						const i = Math.abs(val) - 1;
-						cb[i].checked = true;
-						for (let j = 0; j < cb.length; j++) cb[j].disabled = i === j;
-						s.others.except_lang |= 1 << i;
-					} else {
-						for (const e of cb) e.disabled = true;
-					}
-				} else {
-					// @ts-expect-error
-					s.others[name] = val;
-				}
+				// @ts-expect-error
+				s.others[name] = val;
 				switch (name) {
 					case 'emoji': {
 						le.setAttribute('data-emoji', Object.keys(EmojiModeEnum)[val].toLowerCase());
@@ -484,8 +467,23 @@ export class LiveChatPanel {
 						break;
 					}
 				}
+			} else if (name === 'translation') {
+				const prefix = /** @type {HTMLInputElement} */ (ctrls.prefix_lang);
+				const suffix = /** @type {HTMLInputElement} */ (ctrls.suffix_original);
+				prefix.disabled = suffix.disabled = val === 0;
+				s.translation.targetIndex = val;
+				le.classList[prefix.checked ? 'add' : 'remove']('prefix_lang');
+				const cb = /** @type {NodeListOf<HTMLInputElement>} */ (ctrls.except_lang);
+				if (val) {
+					const i = Math.abs(val) - 1;
+					cb[i].checked = true;
+					for (let j = 0; j < cb.length; j++) cb[j].disabled = i === j;
+					s.translation.exceptionFlag |= 1 << i;
+				} else {
+					for (const e of cb) e.disabled = true;
+				}
 			} else if (name === 'muted_words_mode') {
-				const mode = /** @type {MutedWordModeEnum} */ (Number.parseInt(elem.value, 10));
+				const mode = /** @type {MutedWordModeEnum} */ (val);
 				s.mutedWords.mode = mode;
 				const replacement = /** @type {HTMLInputElement} */ (ctrls.muted_words_replacement);
 				replacement.title = mode === MutedWordModeEnum.CHAR ? browser.i18n.getMessage('tooltip_mutedWordsReplacement') : '';
@@ -597,24 +595,30 @@ export class LiveChatPanel {
 			}
 		} else if (name === 'prefix_lang') {
 			const checked = this.form?.[name].checked;
-			const val = s.others.translation;
-			s.others.translation = Math.abs(val) * (checked ? -1 : 1);
+			s.translation.prefixLangCode = checked;
 			le.classList[checked ? 'add' : 'remove'](name);
 			layer.updateCurrentItemStyle();
 		} else if (name === 'suffix_original') {
 			const checked = this.form?.[name].checked;
-			s.others[name] = Number(checked);
+			s.translation.suffixOriginal = checked;
 			le.classList[checked ? 'add' : 'remove'](name);
-		} else if (['overlapping', 'direction', 'except_lang', 'suffix_original'].includes(name)) {
+		} else if (name === 'except_lang') {
 			/** @type {NodeListOf<HTMLInputElement>} */
-			const list = this.form?.[name];
-			const val = Array.from(list).map(l => Number(l.checked)).reduce((a, c, i) => a + (c << i), 0);
-			// @ts-expect-error
-			s.others[name] = val;
-			if (name === 'direction') {
-				le.classList[0b01 & val ? 'add': 'remove']('direction-reversed-y');
-				le.classList[0b10 & val ? 'add': 'remove']('direction-reversed-x');
-			}
+			const cbs = this.form?.[name];
+			const val = Array.from(cbs).map(l => Number(l.checked)).reduce((a, c, i) => a + (c << i), 0);
+			s.translation.exceptionFlag = val;
+		} else if (name === 'overlapping') {
+			/** @type {NodeListOf<HTMLInputElement>} */
+			const cbs = this.form?.[name];
+			const val = Array.from(cbs).map(l => Number(l.checked)).reduce((a, c, i) => a + (c << i), 0);
+			s.others.overlapping = val;
+		} else if (name === 'direction') {
+			/** @type {NodeListOf<HTMLInputElement>} */
+			const cbs = this.form?.[name];
+			const val = Array.from(cbs).map(l => Number(l.checked)).reduce((a, c, i) => a + (c << i), 0);
+			s.others.direction = val;
+			le.classList[0b01 & val ? 'add': 'remove']('direction-reversed-y');
+			le.classList[0b10 & val ? 'add': 'remove']('direction-reversed-x');
 		} else if (name.startsWith('muted_words_')) {
 			switch (name) {
 				case 'muted_words_replacement': {

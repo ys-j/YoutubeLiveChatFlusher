@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "__MSG_manifestName__",
-	"version": "0.15.7",
+	"version": "0.16.0",
 	"author": "_y_s",
 	"action": {
 		"default_state": "disabled"
@@ -14,7 +14,7 @@
 		{
 			"css": ["styles/content.css"],
 			"js": ["content.js"],
-			"matches": ["*://www.youtube.com/*"]
+			"matches": ["*://www.youtube.com/*", "*://m.youtube.com/*"]
 		},
 		{
 			"all_frames": true,
@@ -33,14 +33,16 @@
 		"128": "images/icon128.png"
 	},
 	"key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAw8pVqZOdYarVW0a8/bA4CgxR35Mlg3QSHCgZYecnu6fgANWn0rq+Ive4PC99pT6/29kCT2tk1QWnPuYT3KL/A2LyA5ufzsPos3svKnaIgvO8MS10PjjpxriR798YfwunFi+KDdl2Vw2osz4owS+JeXqE86DT4zik3ZULPGQ4KkNnw25cGRtroqlsNT5sQzTwBocyOS2Rl9crsP60CJethw4rhaHCigugTdrnpn35CdKnjau0o9rEAgsu5YsItLkc6eBgzeTtLfT/go854V5ekLGRuY8mZ4hPoGnqEJwWWRiXsCoBtUvLnkadsn80Xk1rs5cp7spIEoBJ3zulnFY7bQIDAQAB",
+	"optional_permissions": ["notifications"],
 	"options_ui": {
-		"page": "options/options.html"
+		"page": "options/options.html",
+		"open_in_tab": true
 	},
-	"permissions": ["storage", "notifications"],
+	"permissions": ["storage"],
 	"web_accessible_resources": [
 		{
 			"resources": ["modules/*", "injections/*", "styles/*", "templates/*", "images/*"],
-			"matches": ["*://www.youtube.com/*"]
+			"matches": ["*://www.youtube.com/*", "*://m.youtube.com/*"]
 		}
 	]
 }

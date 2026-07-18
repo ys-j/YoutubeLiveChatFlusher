@@ -241,12 +241,12 @@ export async function renderChatItem(item, factory) {
 	const renderer = item[key];
 	const body = new ChatMessageContainer(renderer.message);
 
-	const targetLangIndex = s.others.translation;
-	if (targetLangIndex && !tlExclusionList.some(rule => rule.test(body.message))) {
-		const suffix = s.others.suffix_original;
-		const tl = navigator.languages[Math.abs(targetLangIndex) - 1];
-		const mode = /** @type {const} */ (['eager', 'lazy']).at(s.others.translation_timing) ?? 'eager';
-		await body.translate(mode, tl, Boolean(suffix));
+	const targetIndex = s.translation.targetIndex;
+	if (targetIndex && !tlExclusionList.some(rule => rule.test(body.message))) {
+		const mode = s.translation.mode;
+		const target = navigator.languages[targetIndex - 1];
+		const suffix = s.translation.suffixOriginal;
+		await body.translate(mode, target, suffix);
 	}
 
 	/** @type {(type: keyof typeof s.parts) => boolean} */
@@ -458,7 +458,7 @@ export class ChatMessageContainer {
 	translate(mode, target, suffix = false) {
 		this.lazy = mode === 'lazy';
 		const srcNodes = this.#rawNode.childNodes;
-		const exceptionLangs = navigator.languages.filter((_, i) => s.others.except_lang >>> i & 1);
+		const exceptionLangs = navigator.languages.filter((_, i) => s.translation.exceptionFlag >>> i & 1);
 
 		this.translating = translateNodesAsync(srcNodes, target, exceptionLangs)
 		.then(results => {
