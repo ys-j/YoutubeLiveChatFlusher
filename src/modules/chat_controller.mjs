@@ -636,7 +636,7 @@ export class LiveChatController {
 				merge = el => {
 					const text = el.getAttribute('data-text');
 					const body = text ? `<!-- ${el.className} -->${text}` : '';
-					if (!body) return;
+					if (!body) return true;
 
 					const index = bodies.indexOf(body);
 					if (index < 0) {
