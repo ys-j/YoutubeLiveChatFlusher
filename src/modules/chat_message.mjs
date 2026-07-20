@@ -324,6 +324,29 @@ export async function renderChatItem(item, factory) {
 			});
 			break;
 		}
+		case 'giftMessageViewModel': {
+			const type = 'paid_sticker';
+			skipped = allHidden(type);
+			if (skipped) break;
+			const {
+				authorName,
+				authorAvatar,
+				giftImage,
+				// @ts-expect-error
+			} = /** @type {LiveChat.GiftMessageViewModel} */ (renderer);
+			element = factory.new({
+				type,
+				author: {
+					id: '',
+					name: getText(authorName).trim(),
+					thumbnail: authorAvatar.avatarViewModel.image.sources.at(0)?.url ?? '',
+				},
+				amount: '',
+				sticker: giftImage.sources.at(0)?.url ?? '',
+				background: { header: 0xFFFFFFFF, body: 0xFFFFFFFF },
+			});
+			break;
+		}
 		case 'liveChatSponsorshipsGiftPurchaseAnnouncementRenderer': {
 			const subtype = 'membership';
 			skipped = allHidden(subtype);
