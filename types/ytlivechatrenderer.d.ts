@@ -79,7 +79,7 @@ declare namespace LiveChat {
 		}
 	}
 	type ViewerEngagementMessageRenderer = {
-		liveChatViewerEngagementMessageRenderer: {
+		liveChatViewerEngagementMessageRenderer: { 
 			actionButton: ButtonRenderer
 			icon: { iconType: "GIFT" }
 			message: Runs
@@ -250,33 +250,6 @@ declare namespace LiveChat {
 			webPageType?: string
 			rootVe?: number
 		}
-	}
-	type GiftMessageViewModel = {
-		authorAvatar: {
-			avatarViewModel: AuthorAvatarViewModel
-		}
-		authorName: RichTextContent
-		giftImage: {
-			sources: Thumbnail[]
-		}
-		giftImageA11yLabel: string
-		id: string
-		text: RichTextContent
-	}
-	type AuthorAvatarViewModel = {
-		avatarImageSize: string
-		image: {
-			processor: {
-				borderImageProcessor: {
-					circular: boolean
-				}
-			}
-			sources: Thumbnail[]
-		}
-	}
-	type RichTextContent = {
-		content: string
-		styleRuns: { startIndex: number, length: number }[]
 	}
 }
 
