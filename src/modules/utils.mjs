@@ -45,12 +45,13 @@ export function isAdShowing(player) {
 
 /**
  * Gets string from a message object.
- * @param { LiveChat.Runs | LiveChat.SimpleText | undefined } message message object: Runs or SimpleText
+ * @param { LiveChat.Runs | LiveChat.SimpleText | LiveChat.RichTextContent | undefined } message message object: Runs or SimpleText
  * @returns {string} message string
  */
 export function getText(message) {
 	if (!message) return '';
 	if ('simpleText' in message) return message.simpleText;
+	if ('content' in message) return message.content;
 	const rslt = [];
 	for (const r of message.runs) {
 		if ('text' in r) {
