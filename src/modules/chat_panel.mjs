@@ -493,15 +493,15 @@ export class LiveChatPanel {
 			s.styles[name] = elem.value + (elem.getAttribute('data-unit') || '');
 			if (le) {
 				switch (name) {
-					case 'animation_duration': {
+					case 'animation_duration':
 						const value = /** @type {HTMLInputElement} */ (elem).valueAsNumber;
 						if (value > 0) {
 							const speed = le.getBoundingClientRect().width / value;
 							if (speed) /** @type {HTMLInputElement} */ (ctrls.px_per_sec).valueAsNumber = Math.round(speed);
 						}
 						break;
-					}
-					case 'max_width': layer.updateCurrentItemStyle();
+					case 'max_width':
+						layer.updateCurrentItemStyle();
 				}
 				// @ts-expect-error
 				le.style.setProperty(`--yt-lcf-${name.replace(/_/g, '-')}`, s.styles[name]);
@@ -621,15 +621,13 @@ export class LiveChatPanel {
 			le.classList[0b10 & val ? 'add': 'remove']('direction-reversed-x');
 		} else if (name.startsWith('muted_words_')) {
 			switch (name) {
-				case 'muted_words_replacement': {
+				case 'muted_words_replacement':
 					s.mutedWords.replacement = elem.value;
 					break;
-				}
-				default: {
+				default:
 					s.mutedWords.regexp = /** @type {HTMLInputElement} */ (ctrls.muted_words_regexp).checked;
 					s.mutedWords.plainList = /** @type {HTMLTextAreaElement} */ (ctrls.muted_words_list).value.split(/\n+/).filter(s => s.length > 0);
 					updateMutedWordsList();
-				}
 			}
 		}
 		switch (name) {
@@ -668,9 +666,11 @@ export class LiveChatPanel {
 				s.others.container_limit = checked ? 0 : /** @type {HTMLInputElement} */ (ctrls.container_limit_number).valueAsNumber;
 				break;
 			}
+			case 'layer_autofit':
 			case 'show_username': {
-				const checked = /** @type {HTMLInputElement} */ (ctrls.show_username).checked;
-				s.others.show_username = checked ? 1 : 0;
+				const checked = /** @type {HTMLInputElement} */ (ctrls[name]).checked;
+				s.others[name] = checked ? 1 : 0;
+				if (name === 'layer_autofit') layer.autofit(checked);
 				break;
 			}
 			case 'time_shift': {

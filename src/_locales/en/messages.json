@@ -173,8 +173,11 @@
 	"layerCSS": {
 		"message": "Layer CSS"
 	},
-	"resizeLayer": {
-		"message": "Resize layer"
+	"adjustLayerSize": {
+		"message": "Adjust layer size"
+	},
+	"fitLayerSize": {
+		"message": "Fit layer to video size"
 	},
 	"normal": {
 		"message": "Normal"

@@ -19,6 +19,8 @@ export const SimultaneousModeEnum = Object.freeze({
 export class LiveChatController {
 	/** @type {boolean} */
 	#skip = false;
+	/** @type {MutationObserver} */
+	#layerSizeObserver;
 
 	/** @type {"desktop" | "mobile"} */ device;
 	/** @type {HTMLElement} */ player;
@@ -79,6 +81,10 @@ export class LiveChatController {
 		this.panel = new LiveChatPanel(this);
 		this.contextmenu = new LiveChatContextMenu();
 		this.abortController = new AbortController();
+
+		this.#layerSizeObserver = new MutationObserver(() => {
+			this.layer.autofit(s.others.layer_autofit > 0);
+		});
 	}
 
 	async start() {
@@ -114,6 +120,8 @@ export class LiveChatController {
 		this.layer.element.style.cssText += '--yt-lcf-layer-css: below;' + s.styles.layer_css;
 		await Promise.allSettled(promises);
 		this.#startSendingFrame(video);
+
+		this.layer.autofit(s.others.layer_autofit > 0);
 	}
 
 	async #setupViewerStyle() {
@@ -438,8 +446,9 @@ export class LiveChatController {
 				cb.checked = !!(s.others[cb.name] & 1 << val);
 				break;
 			}
+			case 'layer_autofit':
 			case 'show_username': {
-				cb.checked = s.others.show_username > 0;
+				cb.checked = s.others[cb.name] > 0;
 				break;
 			}
 			case 'muted_words_regexp': {
@@ -768,6 +777,12 @@ export class LiveChatController {
 			}, { passive: true, signal: this.abortController.signal });
 		}, { once: true, passive: true });
 		this.listening = true;
+
+		const video = this.player.querySelector('#movie_player video');
+		if (video) {
+			this.#layerSizeObserver.disconnect();
+			this.#layerSizeObserver.observe(video, { attributeFilter: ['style'] });
+		}
 	}
 
 	unlisten() {

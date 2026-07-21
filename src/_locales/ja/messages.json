@@ -173,8 +173,11 @@
 	"layerCSS": {
 		"message": "レイヤCSS"
 	},
-	"resizeLayer": {
+	"adjustLayerSize": {
 		"message": "レイヤサイズ変更"
+	},
+	"fitLayerSize": {
+		"message": "レイヤサイズを動画に合わせる"
 	},
 	"normal": {
 		"message": "通常"

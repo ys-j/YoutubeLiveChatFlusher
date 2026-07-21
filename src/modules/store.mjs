@@ -30,6 +30,7 @@ export const DEFAULT_CONFIG = Object.freeze({
 		density: 0,
 		overlapping: 0,
 		direction: 0,
+		layer_autofit: 0,
 		show_username: 0,
 		time_shift: 0,
 		notification_updated: 0,

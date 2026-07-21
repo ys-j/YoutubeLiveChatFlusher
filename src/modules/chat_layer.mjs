@@ -169,6 +169,25 @@ export class LiveChatLayer {
 		this.element.style.left = `${x}px`;
 		this.element.style.top = `${y}px`;
 	}
+
+	/**
+	 * Autofits the layer to the video size.
+	 * @param {boolean} fit whether autofits to the video size
+	 */
+	autofit(fit) {
+		const ls = this.element.style;
+		const props = /** @type {const} */ (['left', 'top', 'width', 'height']);
+		if (fit) {
+			const vs = this.element.parentElement?.querySelector('video')?.style;
+			if (vs) for (const p of props) ls[p] = vs[p];
+		} else {
+			const styleMap = new Map(s.styles.layer_css.split(/\s*;\s*/g).map(kv => {
+				const [k = '', v = ''] = kv.split(/\s*:\s*/, 2);
+				return [k.toLowerCase(), v];
+			}));
+			for (const p of props) ls[p] = styleMap.get(p) || '';
+		}
+	}
 }
 
 /**
