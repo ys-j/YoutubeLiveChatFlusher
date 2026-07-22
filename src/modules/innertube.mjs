@@ -1,3 +1,5 @@
+import { sleep } from './utils.mjs';
+
 const defaultClient = {
 	clientName: 'WEB',
 	clientVersion: '2.20260714.01.00',
@@ -32,7 +34,18 @@ export async function fetchInnerTube(url, payload, options = {}) {
 		body: JSON.stringify({ context, ...payload }),
 	});
 	if (res.ok) return res.json();
-	else throw new Error(`Request failed: ${res.status} ${res.statusText}`);
+
+	const message = `Request failed: ${res.status} ${res.statusText}`;
+	switch (res.status) {
+		case 429:
+		case 503:
+			const retryAfter = parseRetryAfter(res.headers.get('Retry-After'));
+			await sleep(retryAfter ?? 1000);
+			// @ts-expect-error
+			return fetchInnerTube(...arguments);
+		default:
+			throw new Error(message);
+	}
 }
 
 /**
@@ -52,4 +65,17 @@ export async function getAuthorication(data) {
 	const digested = new Uint8Array(await crypto.subtle.digest('SHA-1', bytes));
 	const hash = Array.from(digested, b => b.toString(16).padStart(2, '0')).join('');
 	return ['SAPISIDHASH', 'SAPISID1PHASH', 'SAPISID3PHASH'].map(k => `${k} ${timestamp}_${hash}_u`).join(' ');
+}
+
+/**
+ * Parses "Retry-After" header value to milliseconds.
+ * @param {?string} header "Retry-After" header
+ */
+function parseRetryAfter(header) {
+	if (!header?.trim()) return null;
+	const seconds = Number(header);
+	if (!Number.isNaN(seconds)) return Math.max(0, seconds * 1e3);
+	const delay = Date.parse(header) - Date.now();
+	if (!Number.isNaN(delay)) return Math.max(0, delay);
+	return null;
 }
