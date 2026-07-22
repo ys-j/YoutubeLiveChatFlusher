@@ -114,3 +114,26 @@ export function formatMilliseconds(ms) {
 	const fff = zfill(ms % SECOND, 3);
 	return (h > 0 ? `${h}:` : '') + `${mm}:${ss}.${fff}`;
 }
+
+/**
+ * Resolves a JSON Pointer against a JSON object.
+ * @param {any} obj the target JSON object or array
+ * @param {string} pointer the JSON Pointer string
+ * @returns {any} the resolved value, or `undefined` if not found
+ * @throws if the pointer is non-empty and does not start with "/"
+ */
+export function getValueByJSONPointer(obj, pointer) {
+	if (pointer === '') return obj;
+	if (!pointer.startsWith('/')) {
+		throw new Error('Pointer must start with "/"');
+	}
+	const tokens = pointer.split('/').slice(1);
+	let cur = obj;
+	for (const token of tokens) {
+		if (typeof cur !== 'object' || cur === null) return undefined;
+		const key = token.replace(/~1/g, '/').replace(/~0/g, '~');
+		if (Object.hasOwn(cur, key)) cur = cur[key];
+		else return undefined;
+	}
+	return cur;
+}

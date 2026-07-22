@@ -1,6 +1,6 @@
 import { logger } from './logging.mjs';
 import { store } from './store.mjs';
-import { isAdShowing, getText } from './utils.mjs';
+import { isAdShowing, getText, getValueByJSONPointer } from './utils.mjs';
 
 import { LiveChatController } from './chat_controller.mjs';
 import { ReplayActionBuffer, getReplayChatActionsAsyncIterable, getLiveChatActionsAsyncIterable } from './chat_actions.mjs';
@@ -54,20 +54,27 @@ const FetchingModeEnum = Object.freeze({
  */
 
 /**
- * @param { CustomEvent<NavigateFinishEventDetail> | { target: EventTarget, detail: NavigateFinishEventDetail } } e
+ * @param { { target: EventTarget, detail: NavigateFinishEventDetail } } e
  */
 export async function initialize(e) {
 	const player = /** @type {HTMLElement} */ (e.target);
 	state.controller = new LiveChatController(player);
 	state.device = state.controller.device;
-	const navEvtName = state.device === 'desktop'
-		? { start: 'yt-navigate-start', end: 'yt-navigate-finish' }
-		: { start: 'state-navigatestart', end: 'state-navigateend' };
+	const navEvtDefs = state.device === 'desktop'
+		? { start: 'yt-navigate-start', end: 'yt-navigate-finish', pointer: '' }
+		: { start: 'state-navigatestart', end: 'state-navigateend', pointer: '/data' };
 	try {
+		// @ts-expect-error
+		const pageType = e.detail.pageType ?? e.detail.response?.page;
+		if (pageType !== 'watch') throw `page-type is not "watch" but "${pageType}"`;
+
 		await state.controller.start();
 		self.dispatchEvent(new CustomEvent('ytlcf-ready'));
-		onYtNavigateFinish(e);
-		self.addEventListener(navEvtName.end, onYtNavigateFinish);
+		onYtNavigateFinish(pageType, e.detail.response);
+		self.addEventListener(navEvtDefs.end, e => {
+			const data = getValueByJSONPointer(e.detail, navEvtDefs.pointer + '/response');
+			onYtNavigateFinish(data.page, data);
+		});
 
 		if (state.device === 'desktop') {
 			// Initilize document picture-in-picture
@@ -82,11 +89,16 @@ export async function initialize(e) {
 		}
 	} catch (reason) {
 		logger.warn(`Waiting for next navigation due to setup failure:`, reason);
-		self.addEventListener(navEvtName.end, initialize, { once: true });
+		self.addEventListener(navEvtDefs.end, e => {
+			initialize({
+				target: player,
+				detail: getValueByJSONPointer(e.detail, navEvtDefs.pointer),
+			});
+		}, { once: true });
 		return;
 	}
 
-	self.addEventListener(navEvtName.start, () => state.reset());
+	self.addEventListener(navEvtDefs.start, () => state.reset());
 
 	document.body.addEventListener('keydown', e => {
 		if (e.repeat) return;
@@ -121,11 +133,11 @@ export async function initialize(e) {
 }
 
 /**
- * @param { CustomEvent<NavigateFinishEventDetail | StateNavigateEndEventDetail> | { target: EventTarget, detail: NavigateFinishEventDetail } } e
+ * @param {string} pageType
+ * @param {any} response
  */
-async function onYtNavigateFinish(e) {
-	// @ts-expect-error
-	if (e.detail?.pageType !== 'watch' && e.detail?.data?.response?.page !== 'watch') return;
+async function onYtNavigateFinish(pageType, response) {
+	if (pageType !== 'watch') return;
 
 	const toggle = {
 		element: state.controller?.player?.querySelector('#yt-lcf-cb'),
@@ -138,24 +150,21 @@ async function onYtNavigateFinish(e) {
 	const video = (self.documentPictureInPicture?.window || self)?.document.querySelector('#movie_player video');
 	const videoContainer = video?.parentElement;
 	if (!videoContainer) return;
-	const parent = videoContainer.parentElement;
-	if (state.controller?.layer && parent?.contains(state.controller.layer.element)) {
-		videoContainer.after(state.controller.layer.element);
-	}
-	// @ts-expect-error
-	const mainResponse = e.detail?.response ?? e.detail?.data?.response;
-	const response = (mainResponse && 'contents' in mainResponse) ? mainResponse : mainResponse?.response;
-	if (!response) return;
-	const videoDetails = mainResponse?.playerResponse?.videoDetails
-		|| mainResponse.contents?.twoColumnWatchNextResults?.results?.results?.contents?.at(0)?.videoPrimaryInfoRenderer?.viewCount?.videoViewCountRenderer;
+	if (state.controller?.layer) videoContainer.after(state.controller.layer.element);
+
+	const res = (response && 'contents' in response) ? response : response?.response;
+	if (!res) return;
+
+	const videoDetails = response?.playerResponse?.videoDetails
+		|| response.contents?.twoColumnWatchNextResults?.results?.results?.contents?.at(0)?.videoPrimaryInfoRenderer?.viewCount?.videoViewCountRenderer;
 	const info = {
-		videoId: videoDetails?.videoId || mainResponse.currentVideoEndpoint?.watchEndpoint?.videoId,
-		title: videoDetails?.title || getText(mainResponse.playerOverlays?.playerOverlayRenderer?.videoDetails?.playerOverlayVideoDetailsRenderer?.title),
+		videoId: videoDetails?.videoId || response.currentVideoEndpoint?.watchEndpoint?.videoId,
+		title: videoDetails?.title || getText(response.playerOverlays?.playerOverlayRenderer?.videoDetails?.playerOverlayVideoDetailsRenderer?.title),
 	};
 	state.isLive = videoDetails?.isLive
 		|| videoDetails?.isLiveContent
 		|| videoDetails?.isUpcoming
-		|| getText(mainResponse.playerOverlays?.playerOverlayRenderer?.liveIndicatorText)
+		|| getText(response.playerOverlays?.playerOverlayRenderer?.liveIndicatorText)
 		|| false;
 
 	const videoType = state.isLive ? 'livestream' : 'replay';
@@ -195,8 +204,8 @@ async function onYtNavigateFinish(e) {
 			video.removeEventListener('seeking', onSeeking);
 			video.removeEventListener('timeupdate', onTimeUpdate);
 
-			const liveChatRenderer = response?.contents?.twoColumnWatchNextResults?.conversationBar?.liveChatRenderer
-				?? response?.contents?.singleColumnWatchNextResults?.results?.results;
+			const liveChatRenderer = res?.contents?.twoColumnWatchNextResults?.conversationBar?.liveChatRenderer
+				?? res?.contents?.singleColumnWatchNextResults?.results?.results;
 			/** @type {?string} */
 			initialContinuation ||= liveChatRenderer?.continuations?.at(0)?.reloadContinuationData?.continuation;
 			if (initialContinuation) {
