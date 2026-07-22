@@ -166,6 +166,11 @@ browser.runtime.onMessage.addListener((_message, _sender, respond) => {
 	} else if ('request' in msg) {
 		/** @type { { url: string, options?: RequestInit } } */
 		const { url, options } = msg.request;
+		try {
+			if (new URL(url).protocol !== 'https:') return;
+		} catch {
+			return;
+		}
 		fetch(url, options)
 		.then(res => res.text())
 		.then(respond);
