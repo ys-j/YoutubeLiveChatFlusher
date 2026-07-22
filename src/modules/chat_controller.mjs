@@ -96,13 +96,14 @@ export class LiveChatController {
 		}
 
 		document.getElementById(this.panel.element.id)?.remove();
+		document.getElementById(this.layer.element.id)?.remove();
+		document.getElementById(this.contextmenu.element.id)?.remove();
 
 		// get storage data
 		await s.load();
 		// create form
 		await this.panel.createForm();
 
-		document.getElementById(this.layer.element.id)?.remove();
 		if (s.others.disabled) this.layer.hide();
 		videoContainer.after(this.layer.element);
 
