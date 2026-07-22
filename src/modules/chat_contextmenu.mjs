@@ -58,51 +58,50 @@ const menuFns = {
 };
 
 export class LiveChatContextMenu {
-	/** @type {HTMLElement} */
-	#element;
+	/** @type {HTMLElement} */ element;
 
 	constructor() {
-		this.#element = document.createElement('div');
-		this.#element.id = 'yt-lcf-contextmenu';
-		this.#element.classList.add('ytp-popup', 'ytp-contextmenu', 'ytp-delhi-modern-contextmenu');
-		this.#element.style.opacity = '0';
-		document.body.appendChild(this.#element);
+		this.element = document.createElement('div');
+		this.element.id = 'yt-lcf-contextmenu';
+		this.element.classList.add('ytp-popup', 'ytp-contextmenu', 'ytp-delhi-modern-contextmenu');
+		this.element.style.opacity = '0';
+		document.body.appendChild(this.element);
 		document.addEventListener('click', e => {
 			const path = e.composedPath();
-			if (this.#element && !path.includes(this.#element)) {
-				this.#element.style.opacity = '0';
+			if (this.element && !path.includes(this.element)) {
+				this.element.style.opacity = '0';
 			}
 		}, { passive: true });
-		this.#element.addEventListener('transitionend', e => {
-			if (e.propertyName === 'opacity' && this.#element.style.opacity === '0') {
-				this.#element.style.display = 'none';
+		this.element.addEventListener('transitionend', e => {
+			if (e.propertyName === 'opacity' && this.element.style.opacity === '0') {
+				this.element.style.display = 'none';
 			}
 		}, { passive: true });
 	}
 
 	/**
 	 * Displays the context menu for the given message element.
-	 * @param {MouseEvent} event mouse event object
+	 * @param {MouseEvent} ev mouse event object
 	 * @param {HTMLElement} target target message element
 	 * @param {import("./chat_panel.mjs").LiveChatPanel} panel config panel
 	 */
-	async show(event, target, panel) {
-		this.#element.replaceChildren();
+	async show(ev, target, panel) {
+		this.element.replaceChildren();
 		const doc = await loadTemplateDocument('../templates/panel_contextmenu.html');
-		this.#element.append(...doc.body.childNodes);
-		this.#element.style.display = '';
-		this.#element.style.opacity = '1';
+		this.element.append(...doc.body.childNodes);
+		this.element.style.display = '';
+		this.element.style.opacity = '1';
 		let width = 0, height = 0;
-		for (const c of this.#element.children) {
+		for (const c of this.element.children) {
 			const rect = c.getBoundingClientRect();
 			if (width < rect.width) width = rect.width;
 			height += rect.height;
 		}
-		this.#element.style.width = width ? width + 'px' : '';
-		this.#element.style.height = height ? height + 'px' : '';
-		this.#element.style.left = `${event.x}px`;
-		this.#element.style.top = `${event.y}px`;
-		this.#element.onclick = e => {
+		this.element.style.width = width ? width + 'px' : '';
+		this.element.style.height = height ? height + 'px' : '';
+		this.element.style.left = `${ev.x}px`;
+		this.element.style.top = `${ev.y}px`;
+		this.element.onclick = e => {
 			for (const el of e.composedPath()) {
 				const name = el instanceof Element ? el.getAttribute('data-menu') : null;
 				if (name && name in menuFns) {
@@ -115,6 +114,6 @@ export class LiveChatContextMenu {
 	}
 
 	hide() {
-		this.#element.style.opacity = '0';
+		this.element.style.opacity = '0';
 	}
 }
