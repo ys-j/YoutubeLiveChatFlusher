@@ -137,3 +137,29 @@ export function getValueByJSONPointer(obj, pointer) {
 	}
 	return cur;
 }
+
+/**
+ * Waits for the given number of milliseconds.
+ * @param {number} ms milliseconds
+ * @param {object} [options] options
+ * @param {AbortSignal} [options.signal] signal for aborting sleep
+ * @returns {Promise<void>} void promise
+ */
+export function sleep(ms, { signal } = {}) {
+	/** @type {PromiseWithResolvers<void>} */
+	const { promise, resolve } = Promise.withResolvers();
+	if (signal?.aborted) {
+		resolve();
+		return promise;
+	}
+	/** @type {number | undefined} */
+	let timer = undefined;
+	const onDone = () => {
+		clearTimeout(timer);
+		signal?.removeEventListener('abort', onDone);
+		resolve();
+	};
+	if (ms > 0 && Number.isFinite(ms)) timer = setTimeout(onDone, ms);
+	signal?.addEventListener('abort', onDone, { once: true });
+	return promise;
+}
