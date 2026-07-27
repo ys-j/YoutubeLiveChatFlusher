@@ -392,12 +392,7 @@ const RESOLVED_NULL = Promise.resolve(null);
 const TRANSLATABLE_PATTERN = /[\p{L}]/u;
 const NO_REPEATING_PATTERN = /^\p{L}$|(\p{L})(?!\P{L}*\1)\p{L}/u;
 
-/**
- * @typedef {import("./translator.mjs").LanguageDetection} LanguageDetection
- */
-/**
- * @typedef {import("./translator.mjs").TranslationResult} TranslationResult
- */
+/** @import { TranslationResult } from "./translator.mjs" */
 
 /**
  * Detects each node language async.
@@ -413,11 +408,10 @@ function translateNodesAsync(nodes, target, exceptionLangs) {
 		const translatable = text && TRANSLATABLE_PATTERN.test(text) && NO_REPEATING_PATTERN.test(text);
 		if (!translatable) return null;
 		try {
-			/** @type {LanguageDetection} */
 			const detection = await browser.runtime.sendMessage({ detection: { text } });
 			if (exceptions.includes(detection.source)) return null;
 			const translation = {
-				text: node.textContent,
+				text,
 				source: detection.isReliable ? detection.source : 'auto',
 				target,
 			};

@@ -64,7 +64,6 @@ browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 browser.runtime.onInstalled.addListener(async ({ reason, previousVersion }) => {
 	if (
 		reason !== 'browser_update'
-		&& previousVersion !== manifest.version
 		&& (await loadingStore).others.notification_updated
 	) {
 		const isSameVersion = previousVersion === manifest.version;
@@ -140,13 +139,11 @@ loadingStore.then(async s => {
 // @ts-expect-error
 browser.runtime.onMessage.addListener(/** @type {YTLCFMessage.Callback} */ (msg, _sender, respond) => {
 	if ('detection' in msg) {
-		/** @type {Record<string, string>} */
 		const { text } = msg.detection;
 		(detector.isReady ? Promise.resolve() : detector.ready())
 		.then(() => detector.detect(text))
 		.then(respond);
 	} else if ('translation' in msg) {
-		/** @type {Record<string, string>} */
 		const { text, source, target: tl } = msg.translation;
 		(
 			source
@@ -168,11 +165,14 @@ browser.runtime.onMessage.addListener(/** @type {YTLCFMessage.Callback} */ (msg,
 	} else if ('fire' in msg) {
 		events[msg.fire]().then(respond);
 	} else if ('request' in msg) {
-		/** @type { { url: string, options?: RequestInit } } */
 		const { url, options } = msg.request;
 		fetch(url, options)
-		.then(res => res.text())
-		.then(respond);
+		.then(res => {
+			if (!res.ok) throw `Request failed: ${res.status} ${res.statusText}`;
+			return res[msg.contentType]();
+		})
+		.then(data => respond({ data }))
+		.catch(err => respond({ error: Error.isError(err) ? err.message : err }));
 	}
 	return true;
 });

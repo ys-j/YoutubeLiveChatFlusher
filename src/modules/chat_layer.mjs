@@ -272,16 +272,16 @@ export class VideoSegmentationExecutor {
 			);
 		};
 		/** @type {VideoFrameRequestCallback} */
-		const frame = async (_now, _metadata) => {
+		const frame = (_now, _metadata) => {
 			if (this.#abortController.signal.aborted) {
 				this.#abortController = new AbortController();
 				return;
 			} else if (canProcess()) {
 				inProgress = true;
-				const result = await this.#sendFrame(video);
-				// @ts-expect-error
-				this.#callback(result);
-				inProgress = false;
+				this.#sendFrame(video).then(result => {
+					this.#callback(result);
+					inProgress = false;
+				});
 			}
 			this.#reqId = video.requestVideoFrameCallback(frame);
 		};

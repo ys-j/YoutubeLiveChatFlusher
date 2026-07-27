@@ -182,16 +182,26 @@ async function onYtNavigateFinish(pageType, response) {
 			break;
 		case FetchingModeEnum.MOBILE: {
 			const desktopUrl = new URL(`//www.youtube.com/watch?v=${info.videoId}&app=desktop`, location.origin).href;
-			/** @type {?string} */
-			const desktopContentText = await browser.runtime.sendMessage({ request: { url: desktopUrl } });
-			const match = desktopContentText?.match(/"continuations":\s*\[\s*\{\s*"reloadContinuationData":\s*\{\s*"continuation":\s*"([^"]+)"/)?.at(1);
-			if (match) {
-				logger.info(`Running in mobile mode for ${videoType} (${info.videoId}):`, info.title);
-				initialContinuation = match;
+			const desktopContent = await browser.runtime.sendMessage({
+				request: { url: desktopUrl },
+				contentType: 'text',
+			});
+			let warning = null;
+			if ('error' in desktopContent) {
+				warning = 'Failed to fetch the desktop page from mobile mode:';
 			} else {
-				logger.warn('Failed to fetch the chats in mobile mode (this video has no chat):', info);
-				break;
+				const pat = /"continuations":\s*\[\s*\{\s*"reloadContinuationData":\s*\{\s*"continuation":\s*"([^"]+)"/;
+				const match = desktopContent.data.match(pat)?.at(1);
+				if (match) initialContinuation = match;
+				else warning = 'Failed to fetch the chats in mobile mode (this video has no chat):';
 			}
+			if (warning) {
+				logger.warn(warning, info);
+				break;
+			} else {
+				logger.info(`Running in mobile mode for ${videoType} (${info.videoId}):`, info.title);
+			}
+			// fall through
 		}
 		case FetchingModeEnum.INDEPENDENT: {
 			const timer = setInterval(() => {
