@@ -210,13 +210,12 @@ form.addEventListener('submit', async e => {
 	}
 
 	const config = {
+		/** @import { FetchingModeEnum } from "../modules/main.mjs" */
 		/** @type {Partial<typeof s.data.others>} */
 		others: {
 			notification_updated: Number.parseInt(notification_whenUpdated.value, 10),
-			// @ts-expect-error
-			mode_livestream: Number.parseInt(mode_livestream.value, 10),
-			// @ts-expect-error
-			mode_replay: Number.parseInt(mode_replay.value, 10),
+			mode_livestream:  /** @type {FetchingModeEnum} */ (Number.parseInt(mode_livestream.value, 10)),
+			mode_replay: /** @type {FetchingModeEnum} */ (Number.parseInt(mode_replay.value, 10)),
 			autostart: Number.parseInt(autostart.value, 10),
 			message_pause: Number.parseInt(message_pause.value, 10),
 		},

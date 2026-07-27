@@ -11,6 +11,9 @@
 	"notification_title_onUpdate": {
 		"message": "バージョン$1に更新されました\nクリックするとYouTubeタブを再読み込みします"
 	},
+	"notification_title_onReload": {
+		"message": "拡張機能を再起動しました\nクリックするとYouTubeタブを再読み込みします"
+	},
 	"ytp_menuitem_label_switch": {
 		"message": "チャットを流す"
 	},
@@ -419,6 +422,18 @@
 	"whenUpdated": {
 		"message": "バージョン更新時"
 	},
+	"disabled": {
+		"message": "しない"
+	},
+	"enabled": {
+		"message": "する"
+	},
+	"description_notification_disabled": {
+		"message": "自動的にYouTubeを開いているタブが再読み込みされます。"
+	},
+	"description_notification_enabled": {
+		"message": "自動的にYouTubeを開いているタブが再読み込みされません。\n再読み込みするには表示された通知をクリックしてください。"
+	},
 	"loadingMode": {
 		"message": "チャットの読み込みモード"
 	},
@@ -452,17 +467,11 @@
 	"autostart": {
 		"message": "チャット欄の自動オープン（アーカイブ再生時）"
 	},
-	"disabled": {
-		"message": "しない"
-	},
 	"enabled_onDependentMode": {
 		"message": "チャット欄に依存時のみする"
 	},
 	"enabled_always": {
 		"message": "常にする"
-	},
-	"enabled": {
-		"message": "する"
 	},
 	"hotkey": {
 		"message": "キーボードショートカット"

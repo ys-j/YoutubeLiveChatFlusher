@@ -11,6 +11,9 @@
 	"notification_title_onUpdate": {
 		"message": "Updated to version $1.\nClick to refresh YouTube tabs."
 	},
+	"notification_title_onReload": {
+		"message": "Extension restarted.\nClick to refresh YouTube tabs."
+	},
 	"ytp_menuitem_label_switch": {
 		"message": "Flush LiveChat"
 	},
@@ -416,6 +419,18 @@
 	"notification": {
 		"message": "Notifications"
 	},
+	"disabled": {
+		"message": "Disable"
+	},
+	"enabled": {
+		"message": "Enable"
+	},
+	"description_notification_disabled": {
+		"message": "Tabs with YouTube open will automatically reload."
+	},
+	"description_notification_enabled": {
+		"message": "Tabs with YouTube open will not automatically reload.\nClick the notification to reload them."
+	},
 	"whenUpdated": {
 		"message": "When Updated"
 	},
@@ -452,17 +467,11 @@
 	"autostart": {
 		"message": "Automatically open chat frame when watching replays"
 	},
-	"disabled": {
-		"message": "Disable"
-	},
 	"enabled_onDependentMode": {
 		"message": "Enable on ChatFrame Dependent Mode"
 	},
 	"enabled_always": {
 		"message": "Enable Always"
-	},
-	"enabled": {
-		"message": "Enable"
 	},
 	"hotkey": {
 		"message": "Hotkeys (Keyboard Shortcuts)"
