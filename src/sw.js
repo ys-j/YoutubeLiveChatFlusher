@@ -16,7 +16,10 @@ const events = {
 		browser.runtime.reload();
 	},
 	async reloadTabs() {
-		const tabs = await browser.tabs.query({ url: manifest.host_permissions });
+		const tabs = await browser.tabs.query({
+			discarded: false,
+			url: manifest.host_permissions,
+		});
 		return Promise.allSettled(tabs.map(tab => browser.tabs.reload(tab.id, { bypassCache: true })));
 	},
 	async openOptions() {
@@ -25,7 +28,7 @@ const events = {
 
 	/**
 	 * Sends an installation notification to the user.
-	 * @param {import("webextension-polyfill").Runtime.OnInstalledReason} reason
+	 * @param {"install" | "update" | "reload"} reason
 	 */
 	async notify(reason) {
 		const canNofify = await browser.permissions.contains({ permissions: ['notifications'] });
@@ -61,10 +64,10 @@ browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 browser.runtime.onInstalled.addListener(async ({ reason, previousVersion }) => {
 	if (
 		reason !== 'browser_update'
-		&& previousVersion !== manifest.version
 		&& (await loadingStore).others.notification_updated
 	) {
-		await events.notify(reason);
+		const isSameVersion = previousVersion === manifest.version;
+		await events.notify(isSameVersion ? 'reload' : reason);
 	} else {
 		await events.reloadTabs();
 	}
@@ -132,16 +135,15 @@ loadingStore.then(async s => {
 	}
 });
 
-browser.runtime.onMessage.addListener((_message, _sender, respond) => {
-	const msg = /** @type {Record<string, any>} */ (_message);
+/** @import { YTLCFMessage } from "../types/messaging.d.ts" */
+// @ts-expect-error
+browser.runtime.onMessage.addListener(/** @type {YTLCFMessage.Callback} */ (msg, _sender, respond) => {
 	if ('detection' in msg) {
-		/** @type {Record<string, string>} */
 		const { text } = msg.detection;
 		(detector.isReady ? Promise.resolve() : detector.ready())
 		.then(() => detector.detect(text))
 		.then(respond);
 	} else if ('translation' in msg) {
-		/** @type {Record<string, string>} */
 		const { text, source, target: tl } = msg.translation;
 		(
 			source
@@ -161,14 +163,16 @@ browser.runtime.onMessage.addListener((_message, _sender, respond) => {
 		})
 		.finally(() => performanceLogger.write(performance.now() - startTime));
 	} else if ('fire' in msg) {
-		const eventType = /** @type {"reload" | "reloadTabs" | "openOptions"} */ (msg.fire);
-		events[eventType]().then(respond);
+		events[msg.fire]().then(respond);
 	} else if ('request' in msg) {
-		/** @type { { url: string, options?: RequestInit } } */
 		const { url, options } = msg.request;
 		fetch(url, options)
-		.then(res => res.text())
-		.then(respond);
+		.then(res => {
+			if (!res.ok) throw `Request failed: ${res.status} ${res.statusText}`;
+			return res[msg.contentType]();
+		})
+		.then(data => respond({ data }))
+		.catch(err => respond({ error: Error.isError(err) ? err.message : err }));
 	}
 	return true;
 });

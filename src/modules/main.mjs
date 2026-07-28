@@ -124,12 +124,6 @@ export async function initialize(e) {
 				break;
 		}
 	}, { passive: true });
-
-	/** @type {?HTMLVideoElement} */
-	const video = document.querySelector('#movie_player video');
-	video?.addEventListener('ratechange', function () {
-		sessionStorage.setItem('yt-player-playback-rate', `{"data":"${this.playbackRate}"}`);
-	}, { passive: true });
 }
 
 /**
@@ -182,26 +176,38 @@ async function onYtNavigateFinish(pageType, response) {
 			break;
 		case FetchingModeEnum.MOBILE: {
 			const desktopUrl = new URL(`//www.youtube.com/watch?v=${info.videoId}&app=desktop`, location.origin).href;
-			/** @type {?string} */
-			const desktopContentText = await browser.runtime.sendMessage({ request: { url: desktopUrl } });
-			const match = desktopContentText?.match(/"continuations":\s*\[\s*\{\s*"reloadContinuationData":\s*\{\s*"continuation":\s*"([^"]+)"/)?.at(1);
-			if (match) {
-				logger.info(`Running in mobile mode for ${videoType} (${info.videoId}):`, info.title);
-				initialContinuation = match;
+			const desktopContent = await browser.runtime.sendMessage({
+				request: { url: desktopUrl },
+				contentType: 'text',
+			});
+			let warning = null;
+			if ('error' in desktopContent) {
+				warning = 'Failed to fetch the desktop page from mobile mode:';
 			} else {
-				logger.warn('Failed to fetch the chats in mobile mode (this video has no chat):', info);
-				break;
+				const pat = /"continuations":\s*\[\s*\{\s*"reloadContinuationData":\s*\{\s*"continuation":\s*"([^"]+)"/;
+				const match = desktopContent.data.match(pat)?.at(1);
+				if (match) initialContinuation = match;
+				else warning = 'Failed to fetch the chats in mobile mode (this video has no chat):';
 			}
+			if (warning) {
+				logger.warn(warning, info);
+				break;
+			} else {
+				logger.info(`Running in mobile mode for ${videoType} (${info.videoId}):`, info.title);
+			}
+			// fall through
 		}
 		case FetchingModeEnum.INDEPENDENT: {
 			const timer = setInterval(() => {
 				if (state.action.size > 0) {
 					clearInterval(timer);
 					video.addEventListener('seeking', onSeeking, { passive: true });
+					video.addEventListener('ratechange', onRateChange, { passive: true });
 					video.addEventListener('timeupdate', onTimeUpdate, { passive: true });
 				}
 			}, 250);
 			video.removeEventListener('seeking', onSeeking);
+			video.removeEventListener('ratechange', onRateChange);
 			video.removeEventListener('timeupdate', onTimeUpdate);
 
 			const liveChatRenderer = res?.contents?.twoColumnWatchNextResults?.conversationBar?.liveChatRenderer
@@ -219,7 +225,10 @@ async function onYtNavigateFinish(pageType, response) {
 						document.dispatchEvent(ev);
 					}
 				} else {
-					setTimeout(() => onSeeking.call(video), 250);
+					setTimeout(() => {
+						onSeeking.call(video);
+						onRateChange.call(video);
+					}, 250);
 					const generator = getReplayChatActionsAsyncIterable(state.abortController.signal, initialContinuation);
 					for await (const actions of generator) {
 						state.action.pushActions(actions);
@@ -243,6 +252,14 @@ function onSeeking() {
 	const ev = new CustomEvent('ytlcf-seek', { detail: { offset: currentOffset } });
 	state.abortController.signal.dispatchEvent(ev);
 	state.action.update(currentOffset);
+}
+
+/**
+ * @this {HTMLVideoElement}
+ */
+function onRateChange() {
+	const ev = new CustomEvent('ytlcf-ratechange', { detail: { rate: this.playbackRate } });
+	state.abortController.signal.dispatchEvent(ev);
 }
 
 /**

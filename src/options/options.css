@@ -88,6 +88,9 @@ dd {
 	[data-browser="chrome"] & {
 		margin-inline-start: 1em;
 	}
+	&.preline {
+		white-space: pre-line;
+	}
 }
 button {
 	appearance: none;

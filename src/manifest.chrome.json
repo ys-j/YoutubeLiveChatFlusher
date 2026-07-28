@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "__MSG_manifestName__",
-	"version": "0.16.2",
+	"version": "0.16.3",
 	"author": "_y_s",
 	"action": {
 		"default_state": "disabled"
@@ -14,18 +14,18 @@
 		{
 			"css": ["styles/content.css"],
 			"js": ["content.js"],
-			"matches": ["*://www.youtube.com/*", "*://m.youtube.com/*"]
+			"matches": ["https://www.youtube.com/*", "https://m.youtube.com/*"]
 		},
 		{
 			"all_frames": true,
 			"js": ["chatframe.js"],
-			"matches": ["*://www.youtube.com/live_chat*"]
+			"matches": ["https://www.youtube.com/live_chat*"]
 		}
 	],
 	"default_locale": "en",
 	"description": "__MSG_manifestDescription__",
 	"homepage_url": "https://github.com/ys-j/YoutubeLiveChatFlusher",
-	"host_permissions": ["*://www.youtube.com/*"],
+	"host_permissions": ["https://www.youtube.com/*"],
 	"icons": {
 		"16": "images/icon16.png",
 		"32": "images/icon32.png",
@@ -42,7 +42,7 @@
 	"web_accessible_resources": [
 		{
 			"resources": ["modules/*", "injections/*", "styles/*", "templates/*", "images/*"],
-			"matches": ["*://www.youtube.com/*", "*://m.youtube.com/*"]
+			"matches": ["https://www.youtube.com/*", "https://m.youtube.com/*"]
 		}
 	]
 }
