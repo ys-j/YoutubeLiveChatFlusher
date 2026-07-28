@@ -110,7 +110,12 @@ export async function* getReplayChatActionsAsyncIterable(signal, initialContinua
 		seekInfo = /** @type {SeekInfo} */ (e.detail);
 		logger.debug(`Reference offset was set to ${formatMilliseconds(seekInfo.offset)}`);
 		controller.abort();
-	}, { passive: true });
+	});
+	let playbackRate = 1;
+	signal.addEventListener('ytlcf-ratechange', e => {
+		playbackRate = e.detail?.rate || 1;
+		logger.debug(`Playback rate was set to x${playbackRate}`);
+	});
 
 	let prev = body.continuation;
 	let prevOffset = 0;
@@ -134,8 +139,7 @@ export async function* getReplayChatActionsAsyncIterable(signal, initialContinua
 			if (prev !== initialContinuation) continuations.set(prev, body.continuation);
 			const offset = Number.parseInt(contents.actions?.at(-1)?.replayChatItemAction.videoOffsetTimeMsec || '-1', 10);
 			if (offset >= prevOffset) {
-				const playbackRate = JSON.parse(sessionStorage.getItem('yt-player-playback-rate') || `{"data":"1"}`).data || '1';
-				const offsetDiff = (offset - prevOffset) / Number.parseFloat(playbackRate) - 250 | 0;
+				const offsetDiff = (offset - prevOffset) / playbackRate - 250 | 0;
 				sleepMs = Math.max(250, offsetDiff);
 				prevOffset = offset;
 				logger.debug(

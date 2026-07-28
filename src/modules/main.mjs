@@ -124,12 +124,6 @@ export async function initialize(e) {
 				break;
 		}
 	}, { passive: true });
-
-	/** @type {?HTMLVideoElement} */
-	const video = document.querySelector('#movie_player video');
-	video?.addEventListener('ratechange', function () {
-		sessionStorage.setItem('yt-player-playback-rate', `{"data":"${this.playbackRate}"}`);
-	}, { passive: true });
 }
 
 /**
@@ -208,10 +202,12 @@ async function onYtNavigateFinish(pageType, response) {
 				if (state.action.size > 0) {
 					clearInterval(timer);
 					video.addEventListener('seeking', onSeeking, { passive: true });
+					video.addEventListener('ratechange', onRateChange, { passive: true });
 					video.addEventListener('timeupdate', onTimeUpdate, { passive: true });
 				}
 			}, 250);
 			video.removeEventListener('seeking', onSeeking);
+			video.removeEventListener('ratechange', onRateChange);
 			video.removeEventListener('timeupdate', onTimeUpdate);
 
 			const liveChatRenderer = res?.contents?.twoColumnWatchNextResults?.conversationBar?.liveChatRenderer
@@ -229,7 +225,10 @@ async function onYtNavigateFinish(pageType, response) {
 						document.dispatchEvent(ev);
 					}
 				} else {
-					setTimeout(() => onSeeking.call(video), 250);
+					setTimeout(() => {
+						onSeeking.call(video);
+						onRateChange.call(video);
+					}, 250);
 					const generator = getReplayChatActionsAsyncIterable(state.abortController.signal, initialContinuation);
 					for await (const actions of generator) {
 						state.action.pushActions(actions);
@@ -253,6 +252,14 @@ function onSeeking() {
 	const ev = new CustomEvent('ytlcf-seek', { detail: { offset: currentOffset } });
 	state.abortController.signal.dispatchEvent(ev);
 	state.action.update(currentOffset);
+}
+
+/**
+ * @this {HTMLVideoElement}
+ */
+function onRateChange() {
+	const ev = new CustomEvent('ytlcf-ratechange', { detail: { rate: this.playbackRate } });
+	state.abortController.signal.dispatchEvent(ev);
 }
 
 /**
