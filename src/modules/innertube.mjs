@@ -24,7 +24,7 @@ export async function fetchInnerTube(url, payload, options = {}) {
 	const headers = new Headers();
 	headers.set('Content-Type', 'application/json');
 	if (options.auth && data) {
-		headers.set('Authorization', await getAuthorication(data));
+		headers.set('Authorization', await getAuthorization(data));
 	}
 	const client = data?.['INNERTUBE_CONTEXT']?.client;
 	const context = { client: client?.clientName === 'WEB' ? client : defaultClient };
@@ -49,11 +49,16 @@ export async function fetchInnerTube(url, payload, options = {}) {
 }
 
 /**
+ * Lookup table for byte-to-hex string conversions (`0x00` to `0xff`)
+ */
+const HEX_LUT = Object.freeze(Array.from({ length: 256 }, (_, i) => i.toString(16).padStart(2, '0')));
+
+/**
  * Fetches the value of Authorization header.
  * @param {Record<string, string>} data stored data
  * @returns {Promise<string>} authorization value
  */
-export async function getAuthorication(data) {
+async function getAuthorization(data) {
 	const datasyncId = data['DATASYNC_ID'].split('||')[0];
 	const timestamp = (Date.now() / 1e3) | 0;
 	const cookies = new Map(document.cookie.split(/;\s*/).flatMap(c => {
@@ -63,7 +68,7 @@ export async function getAuthorication(data) {
 	const sApisId = cookies.get('SAPISID');
 	const bytes = new TextEncoder().encode([datasyncId, timestamp, sApisId, location.origin].join(' '));
 	const digested = new Uint8Array(await crypto.subtle.digest('SHA-1', bytes));
-	const hash = Array.from(digested, b => b.toString(16).padStart(2, '0')).join('');
+	const hash = Array.from(digested, b => HEX_LUT[b]).join('');
 	return ['SAPISIDHASH', 'SAPISID1PHASH', 'SAPISID3PHASH'].map(k => `${k} ${timestamp}_${hash}_u`).join(' ');
 }
 

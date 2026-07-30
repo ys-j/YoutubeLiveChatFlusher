@@ -52,7 +52,8 @@ export class ReplayActionBuffer {
 		for (let i = startIndex, l = this.#sortedTimes.length; i < l; i++) {
 			const time = this.#sortedTimes[i];
 			if (time > currentOffset) break;
-			this.#map.get(time)?.forEach(a => result.push(a));
+			const actions = this.#map.get(time);
+			if (actions) for (const a of actions) result.push(a);
 		}
 		this.update(currentOffset);
 		return result;
@@ -93,7 +94,7 @@ export class ReplayActionBuffer {
  * @returns {AsyncGenerator<LiveChat.ReplayChatItemAction[]>} chat actions generator
  */
 export async function* getReplayChatActionsAsyncIterable(signal, initialContinuation) {
-	const url = new URL('//www.youtube.com/youtubei/v1/live_chat/get_live_chat_replay', location.origin);
+	const url = new URL('https://www.youtube.com/youtubei/v1/live_chat/get_live_chat_replay');
 	url.searchParams.set('prettyPrint', 'false');
 
 	/** @type {Map<string, string>} */
@@ -165,7 +166,7 @@ export async function* getReplayChatActionsAsyncIterable(signal, initialContinua
  * @returns {AsyncGenerator<LiveChat.LiveChatItemAction[]>} empty generator
  */
 export async function* getLiveChatActionsAsyncIterable(signal, initialContinuation) {
-	const url = new URL('//www.youtube.com/youtubei/v1/live_chat/get_live_chat', location.origin);
+	const url = new URL('https://www.youtube.com/youtubei/v1/live_chat/get_live_chat');
 	url.searchParams.set('prettyPrint', 'false');
 
 	/** @type {ContinuationTokenContainer} */

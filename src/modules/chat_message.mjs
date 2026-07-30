@@ -47,7 +47,7 @@ export const updateTlExclusionList = () => refreshWordsList(tlExclusionList, s.t
  * @typedef AuthorInfo
  * @prop {string} id
  * @prop {string} name
- * @prop {string} thumbnail
+ * @prop {string} [thumbnail]
  */
 
 /**
@@ -135,7 +135,7 @@ export class LiveChatItemFactory {
 				a.href = `/channel/${options.author.id}`;
 				a.title = options.author.name;
 				const photo = a?.querySelector('img');
-				if (photo) photo.src = options.author.thumbnail;
+				if (photo) photo.src = options.author.thumbnail || '';
 			}
 			const name = header?.querySelector('.name');
 			if (name) name.textContent = options.author.name;
@@ -222,7 +222,7 @@ async function fetchAuthorInfo(renderer, type) {
 	}
 	name ||= getText(renderer.authorName);
 
-	const thumbnail = renderer.authorPhoto.thumbnails[0].url;
+	const thumbnail = renderer.authorPhoto?.thumbnails.at(0)?.url;
 	return { id, name, thumbnail };
 }
 

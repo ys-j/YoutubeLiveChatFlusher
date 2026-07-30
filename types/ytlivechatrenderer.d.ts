@@ -23,7 +23,7 @@ declare namespace LiveChat {
 		authorBadges?: AuthorBadgeRenderer[]
 		authorExternalChannelId: string
 		authorName: SimpleText
-		authorPhoto: {
+		authorPhoto?: {
 			thumbnails: Thumbnail[]
 			webThumbnailDetailsExtensionData?: {
 				isPreloaded: boolean

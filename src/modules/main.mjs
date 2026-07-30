@@ -156,7 +156,6 @@ async function onYtNavigateFinish(pageType, response) {
 		title: videoDetails?.title || getText(response.playerOverlays?.playerOverlayRenderer?.videoDetails?.playerOverlayVideoDetailsRenderer?.title),
 	};
 	state.isLive = videoDetails?.isLive
-		|| videoDetails?.isLiveContent
 		|| videoDetails?.isUpcoming
 		|| getText(response.playerOverlays?.playerOverlayRenderer?.liveIndicatorText)
 		|| false;
@@ -175,9 +174,8 @@ async function onYtNavigateFinish(pageType, response) {
 			});
 			break;
 		case FetchingModeEnum.MOBILE: {
-			const desktopUrl = new URL(`//www.youtube.com/watch?v=${info.videoId}&app=desktop`, location.origin).href;
 			const desktopContent = await browser.runtime.sendMessage({
-				request: { url: desktopUrl },
+				request: { url: `https://www.youtube.com/watch?v=${info.videoId}&app=desktop` },
 				contentType: 'text',
 			});
 			let warning = null;
