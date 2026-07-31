@@ -191,23 +191,6 @@ export class LiveChatLayer {
 }
 
 /**
- * @typedef MLEngineResult
- * @prop {object} metrics
- * @prop {number} metrics.decodingTime
- * @prop {number} metrics.inferenceTime
- * @prop {number} metrics.inputTokens
- * @prop {number} metrics.outputTokens
- * @prop {number} metrics.preprocessingTime
- * @prop {Array<{ name: string, when: number }>} metrics.runTimestamps
- * @prop {number} metrics.timePerOutputToken
- * @prop {?number} metrics.timeToFirstToken
- * @prop {number} metrics.tokenizingTime
- * @prop {number} metrics.tokensPerSecond
- * @prop { { cpuTime: number, memory: number } } resourcesAfter
- * @prop { { cpuTime: number, memory: number } } resourcesBefore
- */
-
-/**
  * @typedef SegmentInfo
  * @prop {?string} label
  * @prop {?number} score
