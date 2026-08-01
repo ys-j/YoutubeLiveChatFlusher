@@ -55,6 +55,8 @@ export class LiveChatController {
 				e.preventDefault();
 				e.stopPropagation();
 				if (origin.classList.contains('paused') && this.panel) {
+					const el = this.contextmenu.element;
+					if (!el.isConnected) document.body.appendChild(el);
 					this.contextmenu.show(/** @type {MouseEvent} */ (e), origin, this.panel);
 				} else {
 					origin.classList.add('paused');

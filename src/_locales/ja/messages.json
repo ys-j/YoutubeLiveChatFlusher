@@ -3,7 +3,7 @@
 		"message": "YouTube LiveChat Flusher／弾幕チャット"
 	},
 	"manifestDescription": {
-		"message": "YouTube Liveのチャットをニコニコ動画・ビリビリ動画のように弾幕風に流します"
+		"message": "弾幕スタイルのチャットで、より豊かなYouTubeの視聴体験を提供します。"
 	},
 	"notification_title_onInstall": {
 		"message": "インストールありがとうございます\nクリックするとYouTubeタブを再読み込みします"
