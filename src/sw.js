@@ -31,8 +31,8 @@ const events = {
 	 * @param {"install" | "update" | "reload"} reason
 	 */
 	async notify(reason) {
-		const canNofify = await browser.permissions.contains({ permissions: ['notifications'] });
-		if (!canNofify) return;
+		const canNotify = await browser.permissions.contains({ permissions: ['notifications'] });
+		if (!canNotify) return;
 
 		/** @type {(str: string) => string} */
 		const toUpperCamel = str => str.toLowerCase().replace(/(?:^|_+)(\w)/g, (_, m) => m.toUpperCase());
@@ -84,23 +84,16 @@ let personDetectionEngine = null;
 const performanceLogger = {
 	buffer: new Uint32Array(100),
 	offset: 0,
+	sum: 0,
 	/** @param {number} v */
 	write(v) {
 		if (this.offset >= this.buffer.length) {
+			logger.info('Average inference time (over 100 runs):', this.sum / this.buffer.length, 'ms');
 			this.offset = 0;
-			logger.info('Average inference time (over 100 runs):', this.avarage(), 'ms');
+			this.sum = 0;
 		}
 		this.buffer[this.offset++] = v;
-	},
-	avarage() {
-		let sum = 0, count = 0;
-		for (const v of this.buffer) {
-			if (v > 0) {
-				sum += v;
-				count++;
-			}
-		}
-		return sum / count;
+		this.sum += v;
 	},
 };
 
