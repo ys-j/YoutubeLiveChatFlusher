@@ -65,7 +65,6 @@ export class LiveChatContextMenu {
 		this.element.id = 'yt-lcf-contextmenu';
 		this.element.classList.add('ytp-popup', 'ytp-contextmenu', 'ytp-delhi-modern-contextmenu');
 		this.element.style.opacity = '0';
-		document.body.appendChild(this.element);
 		document.addEventListener('click', e => {
 			const path = e.composedPath();
 			if (this.element && !path.includes(this.element)) {
