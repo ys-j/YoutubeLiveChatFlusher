@@ -177,37 +177,50 @@ s.load().then(() => {
 });
 
 const status = document.getElementById('status');
-form.addEventListener('change', e => {
+form.addEventListener('change', async e => {
 	if (/** @type {HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement} */ (e.target).form !== form) return;
 	if (saveBtn) saveBtn.disabled = false;
 	if (status) status.hidden = false;
-	updateTranslationControls();
-	if (!translation_bodyContent.disabled) {
-		translation_bodyContent.setCustomValidity((v => {
-			try {
-				const json = JSON.parse(v || '{}');
-				if (typeof json !== 'object' || json === null) throw json;
-				else return '';
-			} catch {
-				return browser.i18n.getMessage('translation_invalidRequestBody');
+
+	if (e.target instanceof HTMLInputElement) switch (e.target.name) {
+		case 'notification_whenUpdated':
+		case 'person_detector_device':
+			const permission = {
+				notification_whenUpdated: /** @type {const} */ ({ name: 'notifications', falsyValue: '0' }),
+				person_detector_device: /** @type {const} */ ({ name: 'trialML', falsyValue: '' }),
+			}[e.target.name];
+			if (e.target.value !== permission.falsyValue) {
+				const granted = await browser.permissions.request({ permissions: [permission.name] }).catch(logger.error);
+				if (!granted) {
+					const radio = form.elements[e.target.name];
+					if (radio instanceof RadioNodeList) radio.value = permission.falsyValue;
+					logger.warn('Permission denied:', permission.name);
+				}
 			}
-		})(translation_bodyContent.value));
-	}
-	for (const el of form.querySelectorAll('[data-when-method="POST"]')) {
-		/** @type {HTMLElement} */ (el).hidden = translation_method.value !== 'POST';
+			break;
+		case 'translation_method':
+		case 'translation_bodyType':
+			updateTranslationControls();
+			if (!translation_bodyContent.disabled) {
+				translation_bodyContent.setCustomValidity((v => {
+					try {
+						const json = JSON.parse(v || '{}');
+						if (typeof json !== 'object' || json === null) throw json;
+						else return '';
+					} catch {
+						return browser.i18n.getMessage('translation_invalidRequestBody');
+					}
+				})(translation_bodyContent.value));
+			}
+			for (const el of form.querySelectorAll('[data-when-method="POST"]')) {
+				/** @type {HTMLElement} */ (el).hidden = translation_method.value !== 'POST';
+			}
+			break;
 	}
 });
 
 form.addEventListener('submit', async e => {
 	e.preventDefault();
-	if (Number.parseInt(notification_whenUpdated.value, 10)) {
-		const granted = await browser.permissions.request({ permissions: ['notifications'] }).catch(() => false);
-		if (!granted) notification_whenUpdated.value = '0';
-	}
-	if (person_detector_device.value) {
-		const granted = await browser.permissions.request({ permissions: ['trialML'] }).catch(() => false);
-		if (!granted) person_detector_device.value = '';
-	}
 
 	const config = {
 		/** @import { FetchingModeEnum } from "../modules/main.mjs" */
