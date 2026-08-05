@@ -163,3 +163,20 @@ export function sleep(ms, { signal } = {}) {
 	signal?.addEventListener('abort', onDone, { once: true });
 	return promise;
 }
+
+/** @type {PromiseWithResolvers<?string>} */
+const nonceResolvers = Promise.withResolvers();
+browser.runtime.sendMessage({ nonce: null }).then(res => {
+	if (res?.nonce !== undefined) nonceResolvers.resolve(res.nonce);
+	else throw 'Nonce is undefined';
+}).catch(reason => {
+	console.error(
+		'[%cYTLCF%c...<%c]',
+		'font-family:sans-serif;font-weight:700;padding-right:.33em',
+		'border-radius:.33em;background-color:red;color:white;font-family:sans-serif;font-weight:700;padding:0 .33em',
+		'',
+		reason,
+	);
+	nonceResolvers.resolve(null);
+});
+export const nonce = await nonceResolvers.promise;

@@ -10,6 +10,8 @@ self.browser ??= chrome;
 const loadingStore = store.load();
 
 const manifest = browser.runtime.getManifest();
+/** @type {WeakMap<import("webextension-polyfill").Tabs.Tab, string>} */
+const nonceMap = new WeakMap();
 
 const events = {
 	async reload() {
@@ -87,13 +89,13 @@ const performanceLogger = {
 	sum: 0,
 	/** @param {number} v */
 	write(v) {
+		this.buffer[this.offset++] = v;
+		this.sum += v;
 		if (this.offset >= this.buffer.length) {
 			logger.info('Average inference time (over 100 runs):', this.sum / this.buffer.length, 'ms');
 			this.offset = 0;
 			this.sum = 0;
 		}
-		this.buffer[this.offset++] = v;
-		this.sum += v;
 	},
 };
 
@@ -130,8 +132,20 @@ loadingStore.then(async s => {
 
 /** @import { YTLCFMessage } from "../types/messaging.d.ts" */
 // @ts-expect-error
-browser.runtime.onMessage.addListener(/** @type {YTLCFMessage.Callback} */ (msg, _sender, respond) => {
-	if ('detection' in msg) {
+browser.runtime.onMessage.addListener(/** @type {YTLCFMessage.Callback} */ (msg, sender, respond) => {
+	if ('nonce' in msg) {
+		const tab = sender.tab;
+		if (tab) {
+			let nonce = nonceMap.get(tab);
+			if (!nonce) {
+				nonce = typeof msg.nonce === 'string' ? msg.nonce : crypto.randomUUID();
+				nonceMap.set(tab, nonce);
+			}
+			respond({ nonce });
+		} else {
+			respond({ nonce: null });
+		}
+	} else if ('detection' in msg) {
 		const { text } = msg.detection;
 		(detector.isReady ? Promise.resolve() : detector.ready())
 		.then(() => detector.detect(text))
@@ -148,7 +162,7 @@ browser.runtime.onMessage.addListener(/** @type {YTLCFMessage.Callback} */ (msg,
 	} else if ('mask' in msg && personDetectionEngine) {
 		const { mask: blob, width = 256, height = 144 } = msg;
 		const startTime = performance.now();
-		personDetectionEngine?.run({ args: [ blob ] })
+		personDetectionEngine.run({ args: [ blob ] })
 		.then(respond, err => {
 			logger.warn(err?.message ?? err);
 			const mask = { data: new Uint8Array(width * height), width, height, channel: 1 };
@@ -166,6 +180,8 @@ browser.runtime.onMessage.addListener(/** @type {YTLCFMessage.Callback} */ (msg,
 		})
 		.then(data => respond({ data }))
 		.catch(err => respond({ error: Error.isError(err) ? err.message : err }));
+	} else {
+		respond(void 0);
 	}
 	return true;
 });

@@ -1,6 +1,6 @@
 import { logger } from './logging.mjs';
 import { fetchInnerTube } from './innertube.mjs';
-import { formatMilliseconds, sleep } from './utils.mjs';
+import { formatMilliseconds, sleep, nonce } from './utils.mjs';
 
 export class ReplayActionBuffer {
 	/** @type {Map<number, Set<LiveChat.LiveChatItemAction>>} */
@@ -107,13 +107,13 @@ export async function* getReplayChatActionsAsyncIterable(signal, initialContinua
 	/** @type {SeekInfo | undefined} */
 	let seekInfo;
 	let controller = new AbortController();
-	signal.addEventListener('ytlcf-seek', e => {
+	signal.addEventListener(`ytlcf-seek:${nonce}`, e => {
 		seekInfo = /** @type {SeekInfo} */ (e.detail);
 		logger.debug(`Reference offset was set to ${formatMilliseconds(seekInfo.offset)}`);
 		controller.abort();
 	});
 	let playbackRate = 1;
-	signal.addEventListener('ytlcf-ratechange', e => {
+	signal.addEventListener(`ytlcf-ratechange:${nonce}`, e => {
 		playbackRate = e.detail?.rate || 1;
 		logger.debug(`Playback rate was set to x${playbackRate}`);
 	});

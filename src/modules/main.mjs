@@ -1,6 +1,6 @@
 import { logger } from './logging.mjs';
 import { store } from './store.mjs';
-import { isAdShowing, getText, getValueByJSONPointer } from './utils.mjs';
+import { isAdShowing, getText, getValueByJSONPointer, nonce } from './utils.mjs';
 
 import { LiveChatController } from './chat_controller.mjs';
 import { ReplayActionBuffer, getReplayChatActionsAsyncIterable, getLiveChatActionsAsyncIterable } from './chat_actions.mjs';
@@ -69,7 +69,7 @@ export async function initialize(e) {
 		if (pageType !== 'watch') throw `page-type is not "watch" but "${pageType}"`;
 
 		await state.controller.start();
-		self.dispatchEvent(new CustomEvent('ytlcf-ready'));
+		self.dispatchEvent(new CustomEvent(`ytlcf-ready:${nonce}`));
 		onYtNavigateFinish(pageType, e.detail.response);
 		self.addEventListener(navEvtDefs.end, e => {
 			const data = getValueByJSONPointer(e.detail, navEvtDefs.pointer + '/response');
@@ -79,12 +79,11 @@ export async function initialize(e) {
 		if (state.device === 'desktop') {
 			// Initilize document picture-in-picture
 			const script = document.createElement('script');
-			script.id = 'yt-lcf-pip-script';
-			script.src = browser.runtime.getURL('/injections/pip.mjs');
-			script.type = 'module';
-			script.dataset.paramCssUrl = browser.runtime.getURL('/styles/content.css');
-			script.dataset.paramPipMarkerText = browser.i18n.getMessage('pip_marker');
-			script.dataset.paramHotkeys = JSON.stringify(store.hotkeys);
+			script.src = browser.runtime.getURL('/injections/pip.js');
+			script.dataset.nonce = nonce || '';
+			script.dataset.cssUrl = browser.runtime.getURL('/styles/content.css');
+			script.dataset.pipMarkerText = browser.i18n.getMessage('pip_marker');
+			script.dataset.hotkeys = JSON.stringify(store.hotkeys);
 			document.body.append(script);
 		}
 	} catch (reason) {
@@ -168,7 +167,7 @@ async function onYtNavigateFinish(pageType, response) {
 	switch (modeValue) {
 		case FetchingModeEnum.DEPENDENT:
 			logger.info(`Running in dependent mode for ${videoType} (${info.videoId}):`, info.title);
-			document.addEventListener('ytlcf-start', () => {
+			document.addEventListener(`ytlcf-start:${nonce}`, () => {
 				state.controller?.listen();
 				toggle.enable();
 			});
@@ -179,7 +178,7 @@ async function onYtNavigateFinish(pageType, response) {
 				contentType: 'text',
 			});
 			let warning = null;
-			if ('error' in desktopContent) {
+			if (!desktopContent || 'error' in desktopContent) {
 				warning = 'Failed to fetch the desktop page from mobile mode:';
 			} else {
 				const pat = /"continuations":\s*\[\s*\{\s*"reloadContinuationData":\s*\{\s*"continuation":\s*"([^"]+)"/;
@@ -219,7 +218,7 @@ async function onYtNavigateFinish(pageType, response) {
 				if (state.isLive) {
 					const generator = getLiveChatActionsAsyncIterable(state.abortController.signal, initialContinuation);
 					for await (const actions of generator) {
-						const ev = new CustomEvent('ytlcf-action', { detail: actions });
+						const ev = new CustomEvent(`ytlcf-action:${nonce}`, { detail: actions });
 						document.dispatchEvent(ev);
 					}
 				} else {
@@ -247,7 +246,7 @@ async function onYtNavigateFinish(pageType, response) {
 function onSeeking() {
 	const shiftSec = !state.isLive && store.others.time_shift || 0;
 	const currentOffset = (this.currentTime - shiftSec) * 1000 | 0;
-	const ev = new CustomEvent('ytlcf-seek', { detail: { offset: currentOffset } });
+	const ev = new CustomEvent(`ytlcf-seek:${nonce}`, { detail: { offset: currentOffset } });
 	state.abortController.signal.dispatchEvent(ev);
 	state.action.update(currentOffset);
 }
@@ -256,7 +255,7 @@ function onSeeking() {
  * @this {HTMLVideoElement}
  */
 function onRateChange() {
-	const ev = new CustomEvent('ytlcf-ratechange', { detail: { rate: this.playbackRate } });
+	const ev = new CustomEvent(`ytlcf-ratechange:${nonce}`, { detail: { rate: this.playbackRate } });
 	state.abortController.signal.dispatchEvent(ev);
 }
 
@@ -270,7 +269,7 @@ function onTimeUpdate() {
 	const currentOffset = (this.currentTime - shiftSec) * 1000 | 0;
 	const pendingActions = state.action.getPendingActions(currentOffset);
 	if (pendingActions.length > 0) {
-		const ev = new CustomEvent('ytlcf-action', { detail: pendingActions });
+		const ev = new CustomEvent(`ytlcf-action:${nonce}`, { detail: pendingActions });
 		document.dispatchEvent(ev);
 	}
 }

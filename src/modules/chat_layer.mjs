@@ -231,9 +231,11 @@ export class VideoSegmentationExecutor {
 		try {
 			this.context?.drawImage(video, 0, 0, width, height);
 			const mask = await this.offscreen.convertToBlob({ type: 'image/webp', quality: .3 });
-			return await browser.runtime.sendMessage({ mask });
+			const result = await browser.runtime.sendMessage({ mask });
+			if (result) return result;
+			else throw 'No result received from the person detector.';
 		} catch (cause) {
-			logger.error('Failed to send a video frame to the person detector.\nCaused by:', cause);
+			throw new Error('Failed to transceive a video frame to the person detector.', { cause });
 		}
 	}
 
@@ -264,11 +266,15 @@ export class VideoSegmentationExecutor {
 				this.#sendFrame(video).then(result => {
 					this.#callback(result);
 					inProgress = false;
+				}).catch(reason => {
+					logger.warn(reason);
+					this.disconnect(video);
 				});
 			}
 			this.#reqId = video.requestVideoFrameCallback(frame);
 		};
 		this.#reqId = video.requestVideoFrameCallback(frame);
+		logger.info('Person detection started.');
 	}
 
 	/**
@@ -277,5 +283,6 @@ export class VideoSegmentationExecutor {
 	disconnect(video = undefined) {
 		this.#abortController.abort();
 		if (this.#reqId) video?.cancelVideoFrameCallback(this.#reqId);
+		logger.info('Person detection stopped.');
 	}
 }

@@ -4,15 +4,16 @@ declare module "webextension-polyfill" {
 	namespace Runtime {
 		interface Static {
 			onMessage: Events.Event<YTLCFMessage.Request.Any>;
-			sendMessage(message: YTLCFMessage.Request.LanguageDetection): Promise<YTLCFMessage.Response.LanguageDetection>;
-			sendMessage(message: YTLCFMessage.Request.Translation): Promise<YTLCFMessage.Response.Translation>;
-			sendMessage(message: YTLCFMessage.Request.PersonDetection): Promise<YTLCFMessage.Response.PersonDetection>;
-			sendMessage(message: YTLCFMessage.Request.EventFire): Promise<YTLCFMessage.Response.EventFire>;
-			sendMessage(message: YTLCFMessage.Request.BackgroundFetch<"arrayBuffer">): Promise<YTLCFMessage.Response.BackgroundFetch<ArrayBuffer> | YTLCFMessage.Response.Error>;
-			sendMessage(message: YTLCFMessage.Request.BackgroundFetch<"blob">): Promise<YTLCFMessage.Response.BackgroundFetch<Blob> | YTLCFMessage.Response.Error>;
-			sendMessage(message: YTLCFMessage.Request.BackgroundFetch<"bytes">): Promise<YTLCFMessage.Response.BackgroundFetch<Uint8Array> | YTLCFMessage.Response.Error>;
-			sendMessage(message: YTLCFMessage.Request.BackgroundFetch<"json">): Promise<YTLCFMessage.Response.BackgroundFetch<Record<string, any> | any[]> | YTLCFMessage.Response.Error>;
-			sendMessage(message: YTLCFMessage.Request.BackgroundFetch<"text">): Promise<YTLCFMessage.Response.BackgroundFetch<string> | YTLCFMessage.Response.Error>;
+			sendMessage(message: { nonce: Any }): Promise<{ nonce: string | null } | void>;
+			sendMessage(message: YTLCFMessage.Request.LanguageDetection): Promise<YTLCFMessage.Response.LanguageDetection | void>;
+			sendMessage(message: YTLCFMessage.Request.Translation): Promise<YTLCFMessage.Response.Translation | void>;
+			sendMessage(message: YTLCFMessage.Request.PersonDetection): Promise<YTLCFMessage.Response.PersonDetection | void>;
+			sendMessage(message: YTLCFMessage.Request.EventFire): Promise<YTLCFMessage.Response.EventFire | void>;
+			sendMessage(message: YTLCFMessage.Request.BackgroundFetch<"arrayBuffer">): Promise<YTLCFMessage.Response.BackgroundFetch<ArrayBuffer> | YTLCFMessage.Response.Error | void>;
+			sendMessage(message: YTLCFMessage.Request.BackgroundFetch<"blob">): Promise<YTLCFMessage.Response.BackgroundFetch<Blob> | YTLCFMessage.Response.Error | void>;
+			sendMessage(message: YTLCFMessage.Request.BackgroundFetch<"bytes">): Promise<YTLCFMessage.Response.BackgroundFetch<Uint8Array> | YTLCFMessage.Response.Error | void>;
+			sendMessage(message: YTLCFMessage.Request.BackgroundFetch<"json">): Promise<YTLCFMessage.Response.BackgroundFetch<Record<string, any> | any[]> | YTLCFMessage.Response.Error | void>;
+			sendMessage(message: YTLCFMessage.Request.BackgroundFetch<"text">): Promise<YTLCFMessage.Response.BackgroundFetch<string> | YTLCFMessage.Response.Error | void>;
 			sendMessage(message: any): Promise<unknown>;
 		}
 	}
@@ -72,7 +73,7 @@ namespace YTLCFMessage {
 
 	type Callback = (
 		message: Request.Any,
-		sender: Runtime.MessageSender,
+		sender: import("webextension-polyfill").Runtime.MessageSender,
 		respond: (response: unknown) => void,
 	) => true;
 }

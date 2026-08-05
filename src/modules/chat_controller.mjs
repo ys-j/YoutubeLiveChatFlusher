@@ -1,6 +1,6 @@
 import { logger } from './logging.mjs';
 import { store as s } from './store.mjs';
-import { isNotPip, loadTemplateDocument, getColorRGB } from './utils.mjs';
+import { isNotPip, loadTemplateDocument, getColorRGB, nonce } from './utils.mjs';
 
 import { LiveChatLayer, VideoSegmentationExecutor } from './chat_layer.mjs'
 import { LiveChatPanel, WrapStyleDefinitions } from './chat_panel.mjs';
@@ -774,8 +774,8 @@ export class LiveChatController {
 
 	listen() {
 		this.unlisten();
-		document.addEventListener('ytlcf-action', () => {
-			document.addEventListener('ytlcf-action', e => {
+		document.addEventListener(`ytlcf-action:${nonce}`, () => {
+			document.addEventListener(`ytlcf-action:${nonce}`, e => {
 				this.#onAction(e);
 			}, { passive: true, signal: this.abortController.signal });
 		}, { once: true, passive: true });
