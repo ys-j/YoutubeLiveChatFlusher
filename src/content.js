@@ -1,101 +1,101 @@
-// @ts-expect-error
-self.browser ??= chrome;
+(function () {
+	'use strict';
+	// @ts-expect-error
+	self.browser ??= chrome;
 
-const manifest = browser.runtime.getManifest();
+	const manifest = browser.runtime.getManifest();
 
-const preparingEventListener = import(browser.runtime.getURL('./modules/logging.mjs'))
-.then((/** @type {typeof import("./modules/logging.mjs")} */ { logger }) => {
+	/** @type {Promise<typeof import("./modules/logging.mjs")>} */
+	const importingLogging = import(browser.runtime.getURL('./modules/logging.mjs'));
+	/** @type {Promise<typeof import("./modules/store.mjs")>} */
+	const importingStore = import(browser.runtime.getURL('./modules/store.mjs'));
 	/** @type {Promise<typeof import("./modules/main.mjs")>} */
 	const importingMain = import(browser.runtime.getURL('./modules/main.mjs'));
 
-	// fires when the injected script sends a message
-	self.addEventListener('ytlcf-message', e => {
-		const { ytInitialData, ytcfg } = e.detail ?? {};
-		if (!ytInitialData || !ytcfg) {
-			logger.error('Failed to get a message from the injected script.');
-			return;
-		}
-		logger.debug('Getting initialization message from the injected script.');
-		sessionStorage.setItem('ytlcf-initial-data', ytInitialData);
-		sessionStorage.setItem('ytlcf-cfg', ytcfg);
+	async function checkAutoStart() {
+		const s = await importingStore.then(({ store }) => store.load());
+		const enabled = [ false, s?.others?.mode_replay !== 1, true ].at(s?.others?.autostart ?? 0);
+		if (!enabled) return false;
 
-		const path = location.pathname.split('/').find(Boolean) || '';
-		const detail = {
-			pageType: ['watch', 'live'].includes(path) ? 'watch' : 'browse',
-			response: JSON.parse(ytInitialData),
-		};
-		const timer = setInterval(async () => {
-			const target = document.querySelector('ytd-app') || document.getElementById('player-container-id');
-			if (!target) {
-				logger.debug('Waiting for <ytd-app> element.');
+		const container = document.getElementById('show-hide-button');
+		if (!container || container.hidden) return false;
+
+		const button = container.querySelector('button');
+		if (button?.closest('#close-button')) return false;
+
+		button?.click();
+		return true;
+	};
+
+	importingLogging.then(async ({ logger }) => {
+		const MAX_ATTEMPTS = 10;
+		const nonce = crypto.randomUUID();
+
+		// fires when the injected script sends a message
+		self.addEventListener(`ytlcf-message:${nonce}`, e => {
+			if (!('ytInitialData' in e.detail && 'ytcfg' in e.detail)) {
+				logger.error('Failed to get a message from the injected script.');
 				return;
 			}
-			try {
-				const { initialize } = await importingMain;
-				initialize({ target, detail });
-			} catch (err) {
-				logger.error('Failed to startup.\nCaused by:', err);
-			} finally {
+			logger.debug('Successfully received initialization message from the injected script:', e.detail);
+
+			const { INNERTUBE_API_KEY, INNERTUBE_CONTEXT, DATASYNC_ID } = e.detail.ytcfg;
+			sessionStorage.setItem('INNERTUBE_API_KEY', INNERTUBE_API_KEY);
+			sessionStorage.setItem('INNERTUBE_CONTEXT', JSON.stringify(INNERTUBE_CONTEXT));
+			sessionStorage.setItem('DATASYNC_ID', DATASYNC_ID);
+
+			const path = location.pathname.split('/').find(Boolean) || '';
+			const detail = {
+				pageType: ['watch', 'live'].includes(path) ? 'watch' : 'browse',
+				response: e.detail.ytInitialData,
+			};
+
+			let attempts = 0;
+			const timer = setInterval(() => {
+				const target = document.querySelector('ytd-app') || document.getElementById('player-container-id');
+				if (!target) {
+					logger.debug('Waiting for <ytd-app> element.');
+					if (attempts++ < MAX_ATTEMPTS) return;
+					else return clearInterval(timer);
+				}
+				importingMain.then(module => {
+					return module.initialize({ target, detail });
+				}).catch(err => {
+					logger.error('Failed to startup.\nCaused by:', err);
+				});
 				clearInterval(timer);
-			}
-		}, 1000);
-	});
+			}, 1000);
+		});
 
-	// fires when initialization is complete
-	self.addEventListener('ytlcf-ready', e => {
-		e.stopImmediatePropagation();
-		logger.info(`${manifest.name} is ready!`);
-	});
-});
-
-Promise.all([
-	preparingEventListener,
-	new Promise(resolve => {
+		return browser.runtime.sendMessage({
+			injection: 'init',
+			details: { nonce },
+		});
+	}).then(() => {
 		(function check() {
-			if (document.body) resolve(document.body);
-			else requestAnimationFrame(check);
-		})();
-	}),
-]).then(() => {
-	document.body.dataset.browser = 'browser_specific_settings' in manifest ? 'firefox' : 'chrome';
-
-	const script = document.createElement('script');
-	script.src = browser.runtime.getURL('./injections/init.mjs');
-	script.type = 'module';
-	document.body.appendChild(script);
-
-	document.addEventListener('yt-action', e => {
-		const name = e.detail?.actionName;
-		switch (name) {
-			case 'ytd-watch-player-data-changed': {
-				const ev = new CustomEvent(name);
-				self.documentPictureInPicture?.window?.dispatchEvent(ev);
-				checkAutoStart();
+			if (document.body) {
+				document.body.dataset.browser = 'browser_specific_settings' in manifest ? 'firefox' : 'chrome';
+				document.addEventListener('yt-action', e => {
+					const name = e.detail?.actionName;
+					switch (name) {
+						case 'ytd-watch-player-data-changed': {
+							const ev = new CustomEvent(name);
+							self.documentPictureInPicture?.window?.dispatchEvent(ev);
+							checkAutoStart();
+						}
+					}
+				});
+			} else {
+				requestAnimationFrame(check);
 			}
-		}
+		})();
+	}).catch(err => {
+		console.error(
+			'[%cYTLCF%c...<%c]',
+			'font-family:sans-serif;font-weight:700;padding-right:.33em',
+			'border-radius:.33em;background-color:red;color:white;font-family:sans-serif;font-weight:700;padding:0 .33em',
+			'',
+			'Failed to inject the initialization script.\nCaused by:', err
+		);
 	});
-}).catch(err => {
-	console.error(
-		'[%cYTLCF%c...<%c]',
-		'font-family:sans-serif;font-weight:700;padding-right:.33em',
-		'border-radius:.33em;background-color:red;color:white;font-family:sans-serif;font-weight:700;padding:0 .33em',
-		'',
-		'Failed to inject the initialization script.\nCaused by:', err
-	);
-});
-
-async function checkAutoStart() {
-	const storeUrl = browser.runtime.getURL('./modules/store.mjs');
-	const s = await import(storeUrl).then((/** @type {typeof import("./modules/store.mjs")} */ { store }) => store.load());
-	const enabled = [ false, s?.others?.mode_replay !== 1, true ].at(s?.others?.autostart ?? 0);
-	if (!enabled) return false;
-
-	const container = document.getElementById('show-hide-button');
-	if (!container || container.hidden) return false;
-
-	const button = container.querySelector('button');
-	if (button?.closest('#close-button')) return false;
-
-	button?.click();
-	return true;
-}
+})();

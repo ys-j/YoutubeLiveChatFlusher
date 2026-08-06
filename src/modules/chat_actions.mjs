@@ -91,9 +91,10 @@ export class ReplayActionBuffer {
  * Generates the replay chat actions from the response of InnerTube API.
  * @param {AbortSignal} signal signal for aborting fetching
  * @param {string} initialContinuation initial continuation token
+ * @param {string} [nonce] nonce for the custom event
  * @returns {AsyncGenerator<LiveChat.ReplayChatItemAction[]>} chat actions generator
  */
-export async function* getReplayChatActionsAsyncIterable(signal, initialContinuation) {
+export async function* getReplayChatActionsAsyncIterable(signal, initialContinuation, nonce) {
 	const url = new URL('https://www.youtube.com/youtubei/v1/live_chat/get_live_chat_replay');
 	url.searchParams.set('prettyPrint', 'false');
 
@@ -107,13 +108,13 @@ export async function* getReplayChatActionsAsyncIterable(signal, initialContinua
 	/** @type {SeekInfo | undefined} */
 	let seekInfo;
 	let controller = new AbortController();
-	signal.addEventListener('ytlcf-seek', e => {
+	signal.addEventListener(`ytlcf-seek:${nonce}`, e => {
 		seekInfo = /** @type {SeekInfo} */ (e.detail);
 		logger.debug(`Reference offset was set to ${formatMilliseconds(seekInfo.offset)}`);
 		controller.abort();
 	});
 	let playbackRate = 1;
-	signal.addEventListener('ytlcf-ratechange', e => {
+	signal.addEventListener(`ytlcf-ratechange:${nonce}`, e => {
 		playbackRate = e.detail?.rate || 1;
 		logger.debug(`Playback rate was set to x${playbackRate}`);
 	});

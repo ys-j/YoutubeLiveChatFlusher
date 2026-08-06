@@ -41,7 +41,7 @@
 	"options_ui": {
 		"page": "options/options.html"
 	},
-	"permissions": ["storage"],
+	"permissions": ["scripting", "storage"],
 	"web_accessible_resources": [
 		{
 			"resources": ["modules/*", "injections/*", "styles/*", "templates/*", "images/*"],

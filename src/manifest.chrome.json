@@ -38,7 +38,7 @@
 		"page": "options/options.html",
 		"open_in_tab": true
 	},
-	"permissions": ["storage"],
+	"permissions": ["scripting", "storage"],
 	"web_accessible_resources": [
 		{
 			"resources": ["modules/*", "injections/*", "styles/*", "templates/*", "images/*"],

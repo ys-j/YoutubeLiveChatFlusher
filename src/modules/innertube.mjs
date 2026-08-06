@@ -16,8 +16,11 @@ const defaultClient = {
  * @returns {Promise<Record<string, any>>} JSON object
  */
 export async function fetchInnerTube(url, payload, options = {}) {
-	const stored = sessionStorage.getItem('ytlcf-cfg');
-	const data = stored ? JSON.parse(stored) : null;
+	const data = {
+		INNERTUBE_API_KEY: sessionStorage.getItem('INNERTUBE_API_KEY') || '',
+		INNERTUBE_CONTEXT: JSON.parse(sessionStorage.getItem('INNERTUBE_CONTEXT') || '{}'),
+		DATASYNC_ID: sessionStorage.getItem('DATASYNC_ID') || '',
+	};
 	if (options.key && data) {
 		url.searchParams.set('key', data['INNERTUBE_API_KEY']);
 	}

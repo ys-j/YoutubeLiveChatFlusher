@@ -46,6 +46,19 @@ const events = {
 			if (notificationId === id) events.reloadTabs();
 		});
 	},
+
+	/**
+	 * Returns the nonce for the given tab ID.
+	 * @param {number} [tabId]
+	 * @returns {Promise<string>}
+	 */
+	async getNonce(tabId = -1) {
+		const key = `nonce:${tabId}`;
+		const store = await browser.storage.session.get(key);
+		const nonce = store?.[key];
+		if (typeof nonce === 'string') return nonce;
+		else throw 'Nonce not found';
+	}
 };
 
 browser.action.onClicked.addListener(() => {
@@ -59,6 +72,9 @@ browser.tabs.onActivated.addListener(async ({ tabId }) => {
 browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 	if (changeInfo.status !== 'complete') return;
 	await browser.action[tab.active && tab.url ? 'enable' : 'disable'](tabId);
+});
+browser.tabs.onRemoved.addListener(async tabId => {
+	await browser.storage.session.remove(`nonce:${tabId}`);
 });
 
 browser.runtime.onInstalled.addListener(async ({ reason, previousVersion }) => {
@@ -87,13 +103,13 @@ const performanceLogger = {
 	sum: 0,
 	/** @param {number} v */
 	write(v) {
+		this.buffer[this.offset++] = v;
+		this.sum += v;
 		if (this.offset >= this.buffer.length) {
 			logger.info('Average inference time (over 100 runs):', this.sum / this.buffer.length, 'ms');
 			this.offset = 0;
 			this.sum = 0;
 		}
-		this.buffer[this.offset++] = v;
-		this.sum += v;
 	},
 };
 
@@ -130,8 +146,46 @@ loadingStore.then(async s => {
 
 /** @import { YTLCFMessage } from "../types/messaging.d.ts" */
 // @ts-expect-error
-browser.runtime.onMessage.addListener(/** @type {YTLCFMessage.Callback} */ (msg, _sender, respond) => {
-	if ('detection' in msg) {
+browser.runtime.onMessage.addListener((/** @type {YTLCFMessage.Request.Any} */ msg, sender, respond) => {
+	const tabId = sender.tab?.id;
+	/** @type {(err: unknown) => void} */
+	const handleError = err => respond({ error: Error.isError(err) ? err.message : err });
+
+	if ('injection' in msg && tabId) {
+		const target = { tabId };
+		const loggingPath = browser.runtime.getURL('./modules/logging.mjs');
+		switch (msg.injection) {
+			case 'init': {
+				const { nonce } = msg.details;
+				Promise.all([
+					browser.storage.session.set({ [`nonce:${tabId}`]: nonce }),
+					import('./injections/init.mjs')
+				])
+				.then(([_, { func }]) => {
+					const args = [ loggingPath, nonce ];
+					return browser.scripting.executeScript({ target, func, args, world: 'MAIN' });
+				})
+				.then(respond)
+				.catch(handleError);
+				break;
+			}
+			case 'pip': {
+				Promise.all([
+					events.getNonce(tabId),
+					import('./injections/pip.mjs'),
+				])
+				.then(([nonce, { func }]) => {
+					const args = [ loggingPath, nonce, msg.details ];
+					return browser.scripting.executeScript({ target, func, args, world: 'MAIN' });
+				})
+				.then(respond)
+				.catch(handleError);
+				break;
+			}
+			default:
+				respond(null);
+		}
+	} else if ('detection' in msg) {
 		const { text } = msg.detection;
 		(detector.isReady ? Promise.resolve() : detector.ready())
 		.then(() => detector.detect(text))
@@ -148,7 +202,7 @@ browser.runtime.onMessage.addListener(/** @type {YTLCFMessage.Callback} */ (msg,
 	} else if ('mask' in msg && personDetectionEngine) {
 		const { mask: blob, width = 256, height = 144 } = msg;
 		const startTime = performance.now();
-		personDetectionEngine?.run({ args: [ blob ] })
+		personDetectionEngine.run({ args: [ blob ] })
 		.then(respond, err => {
 			logger.warn(err?.message ?? err);
 			const mask = { data: new Uint8Array(width * height), width, height, channel: 1 };
@@ -156,7 +210,7 @@ browser.runtime.onMessage.addListener(/** @type {YTLCFMessage.Callback} */ (msg,
 		})
 		.finally(() => performanceLogger.write(performance.now() - startTime));
 	} else if ('fire' in msg) {
-		events[msg.fire]().then(respond);
+		events[msg.fire](tabId).then(respond);
 	} else if ('request' in msg) {
 		const { url, options } = msg.request;
 		fetch(url, options)
@@ -165,7 +219,9 @@ browser.runtime.onMessage.addListener(/** @type {YTLCFMessage.Callback} */ (msg,
 			return res[msg.contentType]();
 		})
 		.then(data => respond({ data }))
-		.catch(err => respond({ error: Error.isError(err) ? err.message : err }));
+		.catch(handleError);
+	} else {
+		respond(void 0);
 	}
 	return true;
 });

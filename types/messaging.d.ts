@@ -4,10 +4,11 @@ declare module "webextension-polyfill" {
 	namespace Runtime {
 		interface Static {
 			onMessage: Events.Event<YTLCFMessage.Request.Any>;
+			sendMessage(message: YTLCFMessage.Request.Injection): Promise<void | YTLCFMessage.Response.Error>;
 			sendMessage(message: YTLCFMessage.Request.LanguageDetection): Promise<YTLCFMessage.Response.LanguageDetection>;
 			sendMessage(message: YTLCFMessage.Request.Translation): Promise<YTLCFMessage.Response.Translation>;
 			sendMessage(message: YTLCFMessage.Request.PersonDetection): Promise<YTLCFMessage.Response.PersonDetection>;
-			sendMessage(message: YTLCFMessage.Request.EventFire): Promise<YTLCFMessage.Response.EventFire>;
+			sendMessage(message: YTLCFMessage.Request.EventFire): Promise<string | undefined>;
 			sendMessage(message: YTLCFMessage.Request.BackgroundFetch<"arrayBuffer">): Promise<YTLCFMessage.Response.BackgroundFetch<ArrayBuffer> | YTLCFMessage.Response.Error>;
 			sendMessage(message: YTLCFMessage.Request.BackgroundFetch<"blob">): Promise<YTLCFMessage.Response.BackgroundFetch<Blob> | YTLCFMessage.Response.Error>;
 			sendMessage(message: YTLCFMessage.Request.BackgroundFetch<"bytes">): Promise<YTLCFMessage.Response.BackgroundFetch<Uint8Array> | YTLCFMessage.Response.Error>;
@@ -20,9 +21,22 @@ declare module "webextension-polyfill" {
 
 namespace YTLCFMessage {
 	namespace Request {
-		type Any = LanguageDetection | Translation | PersonDetection | EventFire | BackgroundFetch<AcceptableFetchType>;
+		type Any = Injection | LanguageDetection | Translation | PersonDetection | EventFire | BackgroundFetch<AcceptableFetchType>;
 		type AcceptableFetchType = "arrayBuffer" | "blob" | "bytes" | "json" | "text";
 
+		type Injection = {
+			injection: "init";
+			details: {
+				nonce: string;
+			};
+		} | {
+			injection: "pip";
+			details: {
+				cssUrl: string;
+				pipMarkerText: string;
+				hotkeys: Record<string, { key: string, alt: boolean }>;
+			};
+		};
 		type LanguageDetection = {
 			detection: {
 				text: string;
@@ -41,7 +55,7 @@ namespace YTLCFMessage {
 			height?: number;
 		};
 		type EventFire = {
-			fire: "reload" | "reloadTabs" | "openOptions";
+			fire: "reload" | "reloadTabs" | "openOptions" | "getNonce";
 		};
 		type BackgroundFetch<T extends AcceptableFetchType> = {
 			request: {
@@ -69,12 +83,6 @@ namespace YTLCFMessage {
 			error: string;
 		};
 	}
-
-	type Callback = (
-		message: Request.Any,
-		sender: Runtime.MessageSender,
-		respond: (response: unknown) => void,
-	) => true;
 }
 
 interface SegmentationResult {

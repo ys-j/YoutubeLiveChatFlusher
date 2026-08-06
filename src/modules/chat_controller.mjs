@@ -774,12 +774,14 @@ export class LiveChatController {
 
 	listen() {
 		this.unlisten();
-		document.addEventListener('ytlcf-action', () => {
-			document.addEventListener('ytlcf-action', e => {
-				this.#onAction(e);
-			}, { passive: true, signal: this.abortController.signal });
-		}, { once: true, passive: true });
-		this.listening = true;
+		browser.runtime.sendMessage({ fire: 'getNonce' }).then(nonce => {
+			document.addEventListener(`ytlcf-action:${nonce}`, () => {
+				document.addEventListener(`ytlcf-action:${nonce}`, e => {
+					this.#onAction(e);
+				}, { passive: true, signal: this.abortController.signal });
+			}, { once: true });
+			this.listening = true;
+		});
 
 		const video = this.player.querySelector('#movie_player video');
 		if (video) {

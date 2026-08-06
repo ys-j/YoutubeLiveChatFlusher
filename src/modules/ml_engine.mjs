@@ -1,4 +1,4 @@
-import { logger } from "./logging.mjs";
+import { logger } from './logging.mjs';
 
 /**
  * @typedef {"huggingface" | "mozilla"} ModelHub
