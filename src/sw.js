@@ -1,6 +1,9 @@
 import { logger } from './modules/logging.mjs';
 import { store } from './modules/store.mjs';
 
+import init from './injections/init.mjs';
+import initPip from './injections/pip.mjs';
+
 import { LanguageDetectionController, TranslatorController } from './modules/translator.mjs';
 import { MLEngineManager } from './modules/ml_engine.mjs';
 
@@ -149,7 +152,10 @@ loadingStore.then(async s => {
 browser.runtime.onMessage.addListener((/** @type {YTLCFMessage.Request.Any} */ msg, sender, respond) => {
 	const tabId = sender.tab?.id;
 	/** @type {(err: unknown) => void} */
-	const handleError = err => respond({ error: Error.isError(err) ? err.message : err });
+	const handleError = err => {
+		logger.error(err);
+		respond({ error: Error.isError(err) ? err.message : err });
+	};
 
 	if ('injection' in msg && tabId) {
 		const target = { tabId };
@@ -157,11 +163,9 @@ browser.runtime.onMessage.addListener((/** @type {YTLCFMessage.Request.Any} */ m
 		switch (msg.injection) {
 			case 'init': {
 				const { nonce } = msg.details;
-				Promise.all([
-					browser.storage.session.set({ [`nonce:${tabId}`]: nonce }),
-					import('./injections/init.mjs')
-				])
-				.then(([_, { func }]) => {
+				browser.storage.session.set({ [`nonce:${tabId}`]: nonce })
+				.then(() => {
+					const func = init;
 					const args = [ loggingPath, nonce ];
 					return browser.scripting.executeScript({ target, func, args, world: 'MAIN' });
 				})
@@ -170,11 +174,9 @@ browser.runtime.onMessage.addListener((/** @type {YTLCFMessage.Request.Any} */ m
 				break;
 			}
 			case 'pip': {
-				Promise.all([
-					events.getNonce(tabId),
-					import('./injections/pip.mjs'),
-				])
-				.then(([nonce, { func }]) => {
+				events.getNonce(tabId)
+				.then(nonce => {
+					const func = initPip;
 					const args = [ loggingPath, nonce, msg.details ];
 					return browser.scripting.executeScript({ target, func, args, world: 'MAIN' });
 				})

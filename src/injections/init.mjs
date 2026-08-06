@@ -2,7 +2,7 @@
  * @param {string} loggingPath
  * @param {string} nonce
  */
-export function func(loggingPath, nonce) {
+export default function (loggingPath, nonce) {
 	'use strict';
 	import(loggingPath).then((/** @type {typeof import('../modules/logging.mjs')} */ { logger }) => {
 		logger.debug('Initialization script was injected.');

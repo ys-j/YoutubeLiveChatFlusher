@@ -6,7 +6,7 @@
  * @param {string} params.pipMarkerText text to display in the pip marker
  * @param {Record<string, { key: string, alt: boolean }>} params.hotkeys JSON string of hotkeys to bind
  */
-export function func(loggingPath, nonce, params) {
+export default function (loggingPath, nonce, params) {
 	'use strict';
 	(function initPipMenu() {
 		const pipmenuTop = document.getElementById('yt-lcf-pp');
