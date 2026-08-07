@@ -2,7 +2,7 @@ import { logger } from './logging.mjs';
 import { store as s } from './store.mjs';
 import { isNotPip, loadTemplateDocument, getColorRGB } from './utils.mjs';
 
-import { LiveChatLayer, VideoSegmentationExecutor } from './chat_layer.mjs'
+import { LiveChatLayer, VideoFrameSegmenter } from './chat_layer.mjs'
 import { LiveChatPanel, WrapStyleDefinitions } from './chat_panel.mjs';
 import { LiveChatContextMenu } from './chat_contextmenu.mjs';
 import { LiveChatItemFactory, EmojiModeEnum, renderChatItem, updateMutedWordsList, updateTlExclusionList } from './chat_message.mjs';
@@ -33,7 +33,7 @@ export class LiveChatController {
 
 	/** @type {boolean} */
 	listening = false;
-	/** @type {?VideoSegmentationExecutor} */
+	/** @type {?VideoFrameSegmenter} */
 	segmenter = null;
 
 	/**
@@ -547,7 +547,7 @@ export class LiveChatController {
 		canvas.style.position = 'absolute';
 		canvas.style.visibility = 'hidden';
 
-		const [w, h] = VideoSegmentationExecutor.TARGET_SIZE;
+		const [w, h] = VideoFrameSegmenter.TARGET_SIZE;
 		[canvas.width, canvas.height] = [w, h];
 		const imageData = new ImageData(w, h);
 		const u32data = new Uint32Array(imageData.data.buffer);
@@ -555,7 +555,7 @@ export class LiveChatController {
 		const localBuffer = new Uint8ClampedArray(w * h);
 		let hasNew = false;
 
-		this.segmenter = new VideoSegmentationExecutor(async res => {
+		this.segmenter = new VideoFrameSegmenter(async res => {
 			const data = res?.at(0)?.mask?.data;
 			if (!data) return;
 			localBuffer.set(data);
@@ -563,7 +563,7 @@ export class LiveChatController {
 		});
 		this.segmenter.observe(video, this.layer);
 
-		(async function renderLoop() {
+		(async function renderMask() {
 			if (hasNew) {
 				hasNew = false;
 				const ALPHA_MASK = 0xFF000000;
@@ -594,13 +594,17 @@ export class LiveChatController {
 				ctx.transferFromImageBitmap(bitmap);
 				bitmap.close();
 			}
-			requestAnimationFrame(renderLoop);
+			requestAnimationFrame(renderMask);
 		})();
 
 		const le = this.layer.element;
 		le.style.maskImage = `linear-gradient(#fff, #fff), -moz-element(#${canvas.id})`;
 		le.style.maskMode = 'luminance';
-		le.style.maskPosition = `0px 0px, ${video.style.left} ${video.style.top}`;
+		const maskPos = {
+			x: `calc(${video.style.left} - ${le.style.left || '0px'})`,
+			y: `calc(${video.style.top} - ${le.style.top || '0px'})`,
+		};
+		le.style.maskPosition = `0px 0px, ${maskPos.x} ${maskPos.y}`;
 		le.style.maskSize = `100% 100%, ${video.style.width} ${video.style.height}`;
 		le.style.maskRepeat = 'no-repeat, no-repeat';
 		le.style.maskComposite = 'exclude';
@@ -775,11 +779,12 @@ export class LiveChatController {
 	listen() {
 		this.unlisten();
 		browser.runtime.sendMessage({ fire: 'getNonce' }).then(nonce => {
+			// Skip first event to avoid flushing too many messages
 			document.addEventListener(`ytlcf-action:${nonce}`, () => {
 				document.addEventListener(`ytlcf-action:${nonce}`, e => {
 					this.#onAction(e);
-				}, { passive: true, signal: this.abortController.signal });
-			}, { once: true });
+				}, { signal: this.abortController.signal });
+			}, { once: true, signal: this.abortController.signal });
 			this.listening = true;
 		});
 

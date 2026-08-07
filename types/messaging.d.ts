@@ -7,7 +7,7 @@ declare module "webextension-polyfill" {
 			sendMessage(message: YTLCFMessage.Request.Injection): Promise<void | YTLCFMessage.Response.Error>;
 			sendMessage(message: YTLCFMessage.Request.LanguageDetection): Promise<YTLCFMessage.Response.LanguageDetection>;
 			sendMessage(message: YTLCFMessage.Request.Translation): Promise<YTLCFMessage.Response.Translation>;
-			sendMessage(message: YTLCFMessage.Request.PersonDetection): Promise<YTLCFMessage.Response.PersonDetection>;
+			sendMessage(message: YTLCFMessage.Request.PersonDetection): Promise<YTLCFMessage.Response.PersonDetection | YTLCFMessage.Response.Error>;
 			sendMessage(message: YTLCFMessage.Request.EventFire): Promise<string | undefined>;
 			sendMessage(message: YTLCFMessage.Request.BackgroundFetch<"arrayBuffer">): Promise<YTLCFMessage.Response.BackgroundFetch<ArrayBuffer> | YTLCFMessage.Response.Error>;
 			sendMessage(message: YTLCFMessage.Request.BackgroundFetch<"blob">): Promise<YTLCFMessage.Response.BackgroundFetch<Blob> | YTLCFMessage.Response.Error>;
@@ -51,8 +51,6 @@ namespace YTLCFMessage {
 		};
 		type PersonDetection = {
 			mask: Blob
-			width?: number;
-			height?: number;
 		};
 		type EventFire = {
 			fire: "reload" | "reloadTabs" | "openOptions" | "getNonce";
@@ -80,7 +78,10 @@ namespace YTLCFMessage {
 			data: T;
 		};
 		type Error = {
-			error: string;
+			error: {
+				name?: string;
+				message: string;
+			};
 		};
 	}
 }

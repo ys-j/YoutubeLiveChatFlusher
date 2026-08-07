@@ -33,16 +33,16 @@
 
 		// fires when the injected script sends a message
 		self.addEventListener(`ytlcf-message:${nonce}`, e => {
-			if (!('ytInitialData' in e.detail && 'ytcfg' in e.detail)) {
+			const { INNERTUBE_API_KEY, INNERTUBE_CONTEXT, DATASYNC_ID } = e.detail?.ytcfg || {};
+			if (!e.detail?.ytInitialData || !INNERTUBE_API_KEY || !INNERTUBE_CONTEXT) {
 				logger.error('Failed to get a message from the injected script.');
 				return;
 			}
 			logger.debug('Successfully received initialization message from the injected script:', e.detail);
 
-			const { INNERTUBE_API_KEY, INNERTUBE_CONTEXT, DATASYNC_ID } = e.detail.ytcfg;
 			sessionStorage.setItem('INNERTUBE_API_KEY', INNERTUBE_API_KEY);
 			sessionStorage.setItem('INNERTUBE_CONTEXT', JSON.stringify(INNERTUBE_CONTEXT));
-			sessionStorage.setItem('DATASYNC_ID', DATASYNC_ID);
+			sessionStorage.setItem('DATASYNC_ID', DATASYNC_ID || '');
 
 			const path = location.pathname.split('/').find(Boolean) || '';
 			const detail = {
@@ -65,7 +65,7 @@
 				});
 				clearInterval(timer);
 			}, 1000);
-		});
+		}, { once: true });
 
 		return browser.runtime.sendMessage({
 			injection: 'init',

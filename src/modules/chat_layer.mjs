@@ -48,7 +48,11 @@ export class LiveChatLayer {
 
 			const video = this.element.parentElement?.querySelector('video');
 			if (video) {
-				this.element.style.maskPosition = `0px 0px, ${video.style.left} ${video.style.top}`;
+				const maskPos = {
+					x: `calc(${video.style.left} - ${this.element.style.left || '0px'})`,
+					y: `calc(${video.style.top} - ${this.element.style.top || '0px'})`,
+				};
+				this.element.style.maskPosition = `0px 0px, ${maskPos.x} ${maskPos.y}`;
 				this.element.style.maskSize = `100% 100%, ${video.style.width} ${video.style.height}`;
 			}
 		});
@@ -205,13 +209,15 @@ export class LiveChatLayer {
  * @typedef {(result: SegmentInfo[] | undefined) => void} SegmentationCallback
  */
 
-export class VideoSegmentationExecutor {
+export class VideoFrameSegmenter {
 	/** @type {[number, number]} */
 	static TARGET_SIZE = [256, 144];
+	static ERROR_ATTEMPTS = 10;
 
 	/** @type {SegmentationCallback} */ #callback;
 	/** @type {AbortController} */ #abortController;
 	/** @type {number} */ #reqId = 0;
+	/** @type {number} */ #errorCount = 0;
 
 	/**
 	 * @param {SegmentationCallback} callback
@@ -219,7 +225,7 @@ export class VideoSegmentationExecutor {
 	constructor(callback) {
 		this.#callback = callback;
 		this.#abortController = new AbortController();
-		this.offscreen = new OffscreenCanvas(...VideoSegmentationExecutor.TARGET_SIZE);
+		this.offscreen = new OffscreenCanvas(...VideoFrameSegmenter.TARGET_SIZE);
 		this.context = this.offscreen.getContext('2d');
 	}
 
@@ -227,15 +233,17 @@ export class VideoSegmentationExecutor {
 	 * @param {HTMLVideoElement} video
 	 */
 	async #sendFrame(video) {
-		const [width, height] = VideoSegmentationExecutor.TARGET_SIZE;
+		const [width, height] = VideoFrameSegmenter.TARGET_SIZE;
 		try {
 			this.context?.drawImage(video, 0, 0, width, height);
 			const mask = await this.offscreen.convertToBlob({ type: 'image/webp', quality: .3 });
 			const result = await browser.runtime.sendMessage({ mask });
-			if (result) return result;
-			else throw 'No result received from the person detector.';
-		} catch (cause) {
-			throw new Error('Failed to transceive a video frame to the person detector.', { cause });
+			if (result && typeof result === 'object' && 'error' in result) throw result.error;
+			else return result;
+		} catch (err) {
+			// @ts-expect-error
+			const { name, message } = err;
+			throw new DOMException(message, name);
 		}
 	}
 
@@ -245,6 +253,16 @@ export class VideoSegmentationExecutor {
 	 */
 	observe(video, layer) {
 		let inProgress = false;
+		/** @type {(err: unknown) => boolean} */
+		const isFatalError = err => {
+			const patterns = [/due to previous failure/];
+			if (Error.isError(err)) {
+				const names = ['NotAllowedError', 'NotSupportedError', 'OperationError', 'SecurityError', 'TypeError'];
+				return names.includes(err.name) || patterns.some(pat => pat.test(err.message));
+			} else {
+				return patterns.some(pat => pat.test(`${err}`));
+			}
+		};
 		const canProcess = () => {
 			const player = /** @type {?HTMLElement} */ (video.closest('#movie_player'));
 			return (
@@ -265,10 +283,14 @@ export class VideoSegmentationExecutor {
 				inProgress = true;
 				this.#sendFrame(video).then(result => {
 					this.#callback(result);
-					inProgress = false;
+					this.#errorCount = 0;
 				}).catch(reason => {
 					logger.warn(reason);
-					this.disconnect(video);
+					if (isFatalError(reason) || this.#errorCount++ >= VideoFrameSegmenter.ERROR_ATTEMPTS) {
+						this.disconnect(video);
+					}
+				}).finally(() => {
+					inProgress = false;
 				});
 			}
 			this.#reqId = video.requestVideoFrameCallback(frame);

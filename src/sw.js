@@ -154,7 +154,12 @@ browser.runtime.onMessage.addListener((/** @type {YTLCFMessage.Request.Any} */ m
 	/** @type {(err: unknown) => void} */
 	const handleError = err => {
 		logger.error(err);
-		respond({ error: Error.isError(err) ? err.message : err });
+		if (Error.isError(err)) {
+			const { name, message } = err;
+			respond({ error: { name, message } })
+		} else {
+			respond({ error: { message: `${err}` } });
+		}
 	};
 
 	if ('injection' in msg && tabId) {
@@ -201,18 +206,17 @@ browser.runtime.onMessage.addListener((/** @type {YTLCFMessage.Request.Any} */ m
 		)
 		.then(sl => translationController?.translate(text, tl, sl))
 		.then(respond);
-	} else if ('mask' in msg && personDetectionEngine) {
-		const { mask: blob, width = 256, height = 144 } = msg;
+	} else if ('mask' in msg) {
+		const { mask: blob } = msg;
 		const startTime = performance.now();
-		personDetectionEngine.run({ args: [ blob ] })
-		.then(respond, err => {
-			logger.warn(err?.message ?? err);
-			const mask = { data: new Uint8Array(width * height), width, height, channel: 1 };
-			respond([ { label: null, score: null, mask } ]);
-		})
+		(
+			personDetectionEngine?.run({ args: [ blob ] })
+			|| Promise.reject(new DOMException('Person detector is not defined.', 'NotSupportedError'))
+		)
+		.then(respond, handleError)
 		.finally(() => performanceLogger.write(performance.now() - startTime));
 	} else if ('fire' in msg) {
-		events[msg.fire](tabId).then(respond);
+		events[msg.fire](tabId).then(respond).catch(handleError);
 	} else if ('request' in msg) {
 		const { url, options } = msg.request;
 		fetch(url, options)

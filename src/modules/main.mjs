@@ -129,18 +129,22 @@ export async function initialize(e) {
 	}, { passive: true });
 }
 
+const toggle = {
+	get element() { return state.controller?.player?.querySelector('#yt-lcf-cb'); },
+	disable() { this.element?.setAttribute('aria-disabled', 'true'); },
+	enable() { this.element?.setAttribute('aria-disabled', 'false'); },
+};
+const startListening = () => {
+	state.controller?.listen();
+	toggle.enable();
+};
+
 /**
  * @param {string} pageType
  * @param {any} response
  */
 async function onYtNavigateFinish(pageType, response) {
 	if (pageType !== 'watch') return;
-
-	const toggle = {
-		element: state.controller?.player?.querySelector('#yt-lcf-cb'),
-		disable() { this.element?.setAttribute('aria-disabled', 'true'); },
-		enable() { this.element?.setAttribute('aria-disabled', 'false'); },
-	};
 	toggle.disable();
 
 	/** @type {?HTMLVideoElement | undefined} */
@@ -173,10 +177,7 @@ async function onYtNavigateFinish(pageType, response) {
 	switch (modeValue) {
 		case FetchingModeEnum.DEPENDENT:
 			logger.info(`Running in dependent mode for ${videoType} (${info.videoId}):`, info.title);
-			document.addEventListener(`ytlcf-start:${nonce}`, () => {
-				state.controller?.listen();
-				toggle.enable();
-			});
+			document.addEventListener(`ytlcf-start:${nonce}`, startListening, { once: true });
 			break;
 		case FetchingModeEnum.MOBILE: {
 			const desktopContent = await browser.runtime.sendMessage({
@@ -219,8 +220,7 @@ async function onYtNavigateFinish(pageType, response) {
 			initialContinuation ||= liveChatRenderer?.continuations?.at(0)?.reloadContinuationData?.continuation;
 			if (initialContinuation) {
 				logger.info(`Running in independent mode for ${videoType} (${info.videoId}):`, info.title);
-				state.controller?.listen();
-				toggle.enable();
+				startListening();
 				if (state.isLive) {
 					const generator = getLiveChatActionsAsyncIterable(state.abortController.signal, initialContinuation);
 					for await (const actions of generator) {
