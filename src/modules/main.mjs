@@ -171,6 +171,10 @@ async function onYtNavigateFinish(pageType, response) {
 	const modeValue = state.device === 'mobile' ? FetchingModeEnum.MOBILE : store.others?.[`mode_${videoType}`] ?? FetchingModeEnum.INDEPENDENT;
 
 	const nonce = await browser.runtime.sendMessage({ fire: 'getNonce' });
+	if (typeof nonce !== 'string') {
+		const { name = 'NotFoundError', message } = nonce?.error ?? {};
+		throw new DOMException(message, name);
+	}
 
 	/** @type {?string} */
 	let initialContinuation = null;

@@ -216,18 +216,22 @@ browser.runtime.onMessage.addListener((/** @type {YTLCFMessage.Request.Any} */ m
 		.then(respond, handleError)
 		.finally(() => performanceLogger.write(performance.now() - startTime));
 	} else if ('fire' in msg) {
-		events[msg.fire](tabId).then(respond).catch(handleError);
+		if (Object.hasOwn(events, msg.fire)) {
+			events[msg.fire](tabId).then(respond).catch(handleError);
+		} else {
+			handleError(new DOMException(`Unknown event: ${msg.fire}`, 'NotSupportedError'));
+		}
 	} else if ('request' in msg) {
 		const { url, options } = msg.request;
 		fetch(url, options)
 		.then(res => {
-			if (!res.ok) throw `Request failed: ${res.status} ${res.statusText}`;
+			if (!res.ok) throw new DOMException(`${res.status} ${res.statusText}`, 'NetworkError');
 			return res[msg.contentType]();
 		})
 		.then(data => respond({ data }))
 		.catch(handleError);
 	} else {
-		respond(void 0);
+		handleError(new DOMException(`Unknown message type: ${JSON.stringify(msg)}`, 'NotSupportedError'));
 	}
 	return true;
 });
