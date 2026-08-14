@@ -305,12 +305,7 @@
 		color-scheme: only light;
 	}
 	[data-browser="firefox"] & option {
-		:root[dark] & {
-			color: currentColor;
-		}
-		:root:not([dark]) & {
-			color: initial;
-		}
+		color: currentColor;
 	}
 	input[type="text"], input[type="url"], textarea {
 		background-color: inherit;
@@ -361,6 +356,7 @@
 	button{
 		border: 0;
 		cursor: pointer;
+		font-family: inherit;
 		&[id|="ytlcf-config"] {
 			display: inline-flex;
 		}
