@@ -4,7 +4,7 @@
  * @param {object} params parameters for the script
  * @param {string} params.cssUrl URL of the CSS file to inject
  * @param {string} params.pipMarkerText text to display in the pip marker
- * @param {Record<string, { key: string, alt: boolean }>} params.hotkeys JSON string of hotkeys to bind
+ * @param {typeof import("../modules/store.mjs").DEFAULT_CONFIG.hotkeys} params.hotkeys JSON string of hotkeys to bind
  */
 export default function (loggingPath, nonce, params) {
 	'use strict';

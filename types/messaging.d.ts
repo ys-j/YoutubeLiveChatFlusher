@@ -1,4 +1,5 @@
 import "webextension-polyfill";
+import { DEFAULT_CONFIG } from "../src/modules/store.mjs";
 
 declare module "webextension-polyfill" {
 	namespace Runtime {
@@ -34,7 +35,7 @@ namespace YTLCFMessage {
 			details: {
 				cssUrl: string;
 				pipMarkerText: string;
-				hotkeys: Record<string, { key: string, alt: boolean }>;
+				hotkeys: typeof DEFAULT_CONFIG.hotkeys;
 			};
 		};
 		type LanguageDetection = {
