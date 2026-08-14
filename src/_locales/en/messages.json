@@ -173,14 +173,17 @@
 	"direction_left_to_right": {
 		"message": "Left to right"
 	},
-	"layerCSS": {
-		"message": "Layer CSS"
-	},
-	"adjustLayerSize": {
-		"message": "Adjust layer size"
+	"layerSize": {
+		"message": "Layer Size"
 	},
 	"fitLayerSize": {
-		"message": "Fit layer to video size"
+		"message": "Fit to video size"
+	},
+	"adjustLayerSize": {
+		"message": "Manual Adjustment"
+	},
+	"layerCSS": {
+		"message": "Layer CSS"
 	},
 	"normal": {
 		"message": "Normal"

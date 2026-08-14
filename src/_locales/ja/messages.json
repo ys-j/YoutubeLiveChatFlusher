@@ -173,14 +173,17 @@
 	"direction_left_to_right": {
 		"message": "左から右へ"
 	},
-	"layerCSS": {
-		"message": "レイヤCSS"
-	},
-	"adjustLayerSize": {
-		"message": "レイヤサイズ変更"
+	"layerSize": {
+		"message": "レイヤサイズ"
 	},
 	"fitLayerSize": {
-		"message": "レイヤサイズを動画に合わせる"
+		"message": "動画に合わせる"
+	},
+	"adjustLayerSize": {
+		"message": "マニュアル設定"
+	},
+	"layerCSS": {
+		"message": "レイヤCSS"
 	},
 	"normal": {
 		"message": "通常"
