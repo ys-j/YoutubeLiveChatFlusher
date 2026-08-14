@@ -93,16 +93,6 @@ export function layoutChatItem(el, cache, mode = 'dense') {
 
 	el.style.setProperty('--yt-lcf-translate-x', `-${hw + cw}px`);
 
-	const body = /** @type {?HTMLElement} */ (el.lastElementChild);
-	const content = body?.textContent;
-	if (content) {
-		browser.i18n.detectLanguage(content).then(res => {
-			if (res.isReliable) {
-				body.lang = res.languages[0].language;
-			}
-		});
-	}
-
 	const dir = s.others.direction & 1 ? 'bottom' : 'top';
 	if (ch >= hh) {
 		el.style[dir] = '0px';
