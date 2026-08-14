@@ -449,45 +449,52 @@ export class LiveChatPanel {
 		if (!ctrls) return;
 		if (elem.tagName === 'SELECT') {
 			const val = Number.parseInt(elem.value, 10);
-			if (name in s.others) {
-				// @ts-expect-error
-				s.others[name] = val;
-				switch (name) {
-					case 'emoji': {
-						le.setAttribute('data-emoji', Object.keys(EmojiModeEnum)[val].toLowerCase());
-						layer.updateCurrentItemStyle();
-						break;
+			switch (name) {
+				case 'translation': {
+					const prefix = /** @type {HTMLInputElement} */ (ctrls.prefix_lang);
+					const suffix = /** @type {HTMLInputElement} */ (ctrls.suffix_original);
+					prefix.disabled = suffix.disabled = val === 0;
+					s.translation.targetIndex = val;
+					le.classList[prefix.checked ? 'add' : 'remove']('prefix_lang');
+					const cb = /** @type {NodeListOf<HTMLInputElement>} */ (ctrls.except_lang);
+					if (val) {
+						const i = Math.abs(val) - 1;
+						cb[i].checked = true;
+						for (let j = 0; j < cb.length; j++) cb[j].disabled = i === j;
+						s.translation.exceptionFlag |= 1 << i;
+					} else {
+						for (const e of cb) e.disabled = true;
 					}
-					case 'wrap': {
-						const wrapStyle = WrapStyleDefinitions[val];
-						le.style.setProperty('--yt-lcf-message-hyphens', wrapStyle.hyphens);
-						le.style.setProperty('--yt-lcf-message-word-break', wrapStyle.wordBreak);
-						le.style.setProperty('--yt-lcf-message-white-space', wrapStyle.whiteSpace);
-						le.style.setProperty('--yt-lcf-max-width', s.styles.max_width);
-						layer.updateCurrentItemStyle();
-						break;
+					break;
+				}
+				case 'muted_words_mode': {
+					const mode = /** @type {MutedWordModeEnum} */ (val);
+					s.mutedWords.mode = mode;
+					const replacement = /** @type {HTMLInputElement} */ (ctrls.muted_words_replacement);
+					replacement.title = mode === MutedWordModeEnum.CHAR ? browser.i18n.getMessage('tooltip_mutedWordsReplacement') : '';
+					break;
+				}
+				default: {
+					if (!(name in s.others)) break;
+					// @ts-expect-error
+					s.others[name] = val;
+					switch (name) {
+						case 'emoji': {
+							le.setAttribute('data-emoji', Object.keys(EmojiModeEnum)[val].toLowerCase());
+							layer.updateCurrentItemStyle();
+							break;
+						}
+						case 'wrap': {
+							const wrapStyle = WrapStyleDefinitions[val];
+							le.style.setProperty('--yt-lcf-message-hyphens', wrapStyle.hyphens);
+							le.style.setProperty('--yt-lcf-message-word-break', wrapStyle.wordBreak);
+							le.style.setProperty('--yt-lcf-message-white-space', wrapStyle.whiteSpace);
+							le.style.setProperty('--yt-lcf-max-width', s.styles.max_width);
+							layer.updateCurrentItemStyle();
+							break;
+						}
 					}
 				}
-			} else if (name === 'translation') {
-				const prefix = /** @type {HTMLInputElement} */ (ctrls.prefix_lang);
-				const suffix = /** @type {HTMLInputElement} */ (ctrls.suffix_original);
-				prefix.disabled = suffix.disabled = val === 0;
-				s.translation.targetIndex = val;
-				le.classList[prefix.checked ? 'add' : 'remove']('prefix_lang');
-				const cb = /** @type {NodeListOf<HTMLInputElement>} */ (ctrls.except_lang);
-				if (val) {
-					const i = Math.abs(val) - 1;
-					cb[i].checked = true;
-					for (let j = 0; j < cb.length; j++) cb[j].disabled = i === j;
-					s.translation.exceptionFlag |= 1 << i;
-				} else {
-					for (const e of cb) e.disabled = true;
-				}
-			} else if (name === 'muted_words_mode') {
-				const mode = /** @type {MutedWordModeEnum} */ (val);
-				s.mutedWords.mode = mode;
-				const replacement = /** @type {HTMLInputElement} */ (ctrls.muted_words_replacement);
-				replacement.title = mode === MutedWordModeEnum.CHAR ? browser.i18n.getMessage('tooltip_mutedWordsReplacement') : '';
 			}
 		} else if (elem.classList.contains('styles') && name) {
 			// @ts-expect-error

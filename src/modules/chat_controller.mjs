@@ -305,23 +305,28 @@ export class LiveChatController {
 		const le = this.layer.element;
 		const ctrls = form.elements;
 		for (const select of form.querySelectorAll('select')) {
-			if (select.name in s.others) {
-				const name = /** @type {keyof typeof s.others} */ (select.name);
-				const val = s.others[name];
-				select.selectedIndex = val;
-				if (name === 'emoji') {
-					le.setAttribute('data-emoji', Object.keys(EmojiModeEnum)[val].toLowerCase());
-				} else if (name === 'wrap') {
-					const wrapStyle = WrapStyleDefinitions[val];
-					le.style.setProperty('--yt-lcf-message-hyphens', wrapStyle.hyphens);
-					le.style.setProperty('--yt-lcf-message-word-break', wrapStyle.wordBreak);
-					le.style.setProperty('--yt-lcf-message-white-space', wrapStyle.whiteSpace);
-					le.style.setProperty('--yt-lcf-max-width', s.styles.max_width);
+			switch (select.name) {
+				case 'muted_words_mode':
+					select.selectedIndex = s.mutedWords.mode;
+					break;
+				case 'translation':
+					select.selectedIndex = s.translation.targetIndex;
+					break;
+				default: {
+					if (!(select.name in s.others)) break;
+					const name = /** @type {keyof typeof s.others} */ (select.name);
+					const val = s.others[name];
+					select.selectedIndex = val;
+					if (name === 'emoji') {
+						le.setAttribute('data-emoji', Object.keys(EmojiModeEnum)[val].toLowerCase());
+					} else if (name === 'wrap') {
+						const wrapStyle = WrapStyleDefinitions[val];
+						le.style.setProperty('--yt-lcf-message-hyphens', wrapStyle.hyphens);
+						le.style.setProperty('--yt-lcf-message-word-break', wrapStyle.wordBreak);
+						le.style.setProperty('--yt-lcf-message-white-space', wrapStyle.whiteSpace);
+						le.style.setProperty('--yt-lcf-max-width', s.styles.max_width);
+					}
 				}
-			} else if (select.name === 'muted_words_mode') {
-				select.selectedIndex = s.mutedWords.mode;
-			} else if (select.name === 'translation') {
-				select.selectedIndex = s.translation.targetIndex;
 			}
 		}
 		const checkboxes = /** @type {NodeListOf<HTMLInputElement>} */ (form.querySelectorAll('input[type="checkbox"]'));
