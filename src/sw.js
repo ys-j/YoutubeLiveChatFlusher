@@ -152,7 +152,7 @@ browser.runtime.onMessage.addListener((/** @type {YTLCFMessage.Request.Any} */ m
 	const tabId = sender.tab?.id;
 	/** @type {(err: unknown) => void} */
 	const handleError = err => {
-		logger.error(err);
+		logger.warn(err);
 		if (Error.isError(err)) {
 			const { name, message } = err;
 			respond({ error: { name, message } })
