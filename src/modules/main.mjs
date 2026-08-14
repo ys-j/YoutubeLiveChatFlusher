@@ -1,6 +1,7 @@
 import { logger } from './logging.mjs';
 import { store } from './store.mjs';
-import { isAdShowing, getText, getValueByJSONPointer } from './utils.mjs';
+import { getText, getValueByJSONPointer } from './utils.mjs';
+import { isAdShowing } from './dom_utils.mjs';
 
 import { LiveChatController } from './chat_controller.mjs';
 import { ReplayActionBuffer, getReplayChatActionsAsyncIterable, getLiveChatActionsAsyncIterable } from './chat_actions.mjs';

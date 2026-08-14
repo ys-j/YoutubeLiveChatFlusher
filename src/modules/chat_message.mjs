@@ -1,7 +1,8 @@
 import { logger } from './logging.mjs';
 import { fetchInnerTube } from './innertube.mjs';
 import { store as s } from './store.mjs';
-import { getColorRGB, getText, loadTemplateDocument, refreshWordsList } from './utils.mjs';
+import { getText, getColorRGB } from './utils.mjs';
+import { loadTemplateDocument, refreshWordsList } from './dom_utils.mjs';
 
 const AuthorType = Object.freeze({
 	NORMAL: 'normal',

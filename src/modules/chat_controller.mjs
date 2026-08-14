@@ -1,6 +1,7 @@
 import { logger } from './logging.mjs';
 import { store as s } from './store.mjs';
-import { isNotPip, loadTemplateDocument, getColorRGB } from './utils.mjs';
+import { getColorRGB } from './utils.mjs';
+import { isNotPip, loadTemplateDocument } from './dom_utils.mjs';
 
 import { LiveChatLayer, VideoFrameSegmenter } from './chat_layer.mjs'
 import { LiveChatPanel, WrapStyleDefinitions } from './chat_panel.mjs';

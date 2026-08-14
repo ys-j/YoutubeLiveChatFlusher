@@ -1,5 +1,6 @@
 import { store as s } from './store.mjs';
-import { isNotPip, loadTemplateDocument } from './utils.mjs';
+import { toPascalCase } from './utils.mjs';
+import { isNotPip, loadTemplateDocument } from './dom_utils.mjs';
 
 import { EmojiModeEnum, MutedWordModeEnum, updateMutedWordsList } from './chat_message.mjs';
 
@@ -110,7 +111,7 @@ export class LiveChatPanel {
 		/** @param {string[]} c */
 		const createButtonClassList = (...c) => {
 			const base = 'ytSpecButtonShapeNext';
-			const list = c.map(v => base + v.replace(/(?:^|-+)(\w)/g, (_, p1) => p1.toUpperCase()));
+			const list = c.map(v => base + toPascalCase(v));
 			list.unshift(base);
 			return list.join(' ');
 		};

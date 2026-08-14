@@ -1,4 +1,4 @@
-import { loadTemplateDocument } from './utils.mjs';
+import { loadTemplateDocument } from './dom_utils.mjs';
 
 const menuFns = {
 	/**

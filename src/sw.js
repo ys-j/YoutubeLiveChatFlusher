@@ -1,5 +1,6 @@
 import { logger } from './modules/logging.mjs';
 import { store } from './modules/store.mjs';
+import { toPascalCase } from './modules/utils.mjs';
 
 import init from './injections/init.mjs';
 import initPip from './injections/pip.mjs';
@@ -37,13 +38,11 @@ const events = {
 		const canNotify = await browser.permissions.contains({ permissions: ['notifications'] });
 		if (!canNotify) return;
 
-		/** @type {(str: string) => string} */
-		const toUpperCamel = str => str.toLowerCase().replace(/(?:^|_+)(\w)/g, (_, m) => m.toUpperCase());
 		const id = await browser.notifications.create({
 			type: 'basic',
 			title: manifest.name,
 			iconUrl: manifest.icons?.['128'],
-			message: browser.i18n.getMessage(`notification_title_on${toUpperCamel(reason)}`, [manifest.version]),
+			message: browser.i18n.getMessage(`notification_title_on${toPascalCase(reason)}`, [manifest.version]),
 		});
 		browser.notifications.onClicked.addListener((notificationId) => {
 			if (notificationId === id) events.reloadTabs();

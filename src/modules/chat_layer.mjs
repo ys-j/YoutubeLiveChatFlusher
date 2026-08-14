@@ -1,6 +1,6 @@
 import { logger } from './logging.mjs';
 import { store as s } from './store.mjs';
-import { isAdShowing } from './utils.mjs';
+import { isAdShowing } from './dom_utils.mjs';
 
 export class LiveChatLayer {
 	/** @type {import("./chat_controller.mjs").LiveChatController} */
