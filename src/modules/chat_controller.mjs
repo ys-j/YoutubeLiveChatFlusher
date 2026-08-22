@@ -607,8 +607,8 @@ export class LiveChatController {
 		le.style.maskImage = `linear-gradient(#fff, #fff), -moz-element(#${canvas.id})`;
 		le.style.maskMode = 'luminance';
 		const maskPos = {
-			x: `calc(${video.style.left} - ${le.style.left || '0px'})`,
-			y: `calc(${video.style.top} - ${le.style.top || '0px'})`,
+			x: `calc(${video.style.left || '0px'} - ${le.style.left || '0px'})`,
+			y: `calc(${video.style.top || '0px'} - ${le.style.top || '0px'})`,
 		};
 		le.style.maskPosition = `0px 0px, ${maskPos.x} ${maskPos.y}`;
 		le.style.maskSize = `100% 100%, ${video.style.width} ${video.style.height}`;
@@ -785,6 +785,10 @@ export class LiveChatController {
 	listen() {
 		this.unlisten();
 		browser.runtime.sendMessage({ fire: 'getNonce' }).then(nonce => {
+			if (typeof nonce !== 'string') {
+				const { name = 'NotFoundError', message } = nonce.error ?? {};
+				throw new DOMException(message, name);
+			}
 			// Skip first event to avoid flushing too many messages
 			document.addEventListener(`ytlcf-action:${nonce}`, () => {
 				document.addEventListener(`ytlcf-action:${nonce}`, e => {
@@ -792,7 +796,7 @@ export class LiveChatController {
 				}, { signal: this.abortController.signal });
 			}, { once: true, signal: this.abortController.signal });
 			this.listening = true;
-		});
+		}).catch(logger.error);
 
 		const video = this.player.querySelector('#movie_player video');
 		if (video) {

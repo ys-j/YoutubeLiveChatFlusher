@@ -56,10 +56,10 @@ const events = {
 	 */
 	async getNonce(tabId = -1) {
 		const key = `nonce:${tabId}`;
-		const store = await browser.storage.session.get(key);
-		const nonce = store?.[key];
+		const record = await browser.storage.session.get(key);
+		const nonce = record?.[key];
 		if (typeof nonce === 'string') return nonce;
-		else throw 'Nonce not found';
+		else throw new DOMException('Nonce not found', 'NotFoundError');
 	}
 };
 
@@ -96,15 +96,27 @@ const detector = new LanguageDetectionController();
 /** @type {?TranslatorController} */
 let translationController = null;
 
-/** @type {?MLEngineManager} */
-let personDetectionEngine = null;
+/** @type {MLEngineManager | { run: () => Promise<import("../types/messaging.d.ts").SegmentationResult[]> }} */
+let personDetectionEngine = {
+	async run() {
+		const width = 256, height = 144;
+		const data = new Uint8Array(width * height);
+		const mask = { data, width, height, channel: 1 };
+		return [ { label: null, score: null, mask } ];
+	}
+};
 
 const performanceLogger = {
 	buffer: new Uint32Array(100),
-	offset: 0,
+	// skip first inference
+	offset: -1,
 	sum: 0,
 	/** @param {number} v */
 	write(v) {
+		if (this.offset < 0) {
+			this.offset = 0;
+			return;
+		}
 		this.buffer[this.offset++] = v;
 		this.sum += v;
 		if (this.offset >= this.buffer.length) {
@@ -139,7 +151,13 @@ loadingStore.then(async s => {
 			dtype: device === 'gpu' ? 'fp32' : 'q8',
 			backend,
 		});
-		await personDetectionEngine.ensureReady();
+		try {
+			await personDetectionEngine.ensureReady();
+		} catch (reason) {
+			logger.warn('Failed to initialize ML engine:', reason);
+			const err = new DOMException('Person detector is not defined.', 'NotSupportedError');
+			personDetectionEngine.run = () => Promise.reject(err);
+		}
 	} else {
 		logger.warn('Permission "trialML" was rejected.');
 		s.personDetection.device = '';
@@ -189,7 +207,13 @@ browser.runtime.onMessage.addListener((/** @type {YTLCFMessage.Request.Any} */ m
 				break;
 			}
 			default:
-				respond(null);
+				respond({
+					error: {
+						name: 'NotSupportedError',
+						// @ts-expect-error
+						message: `Unknown injection type: "${msg.injection}"`,
+					},
+				});
 		}
 	} else if ('detection' in msg) {
 		const { text } = msg.detection;
@@ -208,12 +232,11 @@ browser.runtime.onMessage.addListener((/** @type {YTLCFMessage.Request.Any} */ m
 	} else if ('mask' in msg) {
 		const { mask: blob } = msg;
 		const startTime = performance.now();
-		(
-			personDetectionEngine?.run({ args: [ blob ] })
-			|| Promise.reject(new DOMException('Person detector is not defined.', 'NotSupportedError'))
-		)
-		.then(respond, handleError)
-		.finally(() => performanceLogger.write(performance.now() - startTime));
+		personDetectionEngine.run({ args: [ blob ] })
+		.then(result => {
+			respond(result);
+			performanceLogger.write(performance.now() - startTime);
+		}, handleError);
 	} else if ('fire' in msg) {
 		if (Object.hasOwn(events, msg.fire)) {
 			events[msg.fire](tabId).then(respond).catch(handleError);

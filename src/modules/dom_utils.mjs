@@ -17,7 +17,7 @@ const domParser = new DOMParser();
 export async function loadTemplateDocument(path, i18nAttrs = []) {
 	const url = browser.runtime.getURL(path);
 	const text = await fetch(url).then(res => res.text());
-	// Firefox 149 and lower crash with Document.parseHTMLUnsafe().
+	// Use DOMParser because Document.parseHTMLUnsafe() crashes on Firefox 149 and lower.
 	const doc = domParser.parseFromString(text.replace(/\r?\n|\t+/g, ''), 'text/html');
 	for (const el of doc.querySelectorAll('[data-i18n]')) {
 		const key = el.getAttribute('data-i18n');

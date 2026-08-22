@@ -26,6 +26,11 @@
 			const layer = top?.document.getElementById('yt-lcf-layer');
 			if (layer) {
 				const nonce = await browser.runtime.sendMessage({ fire: 'getNonce' });
+				if (typeof nonce !== 'string') {
+					const { name, message } = nonce.error;
+					logger.error(new DOMException(message, name));
+					return;
+				}
 				const startEvent = new CustomEvent(`ytlcf-start:${nonce}`);
 				top?.document.dispatchEvent(startEvent);
 				logger.info('Initialized layer found, dispatched start event.');

@@ -74,10 +74,10 @@ export async function initialize(e) {
 		await state.controller.start();
 		logger.info(`${manifest.name} is ready!`);
 
-		onYtNavigateFinish(pageType, e.detail.response);
+		onYtNavigateFinish(pageType, e.detail.response).catch(logger.error);
 		self.addEventListener(navEvtDefs.end, e => {
 			const data = getValueByJSONPointer(e.detail, navEvtDefs.pointer + '/response');
-			onYtNavigateFinish(data.page, data);
+			onYtNavigateFinish(data.page, data).catch(logger.error);
 		});
 
 		if (state.device === 'desktop') {
@@ -173,7 +173,7 @@ async function onYtNavigateFinish(pageType, response) {
 
 	const nonce = await browser.runtime.sendMessage({ fire: 'getNonce' });
 	if (typeof nonce !== 'string') {
-		const { name = 'NotFoundError', message } = nonce?.error ?? {};
+		const { name = 'NotFoundError', message } = nonce.error ?? {};
 		throw new DOMException(message, name);
 	}
 

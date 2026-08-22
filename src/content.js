@@ -55,8 +55,11 @@
 				const target = document.querySelector('ytd-app') || document.getElementById('player-container-id');
 				if (!target) {
 					logger.debug('Waiting for <ytd-app> element.');
-					if (attempts++ < MAX_ATTEMPTS) return;
-					else return clearInterval(timer);
+					if (attempts++ >= MAX_ATTEMPTS) {
+						clearInterval(timer);
+						logger.warn(`Failed to find <ytd-app> element after ${MAX_ATTEMPTS} attempts.`);
+					}
+					return;
 				}
 				importingMain.then(module => {
 					return module.initialize({ target, detail });

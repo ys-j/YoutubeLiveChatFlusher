@@ -1,11 +1,12 @@
 import "webextension-polyfill";
+import { Scripting } from "webextension-polyfill";
 import { DEFAULT_CONFIG } from "../src/modules/store.mjs";
 
 declare module "webextension-polyfill" {
 	namespace Runtime {
 		interface Static {
 			onMessage: Events.Event<YTLCFMessage.Request.Any>;
-			sendMessage(message: YTLCFMessage.Request.Injection): Promise<void | YTLCFMessage.Response.Error>;
+			sendMessage(message: YTLCFMessage.Request.Injection): Promise<Scripting.Static.InjectionResult[] | YTLCFMessage.Response.Error>;
 			sendMessage(message: YTLCFMessage.Request.LanguageDetection): Promise<YTLCFMessage.Response.LanguageDetection>;
 			sendMessage(message: YTLCFMessage.Request.Translation): Promise<YTLCFMessage.Response.Translation>;
 			sendMessage(message: YTLCFMessage.Request.PersonDetection): Promise<YTLCFMessage.Response.PersonDetection | YTLCFMessage.Response.Error>;

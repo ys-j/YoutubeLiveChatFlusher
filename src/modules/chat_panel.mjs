@@ -395,7 +395,7 @@ export class LiveChatPanel {
 					textarea.setCustomValidity(validityMsg);
 					preview.value = text;
 				}, { passive: true });
-				form.addEventListener('submit', _ => {
+				form.addEventListener('submit', () => {
 					const textarea = /** @type {HTMLTextAreaElement | undefined} */ (this.form?.elements.user_defined_css);
 					if (textarea) {
 						textarea.value += '\n' + preview.value;

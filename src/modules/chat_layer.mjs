@@ -49,8 +49,8 @@ export class LiveChatLayer {
 			const video = this.element.parentElement?.querySelector('video');
 			if (video) {
 				const maskPos = {
-					x: `calc(${video.style.left} - ${this.element.style.left || '0px'})`,
-					y: `calc(${video.style.top} - ${this.element.style.top || '0px'})`,
+					x: `calc(${video.style.left || '0px'} - ${this.element.style.left || '0px'})`,
+					y: `calc(${video.style.top || '0px'} - ${this.element.style.top || '0px'})`,
 				};
 				this.element.style.maskPosition = `0px 0px, ${maskPos.x} ${maskPos.y}`;
 				this.element.style.maskSize = `100% 100%, ${video.style.width} ${video.style.height}`;

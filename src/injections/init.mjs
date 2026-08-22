@@ -25,8 +25,9 @@ export default function (loggingPath, nonce) {
 							clearInterval(timer);
 							self.dispatchEvent(ev);
 						} else if (attempts++ < MAX_ATTEMPTS) {
-							logger.debug('Waiting for <video> element; retrying', attempts, `of ${MAX_ATTEMPTS}`);
+							logger.debug(`Waiting for <video> element; retrying ${attempts} of ${MAX_ATTEMPTS}`);
 						} else {
+							logger.warn(`Failed to find <video> element after ${MAX_ATTEMPTS} attempts.`);
 							clearInterval(timer);
 						}
 					}, 1000);
@@ -41,7 +42,7 @@ export default function (loggingPath, nonce) {
 				self.addEventListener('visibilitychange', dispatch, { once: true, passive: true });
 			}
 		} else if (attempts++ < MAX_ATTEMPTS) {
-			logger.debug('Waiting for the page to load; retrying', attempts, `of ${MAX_ATTEMPTS}`);
+			logger.debug(`Waiting for the page to load; retrying ${attempts} of ${MAX_ATTEMPTS}`);
 			setTimeout(init, 1000, logger, attempts);
 		} else {
 			logger.error(`Failed to initialize after ${MAX_ATTEMPTS} attempts.`);
