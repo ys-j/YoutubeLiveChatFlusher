@@ -1,11 +1,9 @@
-import type { Browser } from "webextension-polyfill";
-
 declare global {
-	const browser: Browser;
+	const browser: import("npm:@types/webextension-polyfill").Browser;
 
 	interface ObjectConstructor {
-		keys<T extends Record>(o: T): Array<keyof T>;
-		entries<T extends Record>(o: T): Array<[keyof T, T[keyof T]]>;
+		keys<T extends object>(o: T): Array<keyof T>;
+		entries<T extends object>(o: T): Array<[keyof T, T[keyof T]]>;
 	}
 
 	interface Window {
@@ -36,7 +34,7 @@ declare global {
 	type TypedArray = Int8Array | Int16Array | Int32Array | Uint8Array | Uint16Array | Uint32Array | Uint8ClampedArray | Float16Array | Float32Array | Float64Array;
 }
 
-type FontData = {
+export type FontData = {
 	family: string;
 	fullName: string;
 	postscriptName: string;
@@ -44,18 +42,18 @@ type FontData = {
 	blob(): Promise<Blob>;
 }
 
-type DocumentPictureInPictureOptions = {
+export type DocumentPictureInPictureOptions = {
 	width?: number;
 	height?: number;
 	disallowReturnToOpener?: boolean;
 	preferInitialWindowPlacement?: boolean;
 }
 
-interface DocumentPictureInPictureEvent extends Event {
+export type DocumentPictureInPictureEvent = Event & {
 	window: Window;
 }
-interface DocumentPictureInPicture extends EventTarget {
+export type DocumentPictureInPicture = EventTarget & {
 	window?: Window;
 	requestWindow(options?: DocumentPictureInPictureOptions): Promise<Window>;
-	addEventListener(type: "enter", callback: (evt: DocumentPictureInPictureEvent) => void, options?: AddEventListenerOptions | boolean): void;
+	addEventListener(type: "enter", callback: (evt: DocumentPictureInPictureEvent) => void | null, options?: AddEventListenerOptions | boolean): void;
 }

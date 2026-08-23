@@ -234,17 +234,14 @@ export class VideoFrameSegmenter {
 	 */
 	async #sendFrame(video) {
 		const [width, height] = VideoFrameSegmenter.TARGET_SIZE;
-		try {
-			this.context?.drawImage(video, 0, 0, width, height);
-			const mask = await this.offscreen.convertToBlob({ type: 'image/webp', quality: .3 });
-			const result = await browser.runtime.sendMessage({ mask });
-			if (result && typeof result === 'object' && 'error' in result) throw result.error;
-			else return result;
-		} catch (err) {
-			// @ts-expect-error
-			const { name, message } = err;
+		this.context?.drawImage(video, 0, 0, width, height);
+		const mask = await this.offscreen.convertToBlob({ type: 'image/webp', quality: .3 });
+		const result = await browser.runtime.sendMessage({ mask });
+		if (result && typeof result === 'object' && 'error' in result) {
+			const { name, message } = result.error;
 			throw new DOMException(message, name);
 		}
+		return result;
 	}
 
 	/**

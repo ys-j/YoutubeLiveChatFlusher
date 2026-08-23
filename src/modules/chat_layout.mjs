@@ -11,7 +11,11 @@ export class LiveChatLayoutCache {
 		this.maps = Array.from({ length: numOfLanes }, () => new Map());
 	}
 
-	get size() {
+	/**
+	 * Number of distinct layouts stored across all lanes.
+	 * A layout spanning multiple lanes is counted once here, unlike the sum of per-lane placements.
+	 */
+	get distinctSize() {
 		return this.maps.reduce((a, c) => a.union(c), new Set()).size;
 	}
 

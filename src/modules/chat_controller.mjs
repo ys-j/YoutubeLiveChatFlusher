@@ -386,7 +386,8 @@ export class LiveChatController {
 		const kebab = type.replace(/_/g, '-');
 		const part = s.parts[type];
 		switch (cb.value) {
-			case 'color': if ('color' in part) {
+			case 'color': {
+				if (!('color' in part)) break;
 				cb.checked = part.color + part.strokeColor !== '';
 				const fillProp = `--yt-lcf-${kebab}-color`;
 				const strokeProp = `--yt-lcf-${kebab}-stroke-color`;
@@ -411,8 +412,9 @@ export class LiveChatController {
 					le.classList[method](`has-${type}-name`);
 				}, { passive: true });
 			}
+			// falls through
 			default: {
-				// @ts-expect-error
+				// @ts-expect-error: Dynamic property access
 				cb.checked = part[cb.value];
 				le.style.setProperty(`--yt-lcf-${kebab}-display-${cb.value}`, cb.checked ? 'inline' : 'none');
 			}
@@ -648,8 +650,7 @@ export class LiveChatController {
 		let merge = _el => true;
 		switch (s.others.simultaneous) {
 			case SimultaneousModeEnum.FIRST: {
-				// @ts-expect-error
-				const notext = filtered.add.slice(1).filter(a => !a.addChatItemAction?.item.liveChatTextMessageRenderer);
+				const notext = filtered.add.slice(1).filter(a => !('liveChatTextMessageRenderer' in (a.addChatItemAction?.item || {})));
 				filtered.add.splice(1, Infinity, ...notext);
 				break;
 			}
@@ -723,8 +724,8 @@ export class LiveChatController {
 	 * @param {LiveChat.LiveChatItemAction} action
 	 */
 	#deleteChatItem(action) {
-		// @ts-expect-error
-		const id = action.markChatItemAsDeletedAction.targetItemId;
+		const id = action.markChatItemAsDeletedAction?.targetItemId;
+		if (!id) return;
 		if (this.layoutCache.delete(id).some(v => v)) {
 			const target = this.layer.root.getElementById(id);
 			target?.remove();
@@ -737,8 +738,8 @@ export class LiveChatController {
 	 * @param {LiveChat.LiveChatItemAction} action
 	 */
 	#deleteChatItemByAuthor(action) {
-		// @ts-expect-error
-		const id = action.markChatItemsByAuthorAsDeletedAction.externalChannelId;
+		const id = action.markChatItemsByAuthorAsDeletedAction?.externalChannelId;
+		if (!id) return;
 		const targets = this.layer.root.querySelectorAll(`[data-author-id="${id}"]`);
 		for (const target of targets) {
 			this.layoutCache.delete(target.id);
@@ -750,8 +751,8 @@ export class LiveChatController {
 	 * @param {LiveChat.LiveChatItemAction} action
 	 */
 	#replaceChatItem(action) {
-		// @ts-expect-error
-		const id = action.replaceChatItemAction.targetItemId;
+		const id = action.replaceChatItemAction?.targetItemId;
+		if (!id) return;
 		const target = this.layer.root.getElementById(id);
 		const item = action.replaceChatItemAction?.replacementItem;
 		if (target && item) {

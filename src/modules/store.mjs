@@ -204,7 +204,10 @@ class ConfigStore {
 	 */
 	/**
 	 * Migrates the stored data to the current schema.
-	 * @param {Partial<UnwrapReadonly<typeof this.data> & FormerConfigSchema>} stored
+	 * Only legacy numeric keys under `others` are handled here; the modern
+	 * sections are merged separately by {@link load}. `others` is intentionally
+	 * loose so a partial/legacy payload (missing most fields) still type-checks.
+	 * @param {Partial<Omit<UnwrapReadonly<typeof this.data>, 'others'> & FormerConfigSchema>} stored
 	 */
 	migrate(stored) {
 		if (stored.others?.translation !== undefined) {

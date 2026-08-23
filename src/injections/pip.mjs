@@ -10,7 +10,7 @@ export default function (loggingPath, nonce, params) {
 	'use strict';
 	(function initPipMenu() {
 		const pipmenuTop = document.getElementById('yt-lcf-pp');
-		if (window.documentPictureInPicture) {
+		if (self.documentPictureInPicture) {
 			const pipmenu = pipmenuTop || self.documentPictureInPicture?.window?.document.getElementById('yt-lcf-pp');
 			pipmenu?.addEventListener('click', async () => {
 				const pipWindow = self.documentPictureInPicture?.window;

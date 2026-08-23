@@ -64,7 +64,6 @@ export class LiveChatPanel {
 		const onmouseup = () => {
 			self.removeEventListener('mousemove', onmousemove);
 			self.removeEventListener('mouseup', onmouseup);
-			window.removeEventListener('mouseup', onmouseup);
 		};
 		this.element.addEventListener('mousedown', e => {
 			const tagName = /** @type {HTMLElement} */ (e.target)?.tagName;
@@ -73,7 +72,6 @@ export class LiveChatPanel {
 			c.y = e.clientY;
 			self.addEventListener('mousemove', onmousemove, { passive: true });
 			self.addEventListener('mouseup', onmouseup, { passive: true });
-			window.addEventListener('mouseup', onmouseup, { passive: true });
 		}, { passive: true });
 		this.element.addEventListener('keyup', e => {
 			e.stopPropagation();
@@ -197,12 +195,12 @@ export class LiveChatPanel {
 			return li;
 		};
 
-		if ('queryLocalFonts' in window && template) {
+		if ('queryLocalFonts' in self && template) {
 			button.after(dialog);
 			const form = dialog.querySelector('form');
 			const ol = dialog.querySelector('ol');
 			const select = dialog.querySelector('select');
-			window.queryLocalFonts?.().then(fonts => {
+			self.queryLocalFonts?.().then(fonts => {
 				if (select) {
 					const families = new Set(fonts.map(f => f.family));
 					select.append(...Array.from(families, f => new Option(f, f)));
@@ -286,7 +284,6 @@ export class LiveChatPanel {
 			const onmouseup = () => {
 				self.removeEventListener('mousemove', onmousemove);
 				self.removeEventListener('mouseup', onmouseup);
-				window.removeEventListener('mouseup', onmouseup);
 			};
 			/** @type {(e: MouseEvent) => void} */
 			const onmousedown = e => {
@@ -295,7 +292,6 @@ export class LiveChatPanel {
 				c.y = e.clientY;
 				self.addEventListener('mousemove', onmousemove, { passive: true });
 				self.addEventListener('mouseup', onmouseup, { passive: true });
-				window.addEventListener('mouseup', onmouseup, { passive: true });
 			};
 
 			/** @type { (e: MouseEvent) => void } */
@@ -319,7 +315,7 @@ export class LiveChatPanel {
 						top: ((le.offsetTop - vc.clientTop) / vc.clientHeight) * 100,
 						width: (le.clientWidth / vc.clientWidth) * 100,
 						height: (le.clientHeight / vc.clientHeight) * 100,
-					}
+					};
 					for (const [prop, val] of Object.entries(percents)) {
 						if (val === defaults[prop]) {
 							styleMap.delete(prop);
@@ -476,7 +472,7 @@ export class LiveChatPanel {
 				}
 				default: {
 					if (!(name in s.others)) break;
-					// @ts-expect-error
+					// @ts-expect-error: Dynamic property access
 					s.others[name] = val;
 					switch (name) {
 						case 'emoji': {
@@ -497,27 +493,28 @@ export class LiveChatPanel {
 				}
 			}
 		} else if (elem.classList.contains('styles') && name) {
-			// @ts-expect-error
+			// @ts-expect-error: Dynamic property access
 			s.styles[name] = elem.value + (elem.getAttribute('data-unit') || '');
 			if (le) {
 				switch (name) {
-					case 'animation_duration':
+					case 'animation_duration': {
 						const value = /** @type {HTMLInputElement} */ (elem).valueAsNumber;
 						if (value > 0) {
 							const speed = le.getBoundingClientRect().width / value;
 							if (speed) /** @type {HTMLInputElement} */ (ctrls.px_per_sec).valueAsNumber = Math.round(speed);
 						}
 						break;
+					}
 					case 'max_width':
 						layer.updateCurrentItemStyle();
 				}
-				// @ts-expect-error
+				// @ts-expect-error: Dynamic property access
 				le.style.setProperty(`--yt-lcf-${name.replace(/_/g, '-')}`, s.styles[name]);
 			}
 		} else if (name.startsWith('stroke_')) {
-			// @ts-expect-error
+			// @ts-expect-error: Dynamic property access
 			s.styles[name] = elem.value + (elem.getAttribute('data-unit') || '');
-			// @ts-expect-error
+			// @ts-expect-error: Dynamic property access
 			le.style.setProperty(name.replace('stroke_', '--yt-lcf-stroke-'), s.styles[name]);
 		} else if (name.endsWith('_display')) {
 			const match = name.match(/^(.+)_display$/);
@@ -527,7 +524,7 @@ export class LiveChatPanel {
 				if (_type in s.parts && le) {
 					const type = /** @type {keyof typeof s.parts} */ (_type);
 					if (input.value !== 'color') {
-						// @ts-expect-error
+						// @ts-expect-error: Dynamic property access
 						s.data.parts[type][input.value] = input.checked;
 						le.style.setProperty(`--yt-lcf-${name.replace(/_/g, '-')}-${input.value}`, input.checked ? 'inherit' : 'none');
 					} else if (type !== 'paid_sticker') {
@@ -547,7 +544,7 @@ export class LiveChatPanel {
 							le.style.removeProperty(strokeProp);
 						}
 					}
-					// @ts-expect-error
+						// @ts-expect-error: Dynamic property access
 					s.parts[type] = s.data.parts[type];
 					layer.updateCurrentItemStyle(type);
 				}
@@ -574,7 +571,7 @@ export class LiveChatPanel {
 						le.style.removeProperty(fillProp);
 						le.style.removeProperty(strokeProp);
 					}
-					// @ts-expect-error
+						// @ts-expect-error: Dynamic property access
 					s.parts[type] = s.data.parts[type];
 				}
 			}
@@ -586,14 +583,14 @@ export class LiveChatPanel {
 			const match = name.match(/^(.*)_css$/);
 			if (match) {
 				const [_, type] = match;
+				/** @type {keyof typeof s.cssTexts} */
+				// @ts-expect-error: Dynamic property access
 				const selector = type && type !== 'user_defined' ? '.' + type : '';
-				// @ts-expect-error
 				s.cssTexts[selector] = /** @type {?HTMLInputElement} */ (ctrls[type + '_css'])?.value || '';
 				if (selector) {
 					const style = layer.root.getElementById('customcss');
 					if (style) {
 						const rule = new RegExp(`:host>${selector.replace('.', '\\.')}{.*?}`);
-						// @ts-expect-error
 						style.textContent = (style.textContent || '').replace(rule, `:host>${selector}{${s.cssTexts[selector]}}`);
 					}
 				} else {

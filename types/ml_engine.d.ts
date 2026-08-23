@@ -1,4 +1,4 @@
-namespace MLEngineManagerOptions {
+export namespace MLEngineManagerOptions {
 	type ModelHub = "huggingface" | "mozilla";
 	type ExecutionPriority = "HIGH" | "NORMAL" | "LOW";
 	type QuantizationLevel = "fp32" | "fp16" | "fp8_e5m2" | "fp8_e4m3" | "q8" | "int8" | "uint8" | "q4" | "bnb4" | "q4f16";

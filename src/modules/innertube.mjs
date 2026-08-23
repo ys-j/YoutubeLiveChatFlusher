@@ -41,11 +41,11 @@ export async function fetchInnerTube(url, payload, options = {}) {
 	const message = `Request failed: ${res.status} ${res.statusText}`;
 	switch (res.status) {
 		case 429:
-		case 503:
+		case 503: {
 			const retryAfter = parseRetryAfter(res.headers.get('Retry-After'));
 			await sleep(retryAfter ?? 1000);
-			// @ts-expect-error
-			return fetchInnerTube(...arguments);
+			return fetchInnerTube(url, payload, options);
+		}
 		default:
 			throw new Error(message);
 	}

@@ -1,3 +1,4 @@
+/** @import { MLEngineManagerOptions } from "../../types/ml_engine.d.ts" */
 import { logger } from './logging.mjs';
 
 export class MLEngineManager {

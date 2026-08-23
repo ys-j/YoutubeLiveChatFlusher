@@ -1,7 +1,7 @@
 (function () {
 	'use strict';
-	// @ts-expect-error
-	self.browser ??= chrome;
+	// @ts-expect-error: Polyfill browser API for Chrome 147 or older environments
+	globalThis.browser ??= chrome;
 
 	const manifest = browser.runtime.getManifest();
 

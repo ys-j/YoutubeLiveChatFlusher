@@ -333,7 +333,7 @@ export async function renderChatItem(item, factory) {
 				authorName,
 				authorAvatar,
 				giftImage,
-				// @ts-expect-error
+				// @ts-expect-error: Type casting required for destructuring GiftMessageViewModel properties
 			} = /** @type {LiveChat.GiftMessageViewModel} */ (renderer);
 			element = factory.new({
 				type,
@@ -352,7 +352,7 @@ export async function renderChatItem(item, factory) {
 			const subtype = 'membership';
 			skipped = allHidden(subtype);
 			if (skipped) break;
-			// @ts-expect-error
+			// @ts-expect-error: Explicit cast required for nested property type narrowing
 			const headerRenderer = /** @type {LiveChat.SponsorshipsHeaderRenderer} */(renderer.header).liveChatSponsorshipsHeaderRenderer;
 			const count = headerRenderer.primaryText?.runs?.filter(r => !Number.isNaN(Number.parseInt(r.text, 10)))[0]?.text;
 			if (!count) break;
@@ -365,7 +365,7 @@ export async function renderChatItem(item, factory) {
 			break;
 		}
 		case 'liveChatViewerEngagementMessageRenderer': {
-			// @ts-expect-error
+			// @ts-expect-error: Type narrowing needed for renderer subtype
 			switch (renderer.icon?.iconType) {
 				case 'POLL':
 					element = factory.new({ type: 'poll', body });

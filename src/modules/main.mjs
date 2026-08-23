@@ -42,6 +42,7 @@ const FetchingModeEnum = Object.freeze({
  * @prop {any} [response.contents]
  * @prop {any} [response.currentVideoEndpoint]
  * @prop {any} [response.playerOverlays]
+ * @prop {string} [response.page]
  */
 
 /**
@@ -67,7 +68,6 @@ export async function initialize(e) {
 		? { start: 'yt-navigate-start', end: 'yt-navigate-finish', pointer: '' }
 		: { start: 'state-navigatestart', end: 'state-navigateend', pointer: '/data' };
 	try {
-		// @ts-expect-error
 		const pageType = e.detail.pageType ?? e.detail.response?.page;
 		if (pageType !== 'watch') throw `page-type is not "watch" but "${pageType}"`;
 
@@ -204,8 +204,8 @@ async function onYtNavigateFinish(pageType, response) {
 			} else {
 				logger.info(`Running in mobile mode for ${videoType} (${info.videoId}):`, info.title);
 			}
-			// fall through
 		}
+		// falls through
 		case FetchingModeEnum.INDEPENDENT: {
 			const timer = setInterval(() => {
 				if (state.action.size > 0) {

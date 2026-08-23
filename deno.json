@@ -1,0 +1,24 @@
+{
+	"compilerOptions": {
+		"checkJs": true,
+		"lib": ["esnext", "dom", "deno.ns"],
+		"types": [
+			"npm:@types/dom-chromium-ai",
+			"npm:@types/webextension-polyfill"
+		]
+	},
+	"exclude": ["dist/"],
+	"lint": {
+		"rules": {
+			"exclude": ["require-await"]
+		}
+	},
+	"tasks": {
+		"dev": "deno run -A npm:vite dev",
+		"build": "deno run -A npm:vite build"
+	},
+	"imports": {
+		"@std/assert": "jsr:@std/assert@^1.0.19",
+		"vite": "npm:vite@^5.4.21"
+	}
+}

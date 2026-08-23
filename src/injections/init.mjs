@@ -13,12 +13,12 @@ export default function (loggingPath, nonce) {
 			const ev = new CustomEvent(`ytlcf-message:${nonce}`, {
 				detail: {
 					ytInitialData: self.ytInitialData,
-					// @ts-expect-error
+					// @ts-expect-error: Dynamic property access
 					ytcfg: self.ytcfg?.d?.(),
 				},
 			});
 			const dispatch = () => {
-				// @ts-expect-error
+				// @ts-expect-error: Dynamic property access
 				if (Object.hasOwn(self.ytInitialData ?? {}, 'playerOverlays')) {
 					const timer = setInterval(() => {
 						if (document.querySelector('#movie_player video')) {

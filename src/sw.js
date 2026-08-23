@@ -8,8 +8,8 @@ import initPip from './injections/pip.mjs';
 import { LanguageDetectionController, TranslatorController } from './modules/translator.mjs';
 import { MLEngineManager } from './modules/ml_engine.mjs';
 
-// @ts-expect-error
-self.browser ??= chrome;
+// @ts-expect-error: Polyfill browser API for Chrome 147 or older environments
+globalThis.browser ??= chrome;
 
 const loadingStore = store.load();
 
@@ -165,7 +165,7 @@ loadingStore.then(async s => {
 });
 
 /** @import { YTLCFMessage } from "../types/messaging.d.ts" */
-// @ts-expect-error
+// @ts-expect-error: Type casting in parameter list causes signature mismatch with onMessage listener
 browser.runtime.onMessage.addListener((/** @type {YTLCFMessage.Request.Any} */ msg, sender, respond) => {
 	const tabId = sender.tab?.id;
 	/** @type {(err: unknown) => void} */
@@ -210,7 +210,7 @@ browser.runtime.onMessage.addListener((/** @type {YTLCFMessage.Request.Any} */ m
 				respond({
 					error: {
 						name: 'NotSupportedError',
-						// @ts-expect-error
+						// @ts-expect-error: Response structure may not strictly match the message type schema
 						message: `Unknown injection type: "${msg.injection}"`,
 					},
 				});

@@ -2,7 +2,7 @@ declare namespace LiveChat {
 	interface ContinuationChatItemAction {
 		liveChatContinuation: {
 			actions?: LiveChatItemAction[],
-			continuations?: any[],
+			continuations?: unknown[],
 		}
 	}
 	interface ReplayChatItemAction {
@@ -283,6 +283,6 @@ declare namespace LiveChat {
 interface DocumentAndElementEventHandlersEventMap {
 	"yt-action": CustomEvent<{
 		actionName: string
-		args: any[][]
+		args: unknown[][]
 	}>
 }
