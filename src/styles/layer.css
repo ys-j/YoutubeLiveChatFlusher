@@ -274,17 +274,19 @@ small.original {
 	50% { filter: drop-shadow(0 0 8px currentColor); }
 }
 .meme {
-	color: #ff6ec7;
 	cursor: pointer;
 	pointer-events: auto !important;
-	animation: flush var(--yt-lcf-animation-duration) linear var(--yt-lcf-animation-play-state),
-	           meme-glow 2s ease-in-out infinite;
-	-webkit-text-stroke-color: rgba(0, 0, 0, 0.6);
 }
 .meme .body {
 	pointer-events: auto;
 }
-.meme::before {
+.meme.played {
+	color: #ff6ec7;
+	animation: flush var(--yt-lcf-animation-duration) linear var(--yt-lcf-animation-play-state),
+	           meme-glow 2s ease-in-out infinite;
+	-webkit-text-stroke-color: rgba(0, 0, 0, 0.6);
+}
+.meme.played::before {
 	content: '🔊 ';
 	font-size: 0.8em;
 }

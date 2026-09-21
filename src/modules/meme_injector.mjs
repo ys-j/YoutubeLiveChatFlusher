@@ -14,11 +14,14 @@ import { store as s } from './store.mjs';
  */
 function createMemeElement(meme) {
 	const el = document.createElement('div');
-	el.classList.add('text', 'meme');
+	el.classList.add('text', 'normal', 'meme');
 	el.id = `meme_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 	el.dataset.memeId = meme.id;
 	el.dataset.audioUrl = meme.audioDataUrl;
 	el.dataset.text = meme.text;
+	if (meme.color) {
+		el.dataset.customColor = meme.color;
+	}
 
 	// Build the inner structure similar to 'text' template
 	const header = document.createElement('span');
@@ -29,11 +32,6 @@ function createMemeElement(meme) {
 	body.textContent = meme.text;
 
 	el.append(header, body);
-
-	// Apply custom color if set
-	if (meme.color) {
-		el.style.color = meme.color;
-	}
 
 	return el;
 }
@@ -131,6 +129,11 @@ export class MemeInjector {
 		const audioUrl = memeElement.dataset.audioUrl;
 		if (!audioUrl) return;
 
+		memeElement.classList.add('played');
+		if (memeElement.dataset.customColor) {
+			memeElement.style.color = memeElement.dataset.customColor;
+		}
+
 		const audio = new Audio(audioUrl);
 		audio.volume = 1.0; // Play meme loudly
 		
@@ -141,23 +144,18 @@ export class MemeInjector {
 			videoElement.volume = originalVolume * 0.2;
 		}
 
-		audio.onended = () => {
-			if (videoElement) {
-				videoElement.volume = originalVolume;
-			}
-		};
-		// Also restore volume if there's an error or it gets paused somehow
-		audio.onpause = audio.onerror = () => {
+		const cleanup = () => {
 			if (videoElement && videoElement.volume < originalVolume) {
 				videoElement.volume = originalVolume;
 			}
 		};
 
+		audio.onended = cleanup;
+		audio.onpause = audio.onerror = cleanup;
+
 		audio.play().catch(err => {
 			console.warn('Failed to play meme audio:', err);
-			if (videoElement) {
-				videoElement.volume = originalVolume;
-			}
+			cleanup();
 		});
 	}
 }
