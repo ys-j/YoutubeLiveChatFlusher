@@ -783,21 +783,16 @@ export class LiveChatController {
 		this.#skip = true;
 	}
 
-	listen() {
+	/** @param {string} nonce */
+	listen(nonce) {
 		this.unlisten();
-		browser.runtime.sendMessage({ fire: 'getNonce' }).then(nonce => {
-			if (typeof nonce !== 'string') {
-				const { name = 'NotFoundError', message } = nonce.error ?? {};
-				throw new DOMException(message, name);
-			}
-			// Skip first event to avoid flushing too many messages
-			document.addEventListener(`ytlcf-action:${nonce}`, () => {
-				document.addEventListener(`ytlcf-action:${nonce}`, e => {
-					this.#onAction(e);
-				}, { signal: this.abortController.signal });
-			}, { once: true, signal: this.abortController.signal });
-			this.listening = true;
-		}).catch(logger.error);
+		// Skip first event to avoid flushing too many messages
+		document.addEventListener(`ytlcf-action:${nonce}`, () => {
+			document.addEventListener(`ytlcf-action:${nonce}`, e => {
+				this.#onAction(e);
+			}, { signal: this.abortController.signal });
+		}, { once: true, signal: this.abortController.signal });
+		this.listening = true;
 
 		const video = this.player.querySelector('#movie_player video');
 		if (video) {

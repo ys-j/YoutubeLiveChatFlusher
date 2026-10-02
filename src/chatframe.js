@@ -31,22 +31,25 @@
 					logger.error(new DOMException(message, name));
 					return;
 				}
-				const startEvent = new CustomEvent(`ytlcf-start:${nonce}`);
-				top?.document.dispatchEvent(startEvent);
-				logger.info('Initialized layer found, dispatched start event.');
-
-				document.addEventListener('yt-action', e => {
-					if (e.detail?.actionName !== 'yt-live-chat-actions') return;
-					const actions = e.detail?.args?.at(0);
-					if (!actions) return;
-					const ev = new CustomEvent(`ytlcf-action:${nonce}`, { detail: actions });
-					top?.document.dispatchEvent(ev);
-				});
-			} else if (attempts++ < MAX_ATTEMPTS) {
-				logger.debug('No initialized layer found, waiting...', attempts, `of ${MAX_ATTEMPTS}`);
+				const startEvent = new CustomEvent(`ytlcf-start:${nonce}`, { cancelable: true });
+				// The layer can exist before the main script is ready to receive events.
+				if (top?.document.dispatchEvent(startEvent) === false) {
+					logger.info('Main script acknowledged start event.');
+					document.addEventListener('yt-action', e => {
+						if (e.detail?.actionName !== 'yt-live-chat-actions') return;
+						const actions = e.detail?.args?.at(0);
+						if (!actions) return;
+						const ev = new CustomEvent(`ytlcf-action:${nonce}`, { detail: actions });
+						top?.document.dispatchEvent(ev);
+					});
+					return;
+				}
+			}
+			if (attempts++ < MAX_ATTEMPTS) {
+				logger.debug('Waiting for the main script to acknowledge the start event...', attempts, `of ${MAX_ATTEMPTS}`);
 				setTimeout(tryFindLayer, 1000);
 			} else {
-				logger.error(`Failed to found initialized layer after ${MAX_ATTEMPTS} attempts.`);
+				logger.error(`Failed to start chat forwarding after ${MAX_ATTEMPTS} retries.`);
 			}
 		})();
 	});
