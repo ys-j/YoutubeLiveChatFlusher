@@ -216,26 +216,26 @@ export class VideoFrameSegmenter {
 	static ERROR_ATTEMPTS = 10;
 
 	/** @type {SegmentationCallback} */ #callback;
-	/** @type {AbortController} */ #abortController;
 	/** @type {number} */ #reqId = 0;
 	/** @type {number} */ #errorCount = 0;
+	/** @type {boolean} */ #disconnected = true;
 
 	/**
 	 * @param {SegmentationCallback} callback
 	 */
 	constructor(callback) {
 		this.#callback = callback;
-		this.#abortController = new AbortController();
 		this.offscreen = new OffscreenCanvas(...VideoFrameSegmenter.TARGET_SIZE);
-		this.context = this.offscreen.getContext('2d');
+		this.context = this.offscreen.getContext('bitmaprenderer');
 	}
 
 	/**
 	 * @param {HTMLVideoElement} video
 	 */
 	async #sendFrame(video) {
-		const [width, height] = VideoFrameSegmenter.TARGET_SIZE;
-		this.context?.drawImage(video, 0, 0, width, height);
+		const [resizeWidth, resizeHeight] = VideoFrameSegmenter.TARGET_SIZE;
+		const bitmap = await createImageBitmap(video, { resizeWidth, resizeHeight });
+		this.context?.transferFromImageBitmap(bitmap);
 		const mask = await this.offscreen.convertToBlob({ type: 'image/webp', quality: .3 });
 		const result = await browser.runtime.sendMessage({ mask });
 		if (result && typeof result === 'object' && 'error' in result) {
@@ -250,7 +250,9 @@ export class VideoFrameSegmenter {
 	 * @param {LiveChatLayer} layer
 	 */
 	observe(video, layer) {
+		this.#errorCount = 0;
 		let inProgress = false;
+		let lastTime = 0;
 		/** @type {(err: unknown) => boolean} */
 		const isFatalError = err => {
 			const patterns = [/due to previous failure/];
@@ -273,13 +275,13 @@ export class VideoFrameSegmenter {
 			);
 		};
 		/** @type {VideoFrameRequestCallback} */
-		const frame = (_now, _metadata) => {
-			if (this.#abortController.signal.aborted) {
-				this.#abortController = new AbortController();
-				return;
-			} else if (canProcess()) {
+		const frame = (now, _metadata) => {
+			if (this.#disconnected) return;
+			if (canProcess() && now > lastTime + 33) {
 				inProgress = true;
+				lastTime = now;
 				this.#sendFrame(video).then(result => {
+					if (this.#disconnected) return;
 					this.#callback(result);
 					this.#errorCount = 0;
 				}).catch(reason => {
@@ -293,6 +295,7 @@ export class VideoFrameSegmenter {
 			}
 			this.#reqId = video.requestVideoFrameCallback(frame);
 		};
+		this.#disconnected = false;
 		this.#reqId = video.requestVideoFrameCallback(frame);
 		logger.info('Person detection started.');
 	}
@@ -301,7 +304,8 @@ export class VideoFrameSegmenter {
 	 * @param {HTMLVideoElement} [video]
 	 */
 	disconnect(video = undefined) {
-		this.#abortController.abort();
+		if (this.#disconnected) return;
+		this.#disconnected = true;
 		if (this.#reqId) video?.cancelVideoFrameCallback(this.#reqId);
 		logger.info('Person detection stopped.');
 	}
