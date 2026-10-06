@@ -7,7 +7,6 @@
  * @param {typeof import("../modules/store.mjs").DEFAULT_CONFIG.hotkeys} params.hotkeys JSON string of hotkeys to bind
  */
 export default function (loggingPath, nonce, params) {
-	'use strict';
 	(function initPipMenu() {
 		const pipmenuTop = document.getElementById('yt-lcf-pp');
 		if (self.documentPictureInPicture) {

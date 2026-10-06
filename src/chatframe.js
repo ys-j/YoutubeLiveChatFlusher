@@ -22,12 +22,12 @@
 		if (mode) return;
 
 		let attempts = 0;
-		(async function tryFindLayer() {
+		return (async function tryFindLayer() {
 			const layer = top?.document.getElementById('yt-lcf-layer');
 			if (layer) {
 				const nonce = await browser.runtime.sendMessage({ fire: 'getNonce' });
 				if (typeof nonce !== 'string') {
-					const { name, message } = nonce.error;
+					const { name = 'NotFoundError', message } = nonce.error;
 					logger.error(new DOMException(message, name));
 					return;
 				}
@@ -52,5 +52,13 @@
 				logger.error(`Failed to start chat forwarding after ${MAX_ATTEMPTS} retries.`);
 			}
 		})();
+	}).catch(err => {
+		console.error(
+			'[%cYTLCF%c...<%c]',
+			'font-family:sans-serif;font-weight:700;padding-right:.33em',
+			'border-radius:.33em;background-color:red;color:white;font-family:sans-serif;font-weight:700;padding:0 .33em',
+			'',
+			'Failed to load the chat frame script.\nCaused by:', err
+		);
 	});
 })();

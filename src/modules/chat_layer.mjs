@@ -1,9 +1,10 @@
 import { logger } from './logging.mjs';
 import { store as s } from './store.mjs';
 import { isAdShowing } from './dom_utils.mjs';
+/** @import { LiveChatController } from './chat_controller.mjs' */
 
 export class LiveChatLayer {
-	/** @type {import("./chat_controller.mjs").LiveChatController} */
+	/** @type {LiveChatController} */
 	#controller;
 
 	/** @type {number} */
@@ -29,7 +30,7 @@ export class LiveChatLayer {
 
 	/**
 	 * Creates new layer.
-	 * @param {import("./chat_controller.mjs").LiveChatController} controller controller
+	 * @param {LiveChatController} controller controller
 	 * @param {HTMLDivElement | undefined} div container element
 	 */
 	constructor(controller, div = undefined) {
@@ -202,7 +203,7 @@ export class LiveChatLayer {
  * @prop {TypedArray} mask.data
  * @prop {number} mask.width
  * @prop {number} mask.height
- * @prop {number} mask.channel
+ * @prop {number} mask.channels
  */
 
 /**

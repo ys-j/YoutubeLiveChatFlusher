@@ -1,5 +1,7 @@
+import type { Browser } from "webextension-polyfill";
+
 declare global {
-	const browser: import("npm:@types/webextension-polyfill").Browser;
+	const browser: Browser;
 
 	interface ObjectConstructor {
 		keys<T extends object>(o: T): Array<keyof T>;

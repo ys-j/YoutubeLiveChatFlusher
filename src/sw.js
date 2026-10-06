@@ -8,6 +8,9 @@ import initPip from './injections/pip.mjs';
 import { LanguageDetectionController, TranslatorController } from './modules/translator.mjs';
 import { MLEngineManager } from './modules/ml_engine.mjs';
 
+/** @import { DEFAULT_CONFIG } from './modules/store.mjs' */
+/** @import { SegmentationResult } from '../types/messaging.d.ts' */
+
 // @ts-expect-error: Polyfill browser API for Chrome 147 or older environments
 globalThis.browser ??= chrome;
 
@@ -96,12 +99,12 @@ const detector = new LanguageDetectionController();
 /** @type {?TranslatorController} */
 let translationController = null;
 
-/** @type {MLEngineManager | { run: () => Promise<import("../types/messaging.d.ts").SegmentationResult[]> }} */
+/** @type {MLEngineManager | { run: () => Promise<SegmentationResult[]> }} */
 let personDetectionEngine = {
 	async run() {
 		const width = 256, height = 144;
 		const data = new Uint8Array(width * height);
-		const mask = { data, width, height, channel: 1 };
+		const mask = { data, width, height, channels: 1 };
 		return [ { label: null, score: null, mask } ];
 	}
 };
@@ -131,14 +134,14 @@ loadingStore.then(async s => {
 	const {
 		translator, url, method, responseStyle,
 		apiKey, modelName, bodyType, bodyContent,
-	} = /** @type {typeof import("./modules/store.mjs").DEFAULT_CONFIG.translation} */ (s.translation);
+	} = /** @type {typeof DEFAULT_CONFIG.translation} */ (s.translation);
 	const config = method === 'GET'
 		? { url, method, responseStyle }
 		: { url, method, responseStyle, apiKey, modelName, json: bodyType === 'OpenAI' ? undefined : bodyContent };
 
 	translationController = new TranslatorController(translator ?? 'internal', config);
 
-	const { device, backend } = /** @type {typeof import("./modules/store.mjs").DEFAULT_CONFIG.personDetection} */ (s.personDetection);
+	const { device, backend } = /** @type {typeof DEFAULT_CONFIG.personDetection} */ (s.personDetection);
 	if (!device || !manifest.optional_permissions?.includes('trialML')) return;
 
 	const granted = await browser.permissions.contains({ permissions: ['trialML'] });
@@ -175,13 +178,19 @@ browser.runtime.onMessage.addListener((/** @type {YTLCFMessage.Request.Any} */ m
 			const { name, message } = err;
 			respond({ error: { name, message } })
 		} else {
-			respond({ error: { message: `${err}` } });
+			respond({ error: { name: 'UnknownError', message: `${err}` } });
 		}
 	};
 
 	if ('injection' in msg && tabId) {
 		const target = { tabId };
 		const loggingPath = browser.runtime.getURL('./modules/logging.mjs');
+		/** @type {(err: unknown) => void} */
+		const respondInjectionError = err => {
+			logger.warn(err);
+			const { name, message } = Error.isError(err) ? err : { message: `${err}` };
+			respond([ { error: { name, message } } ]);
+		};
 		switch (msg.injection) {
 			case 'init': {
 				const { nonce } = msg.details;
@@ -191,8 +200,7 @@ browser.runtime.onMessage.addListener((/** @type {YTLCFMessage.Request.Any} */ m
 					const args = [ loggingPath, nonce ];
 					return browser.scripting.executeScript({ target, func, args, world: 'MAIN' });
 				})
-				.then(respond)
-				.catch(handleError);
+				.then(respond, respondInjectionError);
 				break;
 			}
 			case 'pip': {
@@ -202,17 +210,14 @@ browser.runtime.onMessage.addListener((/** @type {YTLCFMessage.Request.Any} */ m
 					const args = [ loggingPath, nonce, msg.details ];
 					return browser.scripting.executeScript({ target, func, args, world: 'MAIN' });
 				})
-				.then(respond)
-				.catch(handleError);
+				.then(respond, respondInjectionError);
 				break;
 			}
 			default:
-				respond({
-					error: {
-						name: 'NotSupportedError',
-						// @ts-expect-error: Response structure may not strictly match the message type schema
-						message: `Unknown injection type: "${msg.injection}"`,
-					},
+				respondInjectionError({
+					name: 'NotSupportedError',
+					// @ts-expect-error: Response structure may not strictly match the message type schema
+					message: `Unknown injection type: "${msg.injection}"`,
 				});
 		}
 	} else if ('detection' in msg) {

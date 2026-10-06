@@ -82,7 +82,7 @@ export async function initialize(e) {
 
 		if (state.device === 'desktop') {
 			// Initilize document picture-in-picture
-			await browser.runtime.sendMessage({
+			const results = await browser.runtime.sendMessage({
 				injection: 'pip',
 				details: {
 					cssUrl: browser.runtime.getURL('/styles/content.css'),
@@ -90,6 +90,13 @@ export async function initialize(e) {
 					hotkeys: store.data.hotkeys,
 				},
 			});
+			for (const r of results) {
+				if (r?.error) {
+					// @ts-expect-error: r.error is an object with name and message properties
+					const { name = 'AbortError', message = '' } = r.error;
+					logger.warn(new DOMException(message, name));
+				}
+			}
 		}
 	} catch (reason) {
 		logger.warn(`Waiting for next navigation due to setup failure:`, reason);

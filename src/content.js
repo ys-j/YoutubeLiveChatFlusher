@@ -74,7 +74,14 @@
 			injection: 'init',
 			details: { nonce },
 		});
-	}).then(() => {
+	}).then(results => {
+		for (const r of results) {
+			if (r?.error) {
+				// @ts-expect-error: r.error is an object with name and message properties
+				const { name = 'AbortError', message = '' } = r.error;
+				throw new DOMException(message, name);
+			}
+		}
 		(function check() {
 			if (document.body) {
 				document.body.dataset.browser = 'browser_specific_settings' in manifest ? 'firefox' : 'chrome';

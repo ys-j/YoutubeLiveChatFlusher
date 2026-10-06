@@ -1,7 +1,9 @@
+import type { DEFAULT_CONFIG } from "../src/modules/store.mjs";
+
 declare module "npm:@types/webextension-polyfill" {
 	namespace Runtime {
 		interface Static {
-			sendMessage(message: YTLCFMessage.Request.Injection): Promise<Scripting.InjectionResult[] | YTLCFMessage.Response.Error>;
+			sendMessage(message: YTLCFMessage.Request.Injection): Promise<Scripting.InjectionResult[]>;
 			sendMessage(message: YTLCFMessage.Request.LanguageDetection): Promise<YTLCFMessage.Response.LanguageDetection>;
 			sendMessage(message: YTLCFMessage.Request.Translation): Promise<YTLCFMessage.Response.Translation>;
 			sendMessage(message: YTLCFMessage.Request.PersonDetection): Promise<YTLCFMessage.Response.PersonDetection | YTLCFMessage.Response.Error>;
@@ -31,7 +33,7 @@ export namespace YTLCFMessage {
 			details: {
 				cssUrl: string;
 				pipMarkerText: string;
-				hotkeys: typeof import("../src/modules/store.mjs").DEFAULT_CONFIG.hotkeys;
+				hotkeys: typeof DEFAULT_CONFIG["hotkeys"];
 			};
 		};
 		type LanguageDetection = {
@@ -83,13 +85,13 @@ export namespace YTLCFMessage {
 	}
 }
 
-interface SegmentationResult {
+export interface SegmentationResult {
 	label: string | null;
 	score: number | null;
 	mask: {
 		data: Int8Array | Int16Array | Int32Array | Uint8Array | Uint16Array | Uint32Array | Uint8ClampedArray | Float16Array | Float32Array | Float64Array;
 		width: number;
 		height: number;
-		channel: number;
+		channels: number;
 	};
 }

@@ -3,7 +3,6 @@
  * @param {string} nonce
  */
 export default function (loggingPath, nonce) {
-	'use strict';
 	import(loggingPath).then((/** @type {typeof import('../modules/logging.mjs')} */ { logger }) => {
 		logger.debug('Initialization script was injected.');
 		return logger;
@@ -24,11 +23,8 @@ export default function (loggingPath, nonce) {
 						if (document.querySelector('#movie_player video')) {
 							clearInterval(timer);
 							self.dispatchEvent(ev);
-						} else if (attempts++ < MAX_ATTEMPTS) {
-							logger.debug(`Waiting for <video> element; retrying ${attempts} of ${MAX_ATTEMPTS}`);
 						} else {
-							logger.warn(`Failed to find <video> element after ${MAX_ATTEMPTS} attempts.`);
-							clearInterval(timer);
+							logger.debug('Waiting for <video> element.');
 						}
 					}, 1000);
 				} else {
