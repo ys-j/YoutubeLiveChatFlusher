@@ -2,6 +2,8 @@ import { logger } from './logging.mjs';
 import { fetchInnerTube } from './innertube.mjs';
 import { formatMilliseconds, sleep } from './utils.mjs';
 
+const MIN_SLEEP_MS = 250;
+
 export class ReplayActionBuffer {
 	/** @type {Map<number, Set<LiveChat.LiveChatItemAction>>} */
 	#map = new Map();
@@ -91,10 +93,11 @@ export class ReplayActionBuffer {
  * Generates the replay chat actions from the response of InnerTube API.
  * @param {AbortSignal} signal signal for aborting fetching
  * @param {string} initialContinuation initial continuation token
- * @param {string} [nonce] nonce for the custom event
+ * @param {string} nonce nonce for the custom event
+ * @param {HTMLVideoElement} [video] `<video>` element
  * @returns {AsyncGenerator<LiveChat.ReplayChatItemAction[]>} chat actions generator
  */
-export async function* getReplayChatActionsAsyncIterable(signal, initialContinuation, nonce) {
+export async function* getReplayChatActionsAsyncIterable(signal, initialContinuation, nonce, video) {
 	const url = new URL('https://www.youtube.com/youtubei/v1/live_chat/get_live_chat_replay');
 	url.searchParams.set('prettyPrint', 'false');
 
@@ -129,7 +132,7 @@ export async function* getReplayChatActionsAsyncIterable(signal, initialContinua
 			body = { continuation: prev };
 		}
 		contents = await getContentsAsync(url, body);
-		let sleepMs = 250;
+		let sleepMs = MIN_SLEEP_MS;
 		if (contents.actions) yield contents.actions;
 		if (seekInfo) {
 			body = getContinuation(contents, true, seekInfo.offset);
@@ -141,12 +144,16 @@ export async function* getReplayChatActionsAsyncIterable(signal, initialContinua
 			if (prev !== initialContinuation) continuations.set(prev, body.continuation);
 			const offset = Number.parseInt(contents.actions?.at(-1)?.replayChatItemAction.videoOffsetTimeMsec || '-1', 10);
 			if (offset >= prevOffset) {
-				const offsetDiff = (offset - prevOffset) / playbackRate - 250 | 0;
-				sleepMs = Math.max(250, offsetDiff);
+				let offsetDiff = offset - prevOffset;
+				if (video) {
+					const shiftSec = Number.parseFloat(video.getAttribute('data-shift-sec') || '0');
+					offsetDiff = offset - (video.currentTime - shiftSec) * 1e3;
+				}
+				sleepMs = Math.max(MIN_SLEEP_MS, (offsetDiff / playbackRate - MIN_SLEEP_MS) | 0);
 				prevOffset = offset;
 				logger.debug(
 					`Fetched ${contents.actions?.length || 'no'} chat actions up to ${formatMilliseconds(offset)}.`,
-					`Next request will be sent ${(sleepMs / 1000).toFixed(3)} sec after.`
+					`Next request will be sent ${(sleepMs * 1e-3).toFixed(3)} sec after.`
 				);
 			} else {
 				sleepMs = Infinity;
@@ -178,7 +185,7 @@ export async function* getLiveChatActionsAsyncIterable(signal, initialContinuati
 		contents = await getContentsAsync(url, body);
 		yield contents.actions || [];
 		body = getContinuation(contents, false);
-		await sleep(250);
+		await sleep(MIN_SLEEP_MS);
 	}
 }
 

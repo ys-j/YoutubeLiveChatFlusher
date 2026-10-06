@@ -251,7 +251,7 @@ async function onYtNavigateFinish(pageType, response) {
 						onSeeking.call(video);
 						onRateChange.call(video);
 					}, 250);
-					const generator = getReplayChatActionsAsyncIterable(state.abortController.signal, initialContinuation, nonce);
+					const generator = getReplayChatActionsAsyncIterable(state.abortController.signal, initialContinuation, nonce, video);
 					for await (const actions of generator) {
 						state.action.pushActions(actions);
 					}
@@ -269,6 +269,7 @@ async function onYtNavigateFinish(pageType, response) {
 	 */
 	function onSeeking() {
 		const shiftSec = !state.isLive && store.others.time_shift || 0;
+		this.setAttribute('data-shift-sec', shiftSec.toFixed(1));
 		const currentOffset = (this.currentTime - shiftSec) * 1000 | 0;
 		const ev = new CustomEvent(`ytlcf-seek:${nonce}`, { detail: { offset: currentOffset } });
 		state.abortController.signal.dispatchEvent(ev);
@@ -288,6 +289,7 @@ async function onYtNavigateFinish(pageType, response) {
 	 */
 	function onTimeUpdate() {
 		const shiftSec = !state.isLive && store.others.time_shift || 0;
+		this.setAttribute('data-shift-sec', shiftSec.toFixed(1));
 		const player = state.controller?.layer.element.parentElement;
 		if (player && isAdShowing(player)) return;
 		const currentOffset = (this.currentTime - shiftSec) * 1000 | 0;
