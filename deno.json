@@ -14,11 +14,13 @@
 		}
 	},
 	"tasks": {
-		"dev": "deno run -A npm:vite dev",
-		"build": "deno run -A npm:vite build"
+		"build": "deno run --allow-read --allow-write task/build.ts"
 	},
 	"imports": {
 		"@std/assert": "jsr:@std/assert@^1.0.19",
-		"vite": "npm:vite@^5.4.21"
+		"@std/fs": "jsr:@std/fs@^1.0.24",
+		"@std/path": "jsr:@std/path@^1.1.5",
+		"webextension-polyfill": "npm:webextension-polyfill@^0.12.0",
+		"#ys-j/zipjs/zip": "https://raw.githubusercontent.com/ys-j/ZipJS/refs/heads/main/zip.js"
 	}
 }
