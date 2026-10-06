@@ -64,6 +64,7 @@ export class LiveChatPanel {
 		const onmouseup = () => {
 			self.removeEventListener('mousemove', onmousemove);
 			self.removeEventListener('mouseup', onmouseup);
+			top?.removeEventListener('mouseup', onmouseup);
 		};
 		this.element.addEventListener('mousedown', e => {
 			const tagName = /** @type {HTMLElement} */ (e.target)?.tagName;
@@ -72,6 +73,7 @@ export class LiveChatPanel {
 			c.y = e.clientY;
 			self.addEventListener('mousemove', onmousemove, { passive: true });
 			self.addEventListener('mouseup', onmouseup, { passive: true });
+			top?.addEventListener('mouseup', onmouseup, { passive: true });
 		}, { passive: true });
 		this.element.addEventListener('keyup', e => {
 			e.stopPropagation();
@@ -284,6 +286,7 @@ export class LiveChatPanel {
 			const onmouseup = () => {
 				self.removeEventListener('mousemove', onmousemove);
 				self.removeEventListener('mouseup', onmouseup);
+				top?.removeEventListener('mouseup', onmouseup);
 			};
 			/** @type {(e: MouseEvent) => void} */
 			const onmousedown = e => {

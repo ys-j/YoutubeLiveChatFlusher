@@ -238,7 +238,6 @@ div.body:empty {
 
 .engagement-poll {
 	background-color: rgba(64, 64, 64, var(--yt-lcf-background-opacity));
-	color: var(--yt-live-chat-dialog-text-color, #fff);
 }
 
 :host([data-emoji="none"]) .emoji {
