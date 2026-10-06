@@ -135,8 +135,9 @@ const toggle = {
 	disable() { this.element?.setAttribute('aria-disabled', 'true'); },
 	enable() { this.element?.setAttribute('aria-disabled', 'false'); },
 };
-const startListening = () => {
-	state.controller?.listen();
+/** @param {string} nonce */
+const startListening = nonce => {
+	state.controller?.listen(nonce);
 	toggle.enable();
 };
 
@@ -171,7 +172,9 @@ async function onYtNavigateFinish(pageType, response) {
 	const videoType = state.isLive ? 'livestream' : 'replay';
 	const modeValue = state.device === 'mobile' ? FetchingModeEnum.MOBILE : store.others?.[`mode_${videoType}`] ?? FetchingModeEnum.INDEPENDENT;
 
+	const signal = state.abortController.signal;
 	const nonce = await browser.runtime.sendMessage({ fire: 'getNonce' });
+	if (signal.aborted) return;
 	if (typeof nonce !== 'string') {
 		const { name = 'NotFoundError', message } = nonce.error ?? {};
 		throw new DOMException(message, name);
@@ -182,7 +185,11 @@ async function onYtNavigateFinish(pageType, response) {
 	switch (modeValue) {
 		case FetchingModeEnum.DEPENDENT:
 			logger.info(`Running in dependent mode for ${videoType} (${info.videoId}):`, info.title);
-			document.addEventListener(`ytlcf-start:${nonce}`, startListening, { once: true });
+			document.addEventListener(`ytlcf-start:${nonce}`, e => {
+				startListening(nonce);
+				// Acknowledge only after the chat receiver is listening.
+				e.preventDefault();
+			}, { signal });
 			break;
 		case FetchingModeEnum.MOBILE: {
 			const desktopContent = await browser.runtime.sendMessage({
@@ -225,7 +232,7 @@ async function onYtNavigateFinish(pageType, response) {
 			initialContinuation ||= liveChatRenderer?.continuations?.at(0)?.reloadContinuationData?.continuation;
 			if (initialContinuation) {
 				logger.info(`Running in independent mode for ${videoType} (${info.videoId}):`, info.title);
-				startListening();
+				startListening(nonce);
 				if (state.isLive) {
 					const generator = getLiveChatActionsAsyncIterable(state.abortController.signal, initialContinuation);
 					for await (const actions of generator) {
