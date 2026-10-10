@@ -70,11 +70,21 @@ export class LiveChatLayer {
 		this.root.append(link, ...styles);
 		this.#initialElemCount = this.root.childElementCount;
 
-		const mutationObserver = new MutationObserver(() => {
+		const mutationObserver = new MutationObserver(records => {
+			for (const record of records) {
+				for (const removed of record.removedNodes) {
+					if (removed instanceof HTMLElement && removed.parentNode !== this.root) {
+						this.#controller.layoutCache?.deleteElement(removed);
+					}
+				}
+			}
 			const over = this.root.childElementCount - (this.limit || Infinity);
 			let i = this.#initialElemCount;
 			while (i++ < over) {
-				this.root.children[this.#initialElemCount]?.remove();
+				const oldest = /** @type {HTMLElement | undefined} */ (this.root.children[this.#initialElemCount]);
+				if (!oldest) break;
+				this.#controller.layoutCache?.deleteElement(oldest);
+				oldest.remove();
 			}
 		});
 		mutationObserver.observe(this.root, { childList: true });
@@ -90,6 +100,7 @@ export class LiveChatLayer {
 	 * @returns {LiveChatLayer} layer
 	 */
 	clear() {
+		this.#controller.layoutCache?.clear();
 		const styles = this.root.querySelectorAll('link,style');
 		this.root.replaceChildren(...styles);
 		return this;

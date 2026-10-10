@@ -726,9 +726,10 @@ export class LiveChatController {
 	#deleteChatItem(action) {
 		const id = action.markChatItemAsDeletedAction?.targetItemId;
 		if (!id) return;
-		if (this.layoutCache.delete(id).some(v => v)) {
-			const target = this.layer.root.getElementById(id);
-			target?.remove();
+		this.layoutCache.delete(id);
+		const target = this.layer.root.getElementById(id);
+		if (target) {
+			target.remove();
 		} else {
 			logger.warn(`Failed to delete message: #${id}`);
 		}
