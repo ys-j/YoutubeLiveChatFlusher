@@ -42,7 +42,8 @@ class ElementStub {
 		const width = this.boxWidth * this.host.scaleX * scale;
 		const height = this.boxHeight * this.host.scaleY * scale;
 		const offset = Number.parseFloat(this.style.bottom || this.style.top || '0') * this.fontSize * this.host.scaleY;
-		const top = this.style.bottom ? this.host.top + this.host.clientHeight * this.host.scaleY - offset - height : this.host.top + offset;
+		const originTop = this.host.top + this.host.border * this.host.scaleY;
+		const top = this.style.bottom ? originTop + (this.host.height - 2 * this.host.border) * this.host.scaleY - offset - height : originTop + offset;
 		const reversed = !!(store.data.others.direction & 2);
 		const left = this.host.left + (reversed ? -width : this.host.clientWidth * this.host.scaleX);
 		const roundedTop = top + (this.options.rectOffset ?? 0);
@@ -52,14 +53,31 @@ class ElementStub {
 }
 
 class HostStub {
-	clientHeight = 100;
-	clientWidth = 100;
+	height = 100;
+	width = 100;
+	padding = 0;
+	border = 0;
+	boxSizing = 'border-box';
 	top = 30;
 	left = 20;
 	scaleX = 1;
 	scaleY = 1;
+	get clientHeight() { return Math.round(this.height - 2 * this.border); }
+	set clientHeight(value: number) { this.height = value + 2 * this.border; }
+	get clientWidth() { return Math.round(this.width - 2 * this.border); }
+	set clientWidth(value: number) { this.width = value + 2 * this.border; }
 	getBoundingClientRect() {
-		return { top: this.top, height: this.clientHeight * this.scaleY, width: this.clientWidth * this.scaleX };
+		return { top: this.top, height: this.height * this.scaleY, width: this.width * this.scaleX };
+	}
+	getComputedStyle() {
+		const inset = this.boxSizing === 'border-box' ? 0 : 2 * (this.padding + this.border);
+		return {
+			width: `${this.width - inset}px`, height: `${this.height - inset}px`, boxSizing: this.boxSizing,
+			paddingTop: `${this.padding}px`, paddingBottom: `${this.padding}px`,
+			paddingLeft: `${this.padding}px`, paddingRight: `${this.padding}px`,
+			borderTopWidth: `${this.border}px`, borderBottomWidth: `${this.border}px`,
+			borderLeftWidth: `${this.border}px`, borderRightWidth: `${this.border}px`,
+		} as CSSStyleDeclaration;
 	}
 }
 
@@ -85,9 +103,10 @@ function test(name: string, run: () => void) {
 		store.data.others.overlapping = 0;
 		Date.now = () => 1000;
 		globalThis.getComputedStyle = (elem: Element) => {
+			if (elem instanceof HostStub) return elem.getComputedStyle();
 			const fake = elem as unknown as ElementStub;
 			fake.reads.style++;
-			return { fontSize: `${fake.fontSize}px`, lineHeight: `${fake.fontSize}px`, animationDuration: '8s' } as CSSStyleDeclaration;
+			return { fontSize: `${fake.fontSize}px`, lineHeight: `${fake.fontSize * Number(store.data.styles.line_height)}px`, animationDuration: '8s' } as CSSStyleDeclaration;
 		};
 		try { run(); } finally {
 			Object.assign(store.data.styles, before.styles);
@@ -230,6 +249,71 @@ test('scaled host placement and speed stay in viewport coordinates', () => {
 	assertEquals(layout.height, 20);
 	assertAlmostEquals(layout.speed, 120 * 1.5 / 8000);
 	assertEquals(cache.get('scaled')!.length, 1);
+});
+
+for (const measured of [false, true]) {
+	for (const direction of [0, 1]) {
+		for (const mode of ['dense', 'random'] as const) {
+			test(`fractional host fills every lane (${measured ? 'measured' : 'numeric'}, direction ${direction}, ${mode})`, () => {
+				store.data.styles.line_height = '1.4';
+				store.data.styles.layer_css = measured ? 'color: white' : '';
+				store.data.others.direction = direction;
+				Math.random = () => 0;
+				const { cache, element } = fixture(8, host => {
+					host.width = 659.0117797851562;
+					host.height = 370.6941223144531;
+				});
+				for (let line = 0; line < 8; line++) {
+					const target = element(`fractional-${line}`, { fontForLine: () => 32, height: 44.80004 });
+					layoutChatItem(target.element, cache, mode);
+					assertEquals(target.attributes.get('data-line'), `${line}`);
+					assertEquals(target.classes.has('overlap'), false);
+					assertEquals(cache.get(target.id)!.length, 1);
+					assertAlmostEquals(cache.get(target.id)![0].top, target.getBoundingClientRect().top);
+					assertAlmostEquals(cache.get(target.id)![0].speed, (659 + 20) / 8000);
+				}
+			});
+		}
+	}
+}
+
+for (const boxSizing of ['border-box', 'content-box']) {
+	test(`fractional scaled ${boxSizing} host excludes padding and borders from scale`, () => {
+		const { cache, element } = fixture(8, host => {
+			host.width = 659.0117797851562;
+			host.height = 370.6941223144531;
+			host.scaleX = 1.5;
+			host.scaleY = 2;
+			host.padding = 3.25;
+			host.border = 1.5;
+			host.boxSizing = boxSizing;
+		});
+		for (let line = 0; line < 8; line++) {
+			const target = element(`scaled-${line}`);
+			layoutChatItem(target.element, cache);
+			const layout = cache.get(target.id)![0];
+			assertEquals(target.attributes.get('data-line'), `${line}`);
+			assertEquals(cache.get(target.id)!.length, 1);
+			assertAlmostEquals(layout.top, target.getBoundingClientRect().top);
+			assertAlmostEquals(layout.speed, (656 + 20) * 1.5 / 8000);
+		}
+	});
+}
+
+test('subpixel tolerance still rejects a real vertical overlap', () => {
+	const { cache, element } = fixture();
+	layoutChatItem(element('tall', { height: 10.02 }).element, cache);
+	const target = element('next');
+	layoutChatItem(target.element, cache);
+	assertEquals(target.attributes.get('data-line'), '2');
+	assertEquals(cache.get('tall')!.length, 2);
+});
+
+test('positive subpixel height still occupies a lane', () => {
+	const { cache, element } = fixture();
+	const target = element('tiny', { height: .005 });
+	layoutChatItem(target.element, cache);
+	assertEquals(cache.get('tiny')!.length, 1);
 });
 
 test('custom CSS keeps measuring lane-dependent em positions', () => {

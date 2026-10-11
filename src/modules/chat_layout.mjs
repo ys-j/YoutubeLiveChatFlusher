@@ -1,5 +1,8 @@
 import { store as s } from './store.mjs';
 
+// Allow for DOMRect rounding at touching edges, in viewport CSS pixels.
+const RECT_TOLERANCE = .01;
+
 export class LiveChatLayoutCache {
 	/**
 	 * @param {ShadowRoot} root shadow root
@@ -87,6 +90,20 @@ export class LiveChatLayoutCache {
 	}
 }
 
+/** @param {CSSStyleDeclaration} style resolved host style */
+function getBorderBoxSize(style) {
+	let width = Number.parseFloat(style.width), height = Number.parseFloat(style.height);
+	if (style.boxSizing !== 'border-box') {
+		for (const value of [style.paddingLeft, style.paddingRight, style.borderLeftWidth, style.borderRightWidth]) {
+			width += Number.parseFloat(value) || 0;
+		}
+		for (const value of [style.paddingTop, style.paddingBottom, style.borderTopWidth, style.borderBottomWidth]) {
+			height += Number.parseFloat(value) || 0;
+		}
+	}
+	return { width, height };
+}
+
 /**
  * Lays out chat item element.
  * @param {HTMLElement} el rendered element
@@ -108,8 +125,11 @@ export function layoutChatItem(el, cache, mode = 'dense') {
 	const reversed = (s.others.direction & 2) > 0;
 	const lhf = Number.parseFloat(s.styles.line_height) || 1.4;
 	const parentRect = host.getBoundingClientRect();
-	const scaleX = hw ? parentRect.width / hw : 1;
-	const scaleY = hh ? parentRect.height / hh : 1;
+	// clientWidth/Height are rounded integers and exclude borders. Comparing
+	// them with DOMRect sizes would mistake fractional pixels for a transform.
+	const hostSize = getBorderBoxSize(getComputedStyle(host));
+	const scaleX = hostSize.width > 0 ? parentRect.width / hostSize.width : 1;
+	const scaleY = hostSize.height > 0 ? parentRect.height / hostSize.height : 1;
 	// Arbitrary user CSS can change geometry by lane or by the overlap class.
 	const measured = !!s.styles.layer_css || Object.values(s.cssTexts).some(Boolean);
 	el.style[dir] = '0em';
@@ -182,7 +202,7 @@ class ChatLayoutInfo {
 	/** @type {{width: number, height: number, top: number, bottom: number, left: number, right: number}} */ #rect;
 	/** @type {number} */ #originTop;
 	/** @type {number} */ #line;
-	/** @type {number} */ #range;
+	/** @type {number} */ #lineHeight;
 
 	/**
 	 * @param {HTMLElement} elem
@@ -199,7 +219,7 @@ class ChatLayoutInfo {
 		const computedStyle = getComputedStyle(elem);
 		this.fontSize = Number.parseFloat(computedStyle.fontSize);
 		const lh = Number.parseFloat(computedStyle.lineHeight) || this.fontSize * (Number.parseFloat(s.styles.line_height) || 1.4);
-		this.#range = this.height / (lh * scaleY);
+		this.#lineHeight = lh * scaleY;
 		const [_durMatch, durNum, durUnit] = computedStyle.animationDuration.match(/^([\d.]+)(\D+)/) || [];
 		const durFactor = durNum && durUnit && { 's': 1000, 'ms': 1 }[durUnit] || 0;
 		this.duration = durFactor ? Number.parseFloat(durNum) * durFactor : Number.parseFloat(s.styles.animation_duration) * 1000;
@@ -221,7 +241,11 @@ class ChatLayoutInfo {
 	}
 
 	get lineStart() { return Math.floor(this.#line); }
-	get lineEnd() { return Math.ceil(this.#line + this.#range); }
+	get lineEnd() {
+		const end = Math.ceil(this.#line + (this.height - RECT_TOLERANCE) / this.#lineHeight);
+		// A positive-height item must occupy at least one lane, even if tiny.
+		return this.height > 0 ? Math.max(this.lineStart + 1, end) : this.lineStart;
+	}
 	get width() { return this.#rect.width; }
 	get height() { return this.#rect.height; }
 	get top() { return this.#rect.top; }
@@ -240,7 +264,7 @@ class ChatLayoutInfo {
 	 * @returns {boolean}
 	 */
 	isCollidable(before, reversed = false) {
-		if (this.top >= before.bottom || before.top >= this.bottom) return false;
+		if (this.top >= before.bottom - RECT_TOLERANCE || before.top >= this.bottom - RECT_TOLERANCE) return false;
 		const posDiff = reversed ? before.getLeft(-1) - this.getRight(-1) : this.getLeft() - before.getRight();
 		if (posDiff <= 0) return true;
 		const speedDiff = this.speed - before.speed;
@@ -251,6 +275,6 @@ class ChatLayoutInfo {
 	/** @param {{top: number, height: number}} parent */
 	isOverflow(parent) {
 		// DOMRect coordinates can round just beyond an exactly aligned host edge.
-		return this.top < parent.top - .01 || this.bottom > parent.top + parent.height + .01;
+		return this.top < parent.top - RECT_TOLERANCE || this.bottom > parent.top + parent.height + RECT_TOLERANCE;
 	}
 }
