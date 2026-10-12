@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "__MSG_manifestName__",
-	"version": "0.16.5",
+	"version": "0.16.6",
 	"author": "_y_s",
 	"action": {
 		"default_state": "disabled"
@@ -25,7 +25,7 @@
 	"default_locale": "en",
 	"description": "__MSG_manifestDescription__",
 	"homepage_url": "https://github.com/ys-j/YoutubeLiveChatFlusher",
-	"host_permissions": ["https://www.youtube.com/*"],
+	"host_permissions": ["https://www.youtube.com/*", "https://m.youtube.com/*"],
 	"icons": {
 		"16": "images/icon16.png",
 		"32": "images/icon32.png",

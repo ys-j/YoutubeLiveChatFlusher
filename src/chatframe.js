@@ -27,7 +27,7 @@
 			if (layer) {
 				const nonce = await browser.runtime.sendMessage({ fire: 'getNonce' });
 				if (typeof nonce !== 'string') {
-					const { name = 'NotFoundError', message } = nonce.error;
+					const { name = 'NotFoundError', message } = nonce?.error ?? {};
 					logger.error(new DOMException(message, name));
 					return;
 				}

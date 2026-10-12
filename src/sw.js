@@ -224,7 +224,7 @@ browser.runtime.onMessage.addListener((/** @type {YTLCFMessage.Request.Any} */ m
 		const { text } = msg.detection;
 		(detector.isReady ? Promise.resolve() : detector.ready())
 		.then(() => detector.detect(text))
-		.then(respond);
+		.then(respond, handleError);
 	} else if ('translation' in msg) {
 		const { text, source, target: tl } = msg.translation;
 		(
@@ -233,7 +233,7 @@ browser.runtime.onMessage.addListener((/** @type {YTLCFMessage.Request.Any} */ m
 			: detector.detect(text).then(d => d.isReliable && d.source || 'auto')
 		)
 		.then(sl => translationController?.translate(text, tl, sl))
-		.then(respond);
+		.then(respond, handleError);
 	} else if ('mask' in msg) {
 		const { mask: blob } = msg;
 		const startTime = performance.now();
