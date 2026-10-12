@@ -3,8 +3,8 @@ import { DEFAULT_CONFIG, store as s } from '../modules/store.mjs';
 
 import { TranslatorController } from '../modules/translator.mjs';
 
-// @ts-expect-error
-self.browser ??= chrome;
+// @ts-expect-error: Polyfill browser API for Chrome 147 or older environments
+globalThis.browser ??= chrome;
 
 const manifest = browser.runtime.getManifest();
 document.documentElement.dataset.browser = 'browser_specific_settings' in manifest ? 'firefox' : 'chrome';
@@ -38,7 +38,7 @@ const manifestElems = document.querySelectorAll('[data-manifest]');
 for (const el of manifestElems) {
 	const key = el.dataset.manifest;
 	if (key && key in manifest) {
-		const k = /** @type {keyof import("webextension-polyfill").Manifest.WebExtensionManifest} */ (key);
+		const k = /** @type {keyof import("npm:@types/webextension-polyfill").Manifest.WebExtensionManifest} */ (key);
 		const v = manifest[k]?.toString();
 		if (v) el.textContent = v;
 	}
@@ -89,7 +89,7 @@ const saveBtn = /** @type {?HTMLButtonElement} */ (document.getElementById('btn-
 const [form, tester] = document.forms;
 
 /** @type {Record<string, RadioNodeList>} */
-// @ts-expect-error
+// @ts-expect-error: Properties are not explicitly defined on form.elements
 const {
 	notification_whenUpdated,
 	mode_livestream, mode_replay,
@@ -102,7 +102,7 @@ const {
 } = form.elements;
 
 /** @type {Record<string, HTMLInputElement>} */
-// @ts-expect-error
+// @ts-expect-error: Properties are not explicitly defined on form.elements
 const {
 	hotkey_layer_key, hotkey_layer_alt,
 	hotkey_panel_key, hotkey_panel_alt,
@@ -112,14 +112,14 @@ const {
 } = form.elements;
 
 /** @type {Record<string, HTMLSelectElement>} */
-// @ts-expect-error
+// @ts-expect-error: Properties are not explicitly defined on form.elements
 const {
 	person_detector_backend,
 	translation_translator
 } = form.elements;
 
 /** @type {Record<string, HTMLTextAreaElement>} */
-// @ts-expect-error
+// @ts-expect-error: Properties are not explicitly defined on form.elements
 const {
 	translation_blacklist,
 	translation_bodyContent,
@@ -184,7 +184,7 @@ form.addEventListener('change', async e => {
 
 	if (e.target instanceof HTMLInputElement) switch (e.target.name) {
 		case 'notification_whenUpdated':
-		case 'person_detector_device':
+		case 'person_detector_device': {
 			const permission = {
 				notification_whenUpdated: /** @type {const} */ ({ name: 'notifications', falsyValue: '0' }),
 				person_detector_device: /** @type {const} */ ({ name: 'trialML', falsyValue: '' }),
@@ -198,8 +198,9 @@ form.addEventListener('change', async e => {
 				}
 			}
 			break;
+		}
 		case 'translation_method':
-		case 'translation_bodyType':
+		case 'translation_bodyType': {
 			updateTranslationControls();
 			if (!translation_bodyContent.disabled) {
 				translation_bodyContent.setCustomValidity((v => {
@@ -216,6 +217,7 @@ form.addEventListener('change', async e => {
 				/** @type {HTMLElement} */ (el).hidden = translation_method.value !== 'POST';
 			}
 			break;
+		}
 	}
 });
 

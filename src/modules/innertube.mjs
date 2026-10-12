@@ -16,17 +16,20 @@ const defaultClient = {
  * @returns {Promise<Record<string, any>>} JSON object
  */
 export async function fetchInnerTube(url, payload, options = {}) {
-	const stored = sessionStorage.getItem('ytlcf-cfg');
-	const data = stored ? JSON.parse(stored) : null;
-	if (options.key && data) {
-		url.searchParams.set('key', data['INNERTUBE_API_KEY']);
+	const data = {
+		INNERTUBE_API_KEY: sessionStorage.getItem('INNERTUBE_API_KEY') || '',
+		INNERTUBE_CONTEXT: JSON.parse(sessionStorage.getItem('INNERTUBE_CONTEXT') || '{}'),
+		DATASYNC_ID: sessionStorage.getItem('DATASYNC_ID'),
+	};
+	if (options.key && data.INNERTUBE_API_KEY) {
+		url.searchParams.set('key', data.INNERTUBE_API_KEY);
 	}
 	const headers = new Headers();
 	headers.set('Content-Type', 'application/json');
-	if (options.auth && data) {
-		headers.set('Authorization', await getAuthorization(data));
+	if (options.auth && data.DATASYNC_ID) {
+		headers.set('Authorization', await getAuthorization(data.DATASYNC_ID));
 	}
-	const client = data?.['INNERTUBE_CONTEXT']?.client;
+	const client = data?.INNERTUBE_CONTEXT?.client;
 	const context = { client: client?.clientName === 'WEB' ? client : defaultClient };
 	const res = await fetch(url, {
 		method: 'post',
@@ -38,11 +41,11 @@ export async function fetchInnerTube(url, payload, options = {}) {
 	const message = `Request failed: ${res.status} ${res.statusText}`;
 	switch (res.status) {
 		case 429:
-		case 503:
+		case 503: {
 			const retryAfter = parseRetryAfter(res.headers.get('Retry-After'));
 			await sleep(retryAfter ?? 1000);
-			// @ts-expect-error
-			return fetchInnerTube(...arguments);
+			return fetchInnerTube(url, payload, options);
+		}
 		default:
 			throw new Error(message);
 	}
@@ -55,11 +58,11 @@ const HEX_LUT = Object.freeze(Array.from({ length: 256 }, (_, i) => i.toString(1
 
 /**
  * Fetches the value of Authorization header.
- * @param {Record<string, string>} data stored data
+ * @param {string} dataSyncId datasync id
  * @returns {Promise<string>} authorization value
  */
-async function getAuthorization(data) {
-	const datasyncId = data['DATASYNC_ID'].split('||')[0];
+async function getAuthorization(dataSyncId) {
+	const datasyncId = dataSyncId.split('||')[0];
 	const timestamp = (Date.now() / 1e3) | 0;
 	const cookies = new Map(document.cookie.split(/;\s*/).flatMap(c => {
 		const i = c.indexOf('=');

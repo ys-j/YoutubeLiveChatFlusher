@@ -11,7 +11,11 @@ export class LiveChatLayoutCache {
 		this.maps = Array.from({ length: numOfLanes }, () => new Map());
 	}
 
-	get size() {
+	/**
+	 * Number of distinct layouts stored across all lanes.
+	 * A layout spanning multiple lanes is counted once here, unlike the sum of per-lane placements.
+	 */
+	get distinctSize() {
 		return this.maps.reduce((a, c) => a.union(c), new Set()).size;
 	}
 
@@ -92,16 +96,6 @@ export function layoutChatItem(el, cache, mode = 'dense') {
 	}
 
 	el.style.setProperty('--yt-lcf-translate-x', `-${hw + cw}px`);
-
-	const body = /** @type {?HTMLElement} */ (el.lastElementChild);
-	const content = body?.textContent;
-	if (content) {
-		browser.i18n.detectLanguage(content).then(res => {
-			if (res.isReliable) {
-				body.lang = res.languages[0].language;
-			}
-		});
-	}
 
 	const dir = s.others.direction & 1 ? 'bottom' : 'top';
 	if (ch >= hh) {

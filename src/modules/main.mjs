@@ -1,9 +1,12 @@
 import { logger } from './logging.mjs';
 import { store } from './store.mjs';
-import { isAdShowing, getText, getValueByJSONPointer } from './utils.mjs';
+import { getText, getValueByJSONPointer } from './utils.mjs';
+import { isAdShowing } from './dom_utils.mjs';
 
 import { LiveChatController } from './chat_controller.mjs';
 import { ReplayActionBuffer, getReplayChatActionsAsyncIterable, getLiveChatActionsAsyncIterable } from './chat_actions.mjs';
+
+const manifest = browser.runtime.getManifest();
 
 const state = {
 	isLive: false,
@@ -39,6 +42,7 @@ const FetchingModeEnum = Object.freeze({
  * @prop {any} [response.contents]
  * @prop {any} [response.currentVideoEndpoint]
  * @prop {any} [response.playerOverlays]
+ * @prop {string} [response.page]
  */
 
 /**
@@ -64,28 +68,35 @@ export async function initialize(e) {
 		? { start: 'yt-navigate-start', end: 'yt-navigate-finish', pointer: '' }
 		: { start: 'state-navigatestart', end: 'state-navigateend', pointer: '/data' };
 	try {
-		// @ts-expect-error
 		const pageType = e.detail.pageType ?? e.detail.response?.page;
 		if (pageType !== 'watch') throw `page-type is not "watch" but "${pageType}"`;
 
 		await state.controller.start();
-		self.dispatchEvent(new CustomEvent('ytlcf-ready'));
-		onYtNavigateFinish(pageType, e.detail.response);
+		logger.info(`${manifest.name} is ready!`);
+
+		onYtNavigateFinish(pageType, e.detail.response).catch(logger.error);
 		self.addEventListener(navEvtDefs.end, e => {
 			const data = getValueByJSONPointer(e.detail, navEvtDefs.pointer + '/response');
-			onYtNavigateFinish(data.page, data);
+			onYtNavigateFinish(data.page, data).catch(logger.error);
 		});
 
 		if (state.device === 'desktop') {
 			// Initilize document picture-in-picture
-			const script = document.createElement('script');
-			script.id = 'yt-lcf-pip-script';
-			script.src = browser.runtime.getURL('/injections/pip.mjs');
-			script.type = 'module';
-			script.dataset.paramCssUrl = browser.runtime.getURL('/styles/content.css');
-			script.dataset.paramPipMarkerText = browser.i18n.getMessage('pip_marker');
-			script.dataset.paramHotkeys = JSON.stringify(store.hotkeys);
-			document.body.append(script);
+			const results = await browser.runtime.sendMessage({
+				injection: 'pip',
+				details: {
+					cssUrl: browser.runtime.getURL('/styles/content.css'),
+					pipMarkerText: browser.i18n.getMessage('pip_marker'),
+					hotkeys: store.data.hotkeys,
+				},
+			});
+			for (const r of results) {
+				if (r?.error) {
+					// @ts-expect-error: r.error is an object with name and message properties
+					const { name = 'AbortError', message = '' } = r.error;
+					logger.warn(new DOMException(message, name));
+				}
+			}
 		}
 	} catch (reason) {
 		logger.warn(`Waiting for next navigation due to setup failure:`, reason);
@@ -126,18 +137,23 @@ export async function initialize(e) {
 	}, { passive: true });
 }
 
+const toggle = {
+	get element() { return state.controller?.player?.querySelector('#yt-lcf-cb'); },
+	disable() { this.element?.setAttribute('aria-disabled', 'true'); },
+	enable() { this.element?.setAttribute('aria-disabled', 'false'); },
+};
+/** @param {string} nonce */
+const startListening = nonce => {
+	state.controller?.listen(nonce);
+	toggle.enable();
+};
+
 /**
  * @param {string} pageType
  * @param {any} response
  */
 async function onYtNavigateFinish(pageType, response) {
 	if (pageType !== 'watch') return;
-
-	const toggle = {
-		element: state.controller?.player?.querySelector('#yt-lcf-cb'),
-		disable() { this.element?.setAttribute('aria-disabled', 'true'); },
-		enable() { this.element?.setAttribute('aria-disabled', 'false'); },
-	};
 	toggle.disable();
 
 	/** @type {?HTMLVideoElement | undefined} */
@@ -163,15 +179,24 @@ async function onYtNavigateFinish(pageType, response) {
 	const videoType = state.isLive ? 'livestream' : 'replay';
 	const modeValue = state.device === 'mobile' ? FetchingModeEnum.MOBILE : store.others?.[`mode_${videoType}`] ?? FetchingModeEnum.INDEPENDENT;
 
+	const signal = state.abortController.signal;
+	const nonce = await browser.runtime.sendMessage({ fire: 'getNonce' });
+	if (signal.aborted) return;
+	if (typeof nonce !== 'string') {
+		const { name = 'NotFoundError', message } = nonce.error ?? {};
+		throw new DOMException(message, name);
+	}
+
 	/** @type {?string} */
 	let initialContinuation = null;
 	switch (modeValue) {
 		case FetchingModeEnum.DEPENDENT:
 			logger.info(`Running in dependent mode for ${videoType} (${info.videoId}):`, info.title);
-			document.addEventListener('ytlcf-start', () => {
-				state.controller?.listen();
-				toggle.enable();
-			});
+			document.addEventListener(`ytlcf-start:${nonce}`, e => {
+				startListening(nonce);
+				// Acknowledge only after the chat receiver is listening.
+				e.preventDefault();
+			}, { signal });
 			break;
 		case FetchingModeEnum.MOBILE: {
 			const desktopContent = await browser.runtime.sendMessage({
@@ -179,7 +204,7 @@ async function onYtNavigateFinish(pageType, response) {
 				contentType: 'text',
 			});
 			let warning = null;
-			if ('error' in desktopContent) {
+			if (!desktopContent || 'error' in desktopContent) {
 				warning = 'Failed to fetch the desktop page from mobile mode:';
 			} else {
 				const pat = /"continuations":\s*\[\s*\{\s*"reloadContinuationData":\s*\{\s*"continuation":\s*"([^"]+)"/;
@@ -193,8 +218,8 @@ async function onYtNavigateFinish(pageType, response) {
 			} else {
 				logger.info(`Running in mobile mode for ${videoType} (${info.videoId}):`, info.title);
 			}
-			// fall through
 		}
+		// falls through
 		case FetchingModeEnum.INDEPENDENT: {
 			const timer = setInterval(() => {
 				if (state.action.size > 0) {
@@ -214,12 +239,11 @@ async function onYtNavigateFinish(pageType, response) {
 			initialContinuation ||= liveChatRenderer?.continuations?.at(0)?.reloadContinuationData?.continuation;
 			if (initialContinuation) {
 				logger.info(`Running in independent mode for ${videoType} (${info.videoId}):`, info.title);
-				state.controller?.listen();
-				toggle.enable();
+				startListening(nonce);
 				if (state.isLive) {
 					const generator = getLiveChatActionsAsyncIterable(state.abortController.signal, initialContinuation);
 					for await (const actions of generator) {
-						const ev = new CustomEvent('ytlcf-action', { detail: actions });
+						const ev = new CustomEvent(`ytlcf-action:${nonce}`, { detail: actions });
 						document.dispatchEvent(ev);
 					}
 				} else {
@@ -227,7 +251,7 @@ async function onYtNavigateFinish(pageType, response) {
 						onSeeking.call(video);
 						onRateChange.call(video);
 					}, 250);
-					const generator = getReplayChatActionsAsyncIterable(state.abortController.signal, initialContinuation);
+					const generator = getReplayChatActionsAsyncIterable(state.abortController.signal, initialContinuation, nonce, video);
 					for await (const actions of generator) {
 						state.action.pushActions(actions);
 					}
@@ -239,38 +263,40 @@ async function onYtNavigateFinish(pageType, response) {
 			break;
 		}
 	}
-}
 
-/**
- * @this {HTMLVideoElement}
- */
-function onSeeking() {
-	const shiftSec = !state.isLive && store.others.time_shift || 0;
-	const currentOffset = (this.currentTime - shiftSec) * 1000 | 0;
-	const ev = new CustomEvent('ytlcf-seek', { detail: { offset: currentOffset } });
-	state.abortController.signal.dispatchEvent(ev);
-	state.action.update(currentOffset);
-}
+	/**
+	 * @this {HTMLVideoElement}
+	 */
+	function onSeeking() {
+		const shiftSec = !state.isLive && store.others.time_shift || 0;
+		this.setAttribute('data-shift-sec', shiftSec.toFixed(1));
+		const currentOffset = (this.currentTime - shiftSec) * 1000 | 0;
+		const ev = new CustomEvent(`ytlcf-seek:${nonce}`, { detail: { offset: currentOffset } });
+		state.abortController.signal.dispatchEvent(ev);
+		state.action.update(currentOffset);
+	}
 
-/**
- * @this {HTMLVideoElement}
- */
-function onRateChange() {
-	const ev = new CustomEvent('ytlcf-ratechange', { detail: { rate: this.playbackRate } });
-	state.abortController.signal.dispatchEvent(ev);
-}
+	/**
+	 * @this {HTMLVideoElement}
+	 */
+	function onRateChange() {
+		const ev = new CustomEvent(`ytlcf-ratechange:${nonce}`, { detail: { rate: this.playbackRate } });
+		state.abortController.signal.dispatchEvent(ev);
+	}
 
-/**
- * @this {HTMLVideoElement}
- */
-function onTimeUpdate() {
-	const shiftSec = !state.isLive && store.others.time_shift || 0;
-	const player = state.controller?.layer.element.parentElement;
-	if (player && isAdShowing(player)) return;
-	const currentOffset = (this.currentTime - shiftSec) * 1000 | 0;
-	const pendingActions = state.action.getPendingActions(currentOffset);
-	if (pendingActions.length > 0) {
-		const ev = new CustomEvent('ytlcf-action', { detail: pendingActions });
-		document.dispatchEvent(ev);
+	/**
+	 * @this {HTMLVideoElement}
+	 */
+	function onTimeUpdate() {
+		const shiftSec = !state.isLive && store.others.time_shift || 0;
+		this.setAttribute('data-shift-sec', shiftSec.toFixed(1));
+		const player = state.controller?.layer.element.parentElement;
+		if (player && isAdShowing(player)) return;
+		const currentOffset = (this.currentTime - shiftSec) * 1000 | 0;
+		const pendingActions = state.action.getPendingActions(currentOffset);
+		if (pendingActions.length > 0) {
+			const ev = new CustomEvent(`ytlcf-action:${nonce}`, { detail: pendingActions });
+			document.dispatchEvent(ev);
+		}
 	}
 }

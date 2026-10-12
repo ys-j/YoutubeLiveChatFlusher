@@ -1,8 +1,9 @@
 import { logger } from './logging.mjs';
 import { store as s } from './store.mjs';
-import { isNotPip, loadTemplateDocument, getColorRGB } from './utils.mjs';
+import { getColorRGB } from './utils.mjs';
+import { isNotPip, loadTemplateDocument } from './dom_utils.mjs';
 
-import { LiveChatLayer, VideoSegmentationExecutor } from './chat_layer.mjs'
+import { LiveChatLayer, VideoFrameSegmenter } from './chat_layer.mjs'
 import { LiveChatPanel, WrapStyleDefinitions } from './chat_panel.mjs';
 import { LiveChatContextMenu } from './chat_contextmenu.mjs';
 import { LiveChatItemFactory, EmojiModeEnum, renderChatItem, updateMutedWordsList, updateTlExclusionList } from './chat_message.mjs';
@@ -33,7 +34,7 @@ export class LiveChatController {
 
 	/** @type {boolean} */
 	listening = false;
-	/** @type {?VideoSegmentationExecutor} */
+	/** @type {?VideoFrameSegmenter} */
 	segmenter = null;
 
 	/**
@@ -304,23 +305,28 @@ export class LiveChatController {
 		const le = this.layer.element;
 		const ctrls = form.elements;
 		for (const select of form.querySelectorAll('select')) {
-			if (select.name in s.others) {
-				const name = /** @type {keyof typeof s.others} */ (select.name);
-				const val = s.others[name];
-				select.selectedIndex = val;
-				if (name === 'emoji') {
-					le.setAttribute('data-emoji', Object.keys(EmojiModeEnum)[val].toLowerCase());
-				} else if (name === 'wrap') {
-					const wrapStyle = WrapStyleDefinitions[val];
-					le.style.setProperty('--yt-lcf-message-hyphens', wrapStyle.hyphens);
-					le.style.setProperty('--yt-lcf-message-word-break', wrapStyle.wordBreak);
-					le.style.setProperty('--yt-lcf-message-white-space', wrapStyle.whiteSpace);
-					le.style.setProperty('--yt-lcf-max-width', s.styles.max_width);
+			switch (select.name) {
+				case 'muted_words_mode':
+					select.selectedIndex = s.mutedWords.mode;
+					break;
+				case 'translation':
+					select.selectedIndex = s.translation.targetIndex;
+					break;
+				default: {
+					if (!(select.name in s.others)) break;
+					const name = /** @type {keyof typeof s.others} */ (select.name);
+					const val = s.others[name];
+					select.selectedIndex = val;
+					if (name === 'emoji') {
+						le.setAttribute('data-emoji', Object.keys(EmojiModeEnum)[val].toLowerCase());
+					} else if (name === 'wrap') {
+						const wrapStyle = WrapStyleDefinitions[val];
+						le.style.setProperty('--yt-lcf-message-hyphens', wrapStyle.hyphens);
+						le.style.setProperty('--yt-lcf-message-word-break', wrapStyle.wordBreak);
+						le.style.setProperty('--yt-lcf-message-white-space', wrapStyle.whiteSpace);
+						le.style.setProperty('--yt-lcf-max-width', s.styles.max_width);
+					}
 				}
-			} else if (select.name === 'muted_words_mode') {
-				select.selectedIndex = s.mutedWords.mode;
-			} else if (select.name === 'translation') {
-				select.selectedIndex = s.translation.targetIndex;
 			}
 		}
 		const checkboxes = /** @type {NodeListOf<HTMLInputElement>} */ (form.querySelectorAll('input[type="checkbox"]'));
@@ -380,7 +386,8 @@ export class LiveChatController {
 		const kebab = type.replace(/_/g, '-');
 		const part = s.parts[type];
 		switch (cb.value) {
-			case 'color': if ('color' in part) {
+			case 'color': {
+				if (!('color' in part)) break;
 				cb.checked = part.color + part.strokeColor !== '';
 				const fillProp = `--yt-lcf-${kebab}-color`;
 				const strokeProp = `--yt-lcf-${kebab}-stroke-color`;
@@ -405,8 +412,9 @@ export class LiveChatController {
 					le.classList[method](`has-${type}-name`);
 				}, { passive: true });
 			}
+			// falls through
 			default: {
-				// @ts-expect-error
+				// @ts-expect-error: Dynamic property access
 				cb.checked = part[cb.value];
 				le.style.setProperty(`--yt-lcf-${kebab}-display-${cb.value}`, cb.checked ? 'inline' : 'none');
 			}
@@ -547,7 +555,7 @@ export class LiveChatController {
 		canvas.style.position = 'absolute';
 		canvas.style.visibility = 'hidden';
 
-		const [w, h] = VideoSegmentationExecutor.TARGET_SIZE;
+		const [w, h] = VideoFrameSegmenter.TARGET_SIZE;
 		[canvas.width, canvas.height] = [w, h];
 		const imageData = new ImageData(w, h);
 		const u32data = new Uint32Array(imageData.data.buffer);
@@ -555,7 +563,7 @@ export class LiveChatController {
 		const localBuffer = new Uint8ClampedArray(w * h);
 		let hasNew = false;
 
-		this.segmenter = new VideoSegmentationExecutor(async res => {
+		this.segmenter = new VideoFrameSegmenter(async res => {
 			const data = res?.at(0)?.mask?.data;
 			if (!data) return;
 			localBuffer.set(data);
@@ -563,7 +571,7 @@ export class LiveChatController {
 		});
 		this.segmenter.observe(video, this.layer);
 
-		(async function renderLoop() {
+		(async function renderMask() {
 			if (hasNew) {
 				hasNew = false;
 				const ALPHA_MASK = 0xFF000000;
@@ -594,13 +602,17 @@ export class LiveChatController {
 				ctx.transferFromImageBitmap(bitmap);
 				bitmap.close();
 			}
-			requestAnimationFrame(renderLoop);
+			requestAnimationFrame(renderMask);
 		})();
 
 		const le = this.layer.element;
 		le.style.maskImage = `linear-gradient(#fff, #fff), -moz-element(#${canvas.id})`;
 		le.style.maskMode = 'luminance';
-		le.style.maskPosition = `0px 0px, ${video.style.left} ${video.style.top}`;
+		const maskPos = {
+			x: `calc(${video.style.left || '0px'} - ${le.style.left || '0px'})`,
+			y: `calc(${video.style.top || '0px'} - ${le.style.top || '0px'})`,
+		};
+		le.style.maskPosition = `0px 0px, ${maskPos.x} ${maskPos.y}`;
 		le.style.maskSize = `100% 100%, ${video.style.width} ${video.style.height}`;
 		le.style.maskRepeat = 'no-repeat, no-repeat';
 		le.style.maskComposite = 'exclude';
@@ -638,8 +650,7 @@ export class LiveChatController {
 		let merge = _el => true;
 		switch (s.others.simultaneous) {
 			case SimultaneousModeEnum.FIRST: {
-				// @ts-expect-error
-				const notext = filtered.add.slice(1).filter(a => !a.addChatItemAction?.item.liveChatTextMessageRenderer);
+				const notext = filtered.add.slice(1).filter(a => !('liveChatTextMessageRenderer' in (a.addChatItemAction?.item || {})));
 				filtered.add.splice(1, Infinity, ...notext);
 				break;
 			}
@@ -713,8 +724,8 @@ export class LiveChatController {
 	 * @param {LiveChat.LiveChatItemAction} action
 	 */
 	#deleteChatItem(action) {
-		// @ts-expect-error
-		const id = action.markChatItemAsDeletedAction.targetItemId;
+		const id = action.markChatItemAsDeletedAction?.targetItemId;
+		if (!id) return;
 		if (this.layoutCache.delete(id).some(v => v)) {
 			const target = this.layer.root.getElementById(id);
 			target?.remove();
@@ -727,8 +738,8 @@ export class LiveChatController {
 	 * @param {LiveChat.LiveChatItemAction} action
 	 */
 	#deleteChatItemByAuthor(action) {
-		// @ts-expect-error
-		const id = action.markChatItemsByAuthorAsDeletedAction.externalChannelId;
+		const id = action.markChatItemsByAuthorAsDeletedAction?.externalChannelId;
+		if (!id) return;
 		const targets = this.layer.root.querySelectorAll(`[data-author-id="${id}"]`);
 		for (const target of targets) {
 			this.layoutCache.delete(target.id);
@@ -740,8 +751,8 @@ export class LiveChatController {
 	 * @param {LiveChat.LiveChatItemAction} action
 	 */
 	#replaceChatItem(action) {
-		// @ts-expect-error
-		const id = action.replaceChatItemAction.targetItemId;
+		const id = action.replaceChatItemAction?.targetItemId;
+		if (!id) return;
 		const target = this.layer.root.getElementById(id);
 		const item = action.replaceChatItemAction?.replacementItem;
 		if (target && item) {
@@ -772,13 +783,15 @@ export class LiveChatController {
 		this.#skip = true;
 	}
 
-	listen() {
+	/** @param {string} nonce */
+	listen(nonce) {
 		this.unlisten();
-		document.addEventListener('ytlcf-action', () => {
-			document.addEventListener('ytlcf-action', e => {
+		// Skip first event to avoid flushing too many messages
+		document.addEventListener(`ytlcf-action:${nonce}`, () => {
+			document.addEventListener(`ytlcf-action:${nonce}`, e => {
 				this.#onAction(e);
-			}, { passive: true, signal: this.abortController.signal });
-		}, { once: true, passive: true });
+			}, { signal: this.abortController.signal });
+		}, { once: true, signal: this.abortController.signal });
 		this.listening = true;
 
 		const video = this.player.querySelector('#movie_player video');

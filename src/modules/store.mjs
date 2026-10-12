@@ -35,7 +35,7 @@ export const DEFAULT_CONFIG = Object.freeze({
 		time_shift: 0,
 		notification_updated: 0,
 		/** @type {import("./main.mjs").FetchingModeEnum} */
-		mode_livestream: 0,
+		mode_livestream: 1,
 		/** @type {import("./main.mjs").FetchingModeEnum} */
 		mode_replay: 1,
 		autostart: 0,
@@ -134,13 +134,17 @@ class ConfigHandler {
 	set(target, prop, val, _recv) {
 		if (prop in target) {
 			target[prop] = val;
+			const dispVal = typeof val === 'string' ? `"${val}"` : val;
 			browser.storage.local.set({ [this.#name]: target }).then(() => {
-				const dispVal = typeof val === 'string' ? `"${val}"` : val;
 				logger.info(`Successfully saved config:`, `${this.#name}["${prop}"] =`, dispVal);
+			}, () => {
+				logger.error(`Failed to save config:`, `${this.#name}["${prop}"] =`, dispVal);
 			});
 			return true;
+		} else {
+			logger.warn(`Property not found in config:`, `${this.#name}["${prop}"]`);
+			return false;
 		}
-		return false;
 	}
 }
 
@@ -150,18 +154,23 @@ class ConfigHandler {
  */
 
 class ConfigStore {
+	/** @type {boolean} */
+	isLoaded;
+	/** @type {UnwrapReadonly<typeof DEFAULT_CONFIG>} */
+	data;
+	/** @type {UnwrapReadonly<typeof this.data>} */
+	proxies;
+
 	constructor() {
 		this.isLoaded = false;
-		/** @type {UnwrapReadonly<typeof DEFAULT_CONFIG>} */
 		this.data = structuredClone(DEFAULT_CONFIG);
+		this.proxies = this.#createProxies();
+	}
 
-		/** @type {UnwrapReadonly<typeof this.data>} */
-		// @ts-expect-error
-		this.proxies = Object.fromEntries(Object.entries(this.data).map(([k, v]) => {
-			const handler = new ConfigHandler(k);
-			const proxy = new Proxy(v, handler);
-			return [ k, proxy ];
-		}));
+	#createProxies() {
+		const dataEntries = Object.entries(this.data);
+		const proxyEntries = dataEntries.map(([k, v]) => [ k, new Proxy(v, new ConfigHandler(k)) ]);
+		return Object.fromEntries(proxyEntries);
 	}
 
 	/**
@@ -195,7 +204,10 @@ class ConfigStore {
 	 */
 	/**
 	 * Migrates the stored data to the current schema.
-	 * @param {Partial<UnwrapReadonly<typeof this.data> & FormerConfigSchema>} stored
+	 * Only legacy numeric keys under `others` are handled here; the modern
+	 * sections are merged separately by {@link load}. `others` is intentionally
+	 * loose so a partial/legacy payload (missing most fields) still type-checks.
+	 * @param {Partial<Omit<UnwrapReadonly<typeof this.data>, 'others'> & FormerConfigSchema>} stored
 	 */
 	migrate(stored) {
 		if (stored.others?.translation !== undefined) {
@@ -220,7 +232,7 @@ class ConfigStore {
 			const device = /** @type {const} */ (['', 'wasm', 'gpu']).at(stored.others.person_detection);
 			this.data.personDetection.device = device ?? '';
 			delete stored.others.person_detection;
-			logger.info(this.data.personDetection);
+			logger.debug(this.data.personDetection);
 		}
 	}
 
@@ -236,6 +248,7 @@ class ConfigStore {
 	async reset() {
 		await browser.storage.local.clear();
 		this.data = structuredClone(DEFAULT_CONFIG);
+		this.proxies = this.#createProxies();
 	}
 }
 

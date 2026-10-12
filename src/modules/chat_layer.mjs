@@ -1,9 +1,10 @@
 import { logger } from './logging.mjs';
 import { store as s } from './store.mjs';
-import { isAdShowing } from './utils.mjs';
+import { isAdShowing } from './dom_utils.mjs';
+/** @import { LiveChatController } from './chat_controller.mjs' */
 
 export class LiveChatLayer {
-	/** @type {import("./chat_controller.mjs").LiveChatController} */
+	/** @type {LiveChatController} */
 	#controller;
 
 	/** @type {number} */
@@ -29,7 +30,7 @@ export class LiveChatLayer {
 
 	/**
 	 * Creates new layer.
-	 * @param {import("./chat_controller.mjs").LiveChatController} controller controller
+	 * @param {LiveChatController} controller controller
 	 * @param {HTMLDivElement | undefined} div container element
 	 */
 	constructor(controller, div = undefined) {
@@ -48,7 +49,11 @@ export class LiveChatLayer {
 
 			const video = this.element.parentElement?.querySelector('video');
 			if (video) {
-				this.element.style.maskPosition = `0px 0px, ${video.style.left} ${video.style.top}`;
+				const maskPos = {
+					x: `calc(${video.style.left || '0px'} - ${this.element.style.left || '0px'})`,
+					y: `calc(${video.style.top || '0px'} - ${this.element.style.top || '0px'})`,
+				};
+				this.element.style.maskPosition = `0px 0px, ${maskPos.x} ${maskPos.y}`;
 				this.element.style.maskSize = `100% 100%, ${video.style.width} ${video.style.height}`;
 			}
 		});
@@ -198,43 +203,46 @@ export class LiveChatLayer {
  * @prop {TypedArray} mask.data
  * @prop {number} mask.width
  * @prop {number} mask.height
- * @prop {number} mask.channel
+ * @prop {number} mask.channels
  */
 
 /**
  * @typedef {(result: SegmentInfo[] | undefined) => void} SegmentationCallback
  */
 
-export class VideoSegmentationExecutor {
+export class VideoFrameSegmenter {
 	/** @type {[number, number]} */
 	static TARGET_SIZE = [256, 144];
+	static ERROR_ATTEMPTS = 10;
 
 	/** @type {SegmentationCallback} */ #callback;
-	/** @type {AbortController} */ #abortController;
 	/** @type {number} */ #reqId = 0;
+	/** @type {number} */ #errorCount = 0;
+	/** @type {boolean} */ #disconnected = true;
 
 	/**
 	 * @param {SegmentationCallback} callback
 	 */
 	constructor(callback) {
 		this.#callback = callback;
-		this.#abortController = new AbortController();
-		this.offscreen = new OffscreenCanvas(...VideoSegmentationExecutor.TARGET_SIZE);
-		this.context = this.offscreen.getContext('2d');
+		this.offscreen = new OffscreenCanvas(...VideoFrameSegmenter.TARGET_SIZE);
+		this.context = this.offscreen.getContext('bitmaprenderer');
 	}
 
 	/**
 	 * @param {HTMLVideoElement} video
 	 */
 	async #sendFrame(video) {
-		const [width, height] = VideoSegmentationExecutor.TARGET_SIZE;
-		try {
-			this.context?.drawImage(video, 0, 0, width, height);
-			const mask = await this.offscreen.convertToBlob({ type: 'image/webp', quality: .3 });
-			return await browser.runtime.sendMessage({ mask });
-		} catch (cause) {
-			logger.error('Failed to send a video frame to the person detector.\nCaused by:', cause);
+		const [resizeWidth, resizeHeight] = VideoFrameSegmenter.TARGET_SIZE;
+		const bitmap = await createImageBitmap(video, { resizeWidth, resizeHeight });
+		this.context?.transferFromImageBitmap(bitmap);
+		const mask = await this.offscreen.convertToBlob({ type: 'image/webp', quality: .3 });
+		const result = await browser.runtime.sendMessage({ mask });
+		if (result && typeof result === 'object' && 'error' in result) {
+			const { name, message } = result.error;
+			throw new DOMException(message, name);
 		}
+		return result;
 	}
 
 	/**
@@ -242,7 +250,19 @@ export class VideoSegmentationExecutor {
 	 * @param {LiveChatLayer} layer
 	 */
 	observe(video, layer) {
+		this.#errorCount = 0;
 		let inProgress = false;
+		let lastTime = 0;
+		/** @type {(err: unknown) => boolean} */
+		const isFatalError = err => {
+			const patterns = [/due to previous failure/];
+			if (Error.isError(err)) {
+				const names = ['NotAllowedError', 'NotSupportedError', 'OperationError', 'SecurityError', 'TypeError'];
+				return names.includes(err.name) || patterns.some(pat => pat.test(err.message));
+			} else {
+				return patterns.some(pat => pat.test(`${err}`));
+			}
+		};
 		const canProcess = () => {
 			const player = /** @type {?HTMLElement} */ (video.closest('#movie_player'));
 			return (
@@ -255,27 +275,38 @@ export class VideoSegmentationExecutor {
 			);
 		};
 		/** @type {VideoFrameRequestCallback} */
-		const frame = (_now, _metadata) => {
-			if (this.#abortController.signal.aborted) {
-				this.#abortController = new AbortController();
-				return;
-			} else if (canProcess()) {
+		const frame = (now, _metadata) => {
+			if (this.#disconnected) return;
+			if (canProcess() && now > lastTime + 33) {
 				inProgress = true;
+				lastTime = now;
 				this.#sendFrame(video).then(result => {
+					if (this.#disconnected) return;
 					this.#callback(result);
+					this.#errorCount = 0;
+				}).catch(reason => {
+					logger.warn(reason);
+					if (isFatalError(reason) || this.#errorCount++ >= VideoFrameSegmenter.ERROR_ATTEMPTS) {
+						this.disconnect(video);
+					}
+				}).finally(() => {
 					inProgress = false;
 				});
 			}
 			this.#reqId = video.requestVideoFrameCallback(frame);
 		};
+		this.#disconnected = false;
 		this.#reqId = video.requestVideoFrameCallback(frame);
+		logger.info('Person detection started.');
 	}
 
 	/**
 	 * @param {HTMLVideoElement} [video]
 	 */
 	disconnect(video = undefined) {
-		this.#abortController.abort();
+		if (this.#disconnected) return;
+		this.#disconnected = true;
 		if (this.#reqId) video?.cancelVideoFrameCallback(this.#reqId);
+		logger.info('Person detection stopped.');
 	}
 }
