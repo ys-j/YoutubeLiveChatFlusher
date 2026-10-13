@@ -61,7 +61,10 @@ export class LiveChatLayoutCache {
 		return this.maps.map(m => m.delete(id));
 	}
 
-	/** @param {HTMLElement} elem removed element */
+	/**
+	 * @param {HTMLElement} elem removed element
+	 * @returns {boolean[]} if succeeded
+	 */
 	deleteElement(elem) {
 		return this.maps.map(m => {
 			const layout = m.get(elem.id);
