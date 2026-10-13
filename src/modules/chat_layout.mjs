@@ -1,5 +1,8 @@
 import { store as s } from './store.mjs';
 
+// Allow for DOMRect rounding at touching edges, in viewport CSS pixels.
+const RECT_TOLERANCE = .01;
+
 export class LiveChatLayoutCache {
 	/**
 	 * @param {ShadowRoot} root shadow root
@@ -58,6 +61,17 @@ export class LiveChatLayoutCache {
 		return this.maps.map(m => m.delete(id));
 	}
 
+	/**
+	 * @param {HTMLElement} elem removed element
+	 * @returns {boolean[]} if succeeded
+	 */
+	deleteElement(elem) {
+		return this.maps.map(m => {
+			const layout = m.get(elem.id);
+			return layout?.matchesElement(elem) ? m.delete(elem.id) : false;
+		});
+	}
+
 	clear() {
 		for (const m of this.maps) m.clear();
 	}
@@ -79,6 +93,20 @@ export class LiveChatLayoutCache {
 	}
 }
 
+/** @param {CSSStyleDeclaration} style resolved host style */
+function getBorderBoxSize(style) {
+	let width = Number.parseFloat(style.width), height = Number.parseFloat(style.height);
+	if (style.boxSizing !== 'border-box') {
+		for (const value of [style.paddingLeft, style.paddingRight, style.borderLeftWidth, style.borderRightWidth]) {
+			width += Number.parseFloat(value) || 0;
+		}
+		for (const value of [style.paddingTop, style.paddingBottom, style.borderTopWidth, style.borderBottomWidth]) {
+			height += Number.parseFloat(value) || 0;
+		}
+	}
+	return { width, height };
+}
+
 /**
  * Lays out chat item element.
  * @param {HTMLElement} el rendered element
@@ -88,209 +116,175 @@ export class LiveChatLayoutCache {
  */
 export function layoutChatItem(el, cache, mode = 'dense') {
 	cache.dom.appendChild(el);
-
-	const hh = cache.dom.host.clientHeight, hw = cache.dom.host.clientWidth;
-	const ch = el.clientHeight, cw = el.clientWidth;
-	if (cw >= hw * (Number.parseInt(s.styles.max_width, 10) / 100 || 1)) {
+	const host = cache.dom.host;
+	const hw = host.clientWidth, hh = host.clientHeight;
+	if (el.clientWidth >= hw * (Number.parseInt(s.styles.max_width, 10) / 100 || 1)) {
 		el.classList.add('wrap');
 	}
 
+	const cw = el.clientWidth, ch = el.clientHeight;
 	el.style.setProperty('--yt-lcf-translate-x', `-${hw + cw}px`);
-
-	const dir = s.others.direction & 1 ? 'bottom' : 'top';
-	if (ch >= hh) {
-		el.style[dir] = '0px';
-		el.setAttribute('data-line', '0');
-		const layout = new ChatLayoutInfo(el, 0);
-		cache.set(el.id, layout);
-		return el.id;
-	}
-
-	switch (mode) {
-		case 'dense':
-			return placeChatItemDensely(el, cache);
-		case 'random':
-			return placeChatItemRandomly(el, cache);
-	}
-}
-
-/**
- * @param {HTMLElement} el chat item element
- * @param {LiveChatLayoutCache} cache cache object
- * @returns element id
- */
-function placeChatItemDensely(el, cache) {
-	const overline = cache.maps.length;
-	const lhf = Number.parseFloat(s.styles.line_height) || 1.4;
 	const dir = s.others.direction & 1 ? 'bottom' : 'top';
 	const reversed = (s.others.direction & 2) > 0;
-	const parentRect = cache.dom.host.getBoundingClientRect();
+	const lhf = Number.parseFloat(s.styles.line_height) || 1.4;
+	const parentRect = host.getBoundingClientRect();
+	// clientWidth/Height are rounded integers and exclude borders. Comparing
+	// them with DOMRect sizes would mistake fractional pixels for a transform.
+	const hostSize = getBorderBoxSize(getComputedStyle(host));
+	const scaleX = hostSize.width > 0 ? parentRect.width / hostSize.width : 1;
+	const scaleY = hostSize.height > 0 ? parentRect.height / hostSize.height : 1;
+	// Arbitrary user CSS can change geometry by lane or by the overlap class.
+	const measured = !!s.styles.layer_css || Object.values(s.cssTexts).some(Boolean);
+	el.style[dir] = '0em';
+	el.setAttribute('data-line', '0');
+	let layout = new ChatLayoutInfo(el, 0, scaleX, scaleY);
+	const step = lhf * layout.fontSize * scaleY;
 
-	let y = 0;
-	/** @type {ChatLayoutInfo} */
-	let layout;
-	do {
-		el.style[dir] = `${y * lhf}em`;
-		el.setAttribute('data-line', `${y}`);
-		layout = new ChatLayoutInfo(el, y);
-		if (layout.isOverflow(parentRect)) break;
-		if (cache.anyCollides(layout, reversed)) continue;
+	/**
+	 * @param {number} line
+	 * @param {number} [offset]
+	 */
+	function updateCandidate(line, offset = 0) {
+		if (measured) {
+			el.style[dir] = `${(line + offset) * lhf}em`;
+			el.setAttribute('data-line', `${line}`);
+			el.style.setProperty('--yt-lcf-translate-x', `-${hw + el.clientWidth}px`);
+			layout = new ChatLayoutInfo(el, line + offset, scaleX, scaleY);
+		} else {
+			layout.moveTo(line + offset, step * (dir === 'bottom' ? -1 : 1));
+		}
+		return layout;
+	}
+
+	/**
+	 * @param {number} line
+	 * @param {number} [offset]
+	 */
+	function finish(line, offset = 0) {
+		el.style[dir] = `${(line + offset) * lhf}em`;
+		el.setAttribute('data-line', `${line}`);
 		cache.set(el.id, layout);
 		return el.id;
-	} while (++y <= overline);
+	}
+
+	if (ch >= hh || cache.maps.length === 0) return finish(0);
+
+	if (mode === 'random') {
+		const remaining = Array.from(cache.maps.keys());
+		let line = 0, fallbackLine = 0;
+		while (remaining.length) {
+			line = remaining.splice((remaining.length * Math.random()) | 0, 1)[0];
+			updateCandidate(line);
+			if (layout.isOverflow(parentRect)) continue;
+			fallbackLine = line;
+			if (!cache.anyCollides(layout, reversed)) return finish(line);
+		}
+		updateCandidate(fallbackLine);
+		return finish(fallbackLine);
+	}
+
+	let line = 0;
+	for (; line < cache.maps.length; line++) {
+		updateCandidate(line);
+		if (layout.isOverflow(parentRect)) break;
+		if (!cache.anyCollides(layout, reversed)) return finish(line);
+	}
 
 	el.classList.add('overlap');
 	const st = s.others.overlapping;
 	const o = st & 0b01 ? .8 : 1;
 	const dy = st & 0b10 ? .5 : 0;
-
-	y = cache.maps.slice(0, y).reduce((pi, cv, ci, arr) => cv.size < arr[pi].size ? ci : pi, 0);
-	el.setAttribute('data-line', `${y}`);
-	layout = new ChatLayoutInfo(el, y);
-	const len = cache.maps[y].values().filter(other => layout.isCollidable(other, reversed)).toArray().length || 1;
-	el.style[dir] = `${(y + dy) * lhf}em`;
+	line = cache.maps.slice(0, Math.max(1, line)).reduce((pi, cv, ci, arr) => cv.size < arr[pi].size ? ci : pi, 0);
+	updateCandidate(line, dy);
+	const preceding = new Set();
+	for (let i = layout.lineStart; i < Math.min(cache.maps.length, layout.lineEnd); i++) {
+		for (const other of cache.maps[i].values()) preceding.add(other);
+	}
+	const len = preceding.values().filter(other => layout.isCollidable(other, reversed)).toArray().length || 1;
 	el.style.opacity = `${Math.max(.5, o ** len)}`;
 	el.style.zIndex = `-${len}`;
-	cache.set(el.id, layout);
-	return el.id;
-}
-
-/**
- * @param {HTMLElement} el chat item element
- * @param {LiveChatLayoutCache} cache cache object
- * @returns element id
- */
-function placeChatItemRandomly(el, cache) {
-	const overline = cache.maps.length;
-	const lhf = Number.parseFloat(s.styles.line_height) || 1.4;
-	const dir = s.others.direction & 1 ? 'bottom' : 'top';
-	const reversed = (s.others.direction & 2) > 0;
-	const parentRect = cache.dom.host.getBoundingClientRect();
-
-	let y = 0;
-	/** @type {ChatLayoutInfo} */
-	let layout;
-	const calculatedLine = new Set(Array(overline).keys());
-	do {
-		y = (overline * Math.random()) | 0;
-		el.style[dir] = `${y * lhf}em`;
-		el.setAttribute('data-line', `${y}`);
-		layout = new ChatLayoutInfo(el, y);
-		if (layout.isOverflow(parentRect)) {
-			for (let i = y; i < overline; i++) calculatedLine.delete(i);
-			continue;
-		}
-		if (cache.anyCollides(layout, reversed)) {
-			calculatedLine.delete(y);
-			continue;
-		}
-		break;
-	} while (calculatedLine.size > 0);
-	cache.set(el.id, layout);
-	return el.id;
+	return finish(line, dy);
 }
 
 class ChatLayoutInfo {
-	/** @type {HTMLElement} */ #elem;
-	/** @type {DOMRect} */ #rect;
+	/** @type {WeakRef<HTMLElement>} */ #elem;
+	/** @type {{width: number, height: number, top: number, bottom: number, left: number, right: number}} */ #rect;
+	/** @type {number} */ #originTop;
 	/** @type {number} */ #line;
-	/** @type {number} */ #range;
+	/** @type {number} */ #lineHeight;
 
 	/**
 	 * @param {HTMLElement} elem
 	 * @param {number} line
+	 * @param {number} scaleX
+	 * @param {number} scaleY
 	 */
-	constructor(elem, line) {
-		this.#elem = elem;
-		this.#rect = elem.getBoundingClientRect();
+	constructor(elem, line, scaleX, scaleY) {
+		this.#elem = new WeakRef(elem);
+		const rect = elem.getBoundingClientRect();
+		// Keep mutable coordinates for candidate top/bottom updates without remeasuring the DOM.
+		this.#rect = { width: rect.width, height: rect.height, top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right };
+		this.#originTop = rect.top;
 		this.#line = line;
-
 		const computedStyle = getComputedStyle(elem);
-		const lh = Number.parseFloat(computedStyle.lineHeight); // px
-		this.#range = Math.ceil(this.height / lh);
-
+		this.fontSize = Number.parseFloat(computedStyle.fontSize);
+		const lh = Number.parseFloat(computedStyle.lineHeight) || this.fontSize * (Number.parseFloat(s.styles.line_height) || 1.4);
+		this.#lineHeight = lh * scaleY;
 		const [_durMatch, durNum, durUnit] = computedStyle.animationDuration.match(/^([\d.]+)(\D+)/) || [];
 		const durFactor = durNum && durUnit && { 's': 1000, 'ms': 1 }[durUnit] || 0;
 		this.duration = durFactor ? Number.parseFloat(durNum) * durFactor : Number.parseFloat(s.styles.animation_duration) * 1000;
-
 		const [_translateMatch, translateX] = elem.style.getPropertyValue('--yt-lcf-translate-x').match(/^-?([\d.]+)px/) || [];
-		this.speed = Number.parseFloat(translateX) / this.duration;
+		this.speed = Number.parseFloat(translateX) * scaleX / this.duration;
 		this.createdOn = Date.now();
 	}
 
-	get lineStart() {
-		return this.#line;
-	}
-	get lineEnd() {
-		return this.#line + this.#range;
+	/** @param {HTMLElement} elem */
+	matchesElement(elem) {
+		return this.#elem.deref() === elem;
 	}
 
-	get width() {
-		try {
-			return this.#rect.width | 0;
-		} catch {
-			this.#rect = this.#elem.getBoundingClientRect();
-			return this.#rect.width | 0;
-		}
+	/** @param {number} line @param {number} step */
+	moveTo(line, step) {
+		this.#line = line;
+		this.#rect.top = this.#originTop + line * step;
+		this.#rect.bottom = this.#rect.top + this.#rect.height;
 	}
-	get height() {
-		try {
-			return this.#rect.height | 0;
-		} catch {
-			this.#rect = this.#elem.getBoundingClientRect();
-			return this.#rect.height | 0;
-		}
+
+	get lineStart() { return Math.floor(this.#line); }
+	get lineEnd() {
+		const end = Math.ceil(this.#line + (this.height - RECT_TOLERANCE) / this.#lineHeight);
+		// A positive-height item must occupy at least one lane, even if tiny.
+		return this.height > 0 ? Math.max(this.lineStart + 1, end) : this.lineStart;
 	}
-	get top() {
-		try {
-			return this.#rect.top | 0;
-		} catch {
-			this.#rect = this.#elem.getBoundingClientRect();
-			return this.#rect.top | 0;
-		}
-	}
-	get bottom() {
-		try {
-			return this.#rect.bottom | 0;
-		} catch {
-			this.#rect = this.#elem.getBoundingClientRect();
-			return this.#rect.bottom | 0;
-		}
-	}
+	get width() { return this.#rect.width; }
+	get height() { return this.#rect.height; }
+	get top() { return this.#rect.top; }
+	get bottom() { return this.#rect.bottom; }
 
 	getLeft(factor = 1) {
-		const elapsed = Date.now() - this.createdOn;
-		return this.#rect.left - this.speed * elapsed * factor;
+		return this.#rect.left - this.speed * (Date.now() - this.createdOn) * factor;
 	}
 	getRight(factor = 1) {
-		const elapsed = Date.now() - this.createdOn;
-		return this.#rect.right - this.speed * elapsed * factor;
+		return this.#rect.right - this.speed * (Date.now() - this.createdOn) * factor;
 	}
 
 	/**
-	 * Checks whether two flowing messages collide.
-	 * @param {ChatLayoutInfo} before other preceding layout
-	 * @param {boolean} [reversed=false] if direction is reversed
-	 * @returns {boolean} whether this message collides against the preceding message
+	 * @param {ChatLayoutInfo} before preceding layout
+	 * @param {boolean} [reversed=false]
+	 * @returns {boolean}
 	 */
 	isCollidable(before, reversed = false) {
-		if (before.top <= this.top && this.top < before.bottom) {
-			const posDiff = reversed ? before.getLeft(-1) - this.getRight(-1) : this.getLeft() - before.getRight();
-			if (posDiff <= 0) return true;
-			const speedDiff = this.speed - before.speed;
-			if (speedDiff <= 0) return false;
-			return posDiff < speedDiff * Math.min(before.duration, this.duration);
-		} else {
-			return false;
-		}
+		if (this.top >= before.bottom - RECT_TOLERANCE || before.top >= this.bottom - RECT_TOLERANCE) return false;
+		const posDiff = reversed ? before.getLeft(-1) - this.getRight(-1) : this.getLeft() - before.getRight();
+		if (posDiff <= 0) return true;
+		const speedDiff = this.speed - before.speed;
+		if (speedDiff <= 0) return false;
+		return posDiff < speedDiff * Math.min(before.duration, this.duration);
 	}
 
-	/**
-	 * Checks whether this element's position exceeds the size of parent.
-	 * @param { { top: number, height: number } } parent parent bounding box
-	 * @returns {boolean} whether child element is overflowing the parent
-	 */
+	/** @param {{top: number, height: number}} parent */
 	isOverflow(parent) {
-		return this.bottom > parent.top + parent.height;
+		// DOMRect coordinates can round just beyond an exactly aligned host edge.
+		return this.top < parent.top - RECT_TOLERANCE || this.bottom > parent.top + parent.height + RECT_TOLERANCE;
 	}
 }
