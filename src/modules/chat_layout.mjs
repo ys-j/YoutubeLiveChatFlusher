@@ -117,7 +117,7 @@ function getBorderBoxSize(style) {
 export function layoutChatItem(el, cache, mode = 'dense') {
 	cache.dom.appendChild(el);
 	const host = cache.dom.host;
-	const hh = host.clientHeight, hw = host.clientWidth;
+	const hw = host.clientWidth, hh = host.clientHeight;
 	if (el.clientWidth >= hw * (Number.parseInt(s.styles.max_width, 10) / 100 || 1)) {
 		el.classList.add('wrap');
 	}
@@ -140,8 +140,11 @@ export function layoutChatItem(el, cache, mode = 'dense') {
 	let layout = new ChatLayoutInfo(el, 0, scaleX, scaleY);
 	const step = lhf * layout.fontSize * scaleY;
 
-	/** @param {number} line @param {number} [offset] */
-	function candidate(line, offset = 0) {
+	/**
+	 * @param {number} line
+	 * @param {number} [offset]
+	 */
+	function updateCandidate(line, offset = 0) {
 		if (measured) {
 			el.style[dir] = `${(line + offset) * lhf}em`;
 			el.setAttribute('data-line', `${line}`);
@@ -153,7 +156,10 @@ export function layoutChatItem(el, cache, mode = 'dense') {
 		return layout;
 	}
 
-	/** @param {number} line @param {number} [offset] */
+	/**
+	 * @param {number} line
+	 * @param {number} [offset]
+	 */
 	function finish(line, offset = 0) {
 		el.style[dir] = `${(line + offset) * lhf}em`;
 		el.setAttribute('data-line', `${line}`);
@@ -168,18 +174,18 @@ export function layoutChatItem(el, cache, mode = 'dense') {
 		let line = 0, fallbackLine = 0;
 		while (remaining.length) {
 			line = remaining.splice((remaining.length * Math.random()) | 0, 1)[0];
-			candidate(line);
+			updateCandidate(line);
 			if (layout.isOverflow(parentRect)) continue;
 			fallbackLine = line;
 			if (!cache.anyCollides(layout, reversed)) return finish(line);
 		}
-		candidate(fallbackLine);
+		updateCandidate(fallbackLine);
 		return finish(fallbackLine);
 	}
 
 	let line = 0;
 	for (; line < cache.maps.length; line++) {
-		candidate(line);
+		updateCandidate(line);
 		if (layout.isOverflow(parentRect)) break;
 		if (!cache.anyCollides(layout, reversed)) return finish(line);
 	}
@@ -189,12 +195,12 @@ export function layoutChatItem(el, cache, mode = 'dense') {
 	const o = st & 0b01 ? .8 : 1;
 	const dy = st & 0b10 ? .5 : 0;
 	line = cache.maps.slice(0, Math.max(1, line)).reduce((pi, cv, ci, arr) => cv.size < arr[pi].size ? ci : pi, 0);
-	candidate(line, dy);
+	updateCandidate(line, dy);
 	const preceding = new Set();
 	for (let i = layout.lineStart; i < Math.min(cache.maps.length, layout.lineEnd); i++) {
 		for (const other of cache.maps[i].values()) preceding.add(other);
 	}
-	const len = [...preceding].filter(other => layout.isCollidable(other, reversed)).length || 1;
+	const len = preceding.values().filter(other => layout.isCollidable(other, reversed)).toArray().length || 1;
 	el.style.opacity = `${Math.max(.5, o ** len)}`;
 	el.style.zIndex = `-${len}`;
 	return finish(line, dy);
@@ -216,6 +222,7 @@ class ChatLayoutInfo {
 	constructor(elem, line, scaleX, scaleY) {
 		this.#elem = new WeakRef(elem);
 		const rect = elem.getBoundingClientRect();
+		// Keep mutable coordinates for candidate top/bottom updates without remeasuring the DOM.
 		this.#rect = { width: rect.width, height: rect.height, top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right };
 		this.#originTop = rect.top;
 		this.#line = line;
