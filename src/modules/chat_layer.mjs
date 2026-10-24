@@ -1,5 +1,5 @@
 import { logger } from './logging.mjs';
-import { store as s } from './store.mjs';
+import { store as s, DEFAULT_LINE_HEIGHT } from './store.mjs';
 import { isAdShowing } from './dom_utils.mjs';
 /** @import { LiveChatController } from './chat_controller.mjs' */
 
@@ -62,7 +62,7 @@ export class LiveChatLayer {
 		const link = document.createElement('link');
 		link.rel = 'stylesheet';
 		link.href = browser.runtime.getURL('../styles/layer.css');
-		const styles = ['customcss', 'yourcss', 'userdefinedcss'].map(id => {
+		const styles = ['customcss', 'userdefinedcss'].map(id => {
 			const element = document.createElement('style');
 			element.id = id;
 			return element;
@@ -70,9 +70,10 @@ export class LiveChatLayer {
 		this.root.append(link, ...styles);
 		this.#initialElemCount = this.root.childElementCount;
 
-		const mutationObserver = new MutationObserver(records => {
-			for (const record of records) {
-				for (const removed of record.removedNodes) {
+		/** @type {(records: MutationRecord[], observer?: MutationObserver) => void} */
+		const callbackOnRemoved = (records, observer) => {
+			for (const r of records) {
+				for (const removed of r.removedNodes) {
 					if (removed instanceof HTMLElement && removed.parentNode !== this.root) {
 						this.#controller.layoutCache?.deleteElement(removed);
 					}
@@ -80,13 +81,21 @@ export class LiveChatLayer {
 			}
 			const over = this.root.childElementCount - (this.limit || Infinity);
 			let i = this.#initialElemCount;
-			while (i++ < over) {
-				const oldest = /** @type {HTMLElement | undefined} */ (this.root.children[this.#initialElemCount]);
-				if (!oldest) break;
-				this.#controller.layoutCache?.deleteElement(oldest);
-				oldest.remove();
+			if (observer && i < over) {
+				// Suppress re-entrancy while evicting so each removal is handled once here.
+				const mutations = observer.takeRecords();
+				observer.disconnect();
+				while (i++ < over) {
+					const oldest = this.root.children[this.#initialElemCount];
+					if (!(oldest instanceof HTMLElement)) break;
+					this.#controller.layoutCache?.deleteElement(oldest);
+					oldest.remove();
+				}
+				callbackOnRemoved(mutations);
+				observer.observe(this.root, { childList: true });
 			}
-		});
+		};
+		const mutationObserver = new MutationObserver(callbackOnRemoved);
 		mutationObserver.observe(this.root, { childList: true });
 		this.clear();
 	}
@@ -148,9 +157,9 @@ export class LiveChatLayer {
 	resetFontSize(numOfLines = s.others.number_of_lines) {
 		const rect = this.element.getBoundingClientRect();
 		if (!rect.height) return;
-		const lh = Number.parseFloat(s.styles.line_height) || 1.4;
+		const lhf = Number.parseFloat(s.styles.line_height) || DEFAULT_LINE_HEIGHT;
 		if (numOfLines > 0) {
-			const sizeByLines = (rect.height / lh / numOfLines) | 0;
+			const sizeByLines = (rect.height / lhf / numOfLines) | 0;
 			this.element.style.setProperty('--yt-lcf-font-size', [
 				`${sizeByLines}px`,
 				`max(${s.styles.font_size}, ${sizeByLines}px)`,
@@ -159,7 +168,7 @@ export class LiveChatLayer {
 			this.#controller.layoutCache.resize(numOfLines);
 		} else {
 			const fs = Number.parseFloat(s.styles.font_size);
-			const linesBySize = (rect.height / lh / fs) | 0;
+			const linesBySize = (rect.height / lhf / fs) | 0;
 			this.element.style.setProperty('--yt-lcf-font-size', s.styles.font_size);
 			this.#controller.layoutCache.resize(linesBySize);
 		}

@@ -1,5 +1,5 @@
 import { logger } from './logging.mjs';
-import { store as s } from './store.mjs';
+import { store as s, DEFAULT_LINE_HEIGHT } from './store.mjs';
 import { getColorRGB } from './utils.mjs';
 import { isNotPip, loadTemplateDocument } from './dom_utils.mjs';
 
@@ -36,6 +36,10 @@ export class LiveChatController {
 	listening = false;
 	/** @type {?VideoFrameSegmenter} */
 	segmenter = null;
+	/** @type {?string} */
+	#viewerChannelId = null;
+
+	static MODE_OPTIONS = /** @type {const} */ (['dense', 'random']);
 
 	/**
 	 * @param {HTMLElement} player YouTube player element
@@ -132,30 +136,7 @@ export class LiveChatController {
 		const res = await fetch('/account_advanced');
 		const text = await res.text();
 		const matches = text.match(/"(UC[\w-]{22})"/);
-		const channel = matches?.[1] || '';
-		if (!channel) return;
-
-		const style = this.layer.root.querySelector('#yourcss');
-		if (!style) return;
-
-		style.textContent = `\
-[data-author-id="${channel}"] {
-	color: var(--yt-lcf-you-color);
-	:host(.has-you-name) &.text {
-		background-color: var(--yt-live-chat-you-message-background-color);
-		border-radius: .5em;
-		padding: 0 .25em;
-	}
-	&.text .photo {
-		display: var(--yt-lcf-you-display-photo);
-	}
-	&.text .name {
-		display: var(--yt-lcf-you-display-name);
-	}
-	&.text .message {
-		display: var(--yt-lcf-you-display-message);
-	}
-}`;
+		this.#viewerChannelId = matches?.at(1) ?? null;
 	}
 
 	/**
@@ -359,14 +340,15 @@ export class LiveChatController {
 		const lines = s.others.number_of_lines;
 		const inputLineNum = /** @type {HTMLInputElement} */ (ctrls.number_of_lines);
 		if (rect.height > 0) {
+			const lhf = Number.parseFloat(s.styles.line_height) || DEFAULT_LINE_HEIGHT;
 			if (lines > 0) {
-				const sizeByLines = (rect.height / lines / Number.parseFloat(s.styles.line_height)) | 0;
+				const sizeByLines = (rect.height / lines / lhf) | 0;
 				const fsVal = s.others.type_of_lines > 0 ? `max(${s.styles.font_size}, ${sizeByLines}px)` : `${sizeByLines}px`;
 				le.style.setProperty('--yt-lcf-font-size', fsVal);
 				inputLineNum.valueAsNumber = lines;
 				this.layoutCache.resize(lines);
 			} else {
-				const linesBySize = (rect.height / Number.parseFloat(s.styles.font_size) / Number.parseFloat(s.styles.line_height)) | 0;
+				const linesBySize = (rect.height / Number.parseFloat(s.styles.font_size) / lhf) | 0;
 				le.style.setProperty('--yt-lcf-font-size', s.styles.font_size);
 				inputLineNum.valueAsNumber = linesBySize;
 				this.layoutCache.resize(linesBySize);
@@ -713,9 +695,8 @@ export class LiveChatController {
 			if (this.layer.root.getElementById(el.id)) {
 				logger.debug('Skipped rendering chat item (already exists on the layer):', `#${el.id}`);
 			} else {
-				/** @type { ["dense", "random"] } */
-				const modeOptions = ['dense', 'random'];
-				layoutChatItem(el, this.layoutCache, modeOptions[s.others.density]);
+				this.#markIfYours(el);
+				layoutChatItem(el, this.layoutCache, LiveChatController.MODE_OPTIONS[s.others.density]);
 			}
 		}).catch(logger.warn);
 	}
@@ -759,10 +740,23 @@ export class LiveChatController {
 		if (target && item) {
 			renderChatItem(item, this.itemFactory).then(el => {
 				if (!el) return;
+				this.#markIfYours(el);
+				this.layoutCache.delete(el.id);
 				target.replaceWith(el);
+				layoutChatItem(el, this.layoutCache, LiveChatController.MODE_OPTIONS[s.others.density]);
 			}).catch(logger.warn);
 		} else {
 			logger.warn(`Failed to replace message: #${id}`);
+		}
+	}
+
+	/**
+	 * @param {HTMLElement} el chat item element
+	 */
+	#markIfYours(el) {
+		const authorId = el.dataset.authorId;
+		if (authorId && authorId === this.#viewerChannelId) {
+			el.classList.add('you');
 		}
 	}
 

@@ -8,8 +8,14 @@ const source = Deno.readTextFileSync(new URL('src/modules/chat_layer.mjs', sourc
 
 function fixture() {
 	let resize = () => {};
-	let notify = (_records: { removedNodes: FakeElement[] }[]) => {};
+	let notify = (_records: { removedNodes: FakeElement[] }[], _observer?: unknown) => {};
 	let pending: { removedNodes: FakeElement[] }[] = [];
+	// Mimics the observer instance the real MutationObserver passes as the callback's 2nd arg.
+	const observerStub = {
+		takeRecords() { const records = pending; pending = []; return records; },
+		disconnect() {},
+		observe() {},
+	};
 	class FakeElement {
 		id = '';
 		parentNode: FakeElement | null = null;
@@ -48,6 +54,9 @@ function fixture() {
 	const layouts = new Map<string, { element: FakeElement }>();
 	const layoutCache = {
 		clear: () => layouts.clear(),
+		delete(id: string) {
+			layouts.delete(id);
+		},
 		deleteElement(element: FakeElement) {
 			if (layouts.get(element.id)?.element === element) layouts.delete(element.id);
 		},
@@ -76,7 +85,7 @@ function fixture() {
 		while (pending.length) {
 			const records = pending;
 			pending = [];
-			notify(records);
+			notify(records, observerStub);
 		}
 	}
 	function add(id: string) {
@@ -97,7 +106,7 @@ Deno.test('clear releases cached DOM references synchronously and retains styles
 	assertEquals(f.layer.clear(), f.layer);
 	assertEquals(f.layouts.size, 0);
 	assertEquals(f.layer.count, 0);
-	assertEquals(f.layer.root.childElementCount, 4);
+	assertEquals(f.layer.root.childElementCount, 3);
 	f.flush();
 });
 
@@ -108,7 +117,7 @@ Deno.test('limit evicts oldest messages and their cached references', () => {
 	f.add('second');
 	f.add('newest');
 	f.flush();
-	assertEquals(f.layer.root.children.slice(4).map((node: { id: string }) => node.id), ['second', 'newest']);
+	assertEquals(f.layer.root.children.slice(3).map((node: { id: string }) => node.id), ['second', 'newest']);
 	assertEquals([...f.layouts.keys()], ['second', 'newest']);
 });
 

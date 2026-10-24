@@ -1,10 +1,13 @@
 import { logger } from './logging.mjs';
 
+// Fallback line-height factor when the stored value is empty or invalid.
+export const DEFAULT_LINE_HEIGHT = 1.4;
+
 export const DEFAULT_CONFIG = Object.freeze({
 	styles: {
 		animation_duration: '8s',
 		font_size: '32px',
-		line_height: '1.4',
+		line_height: `${DEFAULT_LINE_HEIGHT}`,
 		font_family: 'sans-serif',
 		font_weight: '500',
 		stroke_color: '#000000',

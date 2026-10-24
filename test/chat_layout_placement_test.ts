@@ -19,7 +19,10 @@ class ElementStub {
 	classes = new Set<string>();
 	attributes = new Map<string, string>();
 	reads = { width: 0, height: 0, rect: 0, style: 0 };
-	classList = { add: (name: string) => this.classes.add(name) };
+	classList = {
+		add: (name: string) => this.classes.add(name),
+		values: () => this.classes.values(),
+	};
 	style = {
 		top: '', bottom: '', opacity: '', zIndex: '',
 		values: new Map<string, string>(),
@@ -47,7 +50,8 @@ class ElementStub {
 		const reversed = !!(store.data.others.direction & 2);
 		const left = this.host.left + (reversed ? -width : this.host.clientWidth * this.host.scaleX);
 		const roundedTop = top + (this.options.rectOffset ?? 0);
-		return { width, height, top: roundedTop, bottom: roundedTop + height, left, right: left + width };
+		// DOMRect so mutable `y` in moveTo() keeps `top`/`bottom` in sync like the real DOM.
+		return new DOMRect(left, roundedTop, width, height);
 	}
 	get element() { return this as unknown as HTMLElement; }
 }

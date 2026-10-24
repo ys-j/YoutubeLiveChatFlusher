@@ -1,4 +1,4 @@
-import { store as s } from './store.mjs';
+import { store as s, DEFAULT_LINE_HEIGHT } from './store.mjs';
 
 // Allow for DOMRect rounding at touching edges, in viewport CSS pixels.
 const RECT_TOLERANCE = .01;
@@ -62,6 +62,8 @@ export class LiveChatLayoutCache {
 	}
 
 	/**
+	 * Deletes only when the stored layout belongs to the given element.
+	 * Prevents a stale removal (same id reused by a newer element) from discarding the newer layout.
 	 * @param {HTMLElement} elem removed element
 	 * @returns {boolean[]} if succeeded
 	 */
@@ -93,18 +95,21 @@ export class LiveChatLayoutCache {
 	}
 }
 
-/** @param {CSSStyleDeclaration} style resolved host style */
+/**
+ * @param {CSSStyleDeclaration} style resolved host style
+ * @returns { { width: number, height: number } } border box size
+ */
 function getBorderBoxSize(style) {
-	let width = Number.parseFloat(style.width), height = Number.parseFloat(style.height);
+	const widthProps = [style.width];
+	const heightProps = [style.height];
 	if (style.boxSizing !== 'border-box') {
-		for (const value of [style.paddingLeft, style.paddingRight, style.borderLeftWidth, style.borderRightWidth]) {
-			width += Number.parseFloat(value) || 0;
-		}
-		for (const value of [style.paddingTop, style.paddingBottom, style.borderTopWidth, style.borderBottomWidth]) {
-			height += Number.parseFloat(value) || 0;
-		}
+		widthProps.push(style.paddingLeft, style.paddingRight, style.borderLeftWidth, style.borderRightWidth);
+		heightProps.push(style.paddingTop, style.paddingBottom, style.borderTopWidth, style.borderBottomWidth);
 	}
-	return { width, height };
+	return {
+		width: widthProps.reduce((a, c) => a + (Number.parseFloat(c) || 0), 0),
+		height: heightProps.reduce((a, c) => a + (Number.parseFloat(c) || 0), 0),
+	};
 }
 
 /**
@@ -126,43 +131,40 @@ export function layoutChatItem(el, cache, mode = 'dense') {
 	el.style.setProperty('--yt-lcf-translate-x', `-${hw + cw}px`);
 	const dir = s.others.direction & 1 ? 'bottom' : 'top';
 	const reversed = (s.others.direction & 2) > 0;
-	const lhf = Number.parseFloat(s.styles.line_height) || 1.4;
+	const lhf = Number.parseFloat(s.styles.line_height) || DEFAULT_LINE_HEIGHT;
 	const parentRect = host.getBoundingClientRect();
-	// clientWidth/Height are rounded integers and exclude borders. Comparing
-	// them with DOMRect sizes would mistake fractional pixels for a transform.
+	// `clientWidth`/`clientHeight` are rounded integers and exclude borders.
+	// Comparing them with DOMRect sizes would mistake fractional pixels for a transform.
 	const hostSize = getBorderBoxSize(getComputedStyle(host));
 	const scaleX = hostSize.width > 0 ? parentRect.width / hostSize.width : 1;
 	const scaleY = hostSize.height > 0 ? parentRect.height / hostSize.height : 1;
+
 	// Arbitrary user CSS can change geometry by lane or by the overlap class.
-	const measured = !!s.styles.layer_css || Object.values(s.cssTexts).some(Boolean);
+	const measured = Boolean(
+		s.styles.layer_css.trim()
+		// @ts-expect-error: Dynamic property access
+		|| el.classList.values().map(cls => s.cssTexts['.' + cls]?.trim()).find(Boolean)
+		|| s.cssTexts[''].trim()
+	);
 	el.style[dir] = '0em';
 	el.setAttribute('data-line', '0');
 	let layout = new ChatLayoutInfo(el, 0, scaleX, scaleY);
 	const step = lhf * layout.fontSize * scaleY;
 
-	/**
-	 * @param {number} line
-	 * @param {number} [offset]
-	 */
-	function updateCandidate(line, offset = 0) {
-		if (measured) {
-			el.style[dir] = `${(line + offset) * lhf}em`;
-			el.setAttribute('data-line', `${line}`);
-			el.style.setProperty('--yt-lcf-translate-x', `-${hw + el.clientWidth}px`);
-			layout = new ChatLayoutInfo(el, line + offset, scaleX, scaleY);
-		} else {
-			layout.moveTo(line + offset, step * (dir === 'bottom' ? -1 : 1));
-		}
-		return layout;
-	}
+	/** @type {(currentLine: number, offset?: number) => void} */
+	const updateCandidate = measured ? (currentLine, offset = 0) => {
+		el.style[dir] = `${(currentLine + offset) * lhf}em`;
+		el.setAttribute('data-line', `${currentLine}`);
+		el.style.setProperty('--yt-lcf-translate-x', `-${hw + el.clientWidth}px`);
+		layout = new ChatLayoutInfo(el, currentLine + offset, scaleX, scaleY);
+	} : (currentLine, offset = 0) => {
+		layout.moveTo(currentLine + offset, step * (dir === 'bottom' ? -1 : 1));
+	};
 
-	/**
-	 * @param {number} line
-	 * @param {number} [offset]
-	 */
-	function finish(line, offset = 0) {
-		el.style[dir] = `${(line + offset) * lhf}em`;
-		el.setAttribute('data-line', `${line}`);
+	/** @type {(currentLine: number, offset?: number) => string} */
+	const finish = (currentLine, offset = 0) => {
+		el.style[dir] = `${(currentLine + offset) * lhf}em`;
+		el.setAttribute('data-line', `${currentLine}`);
 		cache.set(el.id, layout);
 		return el.id;
 	}
@@ -208,7 +210,7 @@ export function layoutChatItem(el, cache, mode = 'dense') {
 
 class ChatLayoutInfo {
 	/** @type {WeakRef<HTMLElement>} */ #elem;
-	/** @type {{width: number, height: number, top: number, bottom: number, left: number, right: number}} */ #rect;
+	/** @type {DOMRect} */ #rect;
 	/** @type {number} */ #originTop;
 	/** @type {number} */ #line;
 	/** @type {number} */ #lineHeight;
@@ -221,14 +223,13 @@ class ChatLayoutInfo {
 	 */
 	constructor(elem, line, scaleX, scaleY) {
 		this.#elem = new WeakRef(elem);
-		const rect = elem.getBoundingClientRect();
+		this.#rect = elem.getBoundingClientRect();
 		// Keep mutable coordinates for candidate top/bottom updates without remeasuring the DOM.
-		this.#rect = { width: rect.width, height: rect.height, top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right };
-		this.#originTop = rect.top;
+		this.#originTop = this.#rect.top;
 		this.#line = line;
 		const computedStyle = getComputedStyle(elem);
 		this.fontSize = Number.parseFloat(computedStyle.fontSize);
-		const lh = Number.parseFloat(computedStyle.lineHeight) || this.fontSize * (Number.parseFloat(s.styles.line_height) || 1.4);
+		const lh = Number.parseFloat(computedStyle.lineHeight) || this.fontSize * (Number.parseFloat(s.styles.line_height) || DEFAULT_LINE_HEIGHT);
 		this.#lineHeight = lh * scaleY;
 		const [_durMatch, durNum, durUnit] = computedStyle.animationDuration.match(/^([\d.]+)(\D+)/) || [];
 		const durFactor = durNum && durUnit && { 's': 1000, 'ms': 1 }[durUnit] || 0;
@@ -246,8 +247,7 @@ class ChatLayoutInfo {
 	/** @param {number} line @param {number} step */
 	moveTo(line, step) {
 		this.#line = line;
-		this.#rect.top = this.#originTop + line * step;
-		this.#rect.bottom = this.#rect.top + this.#rect.height;
+		this.#rect.y = this.#originTop + line * step;
 	}
 
 	get lineStart() { return Math.floor(this.#line); }
@@ -269,9 +269,10 @@ class ChatLayoutInfo {
 	}
 
 	/**
+	 * Checks whether two flowing messages collide.
 	 * @param {ChatLayoutInfo} before preceding layout
-	 * @param {boolean} [reversed=false]
-	 * @returns {boolean}
+	 * @param {boolean} [reversed=false] if direction is reversed
+	 * @returns {boolean} whether this message collides against the preceding message
 	 */
 	isCollidable(before, reversed = false) {
 		if (this.top >= before.bottom - RECT_TOLERANCE || before.top >= this.bottom - RECT_TOLERANCE) return false;
@@ -282,7 +283,11 @@ class ChatLayoutInfo {
 		return posDiff < speedDiff * Math.min(before.duration, this.duration);
 	}
 
-	/** @param {{top: number, height: number}} parent */
+	/**
+	 * Checks whether this element's position exceeds the size of parent.
+	 * @param { { top: number, height: number } } parent parent bounding box
+	 * @returns {boolean} whether child element is overflowing the parent
+	 */
 	isOverflow(parent) {
 		// DOMRect coordinates can round just beyond an exactly aligned host edge.
 		return this.top < parent.top - RECT_TOLERANCE || this.bottom > parent.top + parent.height + RECT_TOLERANCE;
