@@ -10,7 +10,7 @@ export class LiveChatLayoutCache {
 	 */
 	constructor(root, numOfLanes = 20) {
 		this.dom = root;
-		/** @type {Map<string, ChatLayoutInfo>[]} */
+		/** @type {Map<HTMLElement, ChatLayoutInfo>[]} */
 		this.maps = Array.from({ length: numOfLanes }, () => new Map());
 	}
 
@@ -34,44 +34,34 @@ export class LiveChatLayoutCache {
 	}
 
 	/**
-	 * @param {string} id renderer id
+	 * @param {HTMLElement} elem laid-out element
 	 * @returns {ChatLayoutInfo[] | undefined} list of layout info or undefined
 	 */
-	get(id) {
-		const rslt = this.maps.map(m => m.get(id)).filter(v => v !== undefined);
+	get(elem) {
+		const rslt = this.maps.map(m => m.get(elem)).filter(v => v !== undefined);
 		return rslt.length ? rslt : undefined;
 	}
 
 	/**
-	 * @param {string} id renderer id
+	 * @param {HTMLElement} elem laid-out element
 	 * @param {ChatLayoutInfo} layout layout info
 	 */
-	set(id, layout) {
+	set(elem, layout) {
 		const len = Math.min(this.maps.length, layout.lineEnd);
 		for (let i = layout.lineStart; i < len; i++) {
-			this.maps[i].set(id, layout);
+			this.maps[i].set(elem, layout);
 		}
 	}
 
 	/**
-	 * @param {string} id renderer id
-	 * @returns {boolean[]} if succeeded
-	 */
-	delete(id) {
-		return this.maps.map(m => m.delete(id));
-	}
-
-	/**
-	 * Deletes only when the stored layout belongs to the given element.
-	 * Prevents a stale removal (same id reused by a newer element) from discarding the newer layout.
+	 * Removes the layouts of the given element from every lane it occupies.
+	 * Keying by element makes a stale removal of a same-id element unable
+	 * to discard a newer element's layout without any identity check.
 	 * @param {HTMLElement} elem removed element
 	 * @returns {boolean[]} if succeeded
 	 */
-	deleteElement(elem) {
-		return this.maps.map(m => {
-			const layout = m.get(elem.id);
-			return layout?.matchesElement(elem) ? m.delete(elem.id) : false;
-		});
+	delete(elem) {
+		return this.maps.map(m => m.delete(elem));
 	}
 
 	clear() {
@@ -165,7 +155,7 @@ export function layoutChatItem(el, cache, mode = 'dense') {
 	const finish = (currentLine, offset = 0) => {
 		el.style[dir] = `${(currentLine + offset) * lhf}em`;
 		el.setAttribute('data-line', `${currentLine}`);
-		cache.set(el.id, layout);
+		cache.set(el, layout);
 		return el.id;
 	}
 
@@ -209,7 +199,6 @@ export function layoutChatItem(el, cache, mode = 'dense') {
 }
 
 class ChatLayoutInfo {
-	/** @type {WeakRef<HTMLElement>} */ #elem;
 	/** @type {DOMRect} */ #rect;
 	/** @type {number} */ #originTop;
 	/** @type {number} */ #line;
@@ -222,7 +211,6 @@ class ChatLayoutInfo {
 	 * @param {number} scaleY
 	 */
 	constructor(elem, line, scaleX, scaleY) {
-		this.#elem = new WeakRef(elem);
 		this.#rect = elem.getBoundingClientRect();
 		// Keep mutable coordinates for candidate top/bottom updates without remeasuring the DOM.
 		this.#originTop = this.#rect.top;
@@ -237,11 +225,6 @@ class ChatLayoutInfo {
 		const [_translateMatch, translateX] = elem.style.getPropertyValue('--yt-lcf-translate-x').match(/^-?([\d.]+)px/) || [];
 		this.speed = Number.parseFloat(translateX) * scaleX / this.duration;
 		this.createdOn = Date.now();
-	}
-
-	/** @param {HTMLElement} elem */
-	matchesElement(elem) {
-		return this.#elem.deref() === elem;
 	}
 
 	/** @param {number} line @param {number} step */

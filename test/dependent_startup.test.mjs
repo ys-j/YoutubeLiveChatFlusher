@@ -119,7 +119,13 @@ function fixture({ live = false, mode = 0 } = {}) {
 		self, document, browser, store, s: store, logger,
 		Event, EventTarget, CustomEvent, AbortController, DOMException,
 		LiveChatLayer: class {
-			constructor() { this.element = element('yt-lcf-layer'); this.root = element('shadow-root'); }
+			constructor() {
+				this.element = element('yt-lcf-layer');
+				this.root = element('shadow-root');
+				// Element-keyed cache lookups resolve the target by id, so the delete
+				// path needs the shadow root to hand back a laid-out element.
+				this.root.getElementById = /** @param {string} id */ id => element(id);
+			}
 			hide() { this.element.hidden = true; }
 			clear() {}
 			autofit() {}
@@ -129,8 +135,11 @@ function fixture({ live = false, mode = 0 } = {}) {
 			async createForm() {}
 		},
 		LiveChatLayoutCache: class {
-			/** @param {string} id */
-			delete(id) { processed.push(id); return [true]; }
+			/** @param {StubElement} elem */
+			delete(elem) {
+				processed.push(elem.id);
+				return [true];
+			}
 		},
 		LiveChatItemFactory: class { async load() {} },
 		LiveChatContextMenu: class { constructor() { this.element = element('yt-lcf-context'); } },

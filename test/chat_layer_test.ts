@@ -51,14 +51,11 @@ function fixture() {
 			this.append(...nodes);
 		}
 	}
-	const layouts = new Map<string, { element: FakeElement }>();
+	const layouts = new Map<FakeElement, string>();
 	const layoutCache = {
 		clear: () => layouts.clear(),
-		delete(id: string) {
-			layouts.delete(id);
-		},
-		deleteElement(element: FakeElement) {
-			if (layouts.get(element.id)?.element === element) layouts.delete(element.id);
+		delete(element: FakeElement) {
+			return layouts.delete(element);
 		},
 	};
 	const controller = { panel: {}, layoutCache: undefined as typeof layoutCache | undefined };
@@ -92,7 +89,7 @@ function fixture() {
 		const node = new FakeElement();
 		node.id = id;
 		layer.root.append(node);
-		layouts.set(id, { element: node });
+		layouts.set(node, id);
 		return node;
 	}
 	flush();
@@ -118,7 +115,7 @@ Deno.test('limit evicts oldest messages and their cached references', () => {
 	f.add('newest');
 	f.flush();
 	assertEquals(f.layer.root.children.slice(3).map((node: { id: string }) => node.id), ['second', 'newest']);
-	assertEquals([...f.layouts.keys()], ['second', 'newest']);
+	assertEquals([...f.layouts.keys()].map(node => node.id), ['second', 'newest']);
 });
 
 Deno.test('arbitrary removal and replacement release the removed element only', () => {
@@ -128,7 +125,7 @@ Deno.test('arbitrary removal and replacement release the removed element only', 
 	replaced.remove();
 	f.add('replacement');
 	f.flush();
-	assertEquals([...f.layouts.keys()], ['replacement']);
+	assertEquals([...f.layouts.keys()].map(node => node.id), ['replacement']);
 });
 
 Deno.test('remove and reappend preserves the same cached element', () => {
@@ -137,7 +134,7 @@ Deno.test('remove and reappend preserves the same cached element', () => {
 	node.remove();
 	f.layer.root.append(node);
 	f.flush();
-	assertEquals(f.layouts.get('same')?.element, node);
+	assertEquals(f.layouts.get(node), 'same');
 });
 
 Deno.test('old same-ID removal does not delete a newly laid out replacement', () => {
@@ -145,7 +142,7 @@ Deno.test('old same-ID removal does not delete a newly laid out replacement', ()
 	f.add('same').remove();
 	const replacement = f.add('same');
 	f.flush();
-	assertEquals(f.layouts.get('same')?.element, replacement);
+	assertEquals(f.layouts.get(replacement), 'same');
 });
 
 Deno.test('hide and resize release messages and cache through clear', () => {

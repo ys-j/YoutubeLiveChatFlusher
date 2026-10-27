@@ -140,7 +140,7 @@ for (let direction = 0; direction < 4; direction++) {
 		layoutChatItem(element('first').element, cache);
 		const target = element('target');
 		layoutChatItem(target.element, cache);
-		const result = cache.get('target')![0];
+		const result = cache.get(target.element)![0];
 		const actual = target.getBoundingClientRect();
 		assertEquals(target.attributes.get('data-line'), '1');
 		assertAlmostEquals(result.top, actual.top);
@@ -155,18 +155,19 @@ test('wrap dimensions and animation distance use the finalized size', () => {
 	layoutChatItem(target.element, cache);
 	assertEquals(target.classes.has('wrap'), true);
 	assertEquals(target.style.getPropertyValue('--yt-lcf-translate-x'), '-180px');
-	assertEquals(cache.get('wrapped')![0].height, 30);
-	assertEquals(cache.get('wrapped')!.length, 3);
+	assertEquals(cache.get(target.element)![0].height, 30);
+	assertEquals(cache.get(target.element)!.length, 3);
 });
 
 test('a tall bottom-up message cannot enclose a preceding shorter message', () => {
 	store.data.others.direction = 1;
 	const { cache, element } = fixture();
-	layoutChatItem(element('short').element, cache);
+	const short = element('short');
+	layoutChatItem(short.element, cache);
 	const target = element('tall', { height: 20 });
 	layoutChatItem(target.element, cache);
 	assertEquals(target.attributes.get('data-line'), '1');
-	assertEquals(cache.get('tall')![0].isCollidable(cache.get('short')![0]), false);
+	assertEquals(cache.get(target.element)![0].isCollidable(cache.get(short.element)![0]), false);
 });
 
 test('bottom-up candidates stop at the upper host boundary', () => {
@@ -178,7 +179,7 @@ test('bottom-up candidates stop at the upper host boundary', () => {
 	layoutChatItem(target.element, cache);
 	assertEquals(target.classes.has('overlap'), true);
 	assertEquals(target.attributes.get('data-line'), '0');
-	assertEquals(cache.get('third')![0].isOverflow(cache.dom.host.getBoundingClientRect()), false);
+	assertEquals(cache.get(target.element)![0].isOverflow(cache.dom.host.getBoundingClientRect()), false);
 });
 
 test('subpixel rectangle rounding at the bottom edge keeps the first lane usable', () => {
@@ -188,7 +189,7 @@ test('subpixel rectangle rounding at the bottom edge keeps the first lane usable
 	layoutChatItem(target.element, cache);
 	assertEquals(target.classes.has('overlap'), false);
 	assertEquals(target.style.bottom, '0em');
-	const layout = cache.get('rounded')![0];
+	const layout = cache.get(target.element)![0];
 	assertEquals(layout.isOverflow({ top: 30, height: 100 }), false);
 	assertEquals(layout.isOverflow({ top: 30, height: 99.98 }), true);
 	assertEquals(layout.isOverflow({ top: layout.top + .00004, height: 100 }), false);
@@ -204,8 +205,8 @@ test('dense overlap caches its final half-lane rectangle and both occupied lanes
 	layoutChatItem(target.element, cache);
 	assertEquals(target.style.top, '0.5em');
 	assertEquals(target.attributes.get('data-line'), '0');
-	assertEquals(cache.get('overlap')!.length, 2);
-	assertEquals(cache.get('overlap')![0].top, target.getBoundingClientRect().top);
+	assertEquals(cache.get(target.element)!.length, 2);
+	assertEquals(cache.get(target.element)![0].top, target.getBoundingClientRect().top);
 	assertEquals(target.style.opacity, '0.6400000000000001');
 	assertEquals(target.style.zIndex, '-2');
 });
@@ -229,7 +230,7 @@ test('random saturation retains a fitting lane instead of an overflowing one', (
 	const target = element('random');
 	layoutChatItem(target.element, cache, 'random');
 	assertEquals(target.attributes.get('data-line'), '1');
-	assertEquals(cache.get('random')![0].isOverflow(cache.dom.host.getBoundingClientRect()), false);
+	assertEquals(cache.get(target.element)![0].isOverflow(cache.dom.host.getBoundingClientRect()), false);
 });
 
 test('zero lanes are safe in dense and random modes', () => {
@@ -238,7 +239,7 @@ test('zero lanes are safe in dense and random modes', () => {
 		const target = element(mode);
 		assertEquals(layoutChatItem(target.element, cache, mode), mode);
 		assertEquals(target.attributes.get('data-line'), '0');
-		assertEquals(cache.get(mode), undefined);
+		assertEquals(cache.get(target.element), undefined);
 	}
 });
 
@@ -247,12 +248,12 @@ test('scaled host placement and speed stay in viewport coordinates', () => {
 	layoutChatItem(element('first').element, cache);
 	const target = element('scaled');
 	layoutChatItem(target.element, cache);
-	const layout = cache.get('scaled')![0];
+	const layout = cache.get(target.element)![0];
 	assertEquals(target.attributes.get('data-line'), '1');
 	assertEquals(layout.top, target.getBoundingClientRect().top);
 	assertEquals(layout.height, 20);
 	assertAlmostEquals(layout.speed, 120 * 1.5 / 8000);
-	assertEquals(cache.get('scaled')!.length, 1);
+	assertEquals(cache.get(target.element)!.length, 1);
 });
 
 for (const measured of [false, true]) {
@@ -272,9 +273,9 @@ for (const measured of [false, true]) {
 					layoutChatItem(target.element, cache, mode);
 					assertEquals(target.attributes.get('data-line'), `${line}`);
 					assertEquals(target.classes.has('overlap'), false);
-					assertEquals(cache.get(target.id)!.length, 1);
-					assertAlmostEquals(cache.get(target.id)![0].top, target.getBoundingClientRect().top);
-					assertAlmostEquals(cache.get(target.id)![0].speed, (659 + 20) / 8000);
+					assertEquals(cache.get(target.element)!.length, 1);
+					assertAlmostEquals(cache.get(target.element)![0].top, target.getBoundingClientRect().top);
+					assertAlmostEquals(cache.get(target.element)![0].speed, (659 + 20) / 8000);
 				}
 			});
 		}
@@ -295,9 +296,9 @@ for (const boxSizing of ['border-box', 'content-box']) {
 		for (let line = 0; line < 8; line++) {
 			const target = element(`scaled-${line}`);
 			layoutChatItem(target.element, cache);
-			const layout = cache.get(target.id)![0];
+			const layout = cache.get(target.element)![0];
 			assertEquals(target.attributes.get('data-line'), `${line}`);
-			assertEquals(cache.get(target.id)!.length, 1);
+			assertEquals(cache.get(target.element)!.length, 1);
 			assertAlmostEquals(layout.top, target.getBoundingClientRect().top);
 			assertAlmostEquals(layout.speed, (656 + 20) * 1.5 / 8000);
 		}
@@ -306,18 +307,19 @@ for (const boxSizing of ['border-box', 'content-box']) {
 
 test('subpixel tolerance still rejects a real vertical overlap', () => {
 	const { cache, element } = fixture();
-	layoutChatItem(element('tall', { height: 10.02 }).element, cache);
+	const tall = element('tall', { height: 10.02 });
+	layoutChatItem(tall.element, cache);
 	const target = element('next');
 	layoutChatItem(target.element, cache);
 	assertEquals(target.attributes.get('data-line'), '2');
-	assertEquals(cache.get('tall')!.length, 2);
+	assertEquals(cache.get(tall.element)!.length, 2);
 });
 
 test('positive subpixel height still occupies a lane', () => {
 	const { cache, element } = fixture();
 	const target = element('tiny', { height: .005 });
 	layoutChatItem(target.element, cache);
-	assertEquals(cache.get('tiny')!.length, 1);
+	assertEquals(cache.get(target.element)!.length, 1);
 });
 
 test('custom CSS keeps measuring lane-dependent em positions', () => {
@@ -327,7 +329,7 @@ test('custom CSS keeps measuring lane-dependent em positions', () => {
 	const target = element('custom', { fontForLine: line => line === 1 ? 20 : 10 });
 	layoutChatItem(target.element, cache);
 	assertEquals(target.style.top, '1em');
-	assertEquals(cache.get('custom')![0].top, target.getBoundingClientRect().top);
+	assertEquals(cache.get(target.element)![0].top, target.getBoundingClientRect().top);
 	assertEquals(target.reads.style, 3);
 });
 
@@ -342,23 +344,24 @@ test('custom layer CSS measures the final overlap class and half-line position',
 	layoutChatItem(target.element, cache);
 	assertEquals(target.classes.has('overlap'), true);
 	assertEquals(target.style.top, '0.5em');
-	assertEquals(cache.get('custom-overlap')![0].top, target.getBoundingClientRect().top);
-	assertEquals(cache.get('custom-overlap')![0].height, 20);
+	assertEquals(cache.get(target.element)![0].top, target.getBoundingClientRect().top);
+	assertEquals(cache.get(target.element)![0].height, 20);
 });
 
 function hostHeight(cache: LiveChatLayoutCache, height: number) {
 	(cache.dom.host as unknown as HostStub).clientHeight = height;
 }
 
-test('element-identity deletion preserves a newer layout with the same id', () => {
+test('element-keyed cache keeps a newer layout when the same id is replaced', () => {
 	const { cache, element } = fixture();
 	const old = element('same');
 	layoutChatItem(old.element, cache);
 	const replacement = element('same');
-	cache.delete('same');
 	layoutChatItem(replacement.element, cache);
-	assertEquals(cache.deleteElement(old.element).some(Boolean), false);
-	assertEquals(cache.get('same')![0].matchesElement(replacement.element), true);
-	assertEquals(cache.deleteElement(replacement.element).some(Boolean), true);
-	assertEquals(cache.get('same'), undefined);
+	assertEquals(cache.delete(old.element).some(Boolean), true);
+	assertEquals(cache.get(old.element), undefined);
+	assertEquals(cache.delete(old.element).some(Boolean), false);
+	assertEquals(cache.get(replacement.element)!.length, 1);
+	assertEquals(cache.delete(replacement.element).some(Boolean), true);
+	assertEquals(cache.get(replacement.element), undefined);
 });

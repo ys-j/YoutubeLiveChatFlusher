@@ -75,7 +75,7 @@ export class LiveChatLayer {
 			for (const r of records) {
 				for (const removed of r.removedNodes) {
 					if (removed instanceof HTMLElement && removed.parentNode !== this.root) {
-						this.#controller.layoutCache?.deleteElement(removed);
+						this.#controller.layoutCache?.delete(removed);
 					}
 				}
 			}
@@ -88,7 +88,7 @@ export class LiveChatLayer {
 				while (i++ < over) {
 					const oldest = this.root.children[this.#initialElemCount];
 					if (!(oldest instanceof HTMLElement)) break;
-					this.#controller.layoutCache?.deleteElement(oldest);
+					this.#controller.layoutCache?.delete(oldest);
 					oldest.remove();
 				}
 				callbackOnRemoved(mutations);

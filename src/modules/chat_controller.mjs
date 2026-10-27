@@ -80,7 +80,7 @@ export class LiveChatController {
 		root.addEventListener('animationend', e => {
 			const elem = /** @type {HTMLElement} */ (e.target);
 			if (elem.parentNode === root) {
-				this.layoutCache.delete(elem.id);
+				this.layoutCache.delete(elem);
 				elem.remove();
 			}
 		}, { passive: true });
@@ -707,9 +707,9 @@ export class LiveChatController {
 	#deleteChatItem(action) {
 		const id = action.markChatItemAsDeletedAction?.targetItemId;
 		if (!id) return;
-		this.layoutCache.delete(id);
 		const target = this.layer.root.getElementById(id);
 		if (target) {
+			this.layoutCache.delete(target);
 			target.remove();
 		} else {
 			logger.warn(`Failed to delete message: #${id}`);
@@ -722,9 +722,10 @@ export class LiveChatController {
 	#deleteChatItemByAuthor(action) {
 		const id = action.markChatItemsByAuthorAsDeletedAction?.externalChannelId;
 		if (!id) return;
+		/** @type {NodeListOf<HTMLElement>} */
 		const targets = this.layer.root.querySelectorAll(`[data-author-id="${id}"]`);
 		for (const target of targets) {
-			this.layoutCache.delete(target.id);
+			this.layoutCache.delete(target);
 			target.remove();
 		}
 	}
@@ -741,7 +742,8 @@ export class LiveChatController {
 			renderChatItem(item, this.itemFactory).then(el => {
 				if (!el) return;
 				this.#markIfYours(el);
-				this.layoutCache.delete(el.id);
+				// Evict the old layout now; the observer's removal record arrives after relayout.
+				this.layoutCache.delete(target);
 				target.replaceWith(el);
 				layoutChatItem(el, this.layoutCache, LiveChatController.MODE_OPTIONS[s.others.density]);
 			}).catch(logger.warn);
