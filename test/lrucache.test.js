@@ -1,4 +1,4 @@
-import './_globals.mjs';
+import './_globals.js';
 
 import { assertEquals, assertThrows } from '@std/assert';
 import { LRUCache } from '../src/modules/lrucache.mjs';

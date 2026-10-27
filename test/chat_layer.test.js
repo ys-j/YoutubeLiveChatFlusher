@@ -1,15 +1,18 @@
-// Run: deno test --allow-read test/chat_layer_test.ts
+// Run: deno test --allow-read test/chat_layer.test.js
 // A checkout file URL after -- selects regression source.
-import './_globals.mjs';
+import './_globals.js';
 import { assertEquals } from '@std/assert';
 
 const sourceRoot = new URL(Deno.args[0] ?? '../', import.meta.url);
 const source = Deno.readTextFileSync(new URL('src/modules/chat_layer.mjs', sourceRoot));
 
 function fixture() {
+	/** @type {() => void} */
 	let resize = () => {};
-	let notify = (_records: { removedNodes: FakeElement[] }[], _observer?: unknown) => {};
-	let pending: { removedNodes: FakeElement[] }[] = [];
+	/** @type {(records: { removedNodes: FakeElement[] }[], observer?: unknown) => void} */
+	let notify = () => {};
+	/** @type {{ removedNodes: FakeElement[] }[]} */
+	let pending = [];
 	// Mimics the observer instance the real MutationObserver passes as the callback's 2nd arg.
 	const observerStub = {
 		takeRecords() { const records = pending; pending = []; return records; },
@@ -18,20 +21,24 @@ function fixture() {
 	};
 	class FakeElement {
 		id = '';
-		parentNode: FakeElement | null = null;
-		children: FakeElement[] = [];
+		tagName;
+		/** @type {FakeElement | null} */
+		parentNode = null;
+		/** @type {FakeElement[]} */
+		children = [];
 		style = { display: '', setProperty() {} };
 		hidden = false;
 		ariaHidden = 'false';
 		tabIndex = 0;
+		/** @param {string} [tagName] */
 		constructor(tagName = 'DIV') { this.tagName = tagName; }
-		tagName: string;
 		get childElementCount() { return this.children.length; }
 		setAttribute() {}
 		attachShadow() { return new FakeElement('SHADOW'); }
 		getBoundingClientRect() { return { width: 0, height: 0 }; }
 		querySelectorAll() { return this.children.filter(node => ['LINK', 'STYLE'].includes(node.tagName)); }
-		append(...nodes: FakeElement[]) {
+		/** @this {FakeElement} @param {...FakeElement} nodes */
+		append(...nodes) {
 			for (const node of nodes) {
 				if (node.parentNode) node.remove();
 				node.parentNode = this;
@@ -39,6 +46,7 @@ function fixture() {
 			}
 			pending.push({ removedNodes: [] });
 		}
+		/** @this {FakeElement} */
 		remove() {
 			if (!this.parentNode) return;
 			const siblings = this.parentNode.children;
@@ -46,30 +54,35 @@ function fixture() {
 			this.parentNode = null;
 			pending.push({ removedNodes: [this] });
 		}
-		replaceChildren(...nodes: FakeElement[]) {
+		/** @this {FakeElement} @param {...FakeElement} nodes */
+		replaceChildren(...nodes) {
 			for (const node of [...this.children]) node.remove();
 			this.append(...nodes);
 		}
 	}
-	const layouts = new Map<FakeElement, string>();
+	const layouts = new Map();
 	const layoutCache = {
 		clear: () => layouts.clear(),
-		delete(element: FakeElement) {
+		/** @param {FakeElement} element */
+		delete(element) {
 			return layouts.delete(element);
 		},
 	};
-	const controller = { panel: {}, layoutCache: undefined as typeof layoutCache | undefined };
+	/** @type {{ panel: object, layoutCache: typeof layoutCache | undefined }} */
+	const controller = { panel: {}, layoutCache: undefined };
 	const bindings = {
 		HTMLElement: FakeElement,
-		document: { createElement: (tag: string) => new FakeElement(tag.toUpperCase()) },
-		browser: { runtime: { getURL: (path: string) => path } },
+		document: { createElement: (/** @type {string} */ tag) => new FakeElement(tag.toUpperCase()) },
+		browser: { runtime: { getURL: (/** @type {string} */ path) => path } },
 		s: { others: { px_per_sec: 0 }, styles: { animation_duration: '8s' } },
 		ResizeObserver: class {
-			constructor(callback: () => void) { resize = callback; }
+			/** @param {() => void} callback */
+			constructor(callback) { resize = callback; }
 			observe() {}
 		},
 		MutationObserver: class {
-			constructor(callback: typeof notify) { notify = callback; }
+			/** @param {(records: { removedNodes: FakeElement[] }[], observer?: unknown) => void} callback */
+			constructor(callback) { notify = callback; }
 			observe() {}
 		},
 	};
@@ -85,7 +98,8 @@ function fixture() {
 			notify(records, observerStub);
 		}
 	}
-	function add(id: string) {
+	/** @param {string} id */
+	function add(id) {
 		const node = new FakeElement();
 		node.id = id;
 		layer.root.append(node);
@@ -114,7 +128,7 @@ Deno.test('limit evicts oldest messages and their cached references', () => {
 	f.add('second');
 	f.add('newest');
 	f.flush();
-	assertEquals(f.layer.root.children.slice(3).map((node: { id: string }) => node.id), ['second', 'newest']);
+	assertEquals(f.layer.root.children.slice(3).map((/** @type {{ id: string }} */ node) => node.id), ['second', 'newest']);
 	assertEquals([...f.layouts.keys()].map(node => node.id), ['second', 'newest']);
 });
 

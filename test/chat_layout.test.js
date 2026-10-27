@@ -1,4 +1,4 @@
-import './_globals.mjs';
+import './_globals.js';
 
 import { assertEquals } from '@std/assert';
 import { LiveChatLayoutCache } from '../src/modules/chat_layout.mjs';

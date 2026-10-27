@@ -1,6 +1,6 @@
-// Run: deno test --allow-read test/dependent_startup.test.mjs
+// Run: deno test --allow-read test/dependent_startup.test.js
 // An optional checkout file URL ending in / after -- selects regression source.
-import './_globals.mjs';
+import './_globals.js';
 import { assert, assertEquals } from '@std/assert';
 
 const sourceRoot = new URL(Deno.args[0] ?? '../', import.meta.url);
@@ -96,8 +96,16 @@ function fixture({ live = false, mode = 0 } = {}) {
 			/** @param {string} path */
 			getURL: path => path,
 			getManifest: () => ({ name: 'Fixture' }),
-			/** @param {{fire?: string, injection?: string}} message */
+			/**
+			 * Mirrors the background's replies: injection messages resolve to
+			 * `Scripting.InjectionResult[]` (see types/messaging.d.ts), so an empty
+			 * array is a successful injection. Returning undefined here would make
+			 * initialize() bail into its setup-failure branch and never register the
+			 * navigate-start listener that starts the regression depends on.
+			 * @param {{fire?: string, injection?: string}} message
+			 */
 			async sendMessage(message) {
+				if (message.injection) return [];
 				if (message.fire !== 'getNonce') return;
 				if (nextNonce) {
 					const pending = nextNonce;

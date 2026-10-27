@@ -1,4 +1,4 @@
-import './_globals.mjs';
+import './_globals.js';
 
 import { assert, assertEquals, assertThrows } from '@std/assert';
 import {

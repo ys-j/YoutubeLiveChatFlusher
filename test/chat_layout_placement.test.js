@@ -1,39 +1,56 @@
-import './_globals.mjs';
+import './_globals.js';
 import { assertEquals, assertAlmostEquals } from '@std/assert';
+import { restore, stub } from '@std/testing/mock';
+import { FakeTime } from '@std/testing/time';
 import { LiveChatLayoutCache, layoutChatItem } from '../src/modules/chat_layout.mjs';
 import { store } from '../src/modules/store.mjs';
 
-type Options = {
-	width?: number;
-	height?: number;
-	wrappedWidth?: number;
-	wrappedHeight?: number;
-	fontForLine?: (line: number) => number;
-	overlapScale?: number;
-	rectOffset?: number;
-};
+/**
+ * @typedef Options
+ * @prop {number} [width]
+ * @prop {number} [height]
+ * @prop {number} [wrappedWidth]
+ * @prop {number} [wrappedHeight]
+ * @prop {(line: number) => number} [fontForLine]
+ * @prop {number} [overlapScale]
+ * @prop {number} [rectOffset]
+ */
 
 class ElementStub {
-	id: string;
-	options: Options;
-	classes = new Set<string>();
-	attributes = new Map<string, string>();
+	/** @type {Set<string>} */
+	classes = new Set();
+	/** @type {Map<string, string>} */
+	attributes = new Map();
 	reads = { width: 0, height: 0, rect: 0, style: 0 };
 	classList = {
-		add: (name: string) => this.classes.add(name),
+		add: (/** @type {string} */ name) => this.classes.add(name),
 		values: () => this.classes.values(),
 	};
 	style = {
 		top: '', bottom: '', opacity: '', zIndex: '',
-		values: new Map<string, string>(),
-		setProperty(name: string, value: string) { this.values.set(name, value); },
-		getPropertyValue(name: string) { return this.values.get(name) ?? ''; },
+		/** @type {Map<string, string>} */
+		values: new Map(),
+		/**
+		 * @param {string} name @param {string} value
+		 * @this {{ values: Map<string, string> }}
+		 */
+		setProperty(name, value) { this.values.set(name, value); },
+		/**
+		 * @param {string} name
+		 * @this {{ values: Map<string, string> }}
+		 */
+		getPropertyValue(name) { return this.values.get(name) ?? ''; },
 	};
-	constructor(id: string, readonly host: HostStub, options: Options = {}) {
+	/**
+	 * @param {string} id @param {HostStub} host @param {Options} [options]
+	 */
+	constructor(id, host, options = {}) {
 		this.id = id;
+		this.host = host;
 		this.options = options;
 	}
-	setAttribute(name: string, value: string) { this.attributes.set(name, value); }
+	/** @param {string} name @param {string} value */
+	setAttribute(name, value) { this.attributes.set(name, value); }
 	get fontSize() { return this.options.fontForLine?.(Number(this.attributes.get('data-line') ?? 0)) ?? 10; }
 	get boxWidth() { return this.classes.has('wrap') ? this.options.wrappedWidth ?? 100 : this.options.width ?? 20; }
 	get boxHeight() { return this.classes.has('wrap') ? this.options.wrappedHeight ?? 20 : this.options.height ?? 10; }
@@ -53,7 +70,7 @@ class ElementStub {
 		// DOMRect so mutable `y` in moveTo() keeps `top`/`bottom` in sync like the real DOM.
 		return new DOMRect(left, roundedTop, width, height);
 	}
-	get element() { return this as unknown as HTMLElement; }
+	get element() { return /** @type {HTMLElement} */ (/** @type {unknown} */ (this)); }
 }
 
 class HostStub {
@@ -67,58 +84,85 @@ class HostStub {
 	scaleX = 1;
 	scaleY = 1;
 	get clientHeight() { return Math.round(this.height - 2 * this.border); }
-	set clientHeight(value: number) { this.height = value + 2 * this.border; }
+	set clientHeight(/** @type {number} */ value) { this.height = value + 2 * this.border; }
 	get clientWidth() { return Math.round(this.width - 2 * this.border); }
-	set clientWidth(value: number) { this.width = value + 2 * this.border; }
+	set clientWidth(/** @type {number} */ value) { this.width = value + 2 * this.border; }
 	getBoundingClientRect() {
 		return { top: this.top, height: this.height * this.scaleY, width: this.width * this.scaleX };
 	}
+	/** @returns {CSSStyleDeclaration} */
 	getComputedStyle() {
 		const inset = this.boxSizing === 'border-box' ? 0 : 2 * (this.padding + this.border);
-		return {
+		return /** @type {CSSStyleDeclaration} */ (/** @type {unknown} */ ({
 			width: `${this.width - inset}px`, height: `${this.height - inset}px`, boxSizing: this.boxSizing,
 			paddingTop: `${this.padding}px`, paddingBottom: `${this.padding}px`,
 			paddingLeft: `${this.padding}px`, paddingRight: `${this.padding}px`,
 			borderTopWidth: `${this.border}px`, borderBottomWidth: `${this.border}px`,
 			borderLeftWidth: `${this.border}px`, borderRightWidth: `${this.border}px`,
-		} as CSSStyleDeclaration;
+		}));
 	}
 }
 
-function fixture(lanes = 10, configure: (host: HostStub) => void = () => {}) {
+/**
+ * @param {number} [lanes] @param {(host: HostStub) => void} [configure]
+ */
+function fixture(lanes = 10, configure = () => {}) {
 	const host = new HostStub();
 	configure(host);
-	const dom = { host, appendChild() {} } as unknown as ShadowRoot;
+	const dom = /** @type {ShadowRoot} */ (/** @type {unknown} */ ({ host, appendChild() {} }));
 	const cache = new LiveChatLayoutCache(dom, lanes);
-	return { host, cache, element: (id: string, options: Options = {}) => new ElementStub(id, host, options) };
+	return {
+		host, cache,
+		/** @param {string} id @param {Options} [options] */
+		element: (id, options = {}) => new ElementStub(id, host, options),
+	};
 }
 
-function test(name: string, run: () => void) {
+/**
+ * Narrows the `ChatLayoutInfo[] | undefined` that the cache hands back, so the
+ * placement assertions can read the stored layouts directly. A missing entry is
+ * a test bug, so this throws rather than silently comparing against undefined.
+ * @param {LiveChatLayoutCache} cache @param {HTMLElement} element
+ * @returns {NonNullable<ReturnType<LiveChatLayoutCache['get']>>}
+ */
+function laidOut(cache, element) {
+	const layouts = cache.get(element);
+	if (!layouts) throw new Error(`No layout stored for ${element.id}.`);
+	return layouts;
+}
+
+/**
+ * Pins the clock and randomness, swaps in the fake `getComputedStyle`, and
+ * restores the ambient state after each case.
+ * @param {string} name @param {() => void} run
+ */
+function test(name, run) {
 	Deno.test(name, () => {
 		const before = structuredClone(store.data);
-		const previousStyle = globalThis.getComputedStyle;
-		const previousRandom = Math.random;
-		const previousNow = Date.now;
 		store.data.styles.line_height = '1';
 		store.data.styles.layer_css = '';
 		store.data.styles.max_width = '100%';
-		for (const key of Object.keys(store.data.cssTexts)) store.data.cssTexts[key as keyof typeof store.data.cssTexts] = '';
+		for (const key of Object.keys(store.data.cssTexts)) store.data.cssTexts[key] = '';
 		store.data.others.direction = 0;
 		store.data.others.overlapping = 0;
-		Date.now = () => 1000;
-		globalThis.getComputedStyle = (elem: Element) => {
+		const time = new FakeTime(1000);
+		stub(Math, 'random', () => 0);
+		stub(globalThis, 'getComputedStyle', (/** @type {Element} */ elem) => {
 			if (elem instanceof HostStub) return elem.getComputedStyle();
-			const fake = elem as unknown as ElementStub;
+			const fake = /** @type {ElementStub} */ (/** @type {unknown} */ (elem));
 			fake.reads.style++;
-			return { fontSize: `${fake.fontSize}px`, lineHeight: `${fake.fontSize * Number(store.data.styles.line_height)}px`, animationDuration: '8s' } as CSSStyleDeclaration;
-		};
+			return /** @type {CSSStyleDeclaration} */ (/** @type {unknown} */ ({
+				fontSize: `${fake.fontSize}px`,
+				lineHeight: `${fake.fontSize * Number(store.data.styles.line_height)}px`,
+				animationDuration: '8s',
+			}));
+		});
 		try { run(); } finally {
 			Object.assign(store.data.styles, before.styles);
 			Object.assign(store.data.others, before.others);
 			Object.assign(store.data.cssTexts, before.cssTexts);
-			globalThis.getComputedStyle = previousStyle;
-			Math.random = previousRandom;
-			Date.now = previousNow;
+			restore();
+			time.restore();
 		}
 	});
 }
@@ -140,7 +184,7 @@ for (let direction = 0; direction < 4; direction++) {
 		layoutChatItem(element('first').element, cache);
 		const target = element('target');
 		layoutChatItem(target.element, cache);
-		const result = cache.get(target.element)![0];
+		const result = laidOut(cache, target.element)[0];
 		const actual = target.getBoundingClientRect();
 		assertEquals(target.attributes.get('data-line'), '1');
 		assertAlmostEquals(result.top, actual.top);
@@ -155,8 +199,8 @@ test('wrap dimensions and animation distance use the finalized size', () => {
 	layoutChatItem(target.element, cache);
 	assertEquals(target.classes.has('wrap'), true);
 	assertEquals(target.style.getPropertyValue('--yt-lcf-translate-x'), '-180px');
-	assertEquals(cache.get(target.element)![0].height, 30);
-	assertEquals(cache.get(target.element)!.length, 3);
+	assertEquals(laidOut(cache, target.element)[0].height, 30);
+	assertEquals(laidOut(cache, target.element).length, 3);
 });
 
 test('a tall bottom-up message cannot enclose a preceding shorter message', () => {
@@ -167,7 +211,7 @@ test('a tall bottom-up message cannot enclose a preceding shorter message', () =
 	const target = element('tall', { height: 20 });
 	layoutChatItem(target.element, cache);
 	assertEquals(target.attributes.get('data-line'), '1');
-	assertEquals(cache.get(target.element)![0].isCollidable(cache.get(short.element)![0]), false);
+	assertEquals(laidOut(cache, target.element)[0].isCollidable(laidOut(cache, short.element)[0]), false);
 });
 
 test('bottom-up candidates stop at the upper host boundary', () => {
@@ -179,7 +223,7 @@ test('bottom-up candidates stop at the upper host boundary', () => {
 	layoutChatItem(target.element, cache);
 	assertEquals(target.classes.has('overlap'), true);
 	assertEquals(target.attributes.get('data-line'), '0');
-	assertEquals(cache.get(target.element)![0].isOverflow(cache.dom.host.getBoundingClientRect()), false);
+	assertEquals(laidOut(cache, target.element)[0].isOverflow(cache.dom.host.getBoundingClientRect()), false);
 });
 
 test('subpixel rectangle rounding at the bottom edge keeps the first lane usable', () => {
@@ -189,7 +233,7 @@ test('subpixel rectangle rounding at the bottom edge keeps the first lane usable
 	layoutChatItem(target.element, cache);
 	assertEquals(target.classes.has('overlap'), false);
 	assertEquals(target.style.bottom, '0em');
-	const layout = cache.get(target.element)![0];
+	const layout = laidOut(cache, target.element)[0];
 	assertEquals(layout.isOverflow({ top: 30, height: 100 }), false);
 	assertEquals(layout.isOverflow({ top: 30, height: 99.98 }), true);
 	assertEquals(layout.isOverflow({ top: layout.top + .00004, height: 100 }), false);
@@ -205,14 +249,13 @@ test('dense overlap caches its final half-lane rectangle and both occupied lanes
 	layoutChatItem(target.element, cache);
 	assertEquals(target.style.top, '0.5em');
 	assertEquals(target.attributes.get('data-line'), '0');
-	assertEquals(cache.get(target.element)!.length, 2);
-	assertEquals(cache.get(target.element)![0].top, target.getBoundingClientRect().top);
+	assertEquals(laidOut(cache, target.element).length, 2);
+	assertEquals(laidOut(cache, target.element)[0].top, target.getBoundingClientRect().top);
 	assertEquals(target.style.opacity, '0.6400000000000001');
 	assertEquals(target.style.zIndex, '-2');
 });
 
 test('random placement consumes remaining lanes with fixed-zero randomness', () => {
-	Math.random = () => 0;
 	const { cache, element } = fixture(3);
 	for (let i = 0; i < 3; i++) layoutChatItem(element(`full-${i}`).element, cache);
 	const target = element('random');
@@ -222,7 +265,6 @@ test('random placement consumes remaining lanes with fixed-zero randomness', () 
 });
 
 test('random saturation retains a fitting lane instead of an overflowing one', () => {
-	Math.random = () => 0;
 	store.data.others.direction = 1;
 	const { cache, element } = fixture(10, host => { host.clientHeight = 25; });
 	layoutChatItem(element('first').element, cache);
@@ -230,11 +272,11 @@ test('random saturation retains a fitting lane instead of an overflowing one', (
 	const target = element('random');
 	layoutChatItem(target.element, cache, 'random');
 	assertEquals(target.attributes.get('data-line'), '1');
-	assertEquals(cache.get(target.element)![0].isOverflow(cache.dom.host.getBoundingClientRect()), false);
+	assertEquals(laidOut(cache, target.element)[0].isOverflow(cache.dom.host.getBoundingClientRect()), false);
 });
 
 test('zero lanes are safe in dense and random modes', () => {
-	for (const mode of ['dense', 'random'] as const) {
+	for (const mode of /** @type {const} */ (['dense', 'random'])) {
 		const { cache, element } = fixture(0);
 		const target = element(mode);
 		assertEquals(layoutChatItem(target.element, cache, mode), mode);
@@ -248,22 +290,21 @@ test('scaled host placement and speed stay in viewport coordinates', () => {
 	layoutChatItem(element('first').element, cache);
 	const target = element('scaled');
 	layoutChatItem(target.element, cache);
-	const layout = cache.get(target.element)![0];
+	const layout = laidOut(cache, target.element)[0];
 	assertEquals(target.attributes.get('data-line'), '1');
 	assertEquals(layout.top, target.getBoundingClientRect().top);
 	assertEquals(layout.height, 20);
 	assertAlmostEquals(layout.speed, 120 * 1.5 / 8000);
-	assertEquals(cache.get(target.element)!.length, 1);
+	assertEquals(laidOut(cache, target.element).length, 1);
 });
 
 for (const measured of [false, true]) {
 	for (const direction of [0, 1]) {
-		for (const mode of ['dense', 'random'] as const) {
+		for (const mode of /** @type {const} */ (['dense', 'random'])) {
 			test(`fractional host fills every lane (${measured ? 'measured' : 'numeric'}, direction ${direction}, ${mode})`, () => {
 				store.data.styles.line_height = '1.4';
 				store.data.styles.layer_css = measured ? 'color: white' : '';
 				store.data.others.direction = direction;
-				Math.random = () => 0;
 				const { cache, element } = fixture(8, host => {
 					host.width = 659.0117797851562;
 					host.height = 370.6941223144531;
@@ -273,9 +314,9 @@ for (const measured of [false, true]) {
 					layoutChatItem(target.element, cache, mode);
 					assertEquals(target.attributes.get('data-line'), `${line}`);
 					assertEquals(target.classes.has('overlap'), false);
-					assertEquals(cache.get(target.element)!.length, 1);
-					assertAlmostEquals(cache.get(target.element)![0].top, target.getBoundingClientRect().top);
-					assertAlmostEquals(cache.get(target.element)![0].speed, (659 + 20) / 8000);
+					assertEquals(laidOut(cache, target.element).length, 1);
+					assertAlmostEquals(laidOut(cache, target.element)[0].top, target.getBoundingClientRect().top);
+					assertAlmostEquals(laidOut(cache, target.element)[0].speed, (659 + 20) / 8000);
 				}
 			});
 		}
@@ -296,9 +337,9 @@ for (const boxSizing of ['border-box', 'content-box']) {
 		for (let line = 0; line < 8; line++) {
 			const target = element(`scaled-${line}`);
 			layoutChatItem(target.element, cache);
-			const layout = cache.get(target.element)![0];
+			const layout = laidOut(cache, target.element)[0];
 			assertEquals(target.attributes.get('data-line'), `${line}`);
-			assertEquals(cache.get(target.element)!.length, 1);
+			assertEquals(laidOut(cache, target.element).length, 1);
 			assertAlmostEquals(layout.top, target.getBoundingClientRect().top);
 			assertAlmostEquals(layout.speed, (656 + 20) * 1.5 / 8000);
 		}
@@ -312,24 +353,24 @@ test('subpixel tolerance still rejects a real vertical overlap', () => {
 	const target = element('next');
 	layoutChatItem(target.element, cache);
 	assertEquals(target.attributes.get('data-line'), '2');
-	assertEquals(cache.get(tall.element)!.length, 2);
+	assertEquals(laidOut(cache, tall.element).length, 2);
 });
 
 test('positive subpixel height still occupies a lane', () => {
 	const { cache, element } = fixture();
 	const target = element('tiny', { height: .005 });
 	layoutChatItem(target.element, cache);
-	assertEquals(cache.get(target.element)!.length, 1);
+	assertEquals(laidOut(cache, target.element).length, 1);
 });
 
 test('custom CSS keeps measuring lane-dependent em positions', () => {
 	store.data.cssTexts[''] = '[data-line="1"] { font-size: 20px }';
 	const { cache, element } = fixture();
 	layoutChatItem(element('first').element, cache);
-	const target = element('custom', { fontForLine: line => line === 1 ? 20 : 10 });
+	const target = element('custom', { fontForLine: (/** @type {number} */ line) => line === 1 ? 20 : 10 });
 	layoutChatItem(target.element, cache);
 	assertEquals(target.style.top, '1em');
-	assertEquals(cache.get(target.element)![0].top, target.getBoundingClientRect().top);
+	assertEquals(laidOut(cache, target.element)[0].top, target.getBoundingClientRect().top);
 	assertEquals(target.reads.style, 3);
 });
 
@@ -344,12 +385,13 @@ test('custom layer CSS measures the final overlap class and half-line position',
 	layoutChatItem(target.element, cache);
 	assertEquals(target.classes.has('overlap'), true);
 	assertEquals(target.style.top, '0.5em');
-	assertEquals(cache.get(target.element)![0].top, target.getBoundingClientRect().top);
-	assertEquals(cache.get(target.element)![0].height, 20);
+	assertEquals(laidOut(cache, target.element)[0].top, target.getBoundingClientRect().top);
+	assertEquals(laidOut(cache, target.element)[0].height, 20);
 });
 
-function hostHeight(cache: LiveChatLayoutCache, height: number) {
-	(cache.dom.host as unknown as HostStub).clientHeight = height;
+/** @param {LiveChatLayoutCache} cache @param {number} height */
+function hostHeight(cache, height) {
+	/** @type {HostStub} */ (/** @type {unknown} */ (cache.dom.host)).clientHeight = height;
 }
 
 test('element-keyed cache keeps a newer layout when the same id is replaced', () => {
@@ -361,7 +403,7 @@ test('element-keyed cache keeps a newer layout when the same id is replaced', ()
 	assertEquals(cache.delete(old.element).some(Boolean), true);
 	assertEquals(cache.get(old.element), undefined);
 	assertEquals(cache.delete(old.element).some(Boolean), false);
-	assertEquals(cache.get(replacement.element)!.length, 1);
+	assertEquals(laidOut(cache, replacement.element).length, 1);
 	assertEquals(cache.delete(replacement.element).some(Boolean), true);
 	assertEquals(cache.get(replacement.element), undefined);
 });
