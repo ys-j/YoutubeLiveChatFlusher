@@ -491,6 +491,9 @@
 	"hotkey_alt": {
 		"message": "with Alt/Option key"
 	},
+	"hotkey_insensitive": {
+		"message": "Case Insensitive"
+	},
 	"message_pause": {
 		"message": "Animation pausing by right-clicking a message"
 	},

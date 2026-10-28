@@ -1,13 +1,7 @@
 import './_globals.js';
 
 import { assert, assertEquals, assertThrows } from '@std/assert';
-import {
-	getText,
-	toPascalCase,
-	getColorRGB,
-	formatMilliseconds,
-	getValueByJSONPointer,
-} from '../src/modules/utils.mjs';
+import { getText, toPascalCase, getColorRGB, formatMilliseconds, getValueByJSONPointer, matchHotkey } from '../src/modules/utils.mjs';
 
 Deno.test('getText joins runs of text and emoji shortcuts', () => {
 	const msg = {
@@ -89,4 +83,62 @@ Deno.test('getValueByJSONPointer decodes JSON Pointer escape sequences', () => {
 Deno.test('getValueByJSONPointer throws for a pointer not starting with "/"', () => {
 	const err = assertThrows(() => getValueByJSONPointer({ a: 1 }, 'a'), Error);
 	assert(err.message.match(/must start with "\/"/i));
+});
+
+/**
+ * @param {string} key
+ * @param {{ shiftKey?: boolean, altKey?: boolean }} [mod]
+ * @returns {any}
+ */
+const keyEvent = (key, { shiftKey = false, altKey = false } = {}) => ({ key, shiftKey, altKey });
+
+Deno.test('matchHotkey requires an exact case match when insensitive is off', () => {
+	const hotkey = { key: 'a', alt: false, insensitive: false };
+	assert(matchHotkey(keyEvent('a'), hotkey));
+	// With Shift the key is treated as uppercase, so it no longer matches.
+	assert(!matchHotkey(keyEvent('A', { shiftKey: true }), hotkey));
+	// An uppercase configuration must be pressed with Shift.
+	const upper = { key: 'A', alt: false, insensitive: false };
+	assert(matchHotkey(keyEvent('A', { shiftKey: true }), upper));
+	assert(!matchHotkey(keyEvent('a'), upper));
+});
+
+Deno.test('matchHotkey cancels CapsLock by the Shift state alone', () => {
+	// CapsLock ON without Shift reports an uppercase key, yet must still match
+	// a lowercase configuration because Shift was not held.
+	assert(matchHotkey(keyEvent('A'), { key: 'a', alt: false, insensitive: false }));
+	// CapsLock ON with Shift reports a lowercase key, yet must match the
+	// uppercase configuration because Shift was held.
+	assert(matchHotkey(keyEvent('a', { shiftKey: true }), { key: 'A', alt: false, insensitive: false }));
+});
+
+Deno.test('matchHotkey ignores case when insensitive is on', () => {
+	const hotkey = { key: 'a', alt: false, insensitive: true };
+	assert(matchHotkey(keyEvent('a'), hotkey));
+	assert(matchHotkey(keyEvent('A'), hotkey));
+	assert(matchHotkey(keyEvent('A', { shiftKey: true }), hotkey));
+});
+
+Deno.test('matchHotkey matches keys unaffected by case folding', () => {
+	// Digits and symbols are common hotkeys and must not be dropped by the
+	// case normalization.
+	assert(matchHotkey(keyEvent('1'), { key: '1', alt: false, insensitive: false }));
+	// A key with no upper/lowercase form matches whichever way it is pressed.
+	assert(matchHotkey(keyEvent('1', { shiftKey: true }), { key: '1', alt: false, insensitive: false }));
+	// A symbol that requires Shift on the physical layout is matched by its
+	// reported key plus the Shift state.
+	assert(matchHotkey(keyEvent('!', { shiftKey: true }), { key: '!', alt: false, insensitive: false }));
+});
+
+Deno.test('matchHotkey compares the Alt/Option modifier', () => {
+	assert(matchHotkey(keyEvent('a', { altKey: true }), { key: 'a', alt: true, insensitive: false }));
+	assert(!matchHotkey(keyEvent('a'), { key: 'a', alt: true, insensitive: false }));
+	assert(matchHotkey(keyEvent('a'), { key: 'a', alt: false, insensitive: false }));
+	assert(!matchHotkey(keyEvent('a', { altKey: true }), { key: 'a', alt: false, insensitive: false }));
+});
+
+Deno.test('matchHotkey never matches an unset key', () => {
+	assert(!matchHotkey(keyEvent(''), { key: '', alt: false, insensitive: false }));
+	assert(!matchHotkey(keyEvent('a'), { key: '', alt: false, insensitive: false }));
+	assert(!matchHotkey(keyEvent(''), { key: '', alt: false, insensitive: true }));
 });

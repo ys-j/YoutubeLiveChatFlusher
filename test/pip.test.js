@@ -14,6 +14,28 @@ class MouseEventStub extends Event {
 	}
 }
 
+class KeyboardEventStub extends Event {
+	/** @param {string} type @param {KeyboardEventInit & { key?: string }} [init] */
+	constructor(type, init = {}) {
+		super(type, init);
+		this.key = init.key ?? '';
+		this.shiftKey = init.shiftKey ?? false;
+		this.altKey = init.altKey ?? false;
+		this.ctrlKey = init.ctrlKey ?? false;
+		this.metaKey = init.metaKey ?? false;
+		this.repeat = init.repeat ?? false;
+	}
+}
+
+/** The utils module, re-exported via a data URL so the injected script can import it. */
+const utilsPath = `data:text/javascript,export * from ${JSON.stringify(new URL('../src/modules/utils.mjs', import.meta.url).href)}`;
+
+const HOTKEYS = Object.freeze({
+	layer: { key: 'l', alt: false, insensitive: false },
+	panel: { key: 'p', alt: false, insensitive: false },
+	pip: { key: 'x', alt: false, insensitive: true },
+});
+
 async function fixture() {
 	/** @returns {StubElement} */
 	const element = () => Object.assign(new EventTarget(), {
@@ -56,11 +78,17 @@ async function fixture() {
 	const moved = Promise.withResolvers();
 	const body = element();
 	body.appendChild = (/** @type {StubElement} */ node) => { body.append(node); moved.resolve(undefined); };
+	/** Click counters for the PiP-window menu triggers, keyed by selector. */
+	const clicks = { '#yt-lcf-cb': 0, '#yt-lcf-pm': 0, '#yt-lcf-pp': 0 };
 	const pipDocument = {
 		body, head: element(), documentElement: { attributes: { setNamedItem() {} } },
 		/** @param {string} selector */
 		querySelector: selector => selector === '#movie_player' || selector === 'ytd-player' ? player
-			: selector === 'video' ? video : null,
+			: selector === 'video' ? video
+			: Object.hasOwn(clicks, selector) ? Object.assign(element(), {
+				click() { clicks[/** @type {keyof typeof clicks} */ (selector)]++; },
+			})
+			: null,
 		getElementsByTagName: () => [],
 	};
 	const pipWindow = Object.assign(new EventTarget(), {
@@ -76,18 +104,24 @@ async function fixture() {
 		contains: () => true,
 	});
 	container.ownerDocument = document;
+	const dppi = {
+		/** @type {any} */
+		window: null,
+		requestWindow: () => {
+			settingsOpenAtRequest = settingsOpen;
+			dppi.window = pipWindow;
+			return Promise.resolve(pipWindow);
+		},
+	};
 	const top = Object.assign(new EventTarget(), {
 		document,
-		documentPictureInPicture: { requestWindow: () => {
-			settingsOpenAtRequest = settingsOpen;
-			return Promise.resolve(pipWindow);
-		} },
+		documentPictureInPicture: dppi,
 	});
-	const initialize = new Function('document', 'top', 'self', 'MouseEvent', `return (${initPip.toString()});`)(document, top, top, MouseEventStub);
-	initialize('data:text/javascript,export const logger = { info() {}, warn() {} };', 'test-nonce', { hotkeys: {} });
+	const initialize = new Function('document', 'top', 'self', 'MouseEvent', 'KeyboardEvent', `return (${initPip.toString()});`)(document, top, top, MouseEventStub, KeyboardEventStub);
+	initialize('data:text/javascript,export const logger = { info() {}, warn() {} };', 'test-nonce', { hotkeys: HOTKEYS, utilsPath });
 	menu.dispatchEvent(new Event('click'));
 	await moved.promise;
-	return { document, pipWindow, video, container, parent, sizes, settingsOpenAtRequest, settingsOpen: () => settingsOpen, wakeups: () => wakeups };
+	return { document, top, pipWindow, video, container, parent, sizes, clicks, settingsOpenAtRequest, settingsOpen: () => settingsOpen, wakeups: () => wakeups };
 }
 
 Deno.test('PiP fits the native player on open, before video metadata arrives', async () => {
@@ -145,4 +179,52 @@ Deno.test('closing PiP restores native layout and removes media resize listeners
 	video.dispatchEvent(new Event('loadedmetadata'));
 	assertEquals(sizes.length, 2);
 	assertEquals(video.style.pointerEvents, '');
+});
+
+Deno.test('PiP hotkeys inside the PiP window click their trigger without forwarding', async () => {
+	const f = await fixture();
+	let forwarded = 0;
+	f.document.addEventListener('keydown', () => forwarded++);
+	f.pipWindow.dispatchEvent(new KeyboardEventStub('keydown', { key: 'l' }));
+	f.pipWindow.dispatchEvent(new KeyboardEventStub('keydown', { key: 'p' }));
+	assertEquals(f.clicks, { '#yt-lcf-cb': 1, '#yt-lcf-pm': 1, '#yt-lcf-pp': 0 });
+	assertEquals(forwarded, 0);
+});
+
+Deno.test('PiP hotkeys respect case sensitivity and forward unmatched keys', async () => {
+	const f = await fixture();
+	/** @type {any[]} */
+	const forwarded = [];
+	f.document.addEventListener('keydown', e => forwarded.push(e));
+	// The layer hotkey is case-sensitive, so Shift+L must not click it.
+	f.pipWindow.dispatchEvent(new KeyboardEventStub('keydown', { key: 'L', shiftKey: true }));
+	assertEquals(f.clicks['#yt-lcf-cb'], 0);
+	assertEquals(forwarded.length, 1);
+	assertEquals(forwarded[0].key, 'L');
+	// The pip hotkey is case-insensitive, so either case clicks it.
+	f.pipWindow.dispatchEvent(new KeyboardEventStub('keydown', { key: 'X', shiftKey: true }));
+	assertEquals(f.clicks['#yt-lcf-pp'], 1);
+	assertEquals(forwarded.length, 1);
+});
+
+Deno.test('PiP forwards parent-window hotkeys to the PiP window', async () => {
+	const f = await fixture();
+	f.top.dispatchEvent(new KeyboardEventStub('keydown', { key: 'l' }));
+	assertEquals(f.clicks['#yt-lcf-cb'], 1);
+	// A case-insensitive hotkey also matches an uppercase press on the parent.
+	f.top.dispatchEvent(new KeyboardEventStub('keydown', { key: 'X', shiftKey: true }));
+	assertEquals(f.clicks['#yt-lcf-pp'], 1);
+});
+
+Deno.test('PiP swallows YouTube player shortcuts instead of forwarding them', async () => {
+	const f = await fixture();
+	/** @type {KeyboardEventStub[]} */
+	const seen = [];
+	f.pipWindow.addEventListener('keydown', e => seen.push(/** @type {KeyboardEventStub} */ (e)));
+	f.document.addEventListener('keydown', e => seen.push(/** @type {KeyboardEventStub} */ (e)));
+	// 'f' is a player shortcut, so the parent must not transfer it.
+	f.top.dispatchEvent(new KeyboardEventStub('keydown', { key: 'f' }));
+	// And a PiP-window 'f' must not be transferred back to the parent.
+	f.pipWindow.dispatchEvent(new KeyboardEventStub('keydown', { key: 'f' }));
+	assertEquals(seen.map(e => e.key), ['f']);
 });

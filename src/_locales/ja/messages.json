@@ -491,6 +491,9 @@
 	"hotkey_alt": {
 		"message": "Alt/Optionキーと同時押し"
 	},
+	"hotkey_insensitive": {
+		"message": "大文字小文字を区別しない"
+	},
 	"message_pause": {
 		"message": "右クリックでメッセージを一時停止"
 	},

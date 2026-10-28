@@ -33,6 +33,7 @@ export namespace YTLCFMessage {
 			details: {
 				cssUrl: string;
 				pipMarkerText: string;
+				utilsPath: string;
 				hotkeys: typeof DEFAULT_CONFIG["hotkeys"];
 			};
 		};

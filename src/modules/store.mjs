@@ -70,9 +70,9 @@ export const DEFAULT_CONFIG = Object.freeze({
 		'': '',
 	},
 	hotkeys: {
-		layer: { key: '', alt: false },
-		panel: { key: '', alt: false },
-		pip: { key: '', alt: false },
+		layer: { key: '', alt: false, insensitive: false },
+		panel: { key: '', alt: false, insensitive: false },
+		pip: { key: '', alt: false, insensitive: false },
 	},
 	mutedWords: {
 		/** @type {import("./chat_message.mjs").MutedWordModeEnum} */
@@ -191,7 +191,7 @@ class ConfigStore {
 		}
 		Object.assign(this.data.cssTexts, stored.cssTexts);
 		for (const [k, v] of Object.entries(stored.hotkeys ?? {})) {
-			const source = typeof v === 'string' ? { key: v, alt: false } : v ?? {};
+			const source = typeof v === 'string' ? { key: v, alt: false, insensitive: false } : v ?? {};
 			Object.assign(this.data.hotkeys[k], source);
 		}
 		Object.assign(this.data.mutedWords, stored.mutedWords);

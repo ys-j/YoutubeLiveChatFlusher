@@ -4,7 +4,8 @@
  * @param {object} params parameters for the script
  * @param {string} params.cssUrl URL of the CSS file to inject
  * @param {string} params.pipMarkerText text to display in the pip marker
- * @param {typeof import("../modules/store.mjs").DEFAULT_CONFIG.hotkeys} params.hotkeys JSON string of hotkeys to bind
+ * @param {string} params.utilsPath absolute path to the utils module
+ * @param {typeof import("../modules/store.mjs").DEFAULT_CONFIG.hotkeys} params.hotkeys hotkeys to bind
  */
 export default function (loggingPath, nonce, params) {
 	(function initPipMenu() {
@@ -48,11 +49,13 @@ export default function (loggingPath, nonce, params) {
 				throw new Error('Access to document picture-in-picture window was denied.', { cause });
 			}
 
-			/** @type {typeof import('../modules/logging.mjs')} */
+			/** @type {typeof import("../modules/logging.mjs")} */
 			const { logger } = await import(loggingPath);
+			/** @type {typeof import("../modules/utils.mjs")} */
+			const { matchHotkey } = await import(params.utilsPath);
 
-			const disableHotkeys = disableKeyboardShortcutOnParentWindow.bind(params.hotkeys);
-			const enableHotkeys = enableKeyboardShortcutOnChildWindow.bind(params.hotkeys);
+			const disableHotkeys = disableKeyboardShortcutOnParentWindow.bind(params.hotkeys, matchHotkey);
+			const enableHotkeys = enableKeyboardShortcutOnChildWindow.bind(params.hotkeys, matchHotkey);
 			top?.addEventListener('keydown', disableHotkeys, true);
 			pipWindow?.addEventListener('keydown', enableHotkeys, true);
 			top?.addEventListener('yt-navigate-finish', onYtNavigateFinishDispatchPip, { passive: true });
@@ -168,45 +171,39 @@ export default function (loggingPath, nonce, params) {
 		}
 
 		/**
-		 * @this {Record<string, { key: string, alt: boolean }>}
+		 * @this {Record<string, import("../modules/utils.mjs").HotkeyConfig>}
+		 * @param {import("../modules/utils.mjs").matchHotkey} matchHotkey
 		 * @param {KeyboardEvent} e
 		 */
-		function disableKeyboardShortcutOnParentWindow(e) {
+		function disableKeyboardShortcutOnParentWindow(matchHotkey, e) {
 			if (['f', 'i', 't', 'escape'].includes(e.key.toLowerCase())) {
 				e.stopPropagation();
-			} else if (Object.values(this).some(h => h.key === e.key && h.alt === e.altKey)) {
+			} else if (Object.values(this).some(hotkey => matchHotkey(e, hotkey))) {
 				// transfer keyboard event to pip window
 				top?.documentPictureInPicture?.window?.dispatchEvent(new KeyboardEvent('keydown', e));
 			}
 		}
 
 		/**
-		 * @this {Record<string, { key: string, alt: boolean }>}
+		 * @this {Record<string, import("../modules/utils.mjs").HotkeyConfig>}
+		 * @param {import("../modules/utils.mjs").matchHotkey} matchHotkey
 		 * @param {KeyboardEvent} e
 		 */
-		function enableKeyboardShortcutOnChildWindow(e) {
+		function enableKeyboardShortcutOnChildWindow(matchHotkey, e) {
 			if (['f', 'i', 't', 'escape', 'k'].includes(e.key.toLowerCase())) return;
-			if (!e.ctrlKey && !e.metaKey) {
+			if (!e.repeat && !e.ctrlKey && !e.metaKey) {
 				const document = top?.documentPictureInPicture?.window?.document;
-				switch (e.key) {
-					case this.layer.key:
-						if (!e.repeat && e.altKey === this.layer.alt) {
-							const checkbox = /** @type {?HTMLElement} */ (document?.querySelector('#yt-lcf-cb'));
-							return checkbox?.click();
-						}
-						break;
-					case this.panel.key:
-						if (!e.repeat && e.altKey === this.panel.alt) {
-							const popupmenu = /** @type {?HTMLElement} */ (document?.querySelector('#yt-lcf-pm'));
-							return popupmenu?.click();
-						}
-						break;
-					case this.pip.key:
-						if (!e.repeat && e.altKey === this.pip.alt) {
-							const pipmenu = /** @type {?HTMLElement} */ (document?.querySelector('#yt-lcf-pp'));
-							return pipmenu?.click();
-						}
-						break;
+				const selectorMap = {
+					layer: '#yt-lcf-cb',
+					panel: '#yt-lcf-pm',
+					pip: '#yt-lcf-pp',
+				};
+				for (const [feat, selector] of Object.entries(selectorMap)) {
+					if (matchHotkey(e, this[feat])) {
+						// The click consumes the event, so it must not be forwarded to the parent window.
+						const trigger = /** @type {?HTMLElement} */ (document?.querySelector(selector));
+						return trigger?.click();
+					}
 				}
 			}
 			// transfer keyboard event to parent window

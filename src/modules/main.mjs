@@ -1,6 +1,6 @@
 import { logger } from './logging.mjs';
 import { store } from './store.mjs';
-import { getText, getValueByJSONPointer } from './utils.mjs';
+import { getText, getValueByJSONPointer, matchHotkey } from './utils.mjs';
 import { isAdShowing } from './dom_utils.mjs';
 
 import { LiveChatController } from './chat_controller.mjs';
@@ -87,6 +87,7 @@ export async function initialize(e) {
 				details: {
 					cssUrl: browser.runtime.getURL('/styles/content.css'),
 					pipMarkerText: browser.i18n.getMessage('pip_marker'),
+					utilsPath: browser.runtime.getURL('/modules/utils.mjs'),
 					hotkeys: store.data.hotkeys,
 				},
 			});
@@ -114,25 +115,17 @@ export async function initialize(e) {
 	document.body.addEventListener('keydown', e => {
 		if (e.repeat) return;
 		if (e.ctrlKey || e.metaKey) return;
-		switch (e.key) {
-			case store.hotkeys.layer.key:
-				if (e.altKey === store.hotkeys.layer.alt) {
-					const checkbox = /** @type {?HTMLElement} */ (player.querySelector('#yt-lcf-cb'));
-					checkbox?.click();
-				}
+		const selectorMap = {
+			layer: '#yt-lcf-cb',
+			panel: '#yt-lcf-pm',
+			pip: '#yt-lcf-pp',
+		};
+		for (const [feat, selector] of Object.entries(selectorMap)) {
+			if (matchHotkey(e, store.hotkeys[feat])) {
+				const trigger = /** @type {?HTMLElement} */ (player.querySelector(selector));
+				trigger?.click();
 				break;
-			case store.hotkeys.panel.key:
-				if (e.altKey === store.hotkeys.panel.alt) {
-					const popupmenu = /** @type {?HTMLElement} */ (player.querySelector('#yt-lcf-pm'));
-					popupmenu?.click();
-				}
-				break;
-			case store.hotkeys.pip.key:
-				if (e.altKey === store.hotkeys.pip.alt) {
-					const pipmenu = /** @type {?HTMLElement} */ (player.querySelector('#yt-lcf-pp'));
-					pipmenu?.click();
-				}
-				break;
+			}
 		}
 	}, { passive: true });
 }
