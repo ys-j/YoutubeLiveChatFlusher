@@ -1,0 +1,611 @@
+{
+	"manifestName": {
+		"message": "YouTube LiveChat Flusher (Bình luận danmaku)"
+	},
+	"manifestDescription": {
+		"message": "Mang đến trải nghiệm xem YouTube phong phú hơn với bình luận chạy kiểu danmaku."
+	},
+	"notification_title_onInstall": {
+		"message": "Cảm ơn bạn đã cài đặt\nNhấp để tải lại các tab YouTube"
+	},
+	"notification_title_onUpdate": {
+		"message": "Đã cập nhật lên phiên bản $1\nNhấp để tải lại các tab YouTube"
+	},
+	"notification_title_onReload": {
+		"message": "Đã khởi động lại tiện ích mở rộng\nNhấp để tải lại các tab YouTube"
+	},
+	"ytp_menuitem_label_switch": {
+		"message": "Cho chat chạy"
+	},
+	"ytp_menuitem_label_config": {
+		"message": "Cài đặt chat"
+	},
+	"ytp_menuitem_label_pip": {
+		"message": "PiP w/ chat (beta)"
+	},
+	"close": {
+		"message": "Đóng"
+	},
+	"displayTab": {
+		"message": "Cơ bản"
+	},
+	"byTypeTab": {
+		"message": "Theo loại"
+	},
+	"mutedWordsTab": {
+		"message": "Từ cấm"
+	},
+	"userDefinedCssTab": {
+		"message": "CSS người dùng"
+	},
+	"othersTab": {
+		"message": "Khác"
+	},
+	"animationDuration": {
+		"message": "Số giây animation"
+	},
+	"fontSize": {
+		"message": "Cỡ chữ"
+	},
+	"lines": {
+		"message": "dòng"
+	},
+	"typeOfLines_0": {
+		"message": "Cố định"
+	},
+	"typeOfLines_1": {
+		"message": "Tối đa"
+	},
+	"typeOfLines_2": {
+		"message": "Tối thiểu"
+	},
+	"lineHeight": {
+		"message": "Chiều cao dòng"
+	},
+	"fontFamily_fontWeight": {
+		"message": "Font/Độ đậm"
+	},
+	"fontFamily_select_from_local": {
+		"message": "Chọn từ font cục bộ"
+	},
+	"strokeStyle": {
+		"message": "Kiểu viền"
+	},
+	"strokeColor": {
+		"message": "Màu"
+	},
+	"strokeOffset": {
+		"message": "Độ lệch"
+	},
+	"strokeBlur": {
+		"message": "Làm mờ"
+	},
+	"layerOpacity": {
+		"message": "Độ trong suốt chung"
+	},
+	"backgroundOpacity": {
+		"message": "Độ trong suốt nền"
+	},
+	"opacity_0": {
+		"message": "Trong suốt"
+	},
+	"opacity_1": {
+		"message": "Không trong suốt"
+	},
+	"maxWidth_wordWrap": {
+		"message": "Độ dài tối đa/Ngắt dòng"
+	},
+	"wordWrap_0": {
+		"message": "Không ngắt dòng"
+	},
+	"wordWrap_1": {
+		"message": "Chế độ 1"
+	},
+	"wordWrap_2": {
+		"message": "Chế độ 2"
+	},
+	"displayLimit": {
+		"message": "Hiển thị tối đa"
+	},
+	"containerLimit": {
+		"message": "Số lượng trong khung chat"
+	},
+	"unlimited": {
+		"message": "Không giới hạn"
+	},
+	"simultaneousMessage": {
+		"message": "Chat cùng lúc"
+	},
+	"simultaneousMessage_0": {
+		"message": "Cho chạy tất cả"
+	},
+	"simultaneousMessage_1": {
+		"message": "Chỉ chat đầu tiên mỗi lần tải"
+	},
+	"simultaneousMessage_2": {
+		"message": "Gộp nội dung trùng"
+	},
+	"simultaneousMessage_3": {
+		"message": "Gộp nội dung trùng gồm cả chat ngay trước"
+	},
+	"emojiExpression": {
+		"message": "Hiển thị emoji"
+	},
+	"emojiExpression_0": {
+		"message": "Ẩn tất cả"
+	},
+	"emojiExpression_1": {
+		"message": "Hiện tất cả"
+	},
+	"emojiExpression_2": {
+		"message": "Thay bằng nhãn"
+	},
+	"emojiExpression_3": {
+		"message": "Thay bằng phím tắt"
+	},
+	"density": {
+		"message": "Mật độ hiển thị"
+	},
+	"density_dense": {
+		"message": "Sát nhau"
+	},
+	"density_random": {
+		"message": "Ngẫu nhiên"
+	},
+	"overlapping": {
+		"message": "Chồng lấn"
+	},
+	"overlapping_transparent": {
+		"message": "Làm trong suốt"
+	},
+	"overlapping_translate": {
+		"message": "Dịch chuyển"
+	},
+	"overlapping_hidden": {
+		"message": "Ẩn"
+	},
+	"direction": {
+		"message": "Hướng"
+	},
+	"direction_bottom_to_top": {
+		"message": "Dưới lên trên"
+	},
+	"direction_left_to_right": {
+		"message": "Trái sang phải"
+	},
+	"layerSize": {
+		"message": "Kích thước lớp"
+	},
+	"fitLayerSize": {
+		"message": "Vừa theo video"
+	},
+	"adjustLayerSize": {
+		"message": "Chỉnh thủ công"
+	},
+	"layerCSS": {
+		"message": "CSS của lớp"
+	},
+	"normal": {
+		"message": "Thông thường"
+	},
+	"member": {
+		"message": "Thành viên"
+	},
+	"moderator": {
+		"message": "Người kiểm duyệt"
+	},
+	"owner": {
+		"message": "Chủ kênh"
+	},
+	"verified": {
+		"message": "Đã xác minh"
+	},
+	"you": {
+		"message": "Bạn"
+	},
+	"superchat": {
+		"message": "Super Chat"
+	},
+	"sticker": {
+		"message": "Super Sticker"
+	},
+	"membership": {
+		"message": "Membership"
+	},
+	"milestone": {
+		"message": "Mốc thành viên"
+	},
+	"displaySettings": {
+		"message": "Cài đặt hiển thị"
+	},
+	"tooltip_authorPhoto": {
+		"message": "Ảnh đại diện người gửi"
+	},
+	"tooltip_authorName": {
+		"message": "Tên người gửi"
+	},
+	"display_authorName": {
+		"message": "Tên"
+	},
+	"tooltip_purchaseAmount": {
+		"message": "Số tiền"
+	},
+	"display_purchaseAmount": {
+		"message": "Số tiền"
+	},
+	"tooltip_milestoneMonths": {
+		"message": "Số tháng mốc thành viên"
+	},
+	"display_milestoneMonths": {
+		"message": "Số tháng"
+	},
+	"tooltip_chatMessage": {
+		"message": "Nội dung chat"
+	},
+	"display_chatMessage": {
+		"message": "Nội dung"
+	},
+	"tooltip_membershipMessage": {
+		"message": "Lời nhắn của thành viên mới"
+	},
+	"display_membershipMessage": {
+		"message": "Nội dung"
+	},
+	"tooltip_sticker": {
+		"message": "Sticker"
+	},
+	"display_sticker": {
+		"message": "Sticker"
+	},
+	"tooltip_stickerSize": {
+		"message": "Kích thước sticker"
+	},
+	"display_stickerSize": {
+		"message": "Kích thước"
+	},
+	"tooltip_customColor": {
+		"message": "Màu tùy chỉnh"
+	},
+	"display_customColor": {
+		"message": "Màu tùy chỉnh"
+	},
+	"placeholder_customCSS": {
+		"message": "CSS tùy chỉnh"
+	},
+	"common": {
+		"message": "Chung"
+	},
+	"show_username": {
+		"message": "Hiện tên người dùng thay vì handle"
+	},
+	"mutedWordsMode": {
+		"message": "Chế độ"
+	},
+	"mutedWordsMode_0": {
+		"message": "Tắt"
+	},
+	"mutedWordsMode_1": {
+		"message": "Ẩn toàn bộ tin nhắn"
+	},
+	"mutedWordsMode_2": {
+		"message": "Ẩn/Thay từ khóa"
+	},
+	"mutedWordsMode_3": {
+		"message": "Che ký tự"
+	},
+	"mutedWordsReplacement": {
+		"message": "Ký tự thay thế"
+	},
+	"placeholder_mutedWordsReplacement": {
+		"message": "Để trống sẽ bị ẩn"
+	},
+	"tooltip_mutedWordsReplacement": {
+		"message": "Chỉ ký tự đầu tiên được dùng để che"
+	},
+	"mutedWordsGrammar": {
+		"message": "Cú pháp"
+	},
+	"regexp": {
+		"message": "Dùng biểu thức chính quy"
+	},
+	"placeholder_mutedWordsList": {
+		"message": "Có thể đặt nhiều từ khóa, mỗi dòng một từ"
+	},
+	"user_defined_css_shortcut": {
+		"message": "Phím tắt"
+	},
+	"font_helper_select": {
+		"message": "Hãy chọn font..."
+	},
+	"up": {
+		"message": "Lên"
+	},
+	"down": {
+		"message": "Xuống"
+	},
+	"delete": {
+		"message": "Xóa"
+	},
+	"add": {
+		"message": "Thêm"
+	},
+	"confirm": {
+		"message": "Xác nhận"
+	},
+	"cancel": {
+		"message": "Hủy"
+	},
+	"addUserStyle": {
+		"message": "Thêm kiểu theo người dùng"
+	},
+	"label": {
+		"message": "Nhãn"
+	},
+	"Channel_ID": {
+		"message": "ID kênh\n(mỗi dòng)"
+	},
+	"displayStyle": {
+		"message": "Kiểu hiển thị"
+	},
+	"fontFactor": {
+		"message": "Hệ số cỡ chữ"
+	},
+	"placeholder_channelId": {
+		"message": "ID kênh 24 ký tự bắt đầu bằng UC"
+	},
+	"validation_channelId": {
+		"message": "Mỗi dòng hãy nhập 24 ký tự bắt đầu bằng UC.\n(dòng $1 không hợp lệ.)"
+	},
+	"placeholder_userStyleTextArea": {
+		"message": "/* Xem trước CSS sẽ hiển thị ở đây */"
+	},
+	"translation": {
+		"message": "Dịch tin nhắn"
+	},
+	"targetLanguage": {
+		"message": "Ngôn ngữ đích"
+	},
+	"prefixOriginalLanguage": {
+		"message": "Thêm ngôn ngữ gốc ở đầu câu"
+	},
+	"exception": {
+		"message": "Ngoại lệ"
+	},
+	"addableByBrowserLanguageSettings": {
+		"message": "Có thể thêm mục\nqua cài đặt ngôn ngữ của trình duyệt"
+	},
+	"translationTiming": {
+		"message": "Thời điểm dịch"
+	},
+	"translation_eagerMode": {
+		"message": "Dịch rồi mới cho chạy"
+	},
+	"translation_lazyMode": {
+		"message": "Vừa chạy vừa dịch"
+	},
+	"suffixOriginalMessage": {
+		"message": "Kèm tin nhắn trước khi dịch"
+	},
+	"timeshift": {
+		"message": "Dịch thời gian (time-shift)"
+	},
+	"latencyNormal": {
+		"message": "Thông thường / Ra mắt"
+	},
+	"latencyLow": {
+		"message": "Độ trễ thấp"
+	},
+	"latencyUltraLow": {
+		"message": "Độ trễ cực thấp"
+	},
+	"timeshift_note": {
+		"message": "※ Chỉ có ở bản ghi"
+	},
+	"otherConfig": {
+		"message": "Cài đặt khác"
+	},
+	"aboutAddon": {
+		"message": "Giới thiệu tiện ích mở rộng"
+	},
+	"version": {
+		"message": "Phiên bản"
+	},
+	"releaseNote": {
+		"message": "Ghi chú phát hành"
+	},
+	"configFile": {
+		"message": "Tệp cấu hình"
+	},
+	"export": {
+		"message": "Xuất"
+	},
+	"import": {
+		"message": "Nhập"
+	},
+	"init": {
+		"message": "Đặt lại"
+	},
+	"commonSettings": {
+		"message": "Cài đặt chung"
+	},
+	"notification": {
+		"message": "Thông báo"
+	},
+	"whenUpdated": {
+		"message": "Khi cập nhật phiên bản"
+	},
+	"disabled": {
+		"message": "Tắt"
+	},
+	"enabled": {
+		"message": "Bật"
+	},
+	"description_notification_disabled": {
+		"message": "Các tab đang mở YouTube sẽ tự động tải lại."
+	},
+	"description_notification_enabled": {
+		"message": "Các tab đang mở YouTube sẽ không tự động tải lại.\nNhấp vào thông báo đã hiện để tải lại."
+	},
+	"loadingMode": {
+		"message": "Chế độ tải chat"
+	},
+	"livestream": {
+		"message": "Trực tiếp"
+	},
+	"replay": {
+		"message": "Bản ghi"
+	},
+	"mode_option_chatframe_dependent": {
+		"message": "Chế độ phụ thuộc khung chat"
+	},
+	"mode_option_chatframe_independent": {
+		"message": "Chế độ độc lập với khung chat"
+	},
+	"description_chatframe_dependent_1": {
+		"message": "Chỉ hoạt động khi đang mở khung chat."
+	},
+	"description_chatframe_dependent_2": {
+		"message": "Trên trang di động (m.youtube.com) luôn chuyển về chế độ độc lập."
+	},
+	"description_chatframe_independent_1": {
+		"message": "Vẫn hoạt động khi đã đóng khung chat."
+	},
+	"description_chatframe_independent_2": {
+		"message": "Ở bản ghi có thể dùng tính năng dịch thời gian (chỉnh được thời điểm cho chat chạy)."
+	},
+	"description_chatframe_independent_3": {
+		"message": "Đặc biệt với video thời lượng dài, hoạt động có thể không ổn định."
+	},
+	"autostart": {
+		"message": "Tự động mở khung chat (khi phát bản ghi)"
+	},
+	"enabled_onDependentMode": {
+		"message": "Chỉ bật khi phụ thuộc khung chat"
+	},
+	"enabled_always": {
+		"message": "Luôn bật"
+	},
+	"hotkey": {
+		"message": "Phím tắt"
+	},
+	"hotkey_layer": {
+		"message": "Lớp chat"
+	},
+	"hotkey_panel": {
+		"message": "Bảng cài đặt"
+	},
+	"hotkey_pip": {
+		"message": "PiP"
+	},
+	"hotkey_alt": {
+		"message": "Giữ cùng phím Alt/Option"
+	},
+	"hotkey_insensitive": {
+		"message": "Không phân biệt hoa/thường"
+	},
+	"message_pause": {
+		"message": "Nhấp chuột phải để tạm dừng tin nhắn"
+	},
+	"person_detection": {
+		"message": "Nhận diện người (tính năng bản alpha)"
+	},
+	"enabled_wasm": {
+		"message": "Bật (WASM / khuyên dùng)"
+	},
+	"enabled_gpu": {
+		"message": "Bật (GPU)"
+	},
+	"inference_backend": {
+		"message": "Backend suy luận"
+	},
+	"inference_backend_onnx": {
+		"message": "ONNX (tiêu chuẩn / khuyên dùng)"
+	},
+	"inference_backend_onnxnative": {
+		"message": "ONNX Native (độ trễ thấp)"
+	},
+	"translationBlacklist": {
+		"message": "Danh sách từ cấm dịch"
+	},
+	"translator": {
+		"message": "Mô hình dịch"
+	},
+	"translator_internal": {
+		"message": "Trình duyệt tích hợp (dịch cục bộ)"
+	},
+	"translator_external": {
+		"message": "Dịch vụ ngoài (chỉ định URL)"
+	},
+	"translator_fallbackNote": {
+		"message": "Nếu không dịch cục bộ được sẽ luôn chuyển sang dịch vụ ngoài."
+	},
+	"translation_request": {
+		"message": "Cài đặt request"
+	},
+	"translation_request_method": {
+		"message": "Phương thức"
+	},
+	"translation_request_url": {
+		"message": "URL"
+	},
+	"translation_request_bodyType": {
+		"message": "Loại API"
+	},
+	"translation_request_bodyType_OpenAICompatible": {
+		"message": "Tương thích OpenAI"
+	},
+	"translation_request_bodyType_custom": {
+		"message": "Tùy chỉnh"
+	},
+	"translation_request_apiKey": {
+		"message": "API key"
+	},
+	"translation_request_modelName": {
+		"message": "Tên mô hình"
+	},
+	"translation_request_body": {
+		"message": "Body của request"
+	},
+	"translation_invalidRequestBody": {
+		"message": "Không phải JSON hợp lệ"
+	},
+	"translation_response": {
+		"message": "Cài đặt response"
+	},
+	"translation_response_style": {
+		"message": "Kiểu"
+	},
+	"translation_response_style_Google": {
+		"message": "Google Dịch"
+	},
+	"translation_response_style_OpenAI": {
+		"message": "OpenAI"
+	},
+	"placeholder_test_translation_text": {
+		"message": "Nhập văn bản thử dịch"
+	},
+	"test_translation": {
+		"message": "Thử dịch"
+	},
+	"save": {
+		"message": "Lưu"
+	},
+	"warning_whenNotSaved": {
+		"message": "Lưu sẽ khởi động lại tiện ích mở rộng. Các tab đang mở YouTube cũng được tải lại tự động, nhưng đôi khi cần cập nhật thủ công."
+	},
+	"pip_marker": {
+		"message": "Video này đang phát ở chế độ hình trong hình"
+	},
+	"menu_resumeAnimation": {
+		"message": "Tiếp tục animation"
+	},
+	"menu_moveMessage": {
+		"message": "Di chuyển tin nhắn"
+	},
+	"menu_copyAuthorId": {
+		"message": "Sao chép ID người dùng"
+	},
+	"menu_hideAuthor": {
+		"message": "Ẩn người dùng này"
+	}
+}

@@ -93,6 +93,7 @@
 	z-index: 12;
 }
 .html5-video-player.unstarted-mode > #yt-lcf-layer,
+.html5-video-player.buffering-mode > #yt-lcf-layer,
 .html5-video-player.ended-mode > #yt-lcf-layer {
 	z-index: 25;
 }

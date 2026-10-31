@@ -1,0 +1,47 @@
+# YoutubeLiveChatFlusher Project Rules
+
+## Verification commands (always run after code changes)
+
+- Type check: `deno check` (no arguments; it covers the whole project)
+  - Do NOT run it per file (e.g. `deno check src/modules/main.mjs`). The global declarations in `types/*.d.ts` (such as `browser`) are not loaded that way, which reports a large number of nonexistent type errors.
+- Tests: `deno task test` (= `deno test --allow-read test/`)
+- Lint: `deno lint`
+
+## Language & code style
+
+- Type with JavaScript + JSDoc instead of TypeScript (`compilerOptions.checkJs: true` in `deno.json`)
+- Put type definitions in `types/*.d.ts` as global declarations
+- Indent with tabs
+- Do not explain repetition in code with plain comments; comments should only explain intent, constraints, and tradeoffs
+- Prefer `const`; match the style of the existing module
+
+## Manifests & minimum browser versions
+
+- Apply every change (including version bumps) to BOTH `src/manifest.chrome.json` and `src/manifest.firefox.json`
+- `minimum_chrome_version` / `strict_min_version` are determined by JS API support (e.g. `Error.isError()` → Chrome 134 / Firefox 138)
+- When using a new CSS unit or JS feature, confirm with MDN etc. that it is supported within the minimum versions above (e.g. the `lh` unit is Chrome 109+ / Firefox 120+, so it is allowed). If it is supported, no `@supports` guard or fallback line is needed
+
+## i18n
+
+- Locale files are `src/_locales/<locale>/messages.json`. Currently shipped: `en`, `ja`, `ko`, `th`, `vi`, `zh_CN`, `zh_TW`, `id`; this list is defined as `LOCALES` in `test/locales.test.js`, so a new locale following the WebExtensions `_locales` scheme must be added to that array
+- `default_locale` in both manifests is `en`, so the `en` file is mandatory and is the reference for the key set; a new locale directory is a valid standalone contribution as long as every key it declares also exists in `en`
+- Message keys must always be added symmetrically to every locale file. `test/locales.test.js` enforces: the same key count and no missing keys against `en`, string-typed values, identical counts of `$1` placeholders, and non-empty `manifestName` / `manifestDescription` (the values referenced as `__MSG_manifestName__` / `__MSG_manifestDescription__` in both manifests)
+- `ja` (not `en`) is the reference for the value-based checks (string type, `$1` counts), because some `en` values are intentionally empty
+- Line breaks inside a message value are not compared across locales: JSON parsing turns `\n` into a real newline, so a literal-`\n` comparison would always count 0 and give no signal
+- An empty `"message": ""` is allowed when the surrounding labels read as a full sentence; only a missing entry is an error
+- In markup, text is translated with `data-i18n=key` and attributes with `data-i18n-<attr>=key`. For templates loaded through `loadTemplateDocument()`, attributes are only resolved for the names passed in its second argument (currently `['title', 'placeholder']`); `src/options/options.js` handles only `data-i18n` and `data-i18n-placeholder`
+
+## Config persistence (`src/modules/store.mjs`)
+
+- When renaming or restructuring config keys such as those under `others`, add a migration from the old key in `ConfigStore.migrate()`. `delete` the old key from `stored.others` and write directly to `this.data` so that no save is fired through the proxy
+- On the reading side, guard persisted values with `|| 0` etc. so behavior is guaranteed even for NaN / null (which occur in JSON serialization when a field is saved blank)
+- Do not immediately delete the old key from storage (same behavior and idempotency as the existing set of migrations)
+
+## Tests
+
+- Cover config-migration changes with the existing pattern in `test/store.test.js` (`store.migrate({ others: {...} })` → assert each field individually)
+- Verify startup / fetching-mode logic (`src/modules/main.mjs` / `chat_controller.mjs`) with the source-loading fixture in `test/dependent_startup.test.js`. When a new YouTube API field is used in a decision, add its real value to the fixture's `playerResponse.videoDetails` (e.g. `latencyClass: "MDE_STREAM_OPTIMIZATIONS_RENDERER_LATENCY_ULTRA_LOW"`) so regressions are detected
+
+## Commits
+
+- Subject line: 50 characters or fewer, imperative mood, no trailing punctuation. Use a body only when it is necessary and useful

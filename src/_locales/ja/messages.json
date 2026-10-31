@@ -302,7 +302,7 @@
 	"tooltip_mutedWordsReplacement": {
 		"message": "最初の1文字のみが伏字に使用されます"
 	},
-	"mutedWordsGrammer": {
+	"mutedWordsGrammar": {
 		"message": "文法"
 	},
 	"regexp": {
@@ -374,7 +374,7 @@
 	"addableByBrowserLanguageSettings": {
 		"message": "項目はブラウザの言語設定から追加可"
 	},
-	"traslationTiming": {
+	"translationTiming": {
 		"message": "タイミング"
 	},
 	"translation_eagerMode": {

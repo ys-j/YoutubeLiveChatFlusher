@@ -1,0 +1,611 @@
+{
+	"manifestName": {
+		"message": "YouTube LiveChat Flusher／탄막 채팅"
+	},
+	"manifestDescription": {
+		"message": "탄막 스타일의 채팅으로 더 풍성한 YouTube 시청 경험을 제공합니다."
+	},
+	"notification_title_onInstall": {
+		"message": "설치해 주셔서 감사합니다\n클릭하면 YouTube 탭을 새로고침합니다"
+	},
+	"notification_title_onUpdate": {
+		"message": "버전 $1(으)로 업데이트되었습니다\n클릭하면 YouTube 탭을 새로고침합니다"
+	},
+	"notification_title_onReload": {
+		"message": "확장 프로그램을 다시 시작했습니다\n클릭하면 YouTube 탭을 새로고침합니다"
+	},
+	"ytp_menuitem_label_switch": {
+		"message": "채팅 흘려보내기"
+	},
+	"ytp_menuitem_label_config": {
+		"message": "채팅 설정"
+	},
+	"ytp_menuitem_label_pip": {
+		"message": "PiP w/ chat (beta)"
+	},
+	"close": {
+		"message": "닫기"
+	},
+	"displayTab": {
+		"message": "기본"
+	},
+	"byTypeTab": {
+		"message": "종류별"
+	},
+	"mutedWordsTab": {
+		"message": "금지어"
+	},
+	"userDefinedCssTab": {
+		"message": "사용자 CSS"
+	},
+	"othersTab": {
+		"message": "기타"
+	},
+	"animationDuration": {
+		"message": "애니메이션 초"
+	},
+	"fontSize": {
+		"message": "글자 크기"
+	},
+	"lines": {
+		"message": "줄"
+	},
+	"typeOfLines_0": {
+		"message": "고정"
+	},
+	"typeOfLines_1": {
+		"message": "최대"
+	},
+	"typeOfLines_2": {
+		"message": "최소"
+	},
+	"lineHeight": {
+		"message": "줄 높이"
+	},
+	"fontFamily_fontWeight": {
+		"message": "글꼴/굵기"
+	},
+	"fontFamily_select_from_local": {
+		"message": "내 글꼴에서 선택"
+	},
+	"strokeStyle": {
+		"message": "외곽선 스타일"
+	},
+	"strokeColor": {
+		"message": "색상"
+	},
+	"strokeOffset": {
+		"message": "오프셋"
+	},
+	"strokeBlur": {
+		"message": "블러"
+	},
+	"layerOpacity": {
+		"message": "전체 투명도"
+	},
+	"backgroundOpacity": {
+		"message": "배경 투명도"
+	},
+	"opacity_0": {
+		"message": "투명"
+	},
+	"opacity_1": {
+		"message": "불투명"
+	},
+	"maxWidth_wordWrap": {
+		"message": "최대 길이/줄바꿈"
+	},
+	"wordWrap_0": {
+		"message": "줄바꿈 없음"
+	},
+	"wordWrap_1": {
+		"message": "모드 1"
+	},
+	"wordWrap_2": {
+		"message": "모드 2"
+	},
+	"displayLimit": {
+		"message": "최대 표시 수"
+	},
+	"containerLimit": {
+		"message": "채팅창 표시 수"
+	},
+	"unlimited": {
+		"message": "무제한"
+	},
+	"simultaneousMessage": {
+		"message": "동시각 채팅"
+	},
+	"simultaneousMessage_0": {
+		"message": "모두 흘려보내기"
+	},
+	"simultaneousMessage_1": {
+		"message": "불러올 때마다 첫 채팅만 흘려보내기"
+	},
+	"simultaneousMessage_2": {
+		"message": "같은 내용 합치기"
+	},
+	"simultaneousMessage_3": {
+		"message": "직전 채팅 포함해 같은 내용 합치기"
+	},
+	"emojiExpression": {
+		"message": "이모지 표시"
+	},
+	"emojiExpression_0": {
+		"message": "모두 숨기기"
+	},
+	"emojiExpression_1": {
+		"message": "모두 표시"
+	},
+	"emojiExpression_2": {
+		"message": "레이블로 대체"
+	},
+	"emojiExpression_3": {
+		"message": "shortcut으로 대체"
+	},
+	"density": {
+		"message": "표시 밀도"
+	},
+	"density_dense": {
+		"message": "빽빽하게"
+	},
+	"density_random": {
+		"message": "무작위"
+	},
+	"overlapping": {
+		"message": "겹침"
+	},
+	"overlapping_transparent": {
+		"message": "투명하게 만들기"
+	},
+	"overlapping_translate": {
+		"message": "어긋나게"
+	},
+	"overlapping_hidden": {
+		"message": "숨기기"
+	},
+	"direction": {
+		"message": "방향"
+	},
+	"direction_bottom_to_top": {
+		"message": "아래에서 위로"
+	},
+	"direction_left_to_right": {
+		"message": "왼쪽에서 오른쪽으로"
+	},
+	"layerSize": {
+		"message": "레이어 크기"
+	},
+	"fitLayerSize": {
+		"message": "영상에 맞추기"
+	},
+	"adjustLayerSize": {
+		"message": "직접 설정"
+	},
+	"layerCSS": {
+		"message": "레이어 CSS"
+	},
+	"normal": {
+		"message": "일반"
+	},
+	"member": {
+		"message": "멤버"
+	},
+	"moderator": {
+		"message": "모더레이터"
+	},
+	"owner": {
+		"message": "채널 소유자"
+	},
+	"verified": {
+		"message": "인증됨"
+	},
+	"you": {
+		"message": "나"
+	},
+	"superchat": {
+		"message": "슈퍼챗"
+	},
+	"sticker": {
+		"message": "슈퍼 스티커"
+	},
+	"membership": {
+		"message": "멤버십"
+	},
+	"milestone": {
+		"message": "마일스톤"
+	},
+	"displaySettings": {
+		"message": "표시 설정"
+	},
+	"tooltip_authorPhoto": {
+		"message": "작성자 프로필 사진"
+	},
+	"tooltip_authorName": {
+		"message": "작성자 이름"
+	},
+	"display_authorName": {
+		"message": "이름"
+	},
+	"tooltip_purchaseAmount": {
+		"message": "금액"
+	},
+	"display_purchaseAmount": {
+		"message": "금액"
+	},
+	"tooltip_milestoneMonths": {
+		"message": "마일스톤 개월 수"
+	},
+	"display_milestoneMonths": {
+		"message": "개월"
+	},
+	"tooltip_chatMessage": {
+		"message": "채팅 메시지"
+	},
+	"display_chatMessage": {
+		"message": "본문"
+	},
+	"tooltip_membershipMessage": {
+		"message": "새 멤버의 메시지"
+	},
+	"display_membershipMessage": {
+		"message": "본문"
+	},
+	"tooltip_sticker": {
+		"message": "스티커"
+	},
+	"display_sticker": {
+		"message": "스티커"
+	},
+	"tooltip_stickerSize": {
+		"message": "스티커 크기"
+	},
+	"display_stickerSize": {
+		"message": "크기"
+	},
+	"tooltip_customColor": {
+		"message": "사용자 지정 색상"
+	},
+	"display_customColor": {
+		"message": "사용자 지정 색상"
+	},
+	"placeholder_customCSS": {
+		"message": "사용자 지정 CSS"
+	},
+	"common": {
+		"message": "공통"
+	},
+	"show_username": {
+		"message": "핸들 대신 사용자 이름 표시"
+	},
+	"mutedWordsMode": {
+		"message": "모드"
+	},
+	"mutedWordsMode_0": {
+		"message": "끄기"
+	},
+	"mutedWordsMode_1": {
+		"message": "메시지 전체 숨기기"
+	},
+	"mutedWordsMode_2": {
+		"message": "키워드 숨기기/대체하기"
+	},
+	"mutedWordsMode_3": {
+		"message": "글자 가리기"
+	},
+	"mutedWordsReplacement": {
+		"message": "대체 문자"
+	},
+	"placeholder_mutedWordsReplacement": {
+		"message": "비워 두면 숨겨집니다"
+	},
+	"tooltip_mutedWordsReplacement": {
+		"message": "첫 글자만 가리기에 사용됩니다"
+	},
+	"mutedWordsGrammar": {
+		"message": "문법"
+	},
+	"regexp": {
+		"message": "정규식 사용"
+	},
+	"placeholder_mutedWordsList": {
+		"message": "줄바꿈으로 여러 키워드를 설정할 수 있습니다"
+	},
+	"user_defined_css_shortcut": {
+		"message": "바로가기"
+	},
+	"font_helper_select": {
+		"message": "글꼴을 선택하세요..."
+	},
+	"up": {
+		"message": "위로"
+	},
+	"down": {
+		"message": "아래로"
+	},
+	"delete": {
+		"message": "삭제"
+	},
+	"add": {
+		"message": "추가"
+	},
+	"confirm": {
+		"message": "확인"
+	},
+	"cancel": {
+		"message": "취소"
+	},
+	"addUserStyle": {
+		"message": "사용자별 스타일 추가"
+	},
+	"label": {
+		"message": "레이블"
+	},
+	"Channel_ID": {
+		"message": "채널 ID\n(각 줄)"
+	},
+	"displayStyle": {
+		"message": "표시 스타일"
+	},
+	"fontFactor": {
+		"message": "글자 배율"
+	},
+	"placeholder_channelId": {
+		"message": "UC로 시작하는 24자 채널 ID"
+	},
+	"validation_channelId": {
+		"message": "각 줄에 UC로 시작하는 24자를 입력하세요.\n($1줄이 올바르지 않습니다.)"
+	},
+	"placeholder_userStyleTextArea": {
+		"message": "/* 여기에 CSS 미리보기가 표시됩니다 */"
+	},
+	"translation": {
+		"message": "메시지 번역"
+	},
+	"targetLanguage": {
+		"message": "번역 언어"
+	},
+	"prefixOriginalLanguage": {
+		"message": "문두에 원본 언어 표시"
+	},
+	"exception": {
+		"message": "제외"
+	},
+	"addableByBrowserLanguageSettings": {
+		"message": "브라우저 언어 설정에서\n항목을 추가할 수 있습니다"
+	},
+	"translationTiming": {
+		"message": "번역 시점"
+	},
+	"translation_eagerMode": {
+		"message": "번역한 뒤 흘려보내기"
+	},
+	"translation_lazyMode": {
+		"message": "흘려보내면서 번역하기"
+	},
+	"suffixOriginalMessage": {
+		"message": "번역 전 메시지 함께 표시"
+	},
+	"timeshift": {
+		"message": "타임시프트"
+	},
+	"latencyNormal": {
+		"message": "일반 / 프리미어 공개"
+	},
+	"latencyLow": {
+		"message": "낮은 지연"
+	},
+	"latencyUltraLow": {
+		"message": "매우 낮은 지연"
+	},
+	"timeshift_note": {
+		"message": "※ 다시보기에서만 사용 가능"
+	},
+	"otherConfig": {
+		"message": "기타 설정"
+	},
+	"aboutAddon": {
+		"message": "확장 프로그램 정보"
+	},
+	"version": {
+		"message": "버전"
+	},
+	"releaseNote": {
+		"message": "릴리스 노트"
+	},
+	"configFile": {
+		"message": "설정 파일"
+	},
+	"export": {
+		"message": "내보내기"
+	},
+	"import": {
+		"message": "가져오기"
+	},
+	"init": {
+		"message": "초기화"
+	},
+	"commonSettings": {
+		"message": "공통 설정"
+	},
+	"notification": {
+		"message": "알림"
+	},
+	"whenUpdated": {
+		"message": "버전 업데이트 시"
+	},
+	"disabled": {
+		"message": "하지 않음"
+	},
+	"enabled": {
+		"message": "함"
+	},
+	"description_notification_disabled": {
+		"message": "YouTube를 열고 있는 탭이 자동으로 새로고침됩니다."
+	},
+	"description_notification_enabled": {
+		"message": "YouTube를 열고 있는 탭이 자동으로 새로고침되지 않습니다.\n새로고침하려면 표시된 알림을 클릭하세요."
+	},
+	"loadingMode": {
+		"message": "채팅 불러오는 모드"
+	},
+	"livestream": {
+		"message": "라이브"
+	},
+	"replay": {
+		"message": "다시보기"
+	},
+	"mode_option_chatframe_dependent": {
+		"message": "채팅창 의존"
+	},
+	"mode_option_chatframe_independent": {
+		"message": "채팅창 비의존"
+	},
+	"description_chatframe_dependent_1": {
+		"message": "채팅창을 열고 있을 때만 동작합니다."
+	},
+	"description_chatframe_dependent_2": {
+		"message": "모바일 버전 페이지(m.youtube.com)에서는 항상 비의존 모드로 전환됩니다."
+	},
+	"description_chatframe_independent_1": {
+		"message": "채팅창을 닫아도 동작합니다."
+	},
+	"description_chatframe_independent_2": {
+		"message": "다시보기에서는 타임시프트 기능을 사용할 수 있습니다(채팅이 흐르는 시점을 조절 가능)."
+	},
+	"description_chatframe_independent_3": {
+		"message": "특히 긴 영상에서는 동작이 불안정할 수 있습니다."
+	},
+	"autostart": {
+		"message": "채팅창 자동 열기(다시보기 재생 시)"
+	},
+	"enabled_onDependentMode": {
+		"message": "채팅창 의존 모드일 때만"
+	},
+	"enabled_always": {
+		"message": "항상"
+	},
+	"hotkey": {
+		"message": "키보드 단축키"
+	},
+	"hotkey_layer": {
+		"message": "채팅 레이어"
+	},
+	"hotkey_panel": {
+		"message": "설정 패널"
+	},
+	"hotkey_pip": {
+		"message": "PiP"
+	},
+	"hotkey_alt": {
+		"message": "Alt/Option 키와 함께 누르기"
+	},
+	"hotkey_insensitive": {
+		"message": "대소문자 구분하지 않음"
+	},
+	"message_pause": {
+		"message": "우클릭으로 메시지 일시정지"
+	},
+	"person_detection": {
+		"message": "인물 감지 (알파 버전 기능)"
+	},
+	"enabled_wasm": {
+		"message": "함 (WASM・권장)"
+	},
+	"enabled_gpu": {
+		"message": "함 (GPU)"
+	},
+	"inference_backend": {
+		"message": "추론 백엔드"
+	},
+	"inference_backend_onnx": {
+		"message": "ONNX (표준・권장)"
+	},
+	"inference_backend_onnxnative": {
+		"message": "ONNX Native (낮은 지연)"
+	},
+	"translationBlacklist": {
+		"message": "번역 제외 목록"
+	},
+	"translator": {
+		"message": "번역 모델"
+	},
+	"translator_internal": {
+		"message": "브라우저 내장 (로컬 번역)"
+	},
+	"translator_external": {
+		"message": "외부 서비스 (URL 지정)"
+	},
+	"translator_fallbackNote": {
+		"message": "로컬 번역을 할 수 없으면 항상 외부 서비스로 전환됩니다."
+	},
+	"translation_request": {
+		"message": "요청 설정"
+	},
+	"translation_request_method": {
+		"message": "메서드"
+	},
+	"translation_request_url": {
+		"message": "URL"
+	},
+	"translation_request_bodyType": {
+		"message": "API 유형"
+	},
+	"translation_request_bodyType_OpenAICompatible": {
+		"message": "OpenAI 호환"
+	},
+	"translation_request_bodyType_custom": {
+		"message": "사용자 지정"
+	},
+	"translation_request_apiKey": {
+		"message": "API 키"
+	},
+	"translation_request_modelName": {
+		"message": "모델 이름"
+	},
+	"translation_request_body": {
+		"message": "요청 본문"
+	},
+	"translation_invalidRequestBody": {
+		"message": "유효한 JSON이 아닙니다"
+	},
+	"translation_response": {
+		"message": "응답 설정"
+	},
+	"translation_response_style": {
+		"message": "스타일"
+	},
+	"translation_response_style_Google": {
+		"message": "Google 번역"
+	},
+	"translation_response_style_OpenAI": {
+		"message": "OpenAI"
+	},
+	"placeholder_test_translation_text": {
+		"message": "번역 테스트 텍스트 입력"
+	},
+	"test_translation": {
+		"message": "번역 테스트"
+	},
+	"save": {
+		"message": "저장"
+	},
+	"warning_whenNotSaved": {
+		"message": "저장하면 확장 프로그램이 다시 시작됩니다. YouTube를 열고 있는 탭도 자동으로 새로고침되지만, 때에 따라 수동 새로고침이 필요할 수 있습니다."
+	},
+	"pip_marker": {
+		"message": "이 영상은 그림 속 그림(PiP)으로 재생되고 있습니다"
+	},
+	"menu_resumeAnimation": {
+		"message": "애니메이션 다시 시작"
+	},
+	"menu_moveMessage": {
+		"message": "메시지 이동"
+	},
+	"menu_copyAuthorId": {
+		"message": "사용자 ID 복사"
+	},
+	"menu_hideAuthor": {
+		"message": "이 사용자 숨기기"
+	}
+}

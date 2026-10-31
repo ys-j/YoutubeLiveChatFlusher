@@ -1,0 +1,611 @@
+{
+	"manifestName": {
+		"message": "YouTube LiveChat Flusher (Danmaku Chat)"
+	},
+	"manifestDescription": {
+		"message": "Hadirkan pengalaman menonton YouTube yang lebih kaya dengan chat berjalan (danmaku)."
+	},
+	"notification_title_onInstall": {
+		"message": "Terima kasih telah memasang!\nKlik untuk memuat ulang tab YouTube"
+	},
+	"notification_title_onUpdate": {
+		"message": "Telah diperbarui ke versi $1\nKlik untuk memuat ulang tab YouTube"
+	},
+	"notification_title_onReload": {
+		"message": "Ekstensi telah dimulai ulang\nKlik untuk memuat ulang tab YouTube"
+	},
+	"ytp_menuitem_label_switch": {
+		"message": "Alirkan chat"
+	},
+	"ytp_menuitem_label_config": {
+		"message": "Pengaturan chat"
+	},
+	"ytp_menuitem_label_pip": {
+		"message": "PiP w/ chat (beta)"
+	},
+	"close": {
+		"message": "Tutup"
+	},
+	"displayTab": {
+		"message": "Dasar"
+	},
+	"byTypeTab": {
+		"message": "Per jenis"
+	},
+	"mutedWordsTab": {
+		"message": "Kata terlarang"
+	},
+	"userDefinedCssTab": {
+		"message": "CSS pengguna"
+	},
+	"othersTab": {
+		"message": "Lainnya"
+	},
+	"animationDuration": {
+		"message": "Detik animasi"
+	},
+	"fontSize": {
+		"message": "Ukuran font"
+	},
+	"lines": {
+		"message": "baris"
+	},
+	"typeOfLines_0": {
+		"message": "tetap"
+	},
+	"typeOfLines_1": {
+		"message": "maks."
+	},
+	"typeOfLines_2": {
+		"message": "min."
+	},
+	"lineHeight": {
+		"message": "Tinggi baris"
+	},
+	"fontFamily_fontWeight": {
+		"message": "Font/ketebalan"
+	},
+	"fontFamily_select_from_local": {
+		"message": "Pilih dari font lokal"
+	},
+	"strokeStyle": {
+		"message": "Gaya garis tepi"
+	},
+	"strokeColor": {
+		"message": "Warna"
+	},
+	"strokeOffset": {
+		"message": "Offset"
+	},
+	"strokeBlur": {
+		"message": "Buram"
+	},
+	"layerOpacity": {
+		"message": "Transparansi keseluruhan"
+	},
+	"backgroundOpacity": {
+		"message": "Transparansi latar"
+	},
+	"opacity_0": {
+		"message": "Transparan"
+	},
+	"opacity_1": {
+		"message": "Tidak transparan"
+	},
+	"maxWidth_wordWrap": {
+		"message": "Panjang maks./wrap"
+	},
+	"wordWrap_0": {
+		"message": "Tanpa wrap"
+	},
+	"wordWrap_1": {
+		"message": "Mode 1"
+	},
+	"wordWrap_2": {
+		"message": "Mode 2"
+	},
+	"displayLimit": {
+		"message": "Batas tampil maks."
+	},
+	"containerLimit": {
+		"message": "Batas tampil panel chat"
+	},
+	"unlimited": {
+		"message": "Tanpa batas"
+	},
+	"simultaneousMessage": {
+		"message": "Chat waktu sama"
+	},
+	"simultaneousMessage_0": {
+		"message": "Alirkan semua"
+	},
+	"simultaneousMessage_1": {
+		"message": "Hanya chat pertama tiap muat"
+	},
+	"simultaneousMessage_2": {
+		"message": "Gabungkan isi yang sama"
+	},
+	"simultaneousMessage_3": {
+		"message": "Gabungkan isi sama, termasuk sebelumnya"
+	},
+	"emojiExpression": {
+		"message": "Tampilan emoji"
+	},
+	"emojiExpression_0": {
+		"message": "Sembunyikan semua"
+	},
+	"emojiExpression_1": {
+		"message": "Tampilkan semua"
+	},
+	"emojiExpression_2": {
+		"message": "Ganti dengan label"
+	},
+	"emojiExpression_3": {
+		"message": "Ganti dengan shortcut"
+	},
+	"density": {
+		"message": "Kepadatan tampilan"
+	},
+	"density_dense": {
+		"message": "Rapat"
+	},
+	"density_random": {
+		"message": "Acak"
+	},
+	"overlapping": {
+		"message": "Tumpang tindih"
+	},
+	"overlapping_transparent": {
+		"message": "Buat transparan"
+	},
+	"overlapping_translate": {
+		"message": "Geser"
+	},
+	"overlapping_hidden": {
+		"message": "Sembunyikan"
+	},
+	"direction": {
+		"message": "Arah"
+	},
+	"direction_bottom_to_top": {
+		"message": "Bawah ke atas"
+	},
+	"direction_left_to_right": {
+		"message": "Kiri ke kanan"
+	},
+	"layerSize": {
+		"message": "Ukuran layer"
+	},
+	"fitLayerSize": {
+		"message": "Sesuaikan dengan video"
+	},
+	"adjustLayerSize": {
+		"message": "Atur manual"
+	},
+	"layerCSS": {
+		"message": "CSS layer"
+	},
+	"normal": {
+		"message": "Biasa"
+	},
+	"member": {
+		"message": "Member"
+	},
+	"moderator": {
+		"message": "Moderator"
+	},
+	"owner": {
+		"message": "Pemilik"
+	},
+	"verified": {
+		"message": "Terverifikasi"
+	},
+	"you": {
+		"message": "Anda"
+	},
+	"superchat": {
+		"message": "Super Chat"
+	},
+	"sticker": {
+		"message": "Super Sticker"
+	},
+	"membership": {
+		"message": "Keanggotaan"
+	},
+	"milestone": {
+		"message": "Milestone"
+	},
+	"displaySettings": {
+		"message": "Pengaturan tampilan"
+	},
+	"tooltip_authorPhoto": {
+		"message": "Foto penulis"
+	},
+	"tooltip_authorName": {
+		"message": "Nama penulis"
+	},
+	"display_authorName": {
+		"message": "Nama"
+	},
+	"tooltip_purchaseAmount": {
+		"message": "Jumlah"
+	},
+	"display_purchaseAmount": {
+		"message": "Jumlah"
+	},
+	"tooltip_milestoneMonths": {
+		"message": "Jumlah bulan milestone"
+	},
+	"display_milestoneMonths": {
+		"message": "Bulan"
+	},
+	"tooltip_chatMessage": {
+		"message": "Isi chat"
+	},
+	"display_chatMessage": {
+		"message": "Isi"
+	},
+	"tooltip_membershipMessage": {
+		"message": "Pesan member baru"
+	},
+	"display_membershipMessage": {
+		"message": "Isi"
+	},
+	"tooltip_sticker": {
+		"message": "Stiker"
+	},
+	"display_sticker": {
+		"message": "Stiker"
+	},
+	"tooltip_stickerSize": {
+		"message": "Ukuran stiker"
+	},
+	"display_stickerSize": {
+		"message": "Ukuran"
+	},
+	"tooltip_customColor": {
+		"message": "Warna kustom"
+	},
+	"display_customColor": {
+		"message": "Warna kustom"
+	},
+	"placeholder_customCSS": {
+		"message": "CSS kustom"
+	},
+	"common": {
+		"message": "Umum"
+	},
+	"show_username": {
+		"message": "Tampilkan nama pengguna, bukan handle"
+	},
+	"mutedWordsMode": {
+		"message": "Mode"
+	},
+	"mutedWordsMode_0": {
+		"message": "Nonaktif"
+	},
+	"mutedWordsMode_1": {
+		"message": "Sembunyikan seluruh pesan"
+	},
+	"mutedWordsMode_2": {
+		"message": "Sembunyikan/ganti kata kunci"
+	},
+	"mutedWordsMode_3": {
+		"message": "Tutup karakter dengan tanda"
+	},
+	"mutedWordsReplacement": {
+		"message": "Kata pengganti"
+	},
+	"placeholder_mutedWordsReplacement": {
+		"message": "Kosong berarti disembunyikan"
+	},
+	"tooltip_mutedWordsReplacement": {
+		"message": "Hanya 1 karakter pertama yang dipakai untuk menutupi"
+	},
+	"mutedWordsGrammar": {
+		"message": "Sintaks"
+	},
+	"regexp": {
+		"message": "Gunakan ekspresi reguler"
+	},
+	"placeholder_mutedWordsList": {
+		"message": "Bisa mengatur beberapa kata kunci, satu per baris"
+	},
+	"user_defined_css_shortcut": {
+		"message": "Pintasan"
+	},
+	"font_helper_select": {
+		"message": "Pilih font..."
+	},
+	"up": {
+		"message": "Naik"
+	},
+	"down": {
+		"message": "Turun"
+	},
+	"delete": {
+		"message": "Hapus"
+	},
+	"add": {
+		"message": "Tambah"
+	},
+	"confirm": {
+		"message": "Konfirmasi"
+	},
+	"cancel": {
+		"message": "Batal"
+	},
+	"addUserStyle": {
+		"message": "Tambah gaya per pengguna"
+	},
+	"label": {
+		"message": "Label"
+	},
+	"Channel_ID": {
+		"message": "ID channel\n(satu per baris)"
+	},
+	"displayStyle": {
+		"message": "Gaya tampilan"
+	},
+	"fontFactor": {
+		"message": "Faktor ukuran font"
+	},
+	"placeholder_channelId": {
+		"message": "ID channel 24 karakter yang diawali UC"
+	},
+	"validation_channelId": {
+		"message": "Masukkan 24 karakter yang diawali UC di setiap baris.\n(Baris ke-$1 tidak valid.)"
+	},
+	"placeholder_userStyleTextArea": {
+		"message": "/* Pratinjau CSS ditampilkan di sini */"
+	},
+	"translation": {
+		"message": "Terjemahan pesan"
+	},
+	"targetLanguage": {
+		"message": "Bahasa target"
+	},
+	"prefixOriginalLanguage": {
+		"message": "Awali dengan bahasa asal"
+	},
+	"exception": {
+		"message": "Kecuali"
+	},
+	"addableByBrowserLanguageSettings": {
+		"message": "Pilihan dapat ditambahkan\ndari pengaturan bahasa browser"
+	},
+	"translationTiming": {
+		"message": "Waktu menerjemahkan"
+	},
+	"translation_eagerMode": {
+		"message": "Terjemahkan dulu"
+	},
+	"translation_lazyMode": {
+		"message": "Alirkan sambil terjemah"
+	},
+	"suffixOriginalMessage": {
+		"message": "Sertakan pesan sebelum diterjemahkan"
+	},
+	"timeshift": {
+		"message": "Geser waktu (time-shift)"
+	},
+	"latencyNormal": {
+		"message": "Biasa / Premiere"
+	},
+	"latencyLow": {
+		"message": "Latensi rendah"
+	},
+	"latencyUltraLow": {
+		"message": "Latensi sangat rendah"
+	},
+	"timeshift_note": {
+		"message": "※ Hanya berlaku di arsip"
+	},
+	"otherConfig": {
+		"message": "Pengaturan lainnya"
+	},
+	"aboutAddon": {
+		"message": "Tentang ekstensi"
+	},
+	"version": {
+		"message": "Versi"
+	},
+	"releaseNote": {
+		"message": "Catatan rilis"
+	},
+	"configFile": {
+		"message": "Berkas konfigurasi"
+	},
+	"export": {
+		"message": "Ekspor"
+	},
+	"import": {
+		"message": "Impor"
+	},
+	"init": {
+		"message": "Reset"
+	},
+	"commonSettings": {
+		"message": "Pengaturan umum"
+	},
+	"notification": {
+		"message": "Notifikasi"
+	},
+	"whenUpdated": {
+		"message": "Saat diperbarui"
+	},
+	"disabled": {
+		"message": "Tidak aktifkan"
+	},
+	"enabled": {
+		"message": "Aktifkan"
+	},
+	"description_notification_disabled": {
+		"message": "Tab yang membuka YouTube akan dimuat ulang secara otomatis."
+	},
+	"description_notification_enabled": {
+		"message": "Tab yang membuka YouTube tidak akan dimuat ulang secara otomatis.\nKlik notifikasi yang muncul untuk memuat ulang."
+	},
+	"loadingMode": {
+		"message": "Mode pemuatan chat"
+	},
+	"livestream": {
+		"message": "Live"
+	},
+	"replay": {
+		"message": "Arsip"
+	},
+	"mode_option_chatframe_dependent": {
+		"message": "Bergantung pada panel chat"
+	},
+	"mode_option_chatframe_independent": {
+		"message": "Tidak bergantung pada panel chat"
+	},
+	"description_chatframe_dependent_1": {
+		"message": "Hanya bekerja saat panel chat terbuka."
+	},
+	"description_chatframe_dependent_2": {
+		"message": "Di halaman seluler (m.youtube.com) selalu kembali ke mode independen."
+	},
+	"description_chatframe_independent_1": {
+		"message": "Tetap bekerja meskipun panel chat ditutup."
+	},
+	"description_chatframe_independent_2": {
+		"message": "Fitur geser waktu tersedia di arsip (waktu aliran chat dapat diatur)."
+	},
+	"description_chatframe_independent_3": {
+		"message": "Pada video yang sangat panjang, kinerja bisa tidak stabil."
+	},
+	"autostart": {
+		"message": "Buka panel chat otomatis (saat memutar arsip)"
+	},
+	"enabled_onDependentMode": {
+		"message": "Hanya saat mode dependen"
+	},
+	"enabled_always": {
+		"message": "Selalu aktifkan"
+	},
+	"hotkey": {
+		"message": "Pintasan keyboard"
+	},
+	"hotkey_layer": {
+		"message": "Layer chat"
+	},
+	"hotkey_panel": {
+		"message": "Panel pengaturan"
+	},
+	"hotkey_pip": {
+		"message": "PiP"
+	},
+	"hotkey_alt": {
+		"message": "Ditekan bersama Alt/Option"
+	},
+	"hotkey_insensitive": {
+		"message": "Tidak peka besar/kecil huruf"
+	},
+	"message_pause": {
+		"message": "Klik kanan untuk menjeda pesan"
+	},
+	"person_detection": {
+		"message": "Deteksi orang (fitur alpha)"
+	},
+	"enabled_wasm": {
+		"message": "Aktifkan (WASM, disarankan)"
+	},
+	"enabled_gpu": {
+		"message": "Aktifkan (GPU)"
+	},
+	"inference_backend": {
+		"message": "Backend inferensi"
+	},
+	"inference_backend_onnx": {
+		"message": "ONNX (standar, disarankan)"
+	},
+	"inference_backend_onnxnative": {
+		"message": "ONNX Native (latensi rendah)"
+	},
+	"translationBlacklist": {
+		"message": "Daftar kata terlarang terjemahan"
+	},
+	"translator": {
+		"message": "Model penerjemah"
+	},
+	"translator_internal": {
+		"message": "Bawaan browser (terjemahan lokal)"
+	},
+	"translator_external": {
+		"message": "Layanan eksternal (URL)"
+	},
+	"translator_fallbackNote": {
+		"message": "Jika terjemahan lokal tidak bisa dilakukan, akan selalu beralih ke layanan eksternal."
+	},
+	"translation_request": {
+		"message": "Pengaturan permintaan"
+	},
+	"translation_request_method": {
+		"message": "Metode"
+	},
+	"translation_request_url": {
+		"message": "URL"
+	},
+	"translation_request_bodyType": {
+		"message": "Tipe API"
+	},
+	"translation_request_bodyType_OpenAICompatible": {
+		"message": "Kompatibel OpenAI"
+	},
+	"translation_request_bodyType_custom": {
+		"message": "Kustom"
+	},
+	"translation_request_apiKey": {
+		"message": "Kunci API"
+	},
+	"translation_request_modelName": {
+		"message": "Nama model"
+	},
+	"translation_request_body": {
+		"message": "Isi permintaan"
+	},
+	"translation_invalidRequestBody": {
+		"message": "Bukan JSON yang valid"
+	},
+	"translation_response": {
+		"message": "Pengaturan respons"
+	},
+	"translation_response_style": {
+		"message": "Gaya"
+	},
+	"translation_response_style_Google": {
+		"message": "Google Translate"
+	},
+	"translation_response_style_OpenAI": {
+		"message": "OpenAI"
+	},
+	"placeholder_test_translation_text": {
+		"message": "Masukkan teks uji terjemahan"
+	},
+	"test_translation": {
+		"message": "Uji terjemahan"
+	},
+	"save": {
+		"message": "Simpan"
+	},
+	"warning_whenNotSaved": {
+		"message": "Setelah disimpan, ekstensi akan dimulai ulang. Tab yang membuka YouTube juga dimuat ulang otomatis, tetapi kadang perlu refresh manual."
+	},
+	"pip_marker": {
+		"message": "Video ini sedang diputar dalam picture-in-picture"
+	},
+	"menu_resumeAnimation": {
+		"message": "Lanjutkan animasi"
+	},
+	"menu_moveMessage": {
+		"message": "Pindahkan pesan ini"
+	},
+	"menu_copyAuthorId": {
+		"message": "Salin ID pengguna"
+	},
+	"menu_hideAuthor": {
+		"message": "Sembunyikan pengguna ini"
+	}
+}

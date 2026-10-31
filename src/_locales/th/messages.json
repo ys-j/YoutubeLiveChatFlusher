@@ -1,0 +1,611 @@
+{
+	"manifestName": {
+		"message": "YouTube LiveChat Flusher (แชทแบบดังมาคุ)"
+	},
+	"manifestDescription": {
+		"message": "มอบประสบการณ์การดู YouTube ที่สนุกยิ่งขึ้นด้วยแชทไหลแบบดังมาคุ"
+	},
+	"notification_title_onInstall": {
+		"message": "ขอบคุณที่ติดตั้ง\nคลิกเพื่อโหลดแท็บ YouTube ใหม่"
+	},
+	"notification_title_onUpdate": {
+		"message": "อัปเดตเป็นเวอร์ชัน $1 แล้ว\nคลิกเพื่อโหลดแท็บ YouTube ใหม่"
+	},
+	"notification_title_onReload": {
+		"message": "เริ่มส่วนขยายใหม่แล้ว\nคลิกเพื่อโหลดแท็บ YouTube ใหม่"
+	},
+	"ytp_menuitem_label_switch": {
+		"message": "ปล่อยแชทไหล"
+	},
+	"ytp_menuitem_label_config": {
+		"message": "ตั้งค่าแชท"
+	},
+	"ytp_menuitem_label_pip": {
+		"message": "PiP w/ chat (beta)"
+	},
+	"close": {
+		"message": "ปิด"
+	},
+	"displayTab": {
+		"message": "พื้นฐาน"
+	},
+	"byTypeTab": {
+		"message": "ตามประเภท"
+	},
+	"mutedWordsTab": {
+		"message": "คำต้องห้าม"
+	},
+	"userDefinedCssTab": {
+		"message": "CSS ผู้ใช้"
+	},
+	"othersTab": {
+		"message": "อื่น ๆ"
+	},
+	"animationDuration": {
+		"message": "วินาทีอนิเมชัน"
+	},
+	"fontSize": {
+		"message": "ขนาดตัวอักษร"
+	},
+	"lines": {
+		"message": "บรรทัด"
+	},
+	"typeOfLines_0": {
+		"message": "คงที่"
+	},
+	"typeOfLines_1": {
+		"message": "สูงสุด"
+	},
+	"typeOfLines_2": {
+		"message": "ต่ำสุด"
+	},
+	"lineHeight": {
+		"message": "ความสูงบรรทัด"
+	},
+	"fontFamily_fontWeight": {
+		"message": "ฟอนต์/ความหนา"
+	},
+	"fontFamily_select_from_local": {
+		"message": "เลือกจากฟอนต์ในเครื่อง"
+	},
+	"strokeStyle": {
+		"message": "สไตล์ขอบ"
+	},
+	"strokeColor": {
+		"message": "สี"
+	},
+	"strokeOffset": {
+		"message": "ระยะเยื้อง"
+	},
+	"strokeBlur": {
+		"message": "เบลอ"
+	},
+	"layerOpacity": {
+		"message": "ความโปร่งใสทั้งหมด"
+	},
+	"backgroundOpacity": {
+		"message": "ความโปร่งใสพื้นหลัง"
+	},
+	"opacity_0": {
+		"message": "โปร่งใส"
+	},
+	"opacity_1": {
+		"message": "ทึบ"
+	},
+	"maxWidth_wordWrap": {
+		"message": "ความยาวสูงสุด/ตัดบรรทัด"
+	},
+	"wordWrap_0": {
+		"message": "ไม่ตัดบรรทัด"
+	},
+	"wordWrap_1": {
+		"message": "โหมด 1"
+	},
+	"wordWrap_2": {
+		"message": "โหมด 2"
+	},
+	"displayLimit": {
+		"message": "จำนวนแสดงสูงสุด"
+	},
+	"containerLimit": {
+		"message": "จำนวนในกรอบแชท"
+	},
+	"unlimited": {
+		"message": "ไม่จำกัด"
+	},
+	"simultaneousMessage": {
+		"message": "แชทพร้อมกัน"
+	},
+	"simultaneousMessage_0": {
+		"message": "ปล่อยทั้งหมด"
+	},
+	"simultaneousMessage_1": {
+		"message": "ปล่อยเฉพาะแชทแรกต่อการโหลดแต่ละครั้ง"
+	},
+	"simultaneousMessage_2": {
+		"message": "รวมเนื้อหาที่ซ้ำกัน"
+	},
+	"simultaneousMessage_3": {
+		"message": "รวมเนื้อหาซ้ำ รวมอันก่อนหน้าด้วย"
+	},
+	"emojiExpression": {
+		"message": "การแสดงอีโมจิ"
+	},
+	"emojiExpression_0": {
+		"message": "ซ่อนทั้งหมด"
+	},
+	"emojiExpression_1": {
+		"message": "แสดงทั้งหมด"
+	},
+	"emojiExpression_2": {
+		"message": "เปลี่ยนเป็นป้ายกำกับ"
+	},
+	"emojiExpression_3": {
+		"message": "เปลี่ยนเป็นคีย์ลัด"
+	},
+	"density": {
+		"message": "ความหนาแน่น"
+	},
+	"density_dense": {
+		"message": "ชิดกัน"
+	},
+	"density_random": {
+		"message": "สุ่ม"
+	},
+	"overlapping": {
+		"message": "ซ้อนทับ"
+	},
+	"overlapping_transparent": {
+		"message": "ทำโปร่งใส"
+	},
+	"overlapping_translate": {
+		"message": "เลื่อนตำแหน่ง"
+	},
+	"overlapping_hidden": {
+		"message": "ซ่อน"
+	},
+	"direction": {
+		"message": "ทิศทาง"
+	},
+	"direction_bottom_to_top": {
+		"message": "ล่างขึ้นบน"
+	},
+	"direction_left_to_right": {
+		"message": "ซ้ายไปขวา"
+	},
+	"layerSize": {
+		"message": "ขนาดเลเยอร์"
+	},
+	"fitLayerSize": {
+		"message": "พอดีกับวิดีโอ"
+	},
+	"adjustLayerSize": {
+		"message": "ตั้งค่าเอง"
+	},
+	"layerCSS": {
+		"message": "CSS เลเยอร์"
+	},
+	"normal": {
+		"message": "ปกติ"
+	},
+	"member": {
+		"message": "สมาชิก"
+	},
+	"moderator": {
+		"message": "Moderator"
+	},
+	"owner": {
+		"message": "เจ้าของช่อง"
+	},
+	"verified": {
+		"message": "ได้รับการยืนยัน"
+	},
+	"you": {
+		"message": "คุณ"
+	},
+	"superchat": {
+		"message": "Super Chat"
+	},
+	"sticker": {
+		"message": "Super Sticker"
+	},
+	"membership": {
+		"message": "Membership"
+	},
+	"milestone": {
+		"message": "หลักไมล์"
+	},
+	"displaySettings": {
+		"message": "ตั้งค่าการแสดง"
+	},
+	"tooltip_authorPhoto": {
+		"message": "รูปโปรไฟล์ผู้ส่ง"
+	},
+	"tooltip_authorName": {
+		"message": "ชื่อผู้ส่ง"
+	},
+	"display_authorName": {
+		"message": "ชื่อ"
+	},
+	"tooltip_purchaseAmount": {
+		"message": "จำนวนเงิน"
+	},
+	"display_purchaseAmount": {
+		"message": "จำนวนเงิน"
+	},
+	"tooltip_milestoneMonths": {
+		"message": "จำนวนเดือนของหลักไมล์"
+	},
+	"display_milestoneMonths": {
+		"message": "จำนวนเดือน"
+	},
+	"tooltip_chatMessage": {
+		"message": "ข้อความแชท"
+	},
+	"display_chatMessage": {
+		"message": "เนื้อหา"
+	},
+	"tooltip_membershipMessage": {
+		"message": "ข้อความจากสมาชิกใหม่"
+	},
+	"display_membershipMessage": {
+		"message": "เนื้อหา"
+	},
+	"tooltip_sticker": {
+		"message": "สติกเกอร์"
+	},
+	"display_sticker": {
+		"message": "สติกเกอร์"
+	},
+	"tooltip_stickerSize": {
+		"message": "ขนาดสติกเกอร์"
+	},
+	"display_stickerSize": {
+		"message": "ขนาด"
+	},
+	"tooltip_customColor": {
+		"message": "สีกำหนดเอง"
+	},
+	"display_customColor": {
+		"message": "สีกำหนดเอง"
+	},
+	"placeholder_customCSS": {
+		"message": "CSS กำหนดเอง"
+	},
+	"common": {
+		"message": "ทั่วไป"
+	},
+	"show_username": {
+		"message": "แสดงชื่อผู้ใช้แทน handle"
+	},
+	"mutedWordsMode": {
+		"message": "โหมด"
+	},
+	"mutedWordsMode_0": {
+		"message": "ปิด"
+	},
+	"mutedWordsMode_1": {
+		"message": "ซ่อนข้อความทั้งข้อความ"
+	},
+	"mutedWordsMode_2": {
+		"message": "ซ่อน/แทนที่คำหลัก"
+	},
+	"mutedWordsMode_3": {
+		"message": "บังตัวอักษร"
+	},
+	"mutedWordsReplacement": {
+		"message": "ตัวอักษรแทนที่"
+	},
+	"placeholder_mutedWordsReplacement": {
+		"message": "เว้นว่างไว้จะถูกซ่อน"
+	},
+	"tooltip_mutedWordsReplacement": {
+		"message": "ใช้อักษรตัวแรกเท่านั้นสำหรับการบัง"
+	},
+	"mutedWordsGrammar": {
+		"message": "ไวยากรณ์"
+	},
+	"regexp": {
+		"message": "ใช้ regular expression"
+	},
+	"placeholder_mutedWordsList": {
+		"message": "ตั้งได้หลายคำหลักโดยแยกเป็นบรรทัด"
+	},
+	"user_defined_css_shortcut": {
+		"message": "คีย์ลัด"
+	},
+	"font_helper_select": {
+		"message": "เลือกฟอนต์..."
+	},
+	"up": {
+		"message": "ขึ้น"
+	},
+	"down": {
+		"message": "ลง"
+	},
+	"delete": {
+		"message": "ลบ"
+	},
+	"add": {
+		"message": "เพิ่ม"
+	},
+	"confirm": {
+		"message": "ยืนยัน"
+	},
+	"cancel": {
+		"message": "ยกเลิก"
+	},
+	"addUserStyle": {
+		"message": "เพิ่มสไตล์รายผู้ใช้"
+	},
+	"label": {
+		"message": "ป้ายกำกับ"
+	},
+	"Channel_ID": {
+		"message": "ID ช่อง\n(แต่ละบรรทัด)"
+	},
+	"displayStyle": {
+		"message": "สไตล์การแสดง"
+	},
+	"fontFactor": {
+		"message": "ตัวคูณขนาดฟอนต์"
+	},
+	"placeholder_channelId": {
+		"message": "ID ช่อง 24 ตัวอักษรที่ขึ้นต้นด้วย UC"
+	},
+	"validation_channelId": {
+		"message": "แต่ละบรรทัดกรุณากรอก 24 ตัวอักษรที่ขึ้นต้นด้วย UC\n(บรรทัด $1 ไม่ถูกต้อง)"
+	},
+	"placeholder_userStyleTextArea": {
+		"message": "/* ตัวอย่าง CSS จะแสดงที่นี่ */"
+	},
+	"translation": {
+		"message": "แปลข้อความ"
+	},
+	"targetLanguage": {
+		"message": "ภาษาปลายทาง"
+	},
+	"prefixOriginalLanguage": {
+		"message": "ใส่ภาษาเดิมไว้ต้นข้อความ"
+	},
+	"exception": {
+		"message": "ยกเว้น"
+	},
+	"addableByBrowserLanguageSettings": {
+		"message": "เพิ่มรายการได้จากการตั้งค่าภาษาของเบราว์เซอร์"
+	},
+	"translationTiming": {
+		"message": "เวลาแปล"
+	},
+	"translation_eagerMode": {
+		"message": "แปลก่อนแล้วค่อยปล่อยไหล"
+	},
+	"translation_lazyMode": {
+		"message": "ปล่อยไหลไปแปลไป"
+	},
+	"suffixOriginalMessage": {
+		"message": "เขียนข้อความก่อนแปลประกอบด้วย"
+	},
+	"timeshift": {
+		"message": "เลื่อนเวลา (Time-shift)"
+	},
+	"latencyNormal": {
+		"message": "ปกติ / รอบปฐมทัศน์"
+	},
+	"latencyLow": {
+		"message": "ดีเลย์ต่ำ"
+	},
+	"latencyUltraLow": {
+		"message": "ดีเลย์ต่ำมาก"
+	},
+	"timeshift_note": {
+		"message": "※ ใช้ได้เฉพาะรับชมย้อนหลัง"
+	},
+	"otherConfig": {
+		"message": "การตั้งค่าอื่น"
+	},
+	"aboutAddon": {
+		"message": "เกี่ยวกับส่วนขยาย"
+	},
+	"version": {
+		"message": "เวอร์ชัน"
+	},
+	"releaseNote": {
+		"message": "บันทึกการอัปเดต"
+	},
+	"configFile": {
+		"message": "ไฟล์ตั้งค่า"
+	},
+	"export": {
+		"message": "ส่งออก"
+	},
+	"import": {
+		"message": "นำเข้า"
+	},
+	"init": {
+		"message": "รีเซ็ต"
+	},
+	"commonSettings": {
+		"message": "การตั้งค่าทั่วไป"
+	},
+	"notification": {
+		"message": "การแจ้งเตือน"
+	},
+	"whenUpdated": {
+		"message": "เมื่ออัปเดตเวอร์ชัน"
+	},
+	"disabled": {
+		"message": "ปิด"
+	},
+	"enabled": {
+		"message": "เปิด"
+	},
+	"description_notification_disabled": {
+		"message": "แท็บที่เปิด YouTube อยู่จะโหลดใหม่อัตโนมัติ"
+	},
+	"description_notification_enabled": {
+		"message": "แท็บที่เปิด YouTube อยู่จะไม่โหลดใหม่อัตโนมัติ\nคลิกการแจ้งเตือนที่แสดงขึ้นมาเพื่อโหลดใหม่"
+	},
+	"loadingMode": {
+		"message": "โหมดโหลดแชท"
+	},
+	"livestream": {
+		"message": "ถ่ายทอดสด"
+	},
+	"replay": {
+		"message": "ดูย้อนหลัง"
+	},
+	"mode_option_chatframe_dependent": {
+		"message": "โหมดพึ่งพาแชทข้าง"
+	},
+	"mode_option_chatframe_independent": {
+		"message": "โหมดไม่พึ่งพาแชทข้าง"
+	},
+	"description_chatframe_dependent_1": {
+		"message": "ทำงานเฉพาะตอนที่เปิดกรอบแชท"
+	},
+	"description_chatframe_dependent_2": {
+		"message": "บนหน้าเว็บมือถือ (m.youtube.com) จะสลับไปโหมดไม่พึ่งพาแชทข้างเสมอ"
+	},
+	"description_chatframe_independent_1": {
+		"message": "ทำงานได้แม้ปิดกรอบแชท"
+	},
+	"description_chatframe_independent_2": {
+		"message": "ตอนรับชมย้อนหลังจะใช้ฟังก์ชันเลื่อนเวลาได้ (ปรับจังหวะปล่อยแชทไหลได้)"
+	},
+	"description_chatframe_independent_3": {
+		"message": "การทำงานอาจไม่เสถียร โดยเฉพาะกับวิดีโอยาว"
+	},
+	"autostart": {
+		"message": "เปิดกรอบแชทอัตโนมัติ (ตอนรับชมย้อนหลัง)"
+	},
+	"enabled_onDependentMode": {
+		"message": "เปิดใช้เฉพาะโหมดพึ่งพาแชทข้าง"
+	},
+	"enabled_always": {
+		"message": "เปิดใช้เสมอ"
+	},
+	"hotkey": {
+		"message": "คีย์ลัด"
+	},
+	"hotkey_layer": {
+		"message": "เลเยอร์แชท"
+	},
+	"hotkey_panel": {
+		"message": "แผงตั้งค่า"
+	},
+	"hotkey_pip": {
+		"message": "PiP"
+	},
+	"hotkey_alt": {
+		"message": "กดพร้อมปุ่ม Alt/Option"
+	},
+	"hotkey_insensitive": {
+		"message": "ไม่แยกพิมพ์ใหญ่/เล็ก"
+	},
+	"message_pause": {
+		"message": "คลิกขวาเพื่อพักข้อความชั่วคราว"
+	},
+	"person_detection": {
+		"message": "ตรวจจับบุคคล (ฟังก์ชันเวอร์ชัน alpha)"
+	},
+	"enabled_wasm": {
+		"message": "เปิดใช้ (WASM / แนะนำ)"
+	},
+	"enabled_gpu": {
+		"message": "เปิดใช้ (GPU)"
+	},
+	"inference_backend": {
+		"message": "แบ็กเอนด์ inference"
+	},
+	"inference_backend_onnx": {
+		"message": "ONNX (มาตรฐาน / แนะนำ)"
+	},
+	"inference_backend_onnxnative": {
+		"message": "ONNX Native (ดีเลย์ต่ำ)"
+	},
+	"translationBlacklist": {
+		"message": "รายการห้ามแปล"
+	},
+	"translator": {
+		"message": "โมเดลแปล"
+	},
+	"translator_internal": {
+		"message": "ในตัวเบราว์เซอร์ (แปลในเครื่อง)"
+	},
+	"translator_external": {
+		"message": "บริการภายนอก (ระบุ URL)"
+	},
+	"translator_fallbackNote": {
+		"message": "หากแปลในเครื่องไม่ได้ จะสลับไปบริการภายนอกเสมอ"
+	},
+	"translation_request": {
+		"message": "ตั้งค่า request"
+	},
+	"translation_request_method": {
+		"message": "เมธอด"
+	},
+	"translation_request_url": {
+		"message": "URL"
+	},
+	"translation_request_bodyType": {
+		"message": "ประเภท API"
+	},
+	"translation_request_bodyType_OpenAICompatible": {
+		"message": "เข้ากันได้กับ OpenAI"
+	},
+	"translation_request_bodyType_custom": {
+		"message": "กำหนดเอง"
+	},
+	"translation_request_apiKey": {
+		"message": "API key"
+	},
+	"translation_request_modelName": {
+		"message": "ชื่อโมเดล"
+	},
+	"translation_request_body": {
+		"message": "body ของ request"
+	},
+	"translation_invalidRequestBody": {
+		"message": "ไม่ใช่ JSON ที่ถูกต้อง"
+	},
+	"translation_response": {
+		"message": "ตั้งค่า response"
+	},
+	"translation_response_style": {
+		"message": "สไตล์"
+	},
+	"translation_response_style_Google": {
+		"message": "Google Translate"
+	},
+	"translation_response_style_OpenAI": {
+		"message": "OpenAI"
+	},
+	"placeholder_test_translation_text": {
+		"message": "กรอกข้อความทดสอบการแปล"
+	},
+	"test_translation": {
+		"message": "ทดสอบการแปล"
+	},
+	"save": {
+		"message": "บันทึก"
+	},
+	"warning_whenNotSaved": {
+		"message": "การบันทึกจะเริ่มส่วนขยายใหม่ แท็บที่เปิด YouTube อยู่จะถูกโหลดใหม่อัตโนมัติ แต่บางกรณีต้องอัปเดตเอง"
+	},
+	"pip_marker": {
+		"message": "วิดีโอนี้กำลังเล่นแบบ picture-in-picture"
+	},
+	"menu_resumeAnimation": {
+		"message": "เล่นอนิเมชันต่อ"
+	},
+	"menu_moveMessage": {
+		"message": "ย้ายข้อความ"
+	},
+	"menu_copyAuthorId": {
+		"message": "คัดลอก ID ผู้ใช้"
+	},
+	"menu_hideAuthor": {
+		"message": "ซ่อนผู้ใช้คนนี้"
+	}
+}

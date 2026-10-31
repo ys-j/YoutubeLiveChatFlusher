@@ -1,0 +1,611 @@
+{
+	"manifestName": {
+		"message": "YouTube LiveChat Flusher／弹幕聊天"
+	},
+	"manifestDescription": {
+		"message": "用弹幕样式的聊天，带来更丰富的YouTube观看体验。"
+	},
+	"notification_title_onInstall": {
+		"message": "感谢您的安装\n点击可重新加载YouTube标签页"
+	},
+	"notification_title_onUpdate": {
+		"message": "已更新到版本$1\n点击可重新加载YouTube标签页"
+	},
+	"notification_title_onReload": {
+		"message": "扩展程序已重新启动\n点击可重新加载YouTube标签页"
+	},
+	"ytp_menuitem_label_switch": {
+		"message": "播放弹幕"
+	},
+	"ytp_menuitem_label_config": {
+		"message": "弹幕设置"
+	},
+	"ytp_menuitem_label_pip": {
+		"message": "PiP w/ chat (beta)"
+	},
+	"close": {
+		"message": "关闭"
+	},
+	"displayTab": {
+		"message": "基本"
+	},
+	"byTypeTab": {
+		"message": "按类型"
+	},
+	"mutedWordsTab": {
+		"message": "违禁词"
+	},
+	"userDefinedCssTab": {
+		"message": "用户CSS"
+	},
+	"othersTab": {
+		"message": "其他"
+	},
+	"animationDuration": {
+		"message": "动画秒数"
+	},
+	"fontSize": {
+		"message": "文字大小"
+	},
+	"lines": {
+		"message": "行"
+	},
+	"typeOfLines_0": {
+		"message": "固定"
+	},
+	"typeOfLines_1": {
+		"message": "最大"
+	},
+	"typeOfLines_2": {
+		"message": "最小"
+	},
+	"lineHeight": {
+		"message": "行高"
+	},
+	"fontFamily_fontWeight": {
+		"message": "字体名称/粗细"
+	},
+	"fontFamily_select_from_local": {
+		"message": "从本地字体中选择"
+	},
+	"strokeStyle": {
+		"message": "描边样式"
+	},
+	"strokeColor": {
+		"message": "颜色"
+	},
+	"strokeOffset": {
+		"message": "偏移"
+	},
+	"strokeBlur": {
+		"message": "模糊"
+	},
+	"layerOpacity": {
+		"message": "整体透明度"
+	},
+	"backgroundOpacity": {
+		"message": "背景透明度"
+	},
+	"opacity_0": {
+		"message": "透明"
+	},
+	"opacity_1": {
+		"message": "不透明"
+	},
+	"maxWidth_wordWrap": {
+		"message": "最大长度/换行"
+	},
+	"wordWrap_0": {
+		"message": "不换行"
+	},
+	"wordWrap_1": {
+		"message": "模式1"
+	},
+	"wordWrap_2": {
+		"message": "模式2"
+	},
+	"displayLimit": {
+		"message": "最大显示数"
+	},
+	"containerLimit": {
+		"message": "聊天栏显示数"
+	},
+	"unlimited": {
+		"message": "无限制"
+	},
+	"simultaneousMessage": {
+		"message": "同时刻聊天"
+	},
+	"simultaneousMessage_0": {
+		"message": "全部播放"
+	},
+	"simultaneousMessage_1": {
+		"message": "每次加载只播放第一条"
+	},
+	"simultaneousMessage_2": {
+		"message": "合并相同内容"
+	},
+	"simultaneousMessage_3": {
+		"message": "合并相同内容（含前一条）"
+	},
+	"emojiExpression": {
+		"message": "表情符号显示"
+	},
+	"emojiExpression_0": {
+		"message": "全部隐藏"
+	},
+	"emojiExpression_1": {
+		"message": "全部显示"
+	},
+	"emojiExpression_2": {
+		"message": "替换为标签"
+	},
+	"emojiExpression_3": {
+		"message": "替换为快捷码"
+	},
+	"density": {
+		"message": "显示密度"
+	},
+	"density_dense": {
+		"message": "紧凑"
+	},
+	"density_random": {
+		"message": "随机"
+	},
+	"overlapping": {
+		"message": "重叠"
+	},
+	"overlapping_transparent": {
+		"message": "透明化"
+	},
+	"overlapping_translate": {
+		"message": "错开"
+	},
+	"overlapping_hidden": {
+		"message": "隐藏"
+	},
+	"direction": {
+		"message": "方向"
+	},
+	"direction_bottom_to_top": {
+		"message": "从下向上"
+	},
+	"direction_left_to_right": {
+		"message": "从左向右"
+	},
+	"layerSize": {
+		"message": "图层尺寸"
+	},
+	"fitLayerSize": {
+		"message": "匹配视频"
+	},
+	"adjustLayerSize": {
+		"message": "手动设置"
+	},
+	"layerCSS": {
+		"message": "图层CSS"
+	},
+	"normal": {
+		"message": "普通"
+	},
+	"member": {
+		"message": "会员"
+	},
+	"moderator": {
+		"message": "管理员"
+	},
+	"owner": {
+		"message": "频道主"
+	},
+	"verified": {
+		"message": "已验证"
+	},
+	"you": {
+		"message": "你"
+	},
+	"superchat": {
+		"message": "超级聊天"
+	},
+	"sticker": {
+		"message": "超级贴纸"
+	},
+	"membership": {
+		"message": "会员资格"
+	},
+	"milestone": {
+		"message": "里程碑"
+	},
+	"displaySettings": {
+		"message": "显示设置"
+	},
+	"tooltip_authorPhoto": {
+		"message": "发言者头像"
+	},
+	"tooltip_authorName": {
+		"message": "发言者名称"
+	},
+	"display_authorName": {
+		"message": "名称"
+	},
+	"tooltip_purchaseAmount": {
+		"message": "金额"
+	},
+	"display_purchaseAmount": {
+		"message": "金额"
+	},
+	"tooltip_milestoneMonths": {
+		"message": "里程碑的月数"
+	},
+	"display_milestoneMonths": {
+		"message": "月数"
+	},
+	"tooltip_chatMessage": {
+		"message": "聊天消息"
+	},
+	"display_chatMessage": {
+		"message": "正文"
+	},
+	"tooltip_membershipMessage": {
+		"message": "新会员的消息"
+	},
+	"display_membershipMessage": {
+		"message": "正文"
+	},
+	"tooltip_sticker": {
+		"message": "贴纸"
+	},
+	"display_sticker": {
+		"message": "贴纸"
+	},
+	"tooltip_stickerSize": {
+		"message": "贴纸的大小"
+	},
+	"display_stickerSize": {
+		"message": "大小"
+	},
+	"tooltip_customColor": {
+		"message": "自定义颜色"
+	},
+	"display_customColor": {
+		"message": "自定义颜色"
+	},
+	"placeholder_customCSS": {
+		"message": "自定义CSS"
+	},
+	"common": {
+		"message": "通用"
+	},
+	"show_username": {
+		"message": "显示用户名而非 handle"
+	},
+	"mutedWordsMode": {
+		"message": "模式"
+	},
+	"mutedWordsMode_0": {
+		"message": "关闭"
+	},
+	"mutedWordsMode_1": {
+		"message": "隐藏整条消息"
+	},
+	"mutedWordsMode_2": {
+		"message": "隐藏/替换关键词"
+	},
+	"mutedWordsMode_3": {
+		"message": "用符号遮盖文字"
+	},
+	"mutedWordsReplacement": {
+		"message": "替换文字"
+	},
+	"placeholder_mutedWordsReplacement": {
+		"message": "留空则会被隐藏"
+	},
+	"tooltip_mutedWordsReplacement": {
+		"message": "仅使用第1个字符进行遮盖"
+	},
+	"mutedWordsGrammar": {
+		"message": "语法"
+	},
+	"regexp": {
+		"message": "使用正则表达式"
+	},
+	"placeholder_mutedWordsList": {
+		"message": "可用换行设置多个关键词"
+	},
+	"user_defined_css_shortcut": {
+		"message": "快捷方式"
+	},
+	"font_helper_select": {
+		"message": "请选择字体..."
+	},
+	"up": {
+		"message": "上移"
+	},
+	"down": {
+		"message": "下移"
+	},
+	"delete": {
+		"message": "删除"
+	},
+	"add": {
+		"message": "添加"
+	},
+	"confirm": {
+		"message": "确定"
+	},
+	"cancel": {
+		"message": "取消"
+	},
+	"addUserStyle": {
+		"message": "添加按用户的样式"
+	},
+	"label": {
+		"message": "标签"
+	},
+	"Channel_ID": {
+		"message": "频道ID\n(每行一个)"
+	},
+	"displayStyle": {
+		"message": "显示样式"
+	},
+	"fontFactor": {
+		"message": "字体倍率"
+	},
+	"placeholder_channelId": {
+		"message": "以UC开头的24位频道ID"
+	},
+	"validation_channelId": {
+		"message": "每行请输入以UC开头的24位字符。\n（第$1行无效。）"
+	},
+	"placeholder_userStyleTextArea": {
+		"message": "/* 这里会显示CSS的预览 */"
+	},
+	"translation": {
+		"message": "消息翻译"
+	},
+	"targetLanguage": {
+		"message": "翻译为"
+	},
+	"prefixOriginalLanguage": {
+		"message": "在句首标注原语言"
+	},
+	"exception": {
+		"message": "排除"
+	},
+	"addableByBrowserLanguageSettings": {
+		"message": "可从浏览器的语言设置中添加更多选项"
+	},
+	"translationTiming": {
+		"message": "翻译时机"
+	},
+	"translation_eagerMode": {
+		"message": "翻译后再播放"
+	},
+	"translation_lazyMode": {
+		"message": "边播放边翻译"
+	},
+	"suffixOriginalMessage": {
+		"message": "同时显示翻译前的消息"
+	},
+	"timeshift": {
+		"message": "时间位移"
+	},
+	"latencyNormal": {
+		"message": "普通 / 首映"
+	},
+	"latencyLow": {
+		"message": "低延迟"
+	},
+	"latencyUltraLow": {
+		"message": "超低延迟"
+	},
+	"timeshift_note": {
+		"message": "※ 仅在回放中有效"
+	},
+	"otherConfig": {
+		"message": "其他设置"
+	},
+	"aboutAddon": {
+		"message": "关于扩展程序"
+	},
+	"version": {
+		"message": "版本"
+	},
+	"releaseNote": {
+		"message": "更新日志"
+	},
+	"configFile": {
+		"message": "配置文件"
+	},
+	"export": {
+		"message": "导出"
+	},
+	"import": {
+		"message": "导入"
+	},
+	"init": {
+		"message": "重置"
+	},
+	"commonSettings": {
+		"message": "通用设置"
+	},
+	"notification": {
+		"message": "通知"
+	},
+	"whenUpdated": {
+		"message": "版本更新时"
+	},
+	"disabled": {
+		"message": "不启用"
+	},
+	"enabled": {
+		"message": "启用"
+	},
+	"description_notification_disabled": {
+		"message": "已打开YouTube的标签页会自动重新加载。"
+	},
+	"description_notification_enabled": {
+		"message": "已打开YouTube的标签页不会自动重新加载。\n请点击出现的通知来重新加载。"
+	},
+	"loadingMode": {
+		"message": "聊天加载模式"
+	},
+	"livestream": {
+		"message": "直播"
+	},
+	"replay": {
+		"message": "回放"
+	},
+	"mode_option_chatframe_dependent": {
+		"message": "依赖聊天栏模式"
+	},
+	"mode_option_chatframe_independent": {
+		"message": "不依赖聊天栏模式"
+	},
+	"description_chatframe_dependent_1": {
+		"message": "仅在打开聊天栏时工作。"
+	},
+	"description_chatframe_dependent_2": {
+		"message": "在移动版页面（m.youtube.com）上始终回退到不依赖聊天栏模式。"
+	},
+	"description_chatframe_independent_1": {
+		"message": "即使关闭聊天栏也会工作。"
+	},
+	"description_chatframe_independent_2": {
+		"message": "在回放中可使用时间位移功能（可调整弹幕播放的时机）。"
+	},
+	"description_chatframe_independent_3": {
+		"message": "尤其在时长很长的视频中可能运行不稳定。"
+	},
+	"autostart": {
+		"message": "自动打开聊天栏（回放播放时）"
+	},
+	"enabled_onDependentMode": {
+		"message": "仅在依赖聊天栏模式时启用"
+	},
+	"enabled_always": {
+		"message": "始终启用"
+	},
+	"hotkey": {
+		"message": "键盘快捷键"
+	},
+	"hotkey_layer": {
+		"message": "弹幕图层"
+	},
+	"hotkey_panel": {
+		"message": "设置面板"
+	},
+	"hotkey_pip": {
+		"message": "PiP"
+	},
+	"hotkey_alt": {
+		"message": "与Alt/Option键同时按下"
+	},
+	"hotkey_insensitive": {
+		"message": "不区分大小写"
+	},
+	"message_pause": {
+		"message": "右键点击消息可暂停"
+	},
+	"person_detection": {
+		"message": "人物检测（alpha版功能）"
+	},
+	"enabled_wasm": {
+		"message": "启用 (WASM，推荐)"
+	},
+	"enabled_gpu": {
+		"message": "启用 (GPU)"
+	},
+	"inference_backend": {
+		"message": "推理后端"
+	},
+	"inference_backend_onnx": {
+		"message": "ONNX（标准，推荐）"
+	},
+	"inference_backend_onnxnative": {
+		"message": "ONNX Native（低延迟）"
+	},
+	"translationBlacklist": {
+		"message": "翻译违禁词列表"
+	},
+	"translator": {
+		"message": "翻译模型"
+	},
+	"translator_internal": {
+		"message": "浏览器内置（本地翻译）"
+	},
+	"translator_external": {
+		"message": "外部服务（指定URL）"
+	},
+	"translator_fallbackNote": {
+		"message": "无法进行本地翻译时，将始终回退到外部服务。"
+	},
+	"translation_request": {
+		"message": "请求设置"
+	},
+	"translation_request_method": {
+		"message": "方法"
+	},
+	"translation_request_url": {
+		"message": "URL"
+	},
+	"translation_request_bodyType": {
+		"message": "API类型"
+	},
+	"translation_request_bodyType_OpenAICompatible": {
+		"message": "OpenAI兼容"
+	},
+	"translation_request_bodyType_custom": {
+		"message": "自定义"
+	},
+	"translation_request_apiKey": {
+		"message": "API密钥"
+	},
+	"translation_request_modelName": {
+		"message": "模型名称"
+	},
+	"translation_request_body": {
+		"message": "请求体"
+	},
+	"translation_invalidRequestBody": {
+		"message": "不是有效的JSON"
+	},
+	"translation_response": {
+		"message": "响应设置"
+	},
+	"translation_response_style": {
+		"message": "样式"
+	},
+	"translation_response_style_Google": {
+		"message": "Google 翻译"
+	},
+	"translation_response_style_OpenAI": {
+		"message": "OpenAI"
+	},
+	"placeholder_test_translation_text": {
+		"message": "输入测试翻译文本"
+	},
+	"test_translation": {
+		"message": "翻译测试"
+	},
+	"save": {
+		"message": "保存"
+	},
+	"warning_whenNotSaved": {
+		"message": "保存后扩展程序将重新启动。已打开YouTube的标签页也会自动重新加载，但有时可能需要手动刷新。"
+	},
+	"pip_marker": {
+		"message": "此视频正在画中画中播放"
+	},
+	"menu_resumeAnimation": {
+		"message": "继续动画"
+	},
+	"menu_moveMessage": {
+		"message": "移动该消息"
+	},
+	"menu_copyAuthorId": {
+		"message": "复制用户ID"
+	},
+	"menu_hideAuthor": {
+		"message": "隐藏该用户"
+	}
+}
