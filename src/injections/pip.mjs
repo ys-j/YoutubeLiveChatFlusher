@@ -4,7 +4,8 @@
  * @param {object} params parameters for the script
  * @param {string} params.cssUrl URL of the CSS file to inject
  * @param {string} params.pipMarkerText text to display in the pip marker
- * @param {typeof import("../modules/store.mjs").DEFAULT_CONFIG.hotkeys} params.hotkeys JSON string of hotkeys to bind
+ * @param {string} params.utilsPath absolute path to the utils module
+ * @param {typeof import("../modules/store.mjs").DEFAULT_CONFIG.hotkeys} params.hotkeys hotkeys to bind
  */
 export default function (loggingPath, nonce, params) {
 	(function initPipMenu() {
@@ -17,6 +18,9 @@ export default function (loggingPath, nonce, params) {
 					pipWindow.close();
 				} else {
 					const player = document.getElementById('yt-lcf-layer')?.closest('#player-container');
+					/** @type {HTMLElement | null | undefined} */
+					const settingsButton = player?.querySelector('.ytp-settings-button[aria-expanded="true"]');
+					settingsButton?.click();
 					if (player) await openPip(player);
 				}
 			}, { passive: true });
@@ -45,11 +49,13 @@ export default function (loggingPath, nonce, params) {
 				throw new Error('Access to document picture-in-picture window was denied.', { cause });
 			}
 
-			/** @type {typeof import('../modules/logging.mjs')} */
+			/** @type {typeof import("../modules/logging.mjs")} */
 			const { logger } = await import(loggingPath);
+			/** @type {typeof import("../modules/utils.mjs")} */
+			const { matchHotkey } = await import(params.utilsPath);
 
-			const disableHotkeys = disableKeyboardShortcutOnParentWindow.bind(params.hotkeys);
-			const enableHotkeys = enableKeyboardShortcutOnChildWindow.bind(params.hotkeys);
+			const disableHotkeys = disableKeyboardShortcutOnParentWindow.bind(params.hotkeys, matchHotkey);
+			const enableHotkeys = enableKeyboardShortcutOnChildWindow.bind(params.hotkeys, matchHotkey);
 			top?.addEventListener('keydown', disableHotkeys, true);
 			pipWindow?.addEventListener('keydown', enableHotkeys, true);
 			top?.addEventListener('yt-navigate-finish', onYtNavigateFinishDispatchPip, { passive: true });
@@ -95,6 +101,8 @@ export default function (loggingPath, nonce, params) {
 			}
 			pipWindow.document.head.append(pipMetaCharset, pipTitle, ...copiedStyles, pipLink, pipStyle);
 
+			/** @type {(HTMLElement & { setSize?: (width: number, height: number) => void, wakeUpControls?: () => void }) | null} */
+			const player = element.querySelector('#movie_player');
 			const pipMarker = document.createElement('span');
 			pipMarker.id = 'yt-lcf-pip-marker';
 			pipMarker.textContent = params.pipMarkerText || '';
@@ -102,13 +110,16 @@ export default function (loggingPath, nonce, params) {
 			pipWindow.document.body.appendChild(element);
 			pipWindow.document.body.dataset.browser = document.body.dataset.browser;
 
-			const player = pipWindow.document.querySelector('ytd-player');
 			const video = player?.querySelector('video');
 			/** @type {?HTMLElement | undefined} */
 			const overlay = player?.querySelector('.ytp-iv-video-content');
+			const resizePlayer = () => {
+				// Keep YouTube's video, controls and chapter geometry in sync without scaling the seek bar.
+				player?.setSize?.(pipWindow.innerWidth, pipWindow.innerHeight);
+			};
 
-			video?.addEventListener(`ytlcf-resize:${nonce}`, onResizeVideo);
-			video?.addEventListener('loadeddata', dispatchResizeVideo, { passive: true });
+			video?.addEventListener('loadedmetadata', resizePlayer, { passive: true });
+			video?.addEventListener('loadeddata', resizePlayer, { passive: true });
 			if (video) video.style.pointerEvents = 'none';
 			if (overlay) overlay.style.pointerEvents = 'none';
 
@@ -121,40 +132,28 @@ export default function (loggingPath, nonce, params) {
 			});
 			pipWindow.dispatchEvent(new CustomEvent(`ytlcf-pip-update:${nonce}`));
 
-			pipWindow.addEventListener('resize', () => {
-				const video = pipWindow.document.querySelector('video');
-				video?.dispatchEvent(new CustomEvent(`ytlcf-resize:${nonce}`, { detail: pipWindow }));
-			}, { passive: true });
+			pipWindow.addEventListener('resize', resizePlayer, { passive: true });
+			pipWindow.addEventListener('mousemove', forwardMouseEvent, { passive: true });
+			pipWindow.addEventListener('mouseup', forwardMouseEvent, { passive: true });
 
 			pipWindow.addEventListener('pagehide', () => {
 				const parent = pipMarker.parentElement || top?.document.getElementById('player-container-inner');
 				parent?.append(element);
-				if (parent && video) {
-					video.style.width = `${parent.clientWidth | 0}px`;
-					video.style.height = 'auto';
-					video.style.top = video.style.left = '0px';
-					/** @type {?HTMLElement} */
-					const b = parent.querySelector('.ytp-chrome-bottom');
-					if (b) {
-						const left = Number.parseInt(b.style.left, 10);
-						b.style.width = `${video.clientWidth - left * 2}px`;
-					}
-					video.removeEventListener(`ytlcf-resize:${nonce}`, onResizeVideo);
-					video.removeEventListener('loadeddata', dispatchResizeVideo);
-					video.style.pointerEvents = '';
-					if (overlay) overlay.style.pointerEvents = '';
-				}
+				if (parent) player?.setSize?.(parent.clientWidth, parent.clientHeight);
+				video?.removeEventListener('loadedmetadata', resizePlayer);
+				video?.removeEventListener('loadeddata', resizePlayer);
+				if (video) video.style.pointerEvents = '';
+				if (overlay) overlay.style.pointerEvents = '';
 				if (top?.document.contains(pipMarker)) pipMarker.remove();
 				top?.removeEventListener('keydown', disableHotkeys, true);
 				pipWindow.removeEventListener('keydown', enableHotkeys, true);
+				pipWindow.removeEventListener('resize', resizePlayer);
+				pipWindow.removeEventListener('mousemove', forwardMouseEvent);
+				pipWindow.removeEventListener('mouseup', forwardMouseEvent);
 				top?.removeEventListener('yt-navigate-finish', onYtNavigateFinishDispatchPip);
 			}, { passive: true });
 
-			if (video) {
-				const le = document.getElementById('yt-lcf-layer');
-				if (le?.style.maskPosition) le.style.maskPosition = `0px 0px, ${video.style.left} ${video.style.top}`;
-				if (le?.style.maskSize) le.style.maskSize = `100% 100%, ${video.style.width} ${video.style.height}`;
-			}
+			resizePlayer();
 
 			logger.info('PiP /w chat window is created successfully.');
 			return pipWindow;
@@ -163,99 +162,48 @@ export default function (loggingPath, nonce, params) {
 				pipWindow?.dispatchEvent(new CustomEvent(`ytlcf-pip-update:${nonce}`));
 			}
 
-			/** @this {HTMLVideoElement} */
-			function dispatchResizeVideo() {
-				this.dispatchEvent(new CustomEvent(`ytlcf-resize:${nonce}`, { detail: pipWindow }));
+			/** @param {MouseEvent} e */
+			function forwardMouseEvent(e) {
+				if (e.type === 'mousemove') player?.wakeUpControls?.();
+				// YouTube's drag listeners remain on the opener document when its player moves.
+				top?.document.dispatchEvent(new MouseEvent(e.type, e));
 			}
 		}
 
 		/**
-		 * Updates size of progress bar in picture-in-picture window.
-		 * @param {Window} win picture-in-picture window
-		 */
-		function updateProgressBarSize(win) {
-			/** @type {?HTMLElement} */
-			const bottomElem = win.document.querySelector('.ytp-chrome-bottom');
-			if (bottomElem) {
-				const left = Number.parseInt(bottomElem.style.left, 10);
-				const bottomWidth = win.innerWidth - left * 2;
-				bottomElem.style.width = `${bottomWidth}px`;
-
-				/** @type {?HTMLElement} */
-				const progressBar = bottomElem.querySelector('.ytp-progress-bar');
-				if (progressBar) {
-					/** @type {?HTMLElement} */
-					const hoverContainer = bottomElem.querySelector('.ytp-chapter-hover-container');
-					const containerWidth = Number.parseInt(hoverContainer?.style.width || '0', 10);
-					if (containerWidth > 0) {
-						progressBar.style.transformOrigin = '0 0 0';
-						progressBar.style.transform = `scaleX(${bottomWidth / containerWidth})`;
-					}
-				}
-				/** @type {?HTMLElement} */
-				const heatMap = bottomElem.querySelector('.ytp-heat-map-chapter');
-				if (heatMap) {
-					heatMap.style.width = '100%';
-				}
-			}
-		}
-
-		/**
-		 * @this {HTMLVideoElement}
-		 * @param {CustomEvent<Window>} e
-		 */
-		function onResizeVideo(e) {
-			const { innerWidth: ww, innerHeight: wh } = e.detail;
-			const { videoWidth: vw, videoHeight: vh } = this;
-			if (!vw || !vh) return;
-			const aspect = vw / vh;
-			const w = Math.min(ww, (wh * aspect) | 0);
-			this.style.height = `${Math.min(wh, (w / aspect) | 0)}px`;
-			this.style.width = `${w}px`;
-			this.style.left = `${Math.max(ww - w, 0) * .5}px`;
-			updateProgressBarSize(e.detail);
-		}
-
-		/**
-		 * @this {Record<string, { key: string, alt: boolean }>}
+		 * @this {Record<string, import("../modules/utils.mjs").HotkeyConfig>}
+		 * @param {import("../modules/utils.mjs").matchHotkey} matchHotkey
 		 * @param {KeyboardEvent} e
 		 */
-		function disableKeyboardShortcutOnParentWindow(e) {
+		function disableKeyboardShortcutOnParentWindow(matchHotkey, e) {
 			if (['f', 'i', 't', 'escape'].includes(e.key.toLowerCase())) {
 				e.stopPropagation();
-			} else if (Object.values(this).some(h => h.key === e.key && h.alt === e.altKey)) {
+			} else if (Object.values(this).some(hotkey => matchHotkey(e, hotkey))) {
 				// transfer keyboard event to pip window
 				top?.documentPictureInPicture?.window?.dispatchEvent(new KeyboardEvent('keydown', e));
 			}
 		}
 
 		/**
-		 * @this {Record<string, { key: string, alt: boolean }>}
+		 * @this {Record<string, import("../modules/utils.mjs").HotkeyConfig>}
+		 * @param {import("../modules/utils.mjs").matchHotkey} matchHotkey
 		 * @param {KeyboardEvent} e
 		 */
-		function enableKeyboardShortcutOnChildWindow(e) {
+		function enableKeyboardShortcutOnChildWindow(matchHotkey, e) {
 			if (['f', 'i', 't', 'escape', 'k'].includes(e.key.toLowerCase())) return;
-			if (!e.ctrlKey && !e.metaKey) {
+			if (!e.repeat && !e.ctrlKey && !e.metaKey) {
 				const document = top?.documentPictureInPicture?.window?.document;
-				switch (e.key) {
-					case this.layer.key:
-						if (!e.repeat && e.altKey === this.layer.alt) {
-							const checkbox = /** @type {?HTMLElement} */ (document?.querySelector('#yt-lcf-cb'));
-							return checkbox?.click();
-						}
-						break;
-					case this.panel.key:
-						if (!e.repeat && e.altKey === this.panel.alt) {
-							const popupmenu = /** @type {?HTMLElement} */ (document?.querySelector('#yt-lcf-pm'));
-							return popupmenu?.click();
-						}
-						break;
-					case this.pip.key:
-						if (!e.repeat && e.altKey === this.pip.alt) {
-							const pipmenu = /** @type {?HTMLElement} */ (document?.querySelector('#yt-lcf-pp'));
-							return pipmenu?.click();
-						}
-						break;
+				const selectorMap = {
+					layer: '#yt-lcf-cb',
+					panel: '#yt-lcf-pm',
+					pip: '#yt-lcf-pp',
+				};
+				for (const [feat, selector] of Object.entries(selectorMap)) {
+					if (matchHotkey(e, this[feat])) {
+						// The click consumes the event, so it must not be forwarded to the parent window.
+						const trigger = /** @type {?HTMLElement} */ (document?.querySelector(selector));
+						return trigger?.click();
+					}
 				}
 			}
 			// transfer keyboard event to parent window

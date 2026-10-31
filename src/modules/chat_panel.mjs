@@ -390,7 +390,7 @@ export class LiveChatPanel {
 						text += '}';
 					}
 					const invalidLN = lines.map((id, i) => !id || pattern.test(id) ? -1 : i + 1).filter(v => v > 0);
-					const validityMsg = invalidLN.length > 0 ? browser.i18n.getMessage('validation_channelId', invalidLN.join()) : '';
+					const validityMsg = invalidLN.length > 0 ? browser.i18n.getMessage('validation_channelId', invalidLN.join(', ')) : '';
 					textarea.setCustomValidity(validityMsg);
 					preview.value = text;
 				}, { passive: true });
@@ -681,10 +681,11 @@ export class LiveChatPanel {
 				if (name === 'layer_autofit') layer.autofit(checked);
 				break;
 			}
-			case 'time_shift': {
-				s.others.time_shift = /** @type {HTMLInputElement} */ (ctrls.time_shift).valueAsNumber;
+			case 'time_shift_normal':
+			case 'time_shift_low':
+			case 'time_shift_ultralow':
+				s.others[name] = /** @type {HTMLInputElement} */ (ctrls[name]).valueAsNumber;
 				break;
-			}
 		}
 	}
 

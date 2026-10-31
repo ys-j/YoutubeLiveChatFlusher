@@ -236,6 +236,24 @@ div.body:empty {
 	.body { display: var(--yt-lcf-paid-sticker-display-sticker) }
 }
 
+.you {
+	color: var(--yt-lcf-you-color);
+	:host > & {
+		text-shadow: var(--yt-lcf-you-stroke-color, var(--yt-lcf-stroke-color)) 0 0 var(--yt-lcf-stroke-blur);
+		-webkit-text-stroke-color: var(--yt-lcf-you-stroke-color, var(--yt-lcf-stroke-color));
+	}
+	&.text {
+		:host(.has-you-name) > & {
+			background-color: var(--yt-live-chat-you-message-background-color);
+			border-radius: .5em;
+			padding: 0 .25em;
+		}
+		.photo { display: var(--yt-lcf-you-display-photo) }
+		.name { display: var(--yt-lcf-you-display-name) }
+		.body { display: var(--yt-lcf-you-display-message) }
+	}
+}
+
 .engagement-poll {
 	background-color: rgba(64, 64, 64, var(--yt-lcf-background-opacity));
 }

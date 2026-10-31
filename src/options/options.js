@@ -104,12 +104,22 @@ const {
 /** @type {Record<string, HTMLInputElement>} */
 // @ts-expect-error: Properties are not explicitly defined on form.elements
 const {
-	hotkey_layer_key, hotkey_layer_alt,
-	hotkey_panel_key, hotkey_panel_alt,
-	hotkey_pip_key, hotkey_pip_alt,
 	translation_blacklist_regexp,
 	translation_url, translation_apiKey, translation_modelName,
 } = form.elements;
+
+/**
+ * @typedef HotkeyInputSet
+ * @prop {HTMLInputElement} key
+ * @prop {HTMLInputElement} alt
+ * @prop {HTMLInputElement} insensitive
+ */
+/** @type { { layer: HotkeyInputSet, panel: HotkeyInputSet, pip: HotkeyInputSet } } */
+// @ts-expect-error: Properties are not explicitly defined on form.elements
+const hotkeyInputs = Object.fromEntries(['layer', 'panel', 'pip'].map(feature => [
+	feature,
+	(Object.fromEntries(['key', 'alt', 'insensitive'].map(k => [k, form.elements[`hotkey_${feature}_${k}`]]))),
+]));
 
 /** @type {Record<string, HTMLSelectElement>} */
 // @ts-expect-error: Properties are not explicitly defined on form.elements
@@ -143,12 +153,12 @@ s.load().then(() => {
 	autostart.value = s.others.autostart.toString();
 
 	// hotkeys
-	hotkey_layer_key.value = s.hotkeys.layer.key ?? s.hotkeys.layer;
-	hotkey_layer_alt.checked = s.hotkeys.layer.alt;
-	hotkey_panel_key.value = s.hotkeys.panel.key ?? s.hotkeys.panel;
-	hotkey_panel_alt.checked = s.hotkeys.panel.alt;
-	hotkey_pip_key.value = s.hotkeys.pip.key;
-	hotkey_pip_alt.checked = s.hotkeys.pip.alt;
+	for (const feature of Object.keys(hotkeyInputs)) {
+		const inputs = hotkeyInputs[feature];
+		inputs.key.value = s.hotkeys[feature].key ?? s.hotkeys[feature];
+		inputs.alt.checked = s.hotkeys[feature].alt;
+		inputs.insensitive.checked = s.hotkeys[feature].insensitive;
+	}
 
 	// message pause
 	message_pause.value = s.others.message_pause.toString();
@@ -235,11 +245,10 @@ form.addEventListener('submit', async e => {
 			message_pause: Number.parseInt(message_pause.value, 10),
 		},
 		/** @type {Partial<typeof s.data.hotkeys>} */
-		hotkeys: {
-			layer: { key: hotkey_layer_key.value, alt: hotkey_layer_alt.checked },
-			panel: { key: hotkey_panel_key.value, alt: hotkey_panel_alt.checked },
-			pip: { key: hotkey_pip_key.value, alt: hotkey_pip_alt.checked },
-		},
+		hotkeys: Object.fromEntries(Object.entries(hotkeyInputs).map(([k, v]) => [
+			k,
+			{ key: v.key.value, alt: v.alt.checked, insensitive: v.insensitive.checked },
+		])),
 		/** @type {Partial<typeof s.data.translation>} */
 		translation: {
 			regexp: /** @type {HTMLInputElement} */ (translation_blacklist_regexp).checked,

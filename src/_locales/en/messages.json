@@ -3,7 +3,7 @@
 		"message": "YouTube LiveChat Flusher (Danmaku Chat)"
 	},
 	"manifestDescription": {
-	    "message": "Revolutionize your YouTube viewing experience with Danmaku-style chat."
+		"message": "Revolutionize your YouTube viewing experience with Danmaku-style chat."
 	},
 	"notification_title_onInstall": {
 		"message": "Thank you for installing!\nClick to refresh YouTube tabs."
@@ -24,7 +24,7 @@
 		"message": "PiP w/ chat (beta)"
 	},
 	"close": {
-		"message": "close"
+		"message": "Close"
 	},
 	"displayTab": {
 		"message": "Basic"
@@ -33,7 +33,7 @@
 		"message": "By Type"
 	},
 	"mutedWordsTab": {
-		"message": "Words Filter"
+		"message": "Word Filter"
 	},
 	"userDefinedCssTab": {
 		"message": "User CSS"
@@ -105,10 +105,10 @@
 		"message": "Wrap Mode 2"
 	},
 	"displayLimit": {
-		"message": "Flow Disp. Limit"
+		"message": "Max Msg. Shown"
 	},
 	"containerLimit": {
-		"message": "Container Disp. Limit"
+		"message": "Chat Frame Msg. Limit"
 	},
 	"unlimited": {
 		"message": "Unlimited"
@@ -120,16 +120,16 @@
 		"message": "Flush all messages"
 	},
 	"simultaneousMessage_1": {
-		"message": "Flush only first message per load"
+		"message": "Flush only the first message per load"
 	},
 	"simultaneousMessage_2": {
-		"message": "Merge same messages"
+		"message": "Merge identical messages"
 	},
 	"simultaneousMessage_3": {
-		"message": "Merge same messages including last one"
+		"message": "Merge identical messages, incl. previous"
 	},
 	"emojiExpression": {
-		"message": "Emoji Expression"
+		"message": "Emoji Display"
 	},
 	"emojiExpression_0": {
 		"message": "Hide all"
@@ -231,13 +231,13 @@
 		"message": "Purchase Amount"
 	},
 	"display_purchaseAmount": {
-		"message": "$0"
+		"message": "Amount"
 	},
 	"tooltip_milestoneMonths": {
 		"message": "Milestone Months"
 	},
 	"display_milestoneMonths": {
-		"message": "mths"
+		"message": "months"
 	},
 	"tooltip_chatMessage": {
 		"message": "Chat Message"
@@ -291,25 +291,25 @@
 		"message": "Hide/replace the keyword"
 	},
 	"mutedWordsMode_3": {
-		"message": "Replace the character"
+		"message": "Mask the characters"
 	},
 	"mutedWordsReplacement": {
 		"message": "Repl. Word/Char"
 	},
 	"placeholder_mutedWordsReplacement": {
-		"message": "Empty means hidden"
+		"message": "Leave empty to hide"
 	},
 	"tooltip_mutedWordsReplacement": {
 		"message": "Only the first character is used for replacement"
 	},
-	"mutedWordsGrammer": {
+	"mutedWordsGrammar": {
 		"message": "Grammar"
 	},
 	"regexp": {
 		"message": "Use regular expression"
 	},
 	"placeholder_mutedWordsList": {
-		"message": "Multiple keywords can be set each on a separated line."
+		"message": "Enter one keyword per line."
 	},
 	"user_defined_css_shortcut": {
 		"message": "Shortcut"
@@ -342,7 +342,7 @@
 		"message": "Label"
 	},
 	"Channel_ID": {
-		"message": "Channel ID\n(Each line)"
+		"message": "Channel ID\n(one per line)"
 	},
 	"displayStyle": {
 		"message": "Display style"
@@ -351,10 +351,10 @@
 		"message": "Font size factor"
 	},
 	"placeholder_channelId": {
-		"message": "24 letters beginning with &quot;UC&quot;"
+		"message": "24 characters beginning with \"UC\""
 	},
 	"validation_channelId": {
-		"message": "Enter 24 characters beginning with &quot;UC&quot; for each line:\nLine #$1 is invalid."
+		"message": "Enter 24 characters beginning with \"UC\" on each line.\nInvalid lines: $1"
 	},
 	"placeholder_userStyleTextArea": {
 		"message": "/* Preview of CSS is displayed in this area. */"
@@ -366,31 +366,40 @@
 		"message": "Target language"
 	},
 	"prefixOriginalLanguage": {
-		"message": "Prefix original language"
+		"message": "Show the original language at the start"
 	},
 	"exception": {
-		"message": "except"
+		"message": "Except"
 	},
 	"addableByBrowserLanguageSettings": {
-		"message": "You can add more options \nvia browser's language settings."
+		"message": "You can add more options\nvia the browser's language settings."
 	},
-	"traslationTiming": {
+	"translationTiming": {
 		"message": ""
 	},
 	"translation_eagerMode": {
-		"message": "Translates before starting animation"
+		"message": "Translate before the animation starts"
 	},
 	"translation_lazyMode": {
-		"message": "Translates after starting animation"
+		"message": "Translate after the animation starts"
 	},
 	"suffixOriginalMessage": {
-		"message": "Suffix original message"
+		"message": "Also show the untranslated message"
 	},
 	"timeshift": {
 		"message": "Time-shift"
 	},
+	"latencyNormal": {
+		"message": "Normal / Premiere"
+	},
+	"latencyLow": {
+		"message": "Low Latency"
+	},
+	"latencyUltraLow": {
+		"message": "Ultra-Low Latency"
+	},
 	"timeshift_note": {
-		"message": "(Only available in replay)"
+		"message": "(Only available for replays)"
 	},
 	"otherConfig": {
 		"message": "Open Other Options"
@@ -462,19 +471,19 @@
 		"message": "Works even when the chat frame is closed."
 	},
 	"description_chatframe_independent_2": {
-		"message": "The time-shift function is available for replays; you can adjust the timing of chat flowing."
+		"message": "The time-shift function is available for replays; you can adjust when the chat flows."
 	},
 	"description_chatframe_independent_3": {
 		"message": "The operation may be unstable, especially for long videos."
 	},
 	"autostart": {
-		"message": "Automatically open chat frame when watching replays"
+		"message": "Automatically open the chat frame when watching replays"
 	},
 	"enabled_onDependentMode": {
-		"message": "Enable on ChatFrame Dependent Mode"
+		"message": "Enable in ChatFrame Dependent Mode"
 	},
 	"enabled_always": {
-		"message": "Enable Always"
+		"message": "Always enable"
 	},
 	"hotkey": {
 		"message": "Hotkeys (Keyboard Shortcuts)"
@@ -491,14 +500,17 @@
 	"hotkey_alt": {
 		"message": "with Alt/Option key"
 	},
+	"hotkey_insensitive": {
+		"message": "Case Insensitive"
+	},
 	"message_pause": {
-		"message": "Animation pausing by right-clicking a message"
+		"message": "Pause the animation by right-clicking a message"
 	},
 	"person_detection": {
-		"message": "Person Detection (alpha-release)"
+		"message": "Person Detection (alpha)"
 	},
 	"enabled_wasm": {
-		"message": "Enable (WASM)"
+		"message": "Enable (WASM / Recommended)"
 	},
 	"enabled_gpu": {
 		"message": "Enable (GPU)"
@@ -525,7 +537,7 @@
 		"message": "External service (URL)"
 	},
 	"translator_fallbackNote": {
-		"message": "It will be felled back to the external service when browser built-in translator is unavailable."
+		"message": "Falls back to the external service when the browser's built-in translator is unavailable."
 	},
 	"translation_request": {
 		"message": "Request"
@@ -579,7 +591,7 @@
 		"message": "Save"
 	},
 	"warning_whenNotSaved": {
-		"message": "Saving will restart the extension and automatically reload all open YouTube tabs, through a manual refresh may sometimes be required."
+		"message": "Saving will restart the extension and automatically reload all open YouTube tabs, though a manual refresh may sometimes be required."
 	},
 	"pip_marker": {
 		"message": "Now playing in picture-in-picture mode"

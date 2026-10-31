@@ -1,10 +1,13 @@
 import { logger } from './logging.mjs';
 
+// Fallback line-height factor when the stored value is empty or invalid.
+export const DEFAULT_LINE_HEIGHT = 1.4;
+
 export const DEFAULT_CONFIG = Object.freeze({
 	styles: {
 		animation_duration: '8s',
 		font_size: '32px',
-		line_height: '1.4',
+		line_height: `${DEFAULT_LINE_HEIGHT}`,
 		font_family: 'sans-serif',
 		font_weight: '500',
 		stroke_color: '#000000',
@@ -32,7 +35,9 @@ export const DEFAULT_CONFIG = Object.freeze({
 		direction: 0,
 		layer_autofit: 0,
 		show_username: 0,
-		time_shift: 0,
+		time_shift_normal: 0,
+		time_shift_low: 0,
+		time_shift_ultralow: 0,
 		notification_updated: 0,
 		/** @type {import("./main.mjs").FetchingModeEnum} */
 		mode_livestream: 1,
@@ -67,9 +72,9 @@ export const DEFAULT_CONFIG = Object.freeze({
 		'': '',
 	},
 	hotkeys: {
-		layer: { key: '', alt: false },
-		panel: { key: '', alt: false },
-		pip: { key: '', alt: false },
+		layer: { key: '', alt: false, insensitive: false },
+		panel: { key: '', alt: false, insensitive: false },
+		pip: { key: '', alt: false, insensitive: false },
 	},
 	mutedWords: {
 		/** @type {import("./chat_message.mjs").MutedWordModeEnum} */
@@ -188,7 +193,7 @@ class ConfigStore {
 		}
 		Object.assign(this.data.cssTexts, stored.cssTexts);
 		for (const [k, v] of Object.entries(stored.hotkeys ?? {})) {
-			const source = typeof v === 'string' ? { key: v, alt: false } : v ?? {};
+			const source = typeof v === 'string' ? { key: v, alt: false, insensitive: false } : v ?? {};
 			Object.assign(this.data.hotkeys[k], source);
 		}
 		Object.assign(this.data.mutedWords, stored.mutedWords);
@@ -210,6 +215,13 @@ class ConfigStore {
 	 * @param {Partial<Omit<UnwrapReadonly<typeof this.data>, 'others'> & FormerConfigSchema>} stored
 	 */
 	migrate(stored) {
+		if (stored.others?.time_shift !== undefined) {
+			const former = stored.others.time_shift;
+			this.data.others.time_shift_normal = former;
+			this.data.others.time_shift_low = former;
+			this.data.others.time_shift_ultralow = former;
+			delete stored.others.time_shift;
+		}
 		if (stored.others?.translation !== undefined) {
 			const former = stored.others.translation;
 			this.data.translation.targetIndex = Math.abs(former) | 0;

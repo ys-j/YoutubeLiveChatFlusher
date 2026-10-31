@@ -1,0 +1,611 @@
+{
+	"manifestName": {
+		"message": "YouTube LiveChat Flusher／彈幕聊天"
+	},
+	"manifestDescription": {
+		"message": "用彈幕樣式的聊天，帶來更豐富的 YouTube 觀看體驗。"
+	},
+	"notification_title_onInstall": {
+		"message": "感謝您的安裝\n點擊即可重新載入 YouTube 分頁"
+	},
+	"notification_title_onUpdate": {
+		"message": "已更新至版本 $1\n點擊即可重新載入 YouTube 分頁"
+	},
+	"notification_title_onReload": {
+		"message": "已重新啟動擴充功能\n點擊即可重新載入 YouTube 分頁"
+	},
+	"ytp_menuitem_label_switch": {
+		"message": "播放彈幕"
+	},
+	"ytp_menuitem_label_config": {
+		"message": "彈幕設定"
+	},
+	"ytp_menuitem_label_pip": {
+		"message": "PiP w/ chat (beta)"
+	},
+	"close": {
+		"message": "關閉"
+	},
+	"displayTab": {
+		"message": "基本"
+	},
+	"byTypeTab": {
+		"message": "按類型"
+	},
+	"mutedWordsTab": {
+		"message": "封鎖關鍵字"
+	},
+	"userDefinedCssTab": {
+		"message": "使用者 CSS"
+	},
+	"othersTab": {
+		"message": "其他"
+	},
+	"animationDuration": {
+		"message": "動畫秒數"
+	},
+	"fontSize": {
+		"message": "文字大小"
+	},
+	"lines": {
+		"message": "行"
+	},
+	"typeOfLines_0": {
+		"message": "固定"
+	},
+	"typeOfLines_1": {
+		"message": "最多"
+	},
+	"typeOfLines_2": {
+		"message": "最少"
+	},
+	"lineHeight": {
+		"message": "行高"
+	},
+	"fontFamily_fontWeight": {
+		"message": "字型名稱/粗細"
+	},
+	"fontFamily_select_from_local": {
+		"message": "從本機字型中選擇"
+	},
+	"strokeStyle": {
+		"message": "描邊樣式"
+	},
+	"strokeColor": {
+		"message": "顏色"
+	},
+	"strokeOffset": {
+		"message": "偏移"
+	},
+	"strokeBlur": {
+		"message": "模糊"
+	},
+	"layerOpacity": {
+		"message": "整體透明度"
+	},
+	"backgroundOpacity": {
+		"message": "背景透明度"
+	},
+	"opacity_0": {
+		"message": "透明"
+	},
+	"opacity_1": {
+		"message": "不透明"
+	},
+	"maxWidth_wordWrap": {
+		"message": "最大長度/換行"
+	},
+	"wordWrap_0": {
+		"message": "不換行"
+	},
+	"wordWrap_1": {
+		"message": "模式1"
+	},
+	"wordWrap_2": {
+		"message": "模式2"
+	},
+	"displayLimit": {
+		"message": "最大顯示數"
+	},
+	"containerLimit": {
+		"message": "聊天室顯示數"
+	},
+	"unlimited": {
+		"message": "無限制"
+	},
+	"simultaneousMessage": {
+		"message": "同時刻聊天"
+	},
+	"simultaneousMessage_0": {
+		"message": "全部播放"
+	},
+	"simultaneousMessage_1": {
+		"message": "每次載入只播放第一則"
+	},
+	"simultaneousMessage_2": {
+		"message": "合併相同內容"
+	},
+	"simultaneousMessage_3": {
+		"message": "合併相同內容（含前一個）"
+	},
+	"emojiExpression": {
+		"message": "表情符號顯示"
+	},
+	"emojiExpression_0": {
+		"message": "全部隱藏"
+	},
+	"emojiExpression_1": {
+		"message": "全部顯示"
+	},
+	"emojiExpression_2": {
+		"message": "替換為標籤"
+	},
+	"emojiExpression_3": {
+		"message": "替換為快捷碼"
+	},
+	"density": {
+		"message": "顯示密度"
+	},
+	"density_dense": {
+		"message": "緊湊"
+	},
+	"density_random": {
+		"message": "隨機"
+	},
+	"overlapping": {
+		"message": "重疊"
+	},
+	"overlapping_transparent": {
+		"message": "透明化"
+	},
+	"overlapping_translate": {
+		"message": "錯開"
+	},
+	"overlapping_hidden": {
+		"message": "隱藏"
+	},
+	"direction": {
+		"message": "方向"
+	},
+	"direction_bottom_to_top": {
+		"message": "從下往上"
+	},
+	"direction_left_to_right": {
+		"message": "從左往右"
+	},
+	"layerSize": {
+		"message": "圖層尺寸"
+	},
+	"fitLayerSize": {
+		"message": "配合影片"
+	},
+	"adjustLayerSize": {
+		"message": "手動設定"
+	},
+	"layerCSS": {
+		"message": "圖層 CSS"
+	},
+	"normal": {
+		"message": "一般"
+	},
+	"member": {
+		"message": "會員"
+	},
+	"moderator": {
+		"message": "頻道管理員"
+	},
+	"owner": {
+		"message": "頻道擁有者"
+	},
+	"verified": {
+		"message": "已驗證"
+	},
+	"you": {
+		"message": "你"
+	},
+	"superchat": {
+		"message": "Super Chat"
+	},
+	"sticker": {
+		"message": "Super Sticker"
+	},
+	"membership": {
+		"message": "會員資格"
+	},
+	"milestone": {
+		"message": "里程碑"
+	},
+	"displaySettings": {
+		"message": "顯示設定"
+	},
+	"tooltip_authorPhoto": {
+		"message": "發文者頭像"
+	},
+	"tooltip_authorName": {
+		"message": "發文者名稱"
+	},
+	"display_authorName": {
+		"message": "名稱"
+	},
+	"tooltip_purchaseAmount": {
+		"message": "金額"
+	},
+	"display_purchaseAmount": {
+		"message": "金額"
+	},
+	"tooltip_milestoneMonths": {
+		"message": "里程碑的月數"
+	},
+	"display_milestoneMonths": {
+		"message": "月數"
+	},
+	"tooltip_chatMessage": {
+		"message": "聊天訊息"
+	},
+	"display_chatMessage": {
+		"message": "內文"
+	},
+	"tooltip_membershipMessage": {
+		"message": "新會員的訊息"
+	},
+	"display_membershipMessage": {
+		"message": "內文"
+	},
+	"tooltip_sticker": {
+		"message": "貼紙"
+	},
+	"display_sticker": {
+		"message": "貼紙"
+	},
+	"tooltip_stickerSize": {
+		"message": "貼紙的大小"
+	},
+	"display_stickerSize": {
+		"message": "大小"
+	},
+	"tooltip_customColor": {
+		"message": "自訂顏色"
+	},
+	"display_customColor": {
+		"message": "自訂顏色"
+	},
+	"placeholder_customCSS": {
+		"message": "自訂 CSS"
+	},
+	"common": {
+		"message": "通用"
+	},
+	"show_username": {
+		"message": "顯示使用者名稱而非 @handle"
+	},
+	"mutedWordsMode": {
+		"message": "模式"
+	},
+	"mutedWordsMode_0": {
+		"message": "關閉"
+	},
+	"mutedWordsMode_1": {
+		"message": "隱藏整則訊息"
+	},
+	"mutedWordsMode_2": {
+		"message": "隱藏/替換關鍵字"
+	},
+	"mutedWordsMode_3": {
+		"message": "將文字遮蔽"
+	},
+	"mutedWordsReplacement": {
+		"message": "替換文字"
+	},
+	"placeholder_mutedWordsReplacement": {
+		"message": "留空則會被隱藏"
+	},
+	"tooltip_mutedWordsReplacement": {
+		"message": "僅使用第1個字元進行遮蔽"
+	},
+	"mutedWordsGrammar": {
+		"message": "語法"
+	},
+	"regexp": {
+		"message": "使用正規表達式"
+	},
+	"placeholder_mutedWordsList": {
+		"message": "可以用換行設定多個關鍵字"
+	},
+	"user_defined_css_shortcut": {
+		"message": "捷徑"
+	},
+	"font_helper_select": {
+		"message": "請選擇字型..."
+	},
+	"up": {
+		"message": "上移"
+	},
+	"down": {
+		"message": "下移"
+	},
+	"delete": {
+		"message": "刪除"
+	},
+	"add": {
+		"message": "新增"
+	},
+	"confirm": {
+		"message": "確定"
+	},
+	"cancel": {
+		"message": "取消"
+	},
+	"addUserStyle": {
+		"message": "新增使用者樣式"
+	},
+	"label": {
+		"message": "標籤"
+	},
+	"Channel_ID": {
+		"message": "頻道ID\n(每行一個)"
+	},
+	"displayStyle": {
+		"message": "顯示樣式"
+	},
+	"fontFactor": {
+		"message": "字型倍率"
+	},
+	"placeholder_channelId": {
+		"message": "以UC開頭的24字元頻道ID"
+	},
+	"validation_channelId": {
+		"message": "每行請輸入以UC開頭的24個字元。\n（第$1行不正確。）"
+	},
+	"placeholder_userStyleTextArea": {
+		"message": "/* 這裡會顯示 CSS 的預覽 */"
+	},
+	"translation": {
+		"message": "訊息翻譯"
+	},
+	"targetLanguage": {
+		"message": "翻譯為"
+	},
+	"prefixOriginalLanguage": {
+		"message": "在句首標明原始語言"
+	},
+	"exception": {
+		"message": "排除"
+	},
+	"addableByBrowserLanguageSettings": {
+		"message": "可從瀏覽器的語言設定新增更多選項"
+	},
+	"translationTiming": {
+		"message": "翻譯時機"
+	},
+	"translation_eagerMode": {
+		"message": "翻譯後再播放"
+	},
+	"translation_lazyMode": {
+		"message": "邊播放邊翻譯"
+	},
+	"suffixOriginalMessage": {
+		"message": "同時顯示翻譯前的訊息"
+	},
+	"timeshift": {
+		"message": "時間偏移"
+	},
+	"latencyNormal": {
+		"message": "一般 / 首映"
+	},
+	"latencyLow": {
+		"message": "低延遲"
+	},
+	"latencyUltraLow": {
+		"message": "超低延遲"
+	},
+	"timeshift_note": {
+		"message": "※ 僅在回放時有效"
+	},
+	"otherConfig": {
+		"message": "其他設定"
+	},
+	"aboutAddon": {
+		"message": "關於擴充功能"
+	},
+	"version": {
+		"message": "版本"
+	},
+	"releaseNote": {
+		"message": "更新日誌"
+	},
+	"configFile": {
+		"message": "設定檔"
+	},
+	"export": {
+		"message": "匯出"
+	},
+	"import": {
+		"message": "匯入"
+	},
+	"init": {
+		"message": "重設"
+	},
+	"commonSettings": {
+		"message": "通用設定"
+	},
+	"notification": {
+		"message": "通知"
+	},
+	"whenUpdated": {
+		"message": "版本更新時"
+	},
+	"disabled": {
+		"message": "不啟用"
+	},
+	"enabled": {
+		"message": "啟用"
+	},
+	"description_notification_disabled": {
+		"message": "已開啟 YouTube 的分頁會自動重新載入。"
+	},
+	"description_notification_enabled": {
+		"message": "已開啟 YouTube 的分頁不會自動重新載入。\n請點擊顯示的通知來重新載入。"
+	},
+	"loadingMode": {
+		"message": "聊天載入模式"
+	},
+	"livestream": {
+		"message": "直播"
+	},
+	"replay": {
+		"message": "回放"
+	},
+	"mode_option_chatframe_dependent": {
+		"message": "依賴聊天室"
+	},
+	"mode_option_chatframe_independent": {
+		"message": "不依賴聊天室"
+	},
+	"description_chatframe_dependent_1": {
+		"message": "僅在開啟聊天室時運作。"
+	},
+	"description_chatframe_dependent_2": {
+		"message": "在行動版頁面（m.youtube.com）上一律回退到不依賴模式。"
+	},
+	"description_chatframe_independent_1": {
+		"message": "即使關閉聊天室也會運作。"
+	},
+	"description_chatframe_independent_2": {
+		"message": "回放時可使用時間偏移功能（可調整彈幕播放的時機）。"
+	},
+	"description_chatframe_independent_3": {
+		"message": "尤其在長時間的影片中可能運作不穩定。"
+	},
+	"autostart": {
+		"message": "自動開啟聊天室（回放播放時）"
+	},
+	"enabled_onDependentMode": {
+		"message": "僅在依賴聊天室時啟用"
+	},
+	"enabled_always": {
+		"message": "一律啟用"
+	},
+	"hotkey": {
+		"message": "鍵盤快速鍵"
+	},
+	"hotkey_layer": {
+		"message": "彈幕圖層"
+	},
+	"hotkey_panel": {
+		"message": "設定面板"
+	},
+	"hotkey_pip": {
+		"message": "PiP"
+	},
+	"hotkey_alt": {
+		"message": "與 Alt/Option 鍵同時按下"
+	},
+	"hotkey_insensitive": {
+		"message": "不分大小寫"
+	},
+	"message_pause": {
+		"message": "右鍵點擊訊息可暫停"
+	},
+	"person_detection": {
+		"message": "人物偵測（alpha 版功能）"
+	},
+	"enabled_wasm": {
+		"message": "啟用 (WASM・建議)"
+	},
+	"enabled_gpu": {
+		"message": "啟用 (GPU)"
+	},
+	"inference_backend": {
+		"message": "推論後端"
+	},
+	"inference_backend_onnx": {
+		"message": "ONNX（標準・建議）"
+	},
+	"inference_backend_onnxnative": {
+		"message": "ONNX Native（低延遲）"
+	},
+	"translationBlacklist": {
+		"message": "翻譯封鎖清單"
+	},
+	"translator": {
+		"message": "翻譯模型"
+	},
+	"translator_internal": {
+		"message": "瀏覽器內建（本機翻譯）"
+	},
+	"translator_external": {
+		"message": "外部服務（指定 URL）"
+	},
+	"translator_fallbackNote": {
+		"message": "無法進行本機翻譯時會一律回退到外部服務。"
+	},
+	"translation_request": {
+		"message": "請求設定"
+	},
+	"translation_request_method": {
+		"message": "方法"
+	},
+	"translation_request_url": {
+		"message": "URL"
+	},
+	"translation_request_bodyType": {
+		"message": "API 類型"
+	},
+	"translation_request_bodyType_OpenAICompatible": {
+		"message": "OpenAI 相容"
+	},
+	"translation_request_bodyType_custom": {
+		"message": "自訂"
+	},
+	"translation_request_apiKey": {
+		"message": "API 金鑰"
+	},
+	"translation_request_modelName": {
+		"message": "模型名稱"
+	},
+	"translation_request_body": {
+		"message": "請求主體"
+	},
+	"translation_invalidRequestBody": {
+		"message": "不是有效的 JSON"
+	},
+	"translation_response": {
+		"message": "回應設定"
+	},
+	"translation_response_style": {
+		"message": "樣式"
+	},
+	"translation_response_style_Google": {
+		"message": "Google 翻譯"
+	},
+	"translation_response_style_OpenAI": {
+		"message": "OpenAI"
+	},
+	"placeholder_test_translation_text": {
+		"message": "輸入測試翻譯文字"
+	},
+	"test_translation": {
+		"message": "翻譯測試"
+	},
+	"save": {
+		"message": "儲存"
+	},
+	"warning_whenNotSaved": {
+		"message": "儲存後擴充功能會重新啟動。已開啟 YouTube 的分頁也會自動重新載入，但有時候需要手動更新。"
+	},
+	"pip_marker": {
+		"message": "這個影片正在子母畫面中播放"
+	},
+	"menu_resumeAnimation": {
+		"message": "繼續動畫"
+	},
+	"menu_moveMessage": {
+		"message": "移動這則訊息"
+	},
+	"menu_copyAuthorId": {
+		"message": "複製使用者 ID"
+	},
+	"menu_hideAuthor": {
+		"message": "隱藏該使用者"
+	}
+}

@@ -302,7 +302,7 @@
 	"tooltip_mutedWordsReplacement": {
 		"message": "最初の1文字のみが伏字に使用されます"
 	},
-	"mutedWordsGrammer": {
+	"mutedWordsGrammar": {
 		"message": "文法"
 	},
 	"regexp": {
@@ -374,7 +374,7 @@
 	"addableByBrowserLanguageSettings": {
 		"message": "項目はブラウザの言語設定から追加可"
 	},
-	"traslationTiming": {
+	"translationTiming": {
 		"message": "タイミング"
 	},
 	"translation_eagerMode": {
@@ -388,6 +388,15 @@
 	},
 	"timeshift": {
 		"message": "タイムシフト"
+	},
+	"latencyNormal": {
+		"message": "通常 / プレミア公開"
+	},
+	"latencyLow": {
+		"message": "低遅延"
+	},
+	"latencyUltraLow": {
+		"message": "超低遅延"
 	},
 	"timeshift_note": {
 		"message": "※ アーカイブでのみ有効"
@@ -491,6 +500,9 @@
 	"hotkey_alt": {
 		"message": "Alt/Optionキーと同時押し"
 	},
+	"hotkey_insensitive": {
+		"message": "大文字小文字を区別しない"
+	},
 	"message_pause": {
 		"message": "右クリックでメッセージを一時停止"
 	},
@@ -498,7 +510,7 @@
 		"message": "人物検出（アルファ版機能）"
 	},
 	"enabled_wasm": {
-		"message": "する (WASM)"
+		"message": "する (WASM・推奨)"
 	},
 	"enabled_gpu": {
 		"message": "する (GPU)"

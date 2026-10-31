@@ -78,6 +78,30 @@ export function getValueByJSONPointer(obj, pointer) {
 }
 
 /**
+ * @typedef HotkeyConfig
+ * @prop {string} key the configured key
+ * @prop {boolean} alt whether the Alt/Option key must be held
+ * @prop {boolean} insensitive whether to ignore upper/lowercase
+ */
+
+/**
+ * Tests whether a keydown event matches a hotkey.
+ * The pressed key is treated as lowercase without Shift and uppercase with
+ * Shift, which cancels the effect of CapsLock regardless of its state.
+ * @param {{ key: string, shiftKey: boolean, altKey: boolean }} event the keydown event
+ * @param {HotkeyConfig} hotkey the hotkey configuration
+ * @returns {boolean} whether the event matches the hotkey
+ */
+export function matchHotkey({ key, shiftKey, altKey }, hotkey) {
+	if (hotkey.key === '') return false;
+	const pressed = shiftKey ? key.toUpperCase() : key.toLowerCase();
+	const sameKey = hotkey.insensitive
+		? pressed.toLowerCase() === hotkey.key.toLowerCase()
+		: pressed === hotkey.key;
+	return sameKey && altKey === hotkey.alt;
+}
+
+/**
  * Waits for the given number of milliseconds.
  * @param {number} ms milliseconds
  * @param {object} [options] options

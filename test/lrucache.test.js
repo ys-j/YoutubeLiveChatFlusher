@@ -1,13 +1,13 @@
-import './_globals.mjs';
+import './_globals.js';
 
 import { assertEquals, assertThrows } from '@std/assert';
 import { LRUCache } from '../src/modules/lrucache.mjs';
 
 /**
-	 * Walks the doubly-linked list and returns keys from oldest (head) to most recent (tail).
-	 * @param {LRUCache<any, any>} cache
-	 * @returns {any[]} keys ordered least- -> most-recently-used
-	 */
+ * Walks the doubly-linked list and returns keys from oldest (head) to most recent (tail).
+ * @param {LRUCache<any, any>} cache
+ * @returns {any[]} keys ordered least- -> most-recently-used
+ */
 function order(cache) {
 	/** @type {any[]} */
 	const out = [];

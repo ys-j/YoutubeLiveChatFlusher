@@ -1,6 +1,6 @@
 import { logger } from './logging.mjs';
 import { store } from './store.mjs';
-import { getText, getValueByJSONPointer } from './utils.mjs';
+import { getText, getValueByJSONPointer, matchHotkey } from './utils.mjs';
 import { isAdShowing } from './dom_utils.mjs';
 
 import { LiveChatController } from './chat_controller.mjs';
@@ -10,6 +10,8 @@ const manifest = browser.runtime.getManifest();
 
 const state = {
 	isLive: false,
+	/** @type {"normal" | "low" | "ultralow"} */
+	latency: 'normal',
 	/** @type {"desktop" | "mobile"} */
 	device: 'desktop',
 	action: new ReplayActionBuffer(),
@@ -87,6 +89,7 @@ export async function initialize(e) {
 				details: {
 					cssUrl: browser.runtime.getURL('/styles/content.css'),
 					pipMarkerText: browser.i18n.getMessage('pip_marker'),
+					utilsPath: browser.runtime.getURL('/modules/utils.mjs'),
 					hotkeys: store.data.hotkeys,
 				},
 			});
@@ -114,25 +117,17 @@ export async function initialize(e) {
 	document.body.addEventListener('keydown', e => {
 		if (e.repeat) return;
 		if (e.ctrlKey || e.metaKey) return;
-		switch (e.key) {
-			case store.hotkeys.layer.key:
-				if (e.altKey === store.hotkeys.layer.alt) {
-					const checkbox = /** @type {?HTMLElement} */ (player.querySelector('#yt-lcf-cb'));
-					checkbox?.click();
-				}
+		const selectorMap = {
+			layer: '#yt-lcf-cb',
+			panel: '#yt-lcf-pm',
+			pip: '#yt-lcf-pp',
+		};
+		for (const [feat, selector] of Object.entries(selectorMap)) {
+			if (matchHotkey(e, store.hotkeys[feat])) {
+				const trigger = /** @type {?HTMLElement} */ (player.querySelector(selector));
+				trigger?.click();
 				break;
-			case store.hotkeys.panel.key:
-				if (e.altKey === store.hotkeys.panel.alt) {
-					const popupmenu = /** @type {?HTMLElement} */ (player.querySelector('#yt-lcf-pm'));
-					popupmenu?.click();
-				}
-				break;
-			case store.hotkeys.pip.key:
-				if (e.altKey === store.hotkeys.pip.alt) {
-					const pipmenu = /** @type {?HTMLElement} */ (player.querySelector('#yt-lcf-pp'));
-					pipmenu?.click();
-				}
-				break;
+			}
 		}
 	}, { passive: true });
 }
@@ -144,8 +139,14 @@ const toggle = {
 };
 /** @param {string} nonce */
 const startListening = nonce => {
-	state.controller?.listen(nonce);
-	toggle.enable();
+	const controller = state.controller;
+	if (controller) {
+		if (!state.isLive) controller.panel.element.dataset.latency = state.latency;
+		controller.listen(nonce);
+		toggle.enable();
+	} else {
+		logger.error('Failed to start observing chat events: Controller was lost.');
+	}
 };
 
 /**
@@ -155,6 +156,7 @@ const startListening = nonce => {
 async function onYtNavigateFinish(pageType, response) {
 	if (pageType !== 'watch') return;
 	toggle.disable();
+	delete state.controller?.panel.element.dataset.latency;
 
 	/** @type {?HTMLVideoElement | undefined} */
 	const video = (self.documentPictureInPicture?.window || self)?.document.querySelector('#movie_player video');
@@ -167,14 +169,27 @@ async function onYtNavigateFinish(pageType, response) {
 
 	const videoDetails = response?.playerResponse?.videoDetails
 		|| response.contents?.twoColumnWatchNextResults?.results?.results?.contents?.at(0)?.videoPrimaryInfoRenderer?.viewCount?.videoViewCountRenderer;
+	/** @type {Record<string, string | boolean | undefined>} */
 	const info = {
 		videoId: videoDetails?.videoId || response.currentVideoEndpoint?.watchEndpoint?.videoId,
 		title: videoDetails?.title || getText(response.playerOverlays?.playerOverlayRenderer?.videoDetails?.playerOverlayVideoDetailsRenderer?.title),
 	};
-	state.isLive = videoDetails?.isLive
+	if (videoDetails) {
+		const props = ['isLiveContent', 'isLowLatencyLiveStream', 'latencyClass'];
+		for (const k of props) {
+			const v = videoDetails[k];
+			if (v !== undefined) info[k] = v;
+		}
+	}
+	state.isLive = info.isLive = videoDetails?.isLive
 		|| videoDetails?.isUpcoming
 		|| getText(response.playerOverlays?.playerOverlayRenderer?.liveIndicatorText)
 		|| false;
+	state.latency = (info => {
+		if (`${info.latencyClass}`.endsWith('LATENCY_ULTRA_LOW')) return 'ultralow';
+		if (`${info.latencyClass}`.endsWith('LATENCY_LOW') || info.isLowLatencyLiveStream) return 'low';
+		return 'normal';
+	})(info);
 
 	const videoType = state.isLive ? 'livestream' : 'replay';
 	const modeValue = state.device === 'mobile' ? FetchingModeEnum.MOBILE : store.others?.[`mode_${videoType}`] ?? FetchingModeEnum.INDEPENDENT;
@@ -191,7 +206,7 @@ async function onYtNavigateFinish(pageType, response) {
 	let initialContinuation = null;
 	switch (modeValue) {
 		case FetchingModeEnum.DEPENDENT:
-			logger.info(`Running in dependent mode for ${videoType} (${info.videoId}):`, info.title);
+			logger.info(`Running in dependent mode for ${videoType}:`, info);
 			document.addEventListener(`ytlcf-start:${nonce}`, e => {
 				startListening(nonce);
 				// Acknowledge only after the chat receiver is listening.
@@ -216,7 +231,7 @@ async function onYtNavigateFinish(pageType, response) {
 				logger.warn(warning, info);
 				break;
 			} else {
-				logger.info(`Running in mobile mode for ${videoType} (${info.videoId}):`, info.title);
+				logger.info(`Running in mobile mode for ${videoType}:`, info);
 			}
 		}
 		// falls through
@@ -238,7 +253,7 @@ async function onYtNavigateFinish(pageType, response) {
 			/** @type {?string} */
 			initialContinuation ||= liveChatRenderer?.continuations?.at(0)?.reloadContinuationData?.continuation;
 			if (initialContinuation) {
-				logger.info(`Running in independent mode for ${videoType} (${info.videoId}):`, info.title);
+				logger.info(`Running in independent mode for ${videoType}:`, info);
 				startListening(nonce);
 				if (state.isLive) {
 					const generator = getLiveChatActionsAsyncIterable(state.abortController.signal, initialContinuation);
@@ -268,7 +283,7 @@ async function onYtNavigateFinish(pageType, response) {
 	 * @this {HTMLVideoElement}
 	 */
 	function onSeeking() {
-		const shiftSec = !state.isLive && store.others.time_shift || 0;
+		const shiftSec = !state.isLive && store.others[`time_shift_${state.latency}`] || 0;
 		this.setAttribute('data-shift-sec', shiftSec.toFixed(1));
 		const currentOffset = (this.currentTime - shiftSec) * 1000 | 0;
 		const ev = new CustomEvent(`ytlcf-seek:${nonce}`, { detail: { offset: currentOffset } });
@@ -288,7 +303,7 @@ async function onYtNavigateFinish(pageType, response) {
 	 * @this {HTMLVideoElement}
 	 */
 	function onTimeUpdate() {
-		const shiftSec = !state.isLive && store.others.time_shift || 0;
+		const shiftSec = !state.isLive && store.others[`time_shift_${state.latency}`] || 0;
 		this.setAttribute('data-shift-sec', shiftSec.toFixed(1));
 		const player = state.controller?.layer.element.parentElement;
 		if (player && isAdShowing(player)) return;

@@ -574,7 +574,7 @@
 			</div>
 		</div>
 		<div>
-			<div data-i18n=mutedWordsGrammer></div>
+			<div data-i18n=mutedWordsGrammar></div>
 			<div>
 				<label>
 					<input type=checkbox name=muted_words_regexp>
@@ -606,7 +606,7 @@
 				<br>
 				<span data-i18n=addableByBrowserLanguageSettings></span>
 				<br>
-				<span data-i18n=traslationTiming></span>
+				<span data-i18n=translationTiming></span>
 				<select name=translation_timing>
 					<option value=0 data-i18n=translation_eagerMode></option>
 					<option value=1 data-i18n=translation_lazyMode></option>
@@ -624,14 +624,25 @@
 			</div>
 			<div></div>
 		</div>
+		<hr>
 		<div>
 			<div data-i18n=timeshift></div>
 			<div>
-				<input type=number name=time_shift step=0.1 data-size=5>
-				s
+				<table>
+					<tr>
+						<td><label for=time_shift_control-normal data-i18n=latencyNormal></label>
+						<td><input id=time_shift_control-normal type=number name=time_shift_normal step=0.1 data-size=5> s
+					<tr>
+						<td><label for=time_shift_control-low data-i18n=latencyLow></label>
+						<td><input id=time_shift_control-low type=number name=time_shift_low step=0.1 data-size=5> s
+					<tr>
+						<td><label for=time_shift_control-ultralow data-i18n=latencyUltraLow></label>
+						<td><input id=time_shift_control-ultralow type=number name=time_shift_ultralow step=0.1 data-size=5> s
+				</table>
 				<span data-i18n=timeshift_note></span>
 			</div>
 		</div>
+		<hr>
 		<div>
 			<div></div>
 			<div>
