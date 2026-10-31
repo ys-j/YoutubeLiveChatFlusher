@@ -8,10 +8,14 @@ export default function (loggingPath, nonce) {
 		return logger;
 	}).then(function init(logger, attempts = 0) {
 		const MAX_ATTEMPTS = 10;
-		if ('ytInitialData' in self && 'ytcfg' in self) {
+		if ('ytInitialData' in self && self.ytInitialData && 'ytcfg' in self) {
 			const ev = new CustomEvent(`ytlcf-message:${nonce}`, {
 				detail: {
-					ytInitialData: self.ytInitialData,
+					ytInitialData: {
+						...self.ytInitialData,
+						// @ts-expect-error: Optional property access
+						playerResponse: self.ytInitialPlayerResponse,
+					},
 					// @ts-expect-error: Dynamic property access
 					ytcfg: self.ytcfg?.d?.(),
 				},

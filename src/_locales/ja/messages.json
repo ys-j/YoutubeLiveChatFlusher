@@ -389,6 +389,15 @@
 	"timeshift": {
 		"message": "タイムシフト"
 	},
+	"latencyNormal": {
+		"message": "通常 / プレミア公開"
+	},
+	"latencyLow": {
+		"message": "低遅延"
+	},
+	"latencyUltraLow": {
+		"message": "超低遅延"
+	},
 	"timeshift_note": {
 		"message": "※ アーカイブでのみ有効"
 	},
@@ -501,7 +510,7 @@
 		"message": "人物検出（アルファ版機能）"
 	},
 	"enabled_wasm": {
-		"message": "する (WASM)"
+		"message": "する (WASM・推奨)"
 	},
 	"enabled_gpu": {
 		"message": "する (GPU)"

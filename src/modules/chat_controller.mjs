@@ -355,8 +355,13 @@ export class LiveChatController {
 			}
 		}
 
-		/** @type {HTMLInputElement} */ (ctrls.time_shift).valueAsNumber = s.others.time_shift || 0;
-		/** @type {HTMLInputElement} */ (ctrls.time_shift).disabled = s.others.mode_replay === 0;
+		const isDependentMode = s.others.mode_replay === 0;
+		for (const latency of /** @type {const} */ (['normal', 'low', 'ultralow'])) {
+			const name = /** @type {const} */ (`time_shift_${latency}`);
+			const input = /** @type {HTMLInputElement} */ (ctrls[name]);
+			input.valueAsNumber = s.others[name] || 0;
+			input.disabled = isDependentMode;
+		}
 	}
 
 	/**

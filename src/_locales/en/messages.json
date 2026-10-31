@@ -389,6 +389,15 @@
 	"timeshift": {
 		"message": "Time-shift"
 	},
+	"latencyNormal": {
+		"message": "Normal / Premiere"
+	},
+	"latencyLow": {
+		"message": "Low Latency"
+	},
+	"latencyUltraLow": {
+		"message": "Ultra-Low Latency"
+	},
 	"timeshift_note": {
 		"message": "(Only available in replay)"
 	},
@@ -501,7 +510,7 @@
 		"message": "Person Detection (alpha-release)"
 	},
 	"enabled_wasm": {
-		"message": "Enable (WASM)"
+		"message": "Enable (WASM / Recommended)"
 	},
 	"enabled_gpu": {
 		"message": "Enable (GPU)"

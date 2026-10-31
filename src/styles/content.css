@@ -199,6 +199,18 @@
 				margin-bottom: 0;
 			}
 		}
+		&[for|="time_shift_control"]::after {
+			content: '';
+			display: inline-block;
+			vertical-align: text-bottom;
+			height: 1lh;
+			width: 1em;
+		}
+		[data-latency="normal"] &[for="time_shift_control-normal"]::after,
+		[data-latency="low"] &[for="time_shift_control-low"]::after,
+		[data-latency="ultralow"] &[for="time_shift_control-ultralow"]::after {
+			background: var(--yt-lcf-red-dot-image) no-repeat center/1em;
+		}
 	}
 	:disabled, :disabled + span {
 		opacity: .4;

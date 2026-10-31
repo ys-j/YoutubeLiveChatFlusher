@@ -681,10 +681,11 @@ export class LiveChatPanel {
 				if (name === 'layer_autofit') layer.autofit(checked);
 				break;
 			}
-			case 'time_shift': {
-				s.others.time_shift = /** @type {HTMLInputElement} */ (ctrls.time_shift).valueAsNumber;
+			case 'time_shift_normal':
+			case 'time_shift_low':
+			case 'time_shift_ultralow':
+				s.others[name] = /** @type {HTMLInputElement} */ (ctrls[name]).valueAsNumber;
 				break;
-			}
 		}
 	}
 

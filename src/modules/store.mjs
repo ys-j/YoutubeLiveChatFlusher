@@ -35,7 +35,9 @@ export const DEFAULT_CONFIG = Object.freeze({
 		direction: 0,
 		layer_autofit: 0,
 		show_username: 0,
-		time_shift: 0,
+		time_shift_normal: 0,
+		time_shift_low: 0,
+		time_shift_ultralow: 0,
 		notification_updated: 0,
 		/** @type {import("./main.mjs").FetchingModeEnum} */
 		mode_livestream: 1,
@@ -213,6 +215,13 @@ class ConfigStore {
 	 * @param {Partial<Omit<UnwrapReadonly<typeof this.data>, 'others'> & FormerConfigSchema>} stored
 	 */
 	migrate(stored) {
+		if (stored.others?.time_shift !== undefined) {
+			const former = stored.others.time_shift;
+			this.data.others.time_shift_normal = former;
+			this.data.others.time_shift_low = former;
+			this.data.others.time_shift_ultralow = former;
+			delete stored.others.time_shift;
+		}
 		if (stored.others?.translation !== undefined) {
 			const former = stored.others.translation;
 			this.data.translation.targetIndex = Math.abs(former) | 0;
