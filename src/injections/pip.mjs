@@ -99,7 +99,8 @@ export default function (loggingPath, nonce, params) {
 					}
 				}
 			}
-			pipWindow.document.head.append(pipMetaCharset, pipTitle, ...copiedStyles, pipLink, pipStyle);
+			const pipHead = pipWindow.document.head;
+			pipHead.append(pipMetaCharset, pipTitle, ...copiedStyles, pipLink, pipStyle);
 
 			/** @type {(HTMLElement & { setSize?: (width: number, height: number) => void, wakeUpControls?: () => void }) | null} */
 			const player = element.querySelector('#movie_player');
@@ -117,7 +118,17 @@ export default function (loggingPath, nonce, params) {
 				// Keep YouTube's video, controls and chapter geometry in sync without scaling the seek bar.
 				player?.setSize?.(pipWindow.innerWidth, pipWindow.innerHeight);
 			};
+			/** @type {number | undefined} */
+			let styleResizeFrame;
+			const resizeAfterStyles = () => {
+				// Copied styles can change the video position without a window resize.
+				styleResizeFrame ??= pipWindow.requestAnimationFrame(() => {
+					styleResizeFrame = undefined;
+					resizePlayer();
+				});
+			};
 
+			pipHead.addEventListener('load', resizeAfterStyles, { capture: true, passive: true });
 			video?.addEventListener('loadedmetadata', resizePlayer, { passive: true });
 			video?.addEventListener('loadeddata', resizePlayer, { passive: true });
 			if (video) video.style.pointerEvents = 'none';
@@ -137,6 +148,8 @@ export default function (loggingPath, nonce, params) {
 			pipWindow.addEventListener('mouseup', forwardMouseEvent, { passive: true });
 
 			pipWindow.addEventListener('pagehide', () => {
+				pipHead.removeEventListener('load', resizeAfterStyles, true);
+				if (styleResizeFrame !== undefined) pipWindow.cancelAnimationFrame(styleResizeFrame);
 				const parent = pipMarker.parentElement || top?.document.getElementById('player-container-inner');
 				parent?.append(element);
 				if (parent) player?.setSize?.(parent.clientWidth, parent.clientHeight);
