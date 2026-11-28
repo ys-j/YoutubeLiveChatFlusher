@@ -36,7 +36,7 @@ const HOTKEYS = Object.freeze({
 	pip: { key: 'x', alt: false, insensitive: true },
 });
 
-async function fixture() {
+async function fixture(playerStylesReady = true) {
 	/** @returns {StubElement} */
 	const element = () => Object.assign(new EventTarget(), {
 		style: {}, dataset: {}, parentElement: null, children: [],
@@ -56,6 +56,7 @@ async function fixture() {
 	const menu = element();
 	const video = Object.assign(element(), { videoWidth: 0, videoHeight: 0 });
 	const overlay = element();
+	const head = Object.assign(element(), { playerStylesReady });
 	/** @type {number[][]} */
 	const sizes = [];
 	let wakeups = 0;
@@ -66,7 +67,10 @@ async function fixture() {
 	});
 	const player = Object.assign(element(), {
 		/** @param {number} width @param {number} height */
-		setSize(width, height) { sizes.push([width, height]); },
+		setSize(width, height) {
+			sizes.push([width, height]);
+			video.style.top = head.playerStylesReady ? '0px' : `${height}px`;
+		},
 		wakeUpControls() { wakeups++; },
 		/** @param {string} selector */
 		querySelector: selector => selector === 'video' ? video
@@ -81,7 +85,7 @@ async function fixture() {
 	/** Click counters for the PiP-window menu triggers, keyed by selector. */
 	const clicks = { '#yt-lcf-cb': 0, '#yt-lcf-pm': 0, '#yt-lcf-pp': 0 };
 	const pipDocument = {
-		body, head: element(), documentElement: { attributes: { setNamedItem() {} } },
+		body, head, documentElement: { attributes: { setNamedItem() {} } },
 		/** @param {string} selector */
 		querySelector: selector => selector === '#movie_player' || selector === 'ytd-player' ? player
 			: selector === 'video' ? video
@@ -91,9 +95,21 @@ async function fixture() {
 			: null,
 		getElementsByTagName: () => [],
 	};
+	let frameId = 0;
+	/** @type {Map<number, FrameRequestCallback>} */
+	const frames = new Map();
 	const pipWindow = Object.assign(new EventTarget(), {
 		document: pipDocument, innerWidth: 640, innerHeight: 360,
+		/** @param {FrameRequestCallback} callback */
+		requestAnimationFrame(callback) { frames.set(++frameId, callback); return frameId; },
+		/** @param {number} id */
+		cancelAnimationFrame(id) { frames.delete(id); },
 	});
+	const renderFrame = () => {
+		const callbacks = Array.from(frames.values());
+		frames.clear();
+		for (const callback of callbacks) callback(0);
+	};
 	const layer = Object.assign(element(), { closest: () => container });
 	const document = Object.assign(new EventTarget(), {
 		body: element(), documentElement: { attributes: [] }, styleSheets: [],
@@ -121,12 +137,24 @@ async function fixture() {
 	initialize('data:text/javascript,export const logger = { info() {}, warn() {} };', 'test-nonce', { hotkeys: HOTKEYS, utilsPath });
 	menu.dispatchEvent(new Event('click'));
 	await moved.promise;
-	return { document, top, pipWindow, video, container, parent, sizes, clicks, settingsOpenAtRequest, settingsOpen: () => settingsOpen, wakeups: () => wakeups };
+	return { document, top, pipWindow, video, container, parent, sizes, renderFrame, clicks, settingsOpenAtRequest, settingsOpen: () => settingsOpen, wakeups: () => wakeups };
 }
 
 Deno.test('PiP fits the native player on open, before video metadata arrives', async () => {
 	const { sizes } = await fixture();
 	assertEquals(sizes, [[640, 360]]);
+});
+
+Deno.test('PiP puts the video in view after delayed player styles load, without resizing the window', async () => {
+	const { pipWindow, video, sizes, renderFrame } = await fixture(false);
+	assertEquals(video.style.top, '360px');
+	const { head } = pipWindow.document;
+	head.playerStylesReady = true;
+	head.dispatchEvent(new Event('load'));
+	head.dispatchEvent(new Event('load'));
+	renderFrame();
+	assertEquals(video.style.top, '0px');
+	assertEquals(sizes, [[640, 360], [640, 360]]);
 });
 
 Deno.test('PiP resizes the whole player synchronously on every window resize', async () => {
@@ -170,11 +198,15 @@ Deno.test('PiP forwards mouse movement and release to the opener drag listeners'
 	assertEquals(received.length, 2);
 });
 
-Deno.test('closing PiP restores native layout and removes media resize listeners', async () => {
-	const { pipWindow, video, container, parent, sizes } = await fixture();
+Deno.test('closing PiP restores native layout and stops PiP resize callbacks', async () => {
+	const { pipWindow, video, container, parent, sizes, renderFrame } = await fixture();
+	const { head } = pipWindow.document;
+	head.dispatchEvent(new Event('load'));
 	pipWindow.dispatchEvent(new Event('pagehide'));
 	assertEquals(container.parentElement, parent);
 	assertEquals(sizes, [[640, 360], [1280, 720]]);
+	head.dispatchEvent(new Event('load'));
+	renderFrame();
 	video.dispatchEvent(new Event('loadeddata'));
 	video.dispatchEvent(new Event('loadedmetadata'));
 	assertEquals(sizes.length, 2);
